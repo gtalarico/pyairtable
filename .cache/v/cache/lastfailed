@@ -1,0 +1,3 @@
+{
+  "tests/test_airtable.py::TestAirtableCreate::()::test_get_all_view": true
+}
