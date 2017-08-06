@@ -24,6 +24,10 @@ class Airtable():
     ALLOWED_PARAMS = ['view', 'maxRecords', 'offset', 'sort']
 
     def __init__(self, base_key, table_name, api_key=None):
+        """
+        If api_key is not provided, AirtableAuth will attempt
+        to use os.environ['AIRTABLE_API_KEY']
+        """
         session = requests.Session()
         session.auth = AirtableAuth(API_KEY=api_key)
         self.session = session
@@ -37,23 +41,23 @@ class Airtable():
         else:
             raise ValueError('Authentication failed. Check your API Key')
 
-    def if_ok(self, response):
+    def _ok_or_raise(self, response):
         response.raise_for_status()
         return response
 
     def _get(self, url, **params):
         if any([True for option in params.keys() if option not in self.ALLOWED_PARAMS]):
             raise ValueError('invalid url param: {}'.format(params.keys()))
-        return self.if_ok(self.session.get(url, params=params))
+        return self._ok_or_raise(self.session.get(url, params=params))
 
     def _post(self, url, json_data):
-        return self.if_ok(self.session.post(url, json=json_data))
+        return self._ok_or_raise(self.session.post(url, json=json_data))
 
     def _patch(self, url, json_data):
-        return self.if_ok(self.session.patch(url, json=json_data))
+        return self._ok_or_raise(self.session.patch(url, json=json_data))
 
     def _delete(self, url):
-        return self.if_ok(self.session.delete(url))
+        return self._ok_or_raise(self.session.delete(url))
 
     def get_records(self, **options):
         """
@@ -62,7 +66,7 @@ class Airtable():
         Kwargs:
             view (``str``): Name of View
             maxRecords (``int``): Maximum number of records to retrieve
-            sort (``dict``): {'field': 'COLUMND_ID', 'direction':'desc'} | 'asc'
+            # sort (``dict``): {'field': 'COLUMND_ID', 'direction':'desc'} | 'asc'
 
         Returns:
             records (``list``): List of Records
@@ -88,6 +92,11 @@ class Airtable():
             field_name (``str``)
             field_value (``str``)
 
+        Kwargs:
+            view (``str``): Name of View
+            maxRecords (``int``): Maximum number of records to retrieve
+            # sort (``dict``): {'field': 'COLUMND_ID', 'direction':'desc'} | 'asc'
+
         Returns:
             record (``dict``)
         """
@@ -96,6 +105,21 @@ class Airtable():
                 return record
 
     def get_search(self, field_name, field_value, **options):
+        """
+        Returns All matching records
+
+        Args:
+            field_name (``str``)
+            field_value (``str``)
+
+        Kwargs:
+            view (``str``): Name of View
+            maxRecords (``int``): Maximum number of records to retrieve
+            # sort (``dict``): {'field': 'COLUMND_ID', 'direction':'desc'} | 'asc'
+
+        Returns:
+            record (``dict``)
+        """
         records = []
         for record in self.get_records(**options):
             if record.get('fields', {}).get(field_name) == field_value:
@@ -108,6 +132,7 @@ class Airtable():
 
         Args:
             fields(``dict``): Fields to add. Must be dictionary with Column names as Key
+
         Returns:
             response
         """
@@ -119,11 +144,32 @@ class Airtable():
             self.insert(row)
             time.sleept(0.21)
 
-    def update(self, record_id, fields, **options):
+    def update(self, record_id, fields):
+        """
+        Updates a record
+
+        Args:
+            record_id(``str``): Id of Record to update
+            fields(``dict``): Fields to add. Must be dictionary with Column names as Key
+
+        Returns:
+            response
+        """
         record_url = posixpath.join(self.url_table, record_id)
         return self._patch(record_url, json_data={"fields": fields})
 
     def update_by_field(self, field_name, field_value, fields, **options):
+        """
+        Updates a record
+
+        Args:
+            field_name(``str``): Name of the field to search
+            field_value(``str``): Value to match
+            fields(``dict``): Fields to add. Must be dictionary with Column names as Key
+
+        Returns:
+            response
+        """
         record = self.get_match(field_name, field_value, **options)
         if record:
             record_url = posixpath.join(self.url_table, record['id'])
