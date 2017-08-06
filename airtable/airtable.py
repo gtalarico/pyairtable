@@ -35,14 +35,17 @@ class Airtable():
         session.auth = AirtableAuth(API_KEY=api_key)
         self.session = session
         self.url_table = posixpath.join(self.API_URL, base_key, table_name)
-        self.is_authenticated = self.validate_authentication(self.url_table)
+        self.is_authenticated = self.validate_session(self.url_table)
 
-    def validate_authentication(self, url):
+    def validate_session(self, url):
         response = self.session.get(url, params={'maxRecords': 1})
+        import pdb; pdb.set_trace()
         if response.ok:
             return True
+        elif response.status_code == 404:
+            raise ValueError('Invalid table name: {}'.format(url))
         else:
-            raise ValueError('Authentication failed. Check your API Key')
+            raise ValueError('Authentication failed: {}'.format(resp.reason))
 
     def _ok_or_raise(self, response):
         response.raise_for_status()
