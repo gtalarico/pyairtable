@@ -11,8 +11,13 @@ import time
 
 from .auth import AirtableAuth
 
-from urllib.parse import urlencode
-from configparser import ConfigParser
+try:
+    from urllib.parse import urlencode
+    from configparser import ConfigParser
+except ImportError:
+     from urlparse import urlencode
+     import ConfigParser
+
 
 
 class Airtable():
