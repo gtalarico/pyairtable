@@ -25,7 +25,7 @@ Python Airtable Client Wrapper
 # Get Records
 >>> airtable.get_records()
 [{'fields': {...}}, ...]
-# Note: Get methods will return the records as dictionary exact as document in the API
+# Note: Get methods will return list of records, each as a dictionary exact as document in the API
 
 # Get Records - Options
 >>> airtable.get_records(view='MyView')
@@ -45,7 +45,7 @@ Python Airtable Client Wrapper
 ```
 # Insert a record
 >>> response = airtable.insert({'Name': 'Your Name'})
-# Note: All Post/Patch methods will return a request response object
+# Note: All Post/Patch/Delete methods will return the json data as per the API
 >>> response
 <Response: 200>
 >>> response.json()
