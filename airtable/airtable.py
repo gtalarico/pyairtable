@@ -15,9 +15,7 @@ try:
     from urllib.parse import urlencode
     from configparser import ConfigParser
 except ImportError:
-     from urlparse import urlencode
-     import ConfigParser
-
+     from urllib import urlencode
 
 
 class Airtable():
