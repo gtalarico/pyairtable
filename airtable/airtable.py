@@ -65,7 +65,7 @@ class Airtable():
 
     def get_records(self, **options):
         """
-        Get's all records.
+        Gets all records.
 
         Kwargs:
             view (``str``): Name of View
@@ -89,7 +89,7 @@ class Airtable():
 
     def get_match(self, field_name, field_value, **options):
         """
-        Returns First match
+        Returns first match found in ``get_records()``
 
         Args:
             field_name (``str``)
@@ -101,7 +101,7 @@ class Airtable():
             # sort (``dict``): {'field': 'COLUMND_ID', 'direction':'desc'} | 'asc'
 
         Returns:
-            record (``dict``)
+            record (``dict``): First record to match the field_value provided
         """
         for record in self.get_records(**options):
             if record.get('fields', {}).get(field_name) == field_value:

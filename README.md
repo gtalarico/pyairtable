@@ -66,15 +66,11 @@ airtable.batch_insert(records)
 >>> response = airtable.update_by_field('Name', 'Your Name', {'Name': 'New Name'})
 ```
 
-
-# TODO:
-
-- [ ] Implement Delete
-- [ ] Implement Filter
-- [ ] Implement Sort
-- [ ] Finish Docstrings
-- [ ] Add Examples
-- [ ] Add Sphinx
-
 ##### License
 [MIT](https://opensource.org/licenses/MIT)
+
+#### TODO:
+
+- [ ] Implement Filter
+- [ ] Implement Sort
+- [ ] Add Sphinx
