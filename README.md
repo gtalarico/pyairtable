@@ -20,3 +20,6 @@ recors[0]
 - [ ] Finish Docstrings
 - [ ] Add Examples
 - [ ] Add Sphinx
+
+##### License
+[MIT](https://opensource.org/licenses/MIT)
