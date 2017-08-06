@@ -102,13 +102,13 @@ class TestAirtableCreate():
         return  {'UUID': str(uuid.uuid4()), 'String': 'TestAirTableCreate'}
 
     def test_create_one(self, row, airtable_write):
-        resp = airtable_write.insert(row)
-        assert resp.ok
+        response = airtable_write.insert(row)
+        assert 'id' in response
 
     def test_create_batch(self, airtable_write):
         for i in range(5):
-            resp = airtable_write.insert(self.row())
-            assert resp.ok
+            response = airtable_write.insert(self.row())
+            assert 'id' in response
 
 
 class TestAirtableUpdate():

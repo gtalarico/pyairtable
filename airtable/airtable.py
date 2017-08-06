@@ -20,6 +20,7 @@ class Airtable():
 
     API_URL = posixpath.join(_API_BASE_URL, _VERSION)
     ALLOWED_PARAMS = ['view', 'maxRecords', 'offset', 'sort']
+    API_LIMIT = 1.0 / 5  # 5 per second
 
     def __init__(self, base_key, table_name, api_key=None):
         """
@@ -41,27 +42,30 @@ class Airtable():
         else:
             raise ValueError('Authentication failed: {}'.format(response.reason))
 
-    def _ok_or_raise(self, response):
-        response.raise_for_status()
-        return response
+    def _process_response(self, response):
+        response.raise_for_status()  # Raises if Status Code is not 200's
+        return response.json()
+
+    def record_url(self, record_id):
+        return posixpath.join(self.url_table, record_id)
 
     def _get(self, url, **params):
         if any([True for option in params.keys() if option not in self.ALLOWED_PARAMS]):
             raise ValueError('invalid url param: {}'.format(params.keys()))
-        return self._ok_or_raise(self.session.get(url, params=params))
+        return self._process_response(self.session.get(url, params=params))
 
     def _post(self, url, json_data):
-        return self._ok_or_raise(self.session.post(url, json=json_data))
+        return self._process_response(self.session.post(url, json=json_data))
 
     def _patch(self, url, json_data):
-        return self._ok_or_raise(self.session.patch(url, json=json_data))
+        return self._process_response(self.session.patch(url, json=json_data))
 
     def _delete(self, url):
-        return self._ok_or_raise(self.session.delete(url))
+        return self._process_response(self.session.delete(url))
 
     def get_records(self, **options):
         """
-        Get records
+        Get's all records.
 
         Kwargs:
             view (``str``): Name of View
@@ -76,11 +80,10 @@ class Airtable():
         records = []
         offset = None
         while True:
-            response = self._get(self.url_table, offset=offset, **options)
-            response_data = response.json()
+            response_data = self._get(self.url_table, offset=offset, **options)
             records.extend(response_data.get('records', []))
             offset = response_data.get('offset')
-            if not response.ok or 'offset' not in response_data:
+            if 'offset' not in response_data:
                 break
         return records
 
@@ -134,15 +137,18 @@ class Airtable():
             fields(``dict``): Fields to add. Must be dictionary with Column names as Key
 
         Returns:
-            response
+            record (``dict``)
         """
         return self._post(self.url_table, json_data={"fields": fields})
 
+    def _batch_request(self, iterable, func):
+        for item in iterable:
+            func(item)
+            time.sleept(self.API_LIMIT)
+
     def batch_insert(self, rows):
         """ Batch Insert without breaking API Rate Limit (5/sec) """
-        for row in rows:
-            self.insert(row)
-            time.sleept(0.21)
+        self._batch_request(rows, self.insert)
 
     def update(self, record_id, fields):
         """
@@ -153,9 +159,9 @@ class Airtable():
             fields(``dict``): Fields to add. Must be dictionary with Column names as Key
 
         Returns:
-            response
+            record (``dict``)
         """
-        record_url = posixpath.join(self.url_table, record_id)
+        record_url = self.record_url(record_id)
         return self._patch(record_url, json_data={"fields": fields})
 
     def update_by_field(self, field_name, field_value, fields, **options):
@@ -168,20 +174,18 @@ class Airtable():
             fields(``dict``): Fields to add. Must be dictionary with Column names as Key
 
         Returns:
-            response
+            record (``dict``)
         """
         record = self.get_match(field_name, field_value, **options)
         if record:
-            record_url = posixpath.join(self.url_table, record['id'])
+            record_url = self.record_url(record['id'])
             return self._patch(record_url, json_data={"fields": fields})
 
     def delete(self, record_id):
-        raise NotImplemented
-        record_url = posixpath.join(self.url_table, record_id)
-        return self._patch(record_url)
+        record_url = self.record_url(record_id)
+        return self._delete(record_url)
 
-    def delete_by_field(self, record_id):
-        raise NotImplemented
-        record = self.get_match(field_name, field_value, view=view)
-        record_url = posixpath.join(self.url_table, record_id)
-        return self._patch(record_url)
+    def delete_by_field(self, field_name, field_value, **options):
+        record = self.get_match(field_name, field_value, **options)
+        record_url = self.record_url(record['id'])
+        return self._delete(record_url)
