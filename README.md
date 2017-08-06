@@ -1,6 +1,8 @@
 # Airtable Python Wrapper
 
-Python Airtable Client Wrapper.
+[![Build Status](https://travis-ci.org/gtalarico/airtable-python-wrapper.svg?branch=master)](https://travis-ci.org/gtalarico/airtable-python-wrapper)
+
+Python Airtable Client Wrapper
 
 # Usage
 
