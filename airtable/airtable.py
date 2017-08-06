@@ -9,7 +9,7 @@ import requests
 import posixpath
 import time
 
-from airtable.auth import AirtableAuth
+from .auth import AirtableAuth
 
 from urllib.parse import urlencode
 from configparser import ConfigParser
