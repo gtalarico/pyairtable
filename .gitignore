@@ -1,6 +1,7 @@
 env.bat
 .cache
-__pycache__
+*__pycache__
 .pypirc
 *.egg-info
 dist
+build

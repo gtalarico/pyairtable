@@ -4,6 +4,10 @@ Python Airtable Client Wrapper.
 
 # Usage
 
+### Installing
+
+`pip install airtable-python-wrapper`
+
 ### Getting Started
 
 ```
@@ -31,7 +35,6 @@ Python Airtable Client Wrapper.
 
 # Get Search - Returns all matches in Table
 >>> airtable.get_search('Name', 'Your Name')
-
 
 ```
 
