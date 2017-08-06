@@ -22,7 +22,7 @@ class Airtable():
     _API_BASE_URL = 'https://api.airtable.com/'
 
     API_URL = posixpath.join(_API_BASE_URL, _VERSION)
-    ALLOWED_PARAMS = ['view', 'maxRecords', 'offset']
+    ALLOWED_PARAMS = ['view', 'maxRecords', 'offset', 'sort']
 
     def __init__(self, base_key, table_name):
         session = requests.Session()
@@ -38,13 +38,20 @@ class Airtable():
         else:
             raise ValueError('Authentication failed. Check your API Key')
 
+    def if_ok(self, response):
+        response.raise_for_status()
+        return response
+
     def _get(self, url, **params):
         if any([True for option in params.keys() if option not in self.ALLOWED_PARAMS]):
             raise ValueError('invalid url param: {}'.format(params.keys()))
-        return self.session.get(url, params=params)
+        return self.if_ok(self.session.get(url, params=params))
 
-    def _post(self, url, json_data=None):
-        return self.session.post(url, json=json_data)
+    def _post(self, url, json_data):
+        return self.if_ok(self.session.post(url, json=json_data))
+
+    def _patch(self, url, json_data):
+        return self.if_ok(self.session.patch(url, json=json_data))
 
     def get_all(self, **options):
         """
@@ -53,12 +60,15 @@ class Airtable():
         Kwargs:
             view (``str``): Name of View
             maxRecords (``int``): Maximum number of records to retrieve
+            sort (``dict``): {'field': 'COLUMND_ID', 'direction':'desc'} | 'asc'
+
+        Returns:
+            records (``list``): List of Records
 
         >>> records = get_records(maxRecords=3, view='All')
         """
         records = []
         offset = None
-
         while True:
             response = self._get(self.url_table, offset=offset, **options)
             response_data = response.json()
@@ -68,7 +78,7 @@ class Airtable():
                 break
         return records
 
-    def get_match(self, field_name, field_value):
+    def get_match(self, field_name, field_value, **options):
         """
         Returns First match
 
@@ -79,15 +89,15 @@ class Airtable():
         Returns:
             record (``dict``)
         """
-        for record in self.get_all():
+        for record in self.get_all(**options):
             if record.get('fields', {}).get(field_name) == field_value:
-                return record.get('fields')
+                return record
 
-    def get_search(self, field_name, field_value):
+    def get_search(self, field_name, field_value, **options):
         records = []
-        for record in self.get_all():
+        for record in self.get_all(**options):
             if record.get('fields', {}).get(field_name) == field_value:
-                records.append(record.get('fields'))
+                records.append(record)
         return records
 
     def insert(self, fields):
@@ -107,13 +117,12 @@ class Airtable():
             self.insert(row)
             time.sleept(0.21)
 
-    def update(self, field_name, field_value, fields, **options):
-        records = self.get_records()
-        for record in records:
-            if record['fields'].get(field_name) == field_value:
-                url = self._url_from_options(**options)
-                url += '/' + record['id']
-                response = self.session.patch(url, json={"fields": fields})
-                return response
-        else:
-            print('Failed to update')
+    def update(self, record_id, fields, **options):
+        record_url = posixpath.join(self.url_table, record_id)
+        return self._patch(record_url, json_data={"fields": fields})
+
+    def update_by_field(self, field_name, field_value, fields, view=''):
+        record = self.get_match(field_name, field_value, view=view)
+        if record:
+            record_url = posixpath.join(self.url_table, record['id'])
+            return self._patch(record_url, json_data={"fields": fields})
