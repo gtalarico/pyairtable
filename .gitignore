@@ -5,3 +5,4 @@ env.bat
 *.egg-info
 dist
 build
+build.bat
