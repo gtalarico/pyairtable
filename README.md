@@ -14,7 +14,9 @@ recors[0]
 
 # TODO:
 
+- [ ] Implement Delete
+- [ ] Implement Filter
+- [ ] Implement Sort
 - [ ] Finish Docstrings
 - [ ] Add Examples
 - [ ] Add Sphinx
-- [ ] Implement Sort

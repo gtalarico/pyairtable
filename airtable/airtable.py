@@ -10,7 +10,6 @@ import posixpath
 import time
 
 from airtable.auth import AirtableAuth
-from airtable.models import Records
 
 from urllib.parse import urlencode
 from configparser import ConfigParser
@@ -52,6 +51,9 @@ class Airtable():
 
     def _patch(self, url, json_data):
         return self.if_ok(self.session.patch(url, json=json_data))
+
+    def _delete(self, url):
+        return self.if_ok(self.session.delete(url))
 
     def get_records(self, **options):
         """
@@ -121,8 +123,19 @@ class Airtable():
         record_url = posixpath.join(self.url_table, record_id)
         return self._patch(record_url, json_data={"fields": fields})
 
-    def update_by_field(self, field_name, field_value, fields, view=''):
-        record = self.get_match(field_name, field_value, view=view)
+    def update_by_field(self, field_name, field_value, fields, **options):
+        record = self.get_match(field_name, field_value, **options)
         if record:
             record_url = posixpath.join(self.url_table, record['id'])
             return self._patch(record_url, json_data={"fields": fields})
+
+    def delete(self, record_id):
+        raise NotImplemented
+        record_url = posixpath.join(self.url_table, record_id)
+        return self._patch(record_url)
+
+    def delete_by_field(self, record_id):
+        raise NotImplemented
+        record = self.get_match(field_name, field_value, view=view)
+        record_url = posixpath.join(self.url_table, record_id)
+        return self._patch(record_url)
