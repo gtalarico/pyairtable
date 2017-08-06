@@ -1,21 +1,16 @@
 """ Airtable Python Wrapper  """
 
 __author__ = 'Gui Talarico'
-__version__ = '0.1.2.dev1'
+__version__ = '0.2.0.dev1'
 
 import os
 import json
 import requests
 import posixpath
 import time
+from six.moves.urllib.parse import urlencode
 
-from .auth import AirtableAuth
-
-try:
-    from urllib.parse import urlencode
-    from configparser import ConfigParser
-except ImportError:
-     from urllib import urlencode
+from ._auth import AirtableAuth
 
 
 class Airtable():
