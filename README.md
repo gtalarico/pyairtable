@@ -14,7 +14,7 @@ Python Airtable Client Wrapper
 
 ```
 >>> from airtable import Airtable
->>> airtable = Airtable(base_key, table_name, your_api_key)
+>>> airtable = Airtable(base_key, table_name, api_key=your_api_key)
 >>> # Alternatively, you can set the env variable AIRTABLE_API_KEY and use
 >>> aitable = Airtable(base_key, table_name)
 ```
