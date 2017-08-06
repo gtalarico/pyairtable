@@ -1,7 +1,7 @@
 """ Airtable Python Wrapper  """
 
 __author__ = 'Gui Talarico'
-__version__ = '0.1.1.dev1'
+__version__ = '0.1.2.dev1'
 
 import os
 import json
