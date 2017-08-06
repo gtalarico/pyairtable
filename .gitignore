@@ -1,3 +1,6 @@
 env.bat
 .cache
 __pycache__
+.pypirc
+*.egg-info
+dist

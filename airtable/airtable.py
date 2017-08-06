@@ -1,7 +1,7 @@
 """ Airtable Python Wrapper  """
 
 __author__ = 'Gui Talarico'
-__version__ = '0.1.0'
+__version__ = '0.1.0.dev1'
 
 import os
 import json
@@ -23,9 +23,9 @@ class Airtable():
     API_URL = posixpath.join(_API_BASE_URL, _VERSION)
     ALLOWED_PARAMS = ['view', 'maxRecords', 'offset', 'sort']
 
-    def __init__(self, base_key, table_name):
+    def __init__(self, base_key, table_name, api_key=None):
         session = requests.Session()
-        session.auth = AirtableAuth()
+        session.auth = AirtableAuth(API_KEY=api_key)
         self.session = session
         self.url_table = posixpath.join(self.API_URL, base_key, table_name)
         self.is_authenticated = self.validate_authentication(self.url_table)
