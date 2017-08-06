@@ -1,4 +1,0 @@
-{
-  "tests/test_airtable.py::TestAirtableCreate::()::test_get_all_view": true,
-  "tests/test_airtable.py::TestAirtableGet::()::test_get_all_sort": true
-}
