@@ -8,6 +8,7 @@ from airtable.auth import AirtableAuth
 TEST_BASE_KEY = 'appJMY16gZDQrMWpA'
 TEST_TABLE_A = 'TABLE READ'
 TEST_TABLE_B = 'TABLE WRITE'
+
 """
 =======
 TABLE A
@@ -56,18 +57,17 @@ class TestAuth():
 
 class TestAirtableGet():
 
-
-    def test_get_all(self, airtable_read):
-        records = airtable_read.get_all()
+    def test_get_records(self, airtable_read):
+        records = airtable_read.get_records()
         assert isinstance(records, list)
         assert len(records) == 300
 
-    def test_get_all_view(self, airtable_read):
-        records = airtable_read.get_all(view='ViewOne')
+    def test_get_records_view(self, airtable_read):
+        records = airtable_read.get_records(view='ViewOne')
         assert len(records) == 1
 
-    def test_get_all_maxrecords(self, airtable_read):
-        records = airtable_read.get_all(maxRecords=50)
+    def test_get_records_maxrecords(self, airtable_read):
+        records = airtable_read.get_records(maxRecords=50)
         assert len(records) == 50
 
     def test_get_match(self, airtable_read):
@@ -82,10 +82,6 @@ class TestAirtableGet():
         assert records[0]['fields'].get('COLUMN_ID') == '2'
         assert records[1]['fields'].get('COLUMN_ID') == '3'
         assert all([True for r in records if r['fields']['COLUMN_STR'] == 'DUPLICATE'])
-
-    # def test_get_all_sort(self, airtable_read):
-    #     records = airtable_read.get_all(maxRecords=5, sort={'COLUMND_ID': 'asc'})
-    #     import pdb; pdb.set_trace()
 
 
 class TestAirtableCreate():
@@ -115,24 +111,24 @@ class TestAirtableUpdate():
         return {'COLUMN_UPDATE': 'B'}
 
     def test_update(self, airtable_read, new_field, old_field):
-        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        record = airtable_read.get_records(maxRecords=1, view='ViewAll')[0]
         assert record['fields']['COLUMN_UPDATE'] == 'A'
 
         airtable_read.update(record['id'], new_field)
-        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        record = airtable_read.get_records(maxRecords=1, view='ViewAll')[0]
         assert record['fields']['COLUMN_UPDATE'] == 'B'
 
         airtable_read.update(record['id'], old_field)
-        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        record = airtable_read.get_records(maxRecords=1, view='ViewAll')[0]
         assert record['fields']['COLUMN_UPDATE'] == 'A'
 
     def test_update_by_field(self, airtable_read, new_field, old_field):
         airtable_read.update_by_field('COLUMN_UPDATE', 'A', new_field)
-        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        record = airtable_read.get_records(maxRecords=1, view='ViewAll')[0]
         assert record['fields']['COLUMN_UPDATE'] == 'B'
 
         airtable_read.update(record['id'], old_field)
-        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        record = airtable_read.get_records(maxRecords=1, view='ViewAll')[0]
         assert record['fields']['COLUMN_UPDATE'] == 'A'
 
 def populate_table_a(self, airtable_write):

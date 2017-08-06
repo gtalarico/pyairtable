@@ -53,7 +53,7 @@ class Airtable():
     def _patch(self, url, json_data):
         return self.if_ok(self.session.patch(url, json=json_data))
 
-    def get_all(self, **options):
+    def get_records(self, **options):
         """
         Get records
 
@@ -89,13 +89,13 @@ class Airtable():
         Returns:
             record (``dict``)
         """
-        for record in self.get_all(**options):
+        for record in self.get_records(**options):
             if record.get('fields', {}).get(field_name) == field_value:
                 return record
 
     def get_search(self, field_name, field_value, **options):
         records = []
-        for record in self.get_all(**options):
+        for record in self.get_records(**options):
             if record.get('fields', {}).get(field_name) == field_value:
                 records.append(record)
         return records
