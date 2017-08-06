@@ -39,13 +39,12 @@ class Airtable():
 
     def validate_session(self, url):
         response = self.session.get(url, params={'maxRecords': 1})
-        import pdb; pdb.set_trace()
         if response.ok:
             return True
         elif response.status_code == 404:
-            raise ValueError('Invalid table name: {}'.format(url))
+            raise ValueError('Invalid base or table name: {}'.format(url))
         else:
-            raise ValueError('Authentication failed: {}'.format(resp.reason))
+            raise ValueError('Authentication failed: {}'.format(response.reason))
 
     def _ok_or_raise(self, response):
         response.raise_for_status()
