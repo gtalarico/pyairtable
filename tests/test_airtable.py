@@ -56,6 +56,15 @@ class TestAuth():
         assert 'Authorization' in resp.request.headers
         assert 'Bearer' in resp.request.headers['Authorization']
 
+    def test_authorization_call(self):
+        session = requests.Session()
+        auth = AirtableAuth()
+        session = auth.__call__(session)
+        assert 'Authorization' in session.headers
+        assert 'Bearer' in session.headers['Authorization']
+
+    def test_authorization_is(self, airtable_read):
+        assert airtable_read.is_authenticated
 
 class TestAirtableGet():
 

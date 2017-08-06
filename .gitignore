@@ -6,3 +6,4 @@ env.bat
 dist
 build
 build.bat
+.coverage
