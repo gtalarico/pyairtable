@@ -142,6 +142,25 @@ class TestAirtableUpdate():
         record = airtable_read.get_records(maxRecords=1, view='ViewAll')[0]
         assert record['fields']['COLUMN_UPDATE'] == 'A'
 
+
+class TestAirtableDelete():
+
+    @pytest.fixture
+    def row(self):
+        return  {'UUID': '4e8f9cfa-543b-492f-962b-e16930b49cae', 'String': 'Deleted Test'}
+
+    def test_delete(self, airtable_write, row):
+        record = airtable_write.get_match('UUID', row['UUID'])
+        response = airtable_write.delete(record['id'])
+
+        assert response.get('deleted') is True
+        assert 'id' in response
+        airtable_write.insert(row)
+
+
+
+
+
 def populate_table_a(self, airtable_write):
     for i in range(4, 300):
         row = {'COLUMN_ID': str(i)}

@@ -142,9 +142,11 @@ class Airtable():
         return self._post(self.url_table, json_data={"fields": fields})
 
     def _batch_request(self, iterable, func):
+        responses = []
         for item in iterable:
-            func(item)
+            responses.append(func(item))
             time.sleept(self.API_LIMIT)
+        return responses
 
     def batch_insert(self, rows):
         """ Batch Insert without breaking API Rate Limit (5/sec) """
