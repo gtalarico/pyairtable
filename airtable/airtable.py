@@ -30,7 +30,7 @@ class Airtable():
 
     def __init__(self, base_key, table_name, api_key=None):
         """
-        If api_key is not provided, AirtableAuth will attempt
+        If api_key is not provided, :any:`AirtableAuth` will attempt
         to use os.environ['AIRTABLE_API_KEY']
         """
         session = requests.Session()
