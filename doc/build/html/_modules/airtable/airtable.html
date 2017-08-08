@@ -1,0 +1,511 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>airtable.airtable &mdash; Airtable Python Wrapper 0.2.0.dev1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Airtable Python Wrapper 0.2.0.dev1 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Airtable Python Wrapper
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.0.dev1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Airtable Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authentication.html">Airtable Authentication</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Airtable Python Wrapper</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>airtable.airtable</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for airtable.airtable</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Airtable Python Wrapper</span>
+
+<span class="sd">&gt;&gt;&gt; airtable = Airtable(&#39;base_key&#39;, &#39;table_name&#39;)</span>
+<span class="sd">&gt;&gt;&gt; airtable.get_all()</span>
+<span class="sd">[{{&#39;fields&#39;: {{...}}, ...}}]</span>
+
+<span class="sd">&quot;&quot;&quot;</span>  <span class="c1">#</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Gui Talarico&#39;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;0.2.0.dev1&#39;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">posixpath</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">six.moves.urllib.parse</span> <span class="k">import</span> <span class="n">urlencode</span>
+
+<span class="kn">from</span> <span class="nn">.auth</span> <span class="k">import</span> <span class="n">AirtableAuth</span>
+
+
+<div class="viewcode-block" id="Airtable"><a class="viewcode-back" href="../../api.html#airtable.Airtable">[docs]</a><span class="k">class</span> <span class="nc">Airtable</span><span class="p">():</span>
+
+    <span class="n">_VERSION</span> <span class="o">=</span> <span class="s1">&#39;v0&#39;</span>
+    <span class="n">_API_BASE_URL</span> <span class="o">=</span> <span class="s1">&#39;https://api.airtable.com/&#39;</span>
+
+    <span class="n">API_URL</span> <span class="o">=</span> <span class="n">posixpath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_API_BASE_URL</span><span class="p">,</span> <span class="n">_VERSION</span><span class="p">)</span>
+    <span class="n">ALLOWED_PARAMS</span> <span class="o">=</span> <span class="s1">&#39;view maxRecords offset pageSize&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>  <span class="c1"># Not implemented: &#39;fields sort filterByFormula&#39;</span>
+    <span class="n">API_LIMIT</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">5</span>  <span class="c1"># 5 per second</span>
+
+<div class="viewcode-block" id="Airtable.__init__"><a class="viewcode-back" href="../../api.html#airtable.Airtable.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_key</span><span class="p">,</span> <span class="n">table_name</span><span class="p">,</span> <span class="n">api_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If api_key is not provided, AirtableAuth will attempt</span>
+<span class="sd">        to use os.environ[&#39;AIRTABLE_API_KEY&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="n">AirtableAuth</span><span class="p">(</span><span class="n">API_KEY</span><span class="o">=</span><span class="n">api_key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url_table</span> <span class="o">=</span> <span class="n">posixpath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">API_URL</span><span class="p">,</span> <span class="n">base_key</span><span class="p">,</span> <span class="n">table_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_authenticated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url_table</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">validate_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;maxRecords&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid base or table name: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Authentication failed: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">reason</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_process_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>  <span class="c1"># Raises if Status Code is not 200&#39;s</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">record_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">posixpath</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url_table</span><span class="p">,</span> <span class="n">record_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="kc">True</span> <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">option</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ALLOWED_PARAMS</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid url param: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">json_data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">json_data</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">json_data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">json_data</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Airtable.get"><a class="viewcode-back" href="../../api.html#airtable.Airtable.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Record Retriever Iterator</span>
+
+<span class="sd">        Returns iterator with lists in batches according to pageSize.</span>
+<span class="sd">        To get all records at once use :any:`get_all`</span>
+
+<span class="sd">        &gt;&gt;&gt; for records in airtable.get():</span>
+<span class="sd">        &gt;&gt;&gt;     print(records)</span>
+<span class="sd">        [{&#39;fields&#39;: ... }, ...]</span>
+
+<span class="sd">        Keyword Args:</span>
+<span class="sd">            view (``str``): Name of View</span>
+<span class="sd">            maxRecords (``int``): The name or ID of a view.</span>
+<span class="sd">                If set, only the records in that view will be returned.</span>
+<span class="sd">                The records will be sorted according to the order of the view.</span>
+<span class="sd">            pageSize (``int``): The number of records returned in each request.</span>
+<span class="sd">                Must be less than or equal to 100. Default is 100.</span>
+
+<span class="sd">            sort (``list``): Not Implemented</span>
+<span class="sd">            filterByFormula (``str``): Not Implemented</span>
+<span class="sd">            fields (``list``): Not Implemented</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            iterator (``list``): List of Records, grouped by pageSize</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">response_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url_table</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
+            <span class="n">records</span> <span class="o">=</span> <span class="n">response_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">yield</span> <span class="n">records</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">response_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;offset&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">offset</span><span class="p">:</span>
+                <span class="k">break</span></div>
+
+<div class="viewcode-block" id="Airtable.get_all"><a class="viewcode-back" href="../../api.html#airtable.Airtable.get_all">[docs]</a>    <span class="k">def</span> <span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all records iteratibely and returns a single list.</span>
+
+<span class="sd">        &gt;&gt;&gt; airtable.get_all()</span>
+<span class="sd">        &gt;&gt;&gt; airtable.get_all(view=&#39;MyView&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; airtable.get_all(maxRecords=50)</span>
+<span class="sd">        [{&#39;fields&#39;: ... }, ...]</span>
+
+<span class="sd">        Keyword Args:</span>
+<span class="sd">            view (``str``): Name of View</span>
+<span class="sd">            maxRecords (``int``): Maximum number of records to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            records (``list``): List of Records</span>
+
+<span class="sd">        &gt;&gt;&gt; records = get_all(maxRecords=3, view=&#39;All&#39;)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_records</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">records</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">):</span>
+            <span class="n">all_records</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">records</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_records</span></div>
+
+<div class="viewcode-block" id="Airtable.match"><a class="viewcode-back" href="../../api.html#airtable.Airtable.match">[docs]</a>    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns first match found in :any:`get_all`</span>
+
+<span class="sd">        &gt;&gt;&gt; airtable.match(&#39;Name&#39;, &#39;John&#39;)</span>
+<span class="sd">        {&#39;fields&#39;: {&#39;Name&#39;: &#39;John&#39;} }</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_name (``str``): Name of field to match (column name)</span>
+<span class="sd">            field_value (``str``): Value of field to match</span>
+
+<span class="sd">        Keyword Args:</span>
+<span class="sd">            view (``str``): Name of View</span>
+<span class="sd">            maxRecords (``int``): Maximum number of records to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            record (``dict``): First record to match the field_value provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fields&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span> <span class="o">==</span> <span class="n">field_value</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">record</span></div>
+
+<div class="viewcode-block" id="Airtable.search"><a class="viewcode-back" href="../../api.html#airtable.Airtable.search">[docs]</a>    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span><span class="p">,</span> <span class="n">record</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns All matching records found in :any:`get_all`</span>
+
+
+<span class="sd">        &gt;&gt;&gt; airtable.search(&#39;Gender&#39;, &#39;Male&#39;)</span>
+<span class="sd">        [{&#39;fields&#39;: {&#39;Name&#39;: &#39;John&#39;, &#39;Gender&#39;: &#39;Male&#39;}, ... ]</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_name (``str``)</span>
+<span class="sd">            field_value (``str``)</span>
+
+<span class="sd">        Keyword Args:</span>
+<span class="sd">            view (``str``): Name of View</span>
+<span class="sd">            maxRecords (``int``): Maximum number of records to retrieve</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            records (``list``): All records that matched ``field_value``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">records</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fields&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span> <span class="o">==</span> <span class="n">field_value</span><span class="p">:</span>
+                <span class="n">records</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">records</span></div>
+
+<div class="viewcode-block" id="Airtable.insert"><a class="viewcode-back" href="../../api.html#airtable.Airtable.insert">[docs]</a>    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inserts a record</span>
+
+<span class="sd">        &gt;&gt;&gt; record = {&#39;Name&#39;: &#39;John&#39;}</span>
+<span class="sd">        &gt;&gt;&gt; airtable.insert(record)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fields(``dict``): Fields to add. Must be dictionary with Column names as Key.</span>
+<span class="sd">                Does not need to include key ``fields``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            record (``dict``): Inserted record</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url_table</span><span class="p">,</span> <span class="n">json_data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="n">fields</span><span class="p">})</span></div>
+
+    <span class="k">def</span> <span class="nf">_batch_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="n">responses</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+            <span class="n">responses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleept</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">API_LIMIT</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">responses</span>
+
+<div class="viewcode-block" id="Airtable.batch_insert"><a class="viewcode-back" href="../../api.html#airtable.Airtable.batch_insert">[docs]</a>    <span class="k">def</span> <span class="nf">batch_insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calls :any:`insert` iteratibely, following set API Rate Limit (5/sec)</span>
+<span class="sd">        To change the rate limit use ``airtable.API_LIMIT = 0.2` (5 per second)</span>
+
+<span class="sd">        &gt;&gt;&gt; records = [{&#39;Name&#39;: &#39;John&#39;}, {&#39;Name&#39;: &#39;Marc&#39;}]</span>
+<span class="sd">        &gt;&gt;&gt; airtable.batch_insert(records)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rows(``list``): Records to insert</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            records (``list``): list of added records</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_batch_request</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">insert</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Airtable.update"><a class="viewcode-back" href="../../api.html#airtable.Airtable.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_id</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates a record</span>
+
+<span class="sd">        &gt;&gt;&gt; record = {&#39;Name&#39;: &#39;John&#39;}</span>
+<span class="sd">        &gt;&gt;&gt; airtable.update(record)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            record_id(``str``): Id of Record to update</span>
+<span class="sd">            fields(``dict``): Fields to add. Must be dictionary with Column names as Key</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            record (``dict``): Updated record</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">record_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">record_url</span><span class="p">(</span><span class="n">record_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_patch</span><span class="p">(</span><span class="n">record_url</span><span class="p">,</span> <span class="n">json_data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="n">fields</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="Airtable.update_by_field"><a class="viewcode-back" href="../../api.html#airtable.Airtable.update_by_field">[docs]</a>    <span class="k">def</span> <span class="nf">update_by_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates a record with first match.</span>
+
+<span class="sd">        &gt;&gt;&gt; record = {&#39;Name&#39;: &#39;John&#39;, &#39;Tel&#39;: &#39;540-255-5522&#39;}</span>
+<span class="sd">        &gt;&gt;&gt; airtable.update_by_field(&#39;Name&#39;, &#39;John&#39;, record)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_name(``str``): Name of the field to search</span>
+<span class="sd">            field_value(``str``): Value to match</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            record (``dict``): Updated record</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record</span><span class="p">:</span>
+            <span class="n">record_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">record_url</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_patch</span><span class="p">(</span><span class="n">record_url</span><span class="p">,</span> <span class="n">json_data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="n">fields</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="Airtable.delete"><a class="viewcode-back" href="../../api.html#airtable.Airtable.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes a record by its id</span>
+
+<span class="sd">        &gt;&gt;&gt; record = airtable.match(&#39;Employee Id&#39;, &#39;DD13332454&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; airtable.delete(record[&#39;id&#39;])</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            record_id(``str``): Airtable record id</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            record (``dict``): Deleted Record</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">record_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">record_url</span><span class="p">(</span><span class="n">record_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete</span><span class="p">(</span><span class="n">record_url</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Airtable.delete_by_field"><a class="viewcode-back" href="../../api.html#airtable.Airtable.delete_by_field">[docs]</a>    <span class="k">def</span> <span class="nf">delete_by_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes first record  to match provided field and value</span>
+
+<span class="sd">        &gt;&gt;&gt; record = airtable.delete_by_field(&#39;Employee Id&#39;, &#39;DD13332454&#39;)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_name(``str``): Name of the field to search</span>
+<span class="sd">            field_value(``str``): Value to match</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            record (``dict``): Deleted Record</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">recor</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
+        <span class="n">record_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">record_url</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delete</span><span class="p">(</span><span class="n">record_url</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Gui Talarico.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.2.0.dev1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

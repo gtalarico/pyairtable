@@ -1,12 +1,6 @@
 certifi==2017.7.27.1
 chardet==3.0.4
-colorama==0.3.9
-coverage==4.4.1
 idna==2.5
-py==1.4.34
-pytest==3.2.0
-pytest-cov==2.5.1
-pytest-ordering==0.5
 requests==2.18.3
 six==1.10.0
 urllib3==1.22

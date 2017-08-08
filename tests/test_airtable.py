@@ -5,7 +5,7 @@ import requests
 import uuid
 
 from airtable import Airtable
-from airtable._auth import AirtableAuth
+from airtable.auth import AirtableAuth
 
 TEST_BASE_KEY = 'appJMY16gZDQrMWpA'
 TEST_TABLE_A = 'TABLE READ'
