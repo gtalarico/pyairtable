@@ -9,12 +9,14 @@ Airtable Python Wrapper Documentation
 For more information about the Airtable API see the
 `Airtable API Docs <https://airtable.com/api>`_
 
+_______________________________________________
 
 Installation
 ************
 
 >>> pip install airtable-python-wrapper
 
+_______________________________________________
 
 Index
 *****

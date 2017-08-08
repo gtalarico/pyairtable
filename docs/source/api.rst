@@ -6,12 +6,15 @@ Usage
 
 .. automodule:: airtable.airtable
 
+_______________________________________________
+
 Class API
 *********
 
 .. autoclass:: airtable.Airtable
     :members:
 
+_______________________________________________
 
 Source Code
 ***********

@@ -6,12 +6,15 @@ Usage
 
 .. automodule:: airtable.auth
 
+_______________________________________________
+
 Authentication Class
 ********************
 
 .. autoclass:: airtable.auth.AirtableAuth
     :members:
 
+_______________________________________________
 
 Source Code
 ***********
