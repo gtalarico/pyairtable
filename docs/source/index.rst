@@ -23,7 +23,6 @@ Index
    :maxdepth: 2
 
    self
-   install
    api
 
 
