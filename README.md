@@ -16,27 +16,55 @@ Python Airtable Client Wrapper
 >>> from airtable import Airtable
 >>> airtable = Airtable(base_key, table_name, api_key=your_api_key)
 >>> # Alternatively, you can set the env variable AIRTABLE_API_KEY and use
->>> aitable = Airtable(base_key, table_name)
+>>> airtable = Airtable(base_key, table_name)
 ```
 
 ### Get Records
 
+#### get()
+
+
+`airtable.get(view='All')`
+
+One Request Max - Up to 100 records.
+Returns iterator.
+
+#### get_all()
+
+`records = airtable.get_all(view='All')``
+
+Multiple requests, 100 at time, until all records are retrieved.
+Returns all records in a list.
+
+### Get Records
+
+##### airtable.get()
+
+Iterates over all records in batches set by pageSize (default: 100)
 ```
-# Get Records
->>> airtable.get_records()
+>>> for records in airtable.get():
+>>>     print(records)
 [{'fields': {...}}, ...]
-# Note: Get methods will return list of records, each as a dictionary exact as document in the API
+[{'fields': {...}}, ...]
+```
+
+##### airtable.all()
+```
+>>> airtable.get_all()
+[{'fields': {...}}, ...]
+```
+
 
 # Get Records - Options
->>> airtable.get_records(view='MyView')
->>> airtable.get_records(maxRecords='MyView')
+>>> airtable.get_all(view='MyView')
+>>> airtable.get_all(maxRecords='MyView')
 
 
 # Get Match - Returns first match
->>> airtable.get_match('Name', 'Your Name')
+>>> airtable.match('Name', 'Your Name')
 
 # Get Search - Returns all matches in Table
->>> airtable.get_search('Name', 'Your Name')
+>>> airtable.search('Name', 'Your Name')
 
 ```
 
@@ -44,11 +72,9 @@ Python Airtable Client Wrapper
 
 ```
 # Insert a record
->>> response = airtable.insert({'Name': 'Your Name'})
+>>> record = airtable.insert({'Name': 'Your Name'})
 # Note: All Post/Patch/Delete methods will return the json data as per the API
->>> response
-<Response: 200>
->>> response.json()
+>>> record
 {'id': 'xxx', 'fields': {...}}
 
 # Batch Create
@@ -60,10 +86,10 @@ airtable.batch_insert(records)
 
 ```
 # Update a record
->>> response = airtable.update(record_id, {'Name': 'Your Name'})
+>>> record = airtable.update(record_id, {'Name': 'Your Name'})
 
 # Update by field
->>> response = airtable.update_by_field('Name', 'Your Name', {'Name': 'New Name'})
+>>> record = airtable.update_by_field('Name', 'Your Name', {'Name': 'New Name'})
 ```
 
 ##### License

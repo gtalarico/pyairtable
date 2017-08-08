@@ -19,7 +19,7 @@ class Airtable():
     _API_BASE_URL = 'https://api.airtable.com/'
 
     API_URL = posixpath.join(_API_BASE_URL, _VERSION)
-    ALLOWED_PARAMS = ['view', 'maxRecords', 'offset', 'sort']
+    ALLOWED_PARAMS = 'view maxRecords offset pageSize'.split()  # Not implemented: 'fields sort filterByFormula'
     API_LIMIT = 1.0 / 5  # 5 per second
 
     def __init__(self, base_key, table_name, api_key=None):
@@ -63,33 +63,65 @@ class Airtable():
     def _delete(self, url):
         return self._process_response(self.session.delete(url))
 
-    def get_records(self, **options):
+    def get(self, **options):
+        """
+        Record Retriever Iterator
+
+        Returns iterator with lists in batches according to pageSize.
+        To get all records at once use ``get_all()``
+
+        >>> for records in airtable.get():
+        >>>     print(records)
+        [{{'fields': ... }}, ...]
+
+        Kwargs:
+            view (``str``): Name of View
+            maxRecords (``int``): The name or ID of a view.  If set, only the records
+                                  in that view will be returned.
+                                  The records will be sorted according to the order of the view.
+            pageSize (``int``): The number of records returned in each request.
+                                Must be less than or equal to 100. Default is 100.
+
+            sort (``list``): Not Implented
+            filterByFormula (``str``): Not Implented
+            fields (``list``): Not Implented
+
+
+        Returns:
+            iterator (``list``): List of Records
+
+        >>> records = get_all(maxRecords=3, view='All')
+        """
+        offset = None
+        while True:
+            response_data = self._get(self.url_table, offset=offset, **options)
+            records = response_data.get('records', [])
+            yield records
+            offset = response_data.get('offset')
+            if not offset:
+                break
+
+    def get_all(self, **options):
         """
         Gets all records.
 
         Kwargs:
             view (``str``): Name of View
             maxRecords (``int``): Maximum number of records to retrieve
-            # sort (``dict``): {'field': 'COLUMND_ID', 'direction':'desc'} | 'asc'
 
         Returns:
             records (``list``): List of Records
 
-        >>> records = get_records(maxRecords=3, view='All')
+        >>> records = get_all(maxRecords=3, view='All')
         """
-        records = []
-        offset = None
-        while True:
-            response_data = self._get(self.url_table, offset=offset, **options)
-            records.extend(response_data.get('records', []))
-            offset = response_data.get('offset')
-            if 'offset' not in response_data:
-                break
-        return records
+        all_records = []
+        for records in self.get(**options):
+            all_records.extend(records)
+        return all_records
 
-    def get_match(self, field_name, field_value, **options):
+    def match(self, field_name, field_value, **options):
         """
-        Returns first match found in ``get_records()``
+        Returns first match found in ``get_all()``
 
         Args:
             field_name (``str``)
@@ -103,11 +135,11 @@ class Airtable():
         Returns:
             record (``dict``): First record to match the field_value provided
         """
-        for record in self.get_records(**options):
+        for record in self.get_all(**options):
             if record.get('fields', {}).get(field_name) == field_value:
                 return record
 
-    def get_search(self, field_name, field_value, **options):
+    def search(self, field_name, field_value, record=None, **options):
         """
         Returns All matching records
 
@@ -124,7 +156,7 @@ class Airtable():
             record (``dict``)
         """
         records = []
-        for record in self.get_records(**options):
+        for record in self.get_all(**options):
             if record.get('fields', {}).get(field_name) == field_value:
                 records.append(record)
         return records
@@ -178,7 +210,7 @@ class Airtable():
         Returns:
             record (``dict``)
         """
-        record = self.get_match(field_name, field_value, **options)
+        record = self.match(field_name, field_value, **options)
         if record:
             record_url = self.record_url(record['id'])
             return self._patch(record_url, json_data={"fields": fields})
@@ -188,6 +220,6 @@ class Airtable():
         return self._delete(record_url)
 
     def delete_by_field(self, field_name, field_value, **options):
-        record = self.get_match(field_name, field_value, **options)
+        record = self.match(field_name, field_value, **options)
         record_url = self.record_url(record['id'])
         return self._delete(record_url)
