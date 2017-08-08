@@ -170,8 +170,10 @@ class TestAirtableDelete():
 
     def test_delete(self, airtable_write, row):
         record = airtable_write.match('UUID', row['UUID'])
-        response = airtable_write.delete(record['id'])
+        if not record:
+            record = airtable_write.insert(row)
 
+        response = airtable_write.delete(record['id'])
         assert response.get('deleted') is True
         assert 'id' in response
         airtable_write.insert(row)
