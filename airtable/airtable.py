@@ -22,12 +22,11 @@ from .auth import AirtableAuth
 
 class Airtable():
 
-    _VERSION = 'v0'
-    _API_BASE_URL = 'https://api.airtable.com/'
-
-    API_URL = posixpath.join(_API_BASE_URL, _VERSION)
-    ALLOWED_PARAMS = 'view maxRecords offset pageSize'.split()  # Not implemented: 'fields sort filterByFormula'
+    VERSION = 'v0'
+    API_BASE_URL = 'https://api.airtable.com/'
     API_LIMIT = 1.0 / 5  # 5 per second
+    _API_URL = posixpath.join(API_BASE_URL, VERSION)
+    _ALLOWED_PARAMS = 'view maxRecords offset pageSize'.split()  # Not implemented: 'fields sort filterByFormula'
 
     def __init__(self, base_key, table_name, api_key=None):
         """
@@ -37,7 +36,7 @@ class Airtable():
         session = requests.Session()
         session.auth = AirtableAuth(api_key=api_key)
         self.session = session
-        self.url_table = posixpath.join(self.API_URL, base_key, table_name)
+        self.url_table = posixpath.join(self._API_URL, base_key, table_name)
         self.is_authenticated = self.validate_session(self.url_table)
 
     def validate_session(self, url):
@@ -57,7 +56,7 @@ class Airtable():
         return posixpath.join(self.url_table, record_id)
 
     def _get(self, url, **params):
-        if any([True for option in params.keys() if option not in self.ALLOWED_PARAMS]):
+        if any([True for option in params.keys() if option not in self._ALLOWED_PARAMS]):
             raise ValueError('invalid url param: {}'.format(params.keys()))
         return self._process_response(self.session.get(url, params=params))
 
