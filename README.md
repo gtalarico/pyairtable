@@ -33,4 +33,3 @@ http://airtable-python-wrapper.readthedocs.io/
 
 - [ ] Implement Filter
 - [ ] Implement Sort
-- [ ] Add Sphinx
