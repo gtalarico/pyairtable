@@ -124,8 +124,9 @@ class TestAirtableCreate():
         assert 'id' in response
 
     def test_create_batch(self, airtable_write):
-        for i in range(5):
-            response = airtable_write.insert(self.row())
+        rows = [self.row() for i in range(5)]
+        responses = airtable_write.batch_insert(rows)
+        for response in responses:
             assert 'id' in response
 
 

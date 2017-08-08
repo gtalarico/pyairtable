@@ -196,7 +196,7 @@ class Airtable():
         responses = []
         for item in iterable:
             responses.append(func(item))
-            time.sleept(self.API_LIMIT)
+            time.sleep(self.API_LIMIT)
         return responses
 
     def batch_insert(self, rows):
@@ -214,7 +214,7 @@ class Airtable():
             records (``list``): list of added records
 
         """
-        self._batch_request(rows, self.insert)
+        return self._batch_request(rows, self.insert)
 
     def update(self, record_id, fields):
         """
