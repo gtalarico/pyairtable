@@ -8,7 +8,7 @@ Airtable Python Wrapper
 """  #
 
 __author__ = 'Gui Talarico'
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 import os
 import json
@@ -150,6 +150,8 @@ class Airtable():
         for record in self.get_all(**options):
             if record.get('fields', {}).get(field_name) == field_value:
                 return record
+        else:
+             return {}
 
     def search(self, field_name, field_value, record=None, **options):
         """
