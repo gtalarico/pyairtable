@@ -4,6 +4,10 @@ python:
   - 3.4
   - 3.5
   - 3.6
+branches:
+  only:
+  - master
+  - dev/main
 install:
   - pip install -r requirements-dev.txt
 script: pytest
