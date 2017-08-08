@@ -31,7 +31,7 @@ class Airtable():
     def __init__(self, base_key, table_name, api_key=None):
         """
         If api_key is not provided, :any:`AirtableAuth` will attempt
-        to use os.environ['AIRTABLE_API_KEY']
+        to use ``os.environ['AIRTABLE_API_KEY']``
         """
         session = requests.Session()
         session.auth = AirtableAuth(api_key=api_key)
@@ -202,7 +202,7 @@ class Airtable():
     def batch_insert(self, rows):
         """
         Calls :any:`insert` iteratibely, following set API Rate Limit (5/sec)
-        To change the rate limit use ``airtable.API_LIMIT = 0.2` (5 per second)
+        To change the rate limit use ``airtable.API_LIMIT = 0.2`` (5 per second)
 
         >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
         >>> airtable.batch_insert(records)
