@@ -1,11 +1,11 @@
 """
 Authentication is handled by the :any:`Airtable` class.
 
->> airtable = Airtable('your_api_key')
+>>> airtable = Airtable('your_api_key')
 
 Alternatively, you can set an enviroment variable ``AIRTABLE_API_KEY``
 
->> airtable = Airtable()  # Will use enviroment variable
+>>> airtable = Airtable()  # Will use enviroment variable
 
 You can also use this class to handle authentication for you if you are making your own wrapper.
 
