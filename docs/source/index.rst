@@ -10,14 +10,23 @@ For more information about the Airtable API see the
 `Airtable API Docs <https://airtable.com/api>`_
 
 
+Installation
+************
+
+>>> pip install airtable-python-wrapper
+
+
 Index
 *****
 
 .. toctree::
    :maxdepth: 2
 
+   install
    api
-   authentication
+
+
+
 
 Questions
 *********
