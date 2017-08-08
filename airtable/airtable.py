@@ -35,7 +35,7 @@ class Airtable():
         to use os.environ['AIRTABLE_API_KEY']
         """
         session = requests.Session()
-        session.auth = AirtableAuth(API_KEY=api_key)
+        session.auth = AirtableAuth(api_key=api_key)
         self.session = session
         self.url_table = posixpath.join(self.API_URL, base_key, table_name)
         self.is_authenticated = self.validate_session(self.url_table)
@@ -234,7 +234,7 @@ class Airtable():
         record_url = self.record_url(record_id)
         return self._patch(record_url, json_data={"fields": fields})
 
-    def update_by_field(self, field_name, field_value, **options):
+    def update_by_field(self, field_name, field_value, fields, **options):
         """
         Updates a record with first match.
 
@@ -244,6 +244,7 @@ class Airtable():
         Args:
             field_name(``str``): Name of the field to search
             field_value(``str``): Value to match
+            fields(``dict``): Fields to add. Must be dictionary with Column names as Key
 
         Returns:
             record (``dict``): Updated record
