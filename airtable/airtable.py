@@ -26,7 +26,8 @@ class Airtable():
     API_BASE_URL = 'https://api.airtable.com/'
     API_LIMIT = 1.0 / 5  # 5 per second
     _API_URL = posixpath.join(API_BASE_URL, VERSION)
-    _ALLOWED_PARAMS = 'view maxRecords offset pageSize'.split()  # Not implemented: 'fields sort filterByFormula'
+    _ALLOWED_PARAMS = 'view maxRecords offset pageSize'.split()
+    # Not implemented Params: 'fields sort filterByFormula'
 
     def __init__(self, base_key, table_name, api_key=None):
         """
@@ -49,10 +50,11 @@ class Airtable():
             raise ValueError('Authentication failed: {}'.format(response.reason))
 
     def _process_response(self, response):
-        response.raise_for_status()  # Raises if Status Code is not 200's
+        response.raise_for_status()
         return response.json()
 
     def record_url(self, record_id):
+        """ Builds URL with record id """
         return posixpath.join(self.url_table, record_id)
 
     def _request(self, method, url, params=None, json=None):
@@ -227,10 +229,11 @@ class Airtable():
 
     def update(self, record_id, fields):
         """
-        Updates a record
+        Updates a record by its record id or by matching fields.
 
-        >>> record = {'Name': 'John'}
-        >>> airtable.update(record)
+        >>> record = airtable.match('Employee Id', 'DD13332454')
+        >>> fields = {'Status': 'Fired'}
+        >>> airtable.update(record['id'], fields)
 
         Args:
             record_id(``str``): Id of Record to update
@@ -258,9 +261,25 @@ class Airtable():
             record (``dict``): Updated record
         """
         record = self.match(field_name, field_value, **options)
-        if record:
-            record_url = self.record_url(record['id'])
-            return self._patch(record_url, json_data={"fields": fields})
+        return {} if not record else self.update(record['id'], fields)
+
+    def replace(self, record_id, fields, all=True):
+        """
+        Replaces a record by its record id
+
+        >>> record = airtable.match('Seat Number', '22A')
+        >>> fields = {'PassangerName': 'Mike', 'Passport': 'YASD232-23'}
+        >>> airtable.replace(record['id'], fields)
+
+        Args:
+            record_id(``str``): Id of Record to update
+            fields(``dict``): Fields to replace. Must be dictionary with Column names as Key
+
+        Returns:
+            record (``dict``): New record
+        """
+        record_url = self.record_url(record_id)
+        return self._put(record_url, json_data={"fields": fields})
 
     def delete(self, record_id):
         """

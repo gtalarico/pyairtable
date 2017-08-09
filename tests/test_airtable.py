@@ -162,6 +162,32 @@ class TestAirtableUpdate():
         assert record['fields']['COLUMN_UPDATE'] == 'A'
 
 
+class TestAirtableReplace():
+
+    @pytest.fixture
+    def old_field(self):
+        return {'COLUMN_ID': '1', 'COLUMN_STR': 'UNIQUE', 'COLUMN_UPDATE': 'A'}
+
+    @pytest.fixture
+    def new_field(self):
+        return {'COLUMN_UPDATE': 'B'}
+
+    def test_replace(self, airtable_read, new_field, old_field):
+        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        assert record['fields']['COLUMN_UPDATE'] == 'A'
+
+        airtable_read.replace(record['id'], new_field)
+        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        assert record['fields']['COLUMN_UPDATE'] == 'B'
+        assert 'COLUMN_ID' not in record['fields']
+        assert 'COLUMN_STR' not in record['fields']
+
+        airtable_read.replace(record['id'], old_field)
+        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        assert record['fields']['COLUMN_UPDATE'] == 'A'
+        assert 'COLUMN_ID' in record['fields']
+        assert 'COLUMN_STR' in record['fields']
+
 class TestAirtableDelete():
 
     @pytest.fixture
