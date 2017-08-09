@@ -88,13 +88,6 @@ class TestAirtableGet():
         records = airtable_read.get_all(view='ViewOne')
         assert len(records) == 1
 
-    @pytest.mark.skip(reason="not implemented")
-    def test_get_fields(self, airtable_read):
-        record = airtable_read.get_all(fields=['COLUMN_STR'], maxRecords=1)[0]
-        assert 'COLUMN_ID' in record['fields']
-        assert 'COLUMN_STR' in record['fields']
-        assert 'COLUMN_UPDATE' not in record
-
     def test_get_all_maxrecords(self, airtable_read):
         records = airtable_read.get_all(maxRecords=50)
         assert len(records) == 50
