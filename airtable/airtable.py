@@ -8,7 +8,7 @@ Airtable Python Wrapper
 """  #
 
 __author__ = 'Gui Talarico'
-__version__ = '0.3.1'
+__version__ = '0.4.1'
 
 import os
 import json
@@ -55,19 +55,26 @@ class Airtable():
     def record_url(self, record_id):
         return posixpath.join(self.url_table, record_id)
 
+    def _request(self, method, url, params=None, json=None):
+        response = self.session.request(method, url, params=params, json=json)
+        return self._process_response(response)
+
     def _get(self, url, **params):
         if any([True for option in params.keys() if option not in self._ALLOWED_PARAMS]):
             raise ValueError('invalid url param: {}'.format(params.keys()))
-        return self._process_response(self.session.get(url, params=params))
+        return self._request('get', url, params=params)
 
     def _post(self, url, json_data):
-        return self._process_response(self.session.post(url, json=json_data))
+        return self._request('post', url, json=json_data)
+
+    def _put(self, url, json_data):
+        return self._request('put', url, json=json_data)
 
     def _patch(self, url, json_data):
-        return self._process_response(self.session.patch(url, json=json_data))
+        return self._request('patch', url, json=json_data)
 
     def _delete(self, url):
-        return self._process_response(self.session.delete(url))
+        return self._request('delete', url)
 
     def get(self, **options):
         """
@@ -98,10 +105,10 @@ class Airtable():
         """
         offset = None
         while True:
-            response_data = self._get(self.url_table, offset=offset, **options)
-            records = response_data.get('records', [])
+            data = self._get(self.url_table, offset=offset, **options)
+            records = data.get('records', [])
             yield records
-            offset = response_data.get('offset')
+            offset = data.get('offset')
             if not offset:
                 break
 
