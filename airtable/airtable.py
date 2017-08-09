@@ -60,7 +60,7 @@ class Airtable():
         return self._process_response(response)
 
     def _get(self, url, **params):
-        if any([True for option in params.keys() if option not in self._ALLOWED_PARAMS]):
+        if any([True for param in params if param not in self._ALLOWED_PARAMS]):
             raise ValueError('invalid url param: {}'.format(params.keys()))
         return self._request('get', url, params=params)
 
