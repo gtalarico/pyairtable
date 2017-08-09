@@ -116,7 +116,7 @@ class Airtable():
 
     def get_all(self, **options):
         """
-        Retrieves all records iteratibely and returns a single list.
+        Retrieves all records repetitively and returns a single list.
 
         >>> airtable.get_all()
         >>> airtable.get_all(view='MyView')
@@ -203,29 +203,30 @@ class Airtable():
         """
         return self._post(self.url_table, json_data={"fields": fields})
 
-    def _batch_request(self, iterable, func):
+    def _batch_request(self, func, iterable):
+        """ Internal Function to limit batch calls to API limit """
         responses = []
         for item in iterable:
             responses.append(func(item))
             time.sleep(self.API_LIMIT)
         return responses
 
-    def batch_insert(self, rows):
+    def batch_insert(self, records):
         """
-        Calls :any:`insert` iteratibely, following set API Rate Limit (5/sec)
+        Calls :any:`insert` repetitively, following set API Rate Limit (5/sec)
         To change the rate limit use ``airtable.API_LIMIT = 0.2`` (5 per second)
 
         >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
         >>> airtable.batch_insert(records)
 
         Args:
-            rows(``list``): Records to insert
+            records(``list``): Records to insert
 
         Returns:
             records (``list``): list of added records
 
         """
-        return self._batch_request(rows, self.insert)
+        return self._batch_request(self.insert, records)
 
     def update(self, record_id, fields):
         """
@@ -257,13 +258,17 @@ class Airtable():
             field_value(``str``): Value to match
             fields(``dict``): Fields to add. Must be dictionary with Column names as Key
 
+        Keyword Args:
+            view (``str``): Name of View
+            maxRecords (``int``): Maximum number of records to retrieve
+
         Returns:
             record (``dict``): Updated record
         """
         record = self.match(field_name, field_value, **options)
         return {} if not record else self.update(record['id'], fields)
 
-    def replace(self, record_id, fields, all=True):
+    def replace(self, record_id, fields):
         """
         Replaces a record by its record id
 
@@ -307,10 +312,63 @@ class Airtable():
             field_name(``str``): Name of the field to search
             field_value(``str``): Value to match
 
+        Keyword Args:
+            view (``str``): Name of View
+            maxRecords (``int``): Maximum number of records to retrieve
+
         Returns:
             record (``dict``): Deleted Record
         """
-        recor
+
         record = self.match(field_name, field_value, **options)
         record_url = self.record_url(record['id'])
         return self._delete(record_url)
+
+
+    def batch_delete(self, record_ids):
+        """
+        Calls :any:`delete` repetitively, following set API Rate Limit (5/sec)
+        To change the rate limit use ``airtable.API_LIMIT = 0.2`` (5 per second)
+
+        >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
+        >>> airtable.batch_delete(records)
+
+        Args:
+            records(``list``): Record Ids to delete
+
+        Returns:
+            records (``list``): list of records deleted
+
+        """
+        return self._batch_request(self.delete, record_ids)
+
+
+    def mirror(self, records, **options):
+        """
+        Deletes all records on table or view and replaces with records.
+
+        >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
+
+        >>> record = airtable.,mirror(records)
+
+        If view options are provided, only records visible on that view will
+        be deleted.
+
+        >>> record = airtable.mirror(records, view='View')
+        ([{'id': 'recwPQIfs4wKPyc9D', ... }], [{'deleted': True, ... }])
+
+        Args:
+            records(``list``): Records to insert
+
+        Keyword Args:
+            view (``str``): Name of View
+            maxRecords (``int``): Maximum number of records to retrieve
+
+        Returns:
+            records (``tuple``): (new_records, deleted_records)
+        """
+
+        all_record_ids = [r['id'] for r in self.get_all(**options)]
+        deleted_records = self.batch_delete(all_record_ids)
+        new_records = self.batch_insert(records)
+        return (new_records, deleted_records)

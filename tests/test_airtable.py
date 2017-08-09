@@ -192,7 +192,8 @@ class TestAirtableDelete():
 
     @pytest.fixture
     def row(self):
-        return  {'UUID': '4e8f9cfa-543b-492f-962b-e16930b49cae', 'String': 'Deleted Test'}
+        return  {'UUID': '4e8f9cfa-543b-492f-962b-e16930b49cae',
+                 'String': 'Deleted Test'}
 
     def test_delete(self, airtable_write, row):
         record = airtable_write.match('UUID', row['UUID'])
@@ -203,6 +204,26 @@ class TestAirtableDelete():
         assert response.get('deleted') is True
         assert 'id' in response
         airtable_write.insert(row)
+
+    def test_batch_delete(self, airtable_write, row):
+        records = [airtable_write.insert(row)['id'],
+                   airtable_write.insert(row)['id']]
+
+        responses = airtable_write.batch_delete(records)
+        assert responses[0].get('deleted') is True
+        assert responses[1].get('deleted') is True
+
+class TestAirtableMirror():
+
+    @pytest.fixture
+    def row(self):
+        return  {'UUID': '4e8f9cfa-543b-492f-962b-e16930b49cae',
+                 'String': 'MIRROR'}
+
+    def test_mirror(self, airtable_write, row):
+        records = [row, row]
+        airtable_write.mirror(records, view='Mirror')
+        assert len(airtable_write.get_all(view='Mirror')) == 2
 
 def populate_table_a(self, airtable_write):
     for i in range(4, 300):
