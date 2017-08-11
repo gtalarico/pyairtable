@@ -8,7 +8,8 @@ Airtable Python Wrapper
 """  #
 
 __author__ = 'Gui Talarico'
-__version__ = '0.4.1'
+__version__ = '0.4.0'
+__release__ = 'dev1'
 
 import os
 import json
@@ -25,7 +26,7 @@ class Airtable():
     VERSION = 'v0'
     API_BASE_URL = 'https://api.airtable.com/'
     API_LIMIT = 1.0 / 5  # 5 per second
-    _API_URL = posixpath.join(API_BASE_URL, VERSION)
+    API_URL = posixpath.join(API_BASE_URL, VERSION)
     _ALLOWED_PARAMS = 'view maxRecords offset pageSize'.split()
     # Not implemented Params: 'fields sort filterByFormula'
 
@@ -37,7 +38,7 @@ class Airtable():
         session = requests.Session()
         session.auth = AirtableAuth(api_key=api_key)
         self.session = session
-        self.url_table = posixpath.join(self._API_URL, base_key, table_name)
+        self.url_table = posixpath.join(self.API_URL, base_key, table_name)
         self.is_authenticated = self.validate_session(self.url_table)
 
     def validate_session(self, url):
@@ -57,8 +58,8 @@ class Airtable():
         """ Builds URL with record id """
         return posixpath.join(self.url_table, record_id)
 
-    def _request(self, method, url, params=None, json=None):
-        response = self.session.request(method, url, params=params, json=json)
+    def _request(self, method, url, params=None, json_data=None):
+        response = self.session.request(method, url, params=params, json=json_data)
         return self._process_response(response)
 
     def _get(self, url, **params):
@@ -67,13 +68,13 @@ class Airtable():
         return self._request('get', url, params=params)
 
     def _post(self, url, json_data):
-        return self._request('post', url, json=json_data)
+        return self._request('post', url, json_data=json_data)
 
     def _put(self, url, json_data):
-        return self._request('put', url, json=json_data)
+        return self._request('put', url, json_data=json_data)
 
     def _patch(self, url, json_data):
-        return self._request('patch', url, json=json_data)
+        return self._request('patch', url, json_data=json_data)
 
     def _delete(self, url):
         return self._request('delete', url)
