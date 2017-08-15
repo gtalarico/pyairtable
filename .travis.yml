@@ -10,9 +10,11 @@ branches:
   only:
   - master
   - dev/main
-script: pytest
+script:
+  - pytest --cov=airtable --cov-report=xml
 install:
   - pip install -r requirements-dev.txt
   - pip install codecov
 after_success:
+  - pytest
   - codecov
