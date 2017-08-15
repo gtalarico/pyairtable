@@ -280,7 +280,8 @@ class TestAirtableMirror():
     def test_mirror(self, airtable_write, row):
         records = [row, row]
         airtable_write.mirror(records, view='Mirror')
-        assert len(airtable_write.get_all(view='Mirror')) == 2
+        new_records = airtable_write.get_all(view='Mirror')
+        assert len(new_records) == 2
 
 def populate_table_a(self, airtable_write):
     for i in range(4, 300):
