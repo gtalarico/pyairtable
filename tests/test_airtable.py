@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import pytest
+import os
 import requests
 import uuid
 
@@ -56,15 +57,45 @@ class TestAuth():
         assert 'Authorization' in resp.request.headers
         assert 'Bearer' in resp.request.headers['Authorization']
 
-    def test_authorization_call(self):
+    def test_authorization_manual_call(self):
         session = requests.Session()
         auth = AirtableAuth()
         session = auth.__call__(session)
         assert 'Authorization' in session.headers
         assert 'Bearer' in session.headers['Authorization']
 
+    def test_authorization_missing(self):
+        key = os.environ.pop('AIRTABLE_API_KEY')
+        session = requests.Session()
+        with pytest.raises(KeyError):
+            session.auth = AirtableAuth()
+        os.environ['AIRTABLE_API_KEY'] = key
+
+    def test_authorization_manual_key(self):
+        key = os.environ['AIRTABLE_API_KEY']
+        session = requests.Session()
+        session.auth = AirtableAuth(api_key=key)
+        resp = session.get('http://www.google.com')
+        assert 'Authorization' in resp.request.headers
+        assert 'Bearer' in resp.request.headers['Authorization']
+
     def test_authorization_is(self, airtable_read):
         assert airtable_read.is_authenticated
+
+    def test_authorization_fail(self, ):
+        with pytest.raises(ValueError) as excinfo:
+            # Raises Invalid Table Name
+            fake_airtable = Airtable(base_key='XXX', table_name='YYY')
+            assert 'invalid table' in str(excinfo.value).lower()
+
+    def test_authorization_bad_credentials(self, ):
+        with pytest.raises(ValueError) as excinfo:
+            # Raises Invalid Table Name
+            fake_airtable = Airtable(base_key=TEST_BASE_KEY,
+                                     table_name=TEST_TABLE_A,
+                                     api_key='BADKEY')
+            assert 'authentication failed' in str(excinfo.value).lower()
+
 
 class TestAirtableGet():
 
@@ -88,6 +119,11 @@ class TestAirtableGet():
         records = airtable_read.get_all(view='ViewOne')
         assert len(records) == 1
 
+    def test_get_bad_param(self, airtable_read):
+        with pytest.raises(ValueError) as excinfo:
+            airtable_read.get_all(view='ViewOne', bad_param=True)
+            assert 'invalid url param' in str(excinfo.value).lower()
+
     def test_get_all_fields_single(self, airtable_read):
         records = airtable_read.get_all(view='ViewAll', maxRecords=1,
                                         fields=['COLUMN_UPDATE'])
@@ -110,6 +146,11 @@ class TestAirtableGet():
         record = airtable_read.match('COLUMN_STR', 'DUPLICATE', view='ViewAll')
         assert isinstance(record, dict)
         assert record['fields'].get('COLUMN_ID') == '2'
+
+    def test_match_not(self, airtable_read):
+        record = airtable_read.match('COLUMN_STR', 'FAKE VALUE', view='ViewAll')
+        assert isinstance(record, dict)
+        assert len(record) == 0
 
     def test_search(self, airtable_read):
         records = airtable_read.search('COLUMN_STR', 'DUPLICATE', view='ViewAll')
@@ -219,6 +260,15 @@ class TestAirtableDelete():
         responses = airtable_write.batch_delete(records)
         assert responses[0].get('deleted') is True
         assert responses[1].get('deleted') is True
+
+    def test_batch_delete_by_field(self, airtable_write, row):
+        record = airtable_write.match('UUID', row['UUID'])
+        if not record:
+            record = airtable_write.insert(row)
+
+        response = airtable_write.delete_by_field('UUID', row['UUID'])
+        assert response.get('deleted') is True
+        airtable_write.insert(row)
 
 class TestAirtableMirror():
 

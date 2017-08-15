@@ -8,6 +8,9 @@ branches:
   only:
   - master
   - dev/main
+script: pytest
 install:
   - pip install -r requirements-dev.txt
-script: pytest
+  - pip install codecov
+after_success:
+  - codecov
