@@ -27,7 +27,7 @@ class Airtable():
     API_BASE_URL = 'https://api.airtable.com/'
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
-    _ALLOWED_PARAMS = 'view maxRecords offset pageSize'.split()
+    _ALLOWED_PARAMS = 'view maxRecords offset pageSize fields'.split()
     # Not implemented Params: 'fields sort filterByFormula'
 
     def __init__(self, base_key, table_name, api_key=None):
@@ -50,6 +50,20 @@ class Airtable():
         else:
             raise ValueError('Authentication failed: {}'.format(response.reason))
 
+    def _process_params(self, params):
+        """
+        Process params names or values as needed
+
+        Array String for example fields=['name1', 'name2'] must be encoded as
+        `fields[]=name1&fields[]=name2`
+        """
+        for param_name, param_value in params.items():
+            # URL Arrays must be named fields[]=...
+            if isinstance(param_value, (tuple, list)):
+                array_param_name = '{name}[]'.format(name=param_name)
+                params[array_param_name] = params.pop(param_name)
+        return params
+
     def _process_response(self, response):
         response.raise_for_status()
         return response.json()
@@ -65,7 +79,8 @@ class Airtable():
     def _get(self, url, **params):
         if any([True for param in params if param not in self._ALLOWED_PARAMS]):
             raise ValueError('invalid url param: {}'.format(params.keys()))
-        return self._request('get', url, params=params)
+        processed_params = self._process_params(params)
+        return self._request('get', url, params=processed_params)
 
     def _post(self, url, json_data):
         return self._request('post', url, json_data=json_data)
@@ -97,10 +112,12 @@ class Airtable():
                 The records will be sorted according to the order of the view.
             pageSize (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
+            fields (``list``): Name of fields to be retrieved. If provided,
+                only the listed field names will be includede in the response.
 
             sort (``list``): Not Implemented
             filterByFormula (``str``): Not Implemented
-            fields (``list``): Not Implemented
+
 
         Returns:
             iterator (``list``): List of Records, grouped by pageSize
@@ -127,6 +144,8 @@ class Airtable():
         Keyword Args:
             view (``str``): Name of View
             maxRecords (``int``): Maximum number of records to retrieve
+            fields (``list``): Name of fields to be retrieved. If provided,
+                only the listed field names will be includede in the response.
 
         Returns:
             records (``list``): List of Records
@@ -153,6 +172,8 @@ class Airtable():
         Keyword Args:
             view (``str``): Name of View
             maxRecords (``int``): Maximum number of records to retrieve
+            fields (``list``): Name of fields to be retrieved. If provided,
+                only the listed field names will be includede in the response.
 
         Returns:
             record (``dict``): First record to match the field_value provided
@@ -178,6 +199,8 @@ class Airtable():
         Keyword Args:
             view (``str``): Name of View
             maxRecords (``int``): Maximum number of records to retrieve
+            fields (``list``): Name of fields to be retrieved. If provided,
+                only the listed field names will be includede in the response.
 
         Returns:
             records (``list``): All records that matched ``field_value``

@@ -88,6 +88,20 @@ class TestAirtableGet():
         records = airtable_read.get_all(view='ViewOne')
         assert len(records) == 1
 
+    def test_get_all_fields_single(self, airtable_read):
+        records = airtable_read.get_all(view='ViewAll', maxRecords=1,
+                                        fields=['COLUMN_UPDATE'])
+        assert 'COLUMN_ID' not in records[0]['fields']
+        assert 'COLUMN_STR' not in records[0]['fields']
+        assert 'COLUMN_UPDATE' in records[0]['fields']
+
+    def test_get_all_fields_multiple(self, airtable_read):
+        records = airtable_read.get_all(view='ViewAll', maxRecords=1,
+                                        fields=['COLUMN_UPDATE', 'COLUMN_ID'])
+        assert 'COLUMN_ID' in records[0]['fields']
+        assert 'COLUMN_UPDATE' in records[0]['fields']
+        assert 'COLUMN_STR' not in records[0]['fields']
+
     def test_get_all_maxrecords(self, airtable_read):
         records = airtable_read.get_all(maxRecords=50)
         assert len(records) == 50
