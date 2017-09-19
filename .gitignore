@@ -3,3 +3,4 @@ env.bat
 *__pycache__
 .coverage
 docs/build
+.ipynb_checkpoints
