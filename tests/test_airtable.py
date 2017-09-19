@@ -142,6 +142,11 @@ class TestAirtableGet():
         records = airtable_read.get_all(maxRecords=50)
         assert len(records) == 50
 
+    def test_get_all_filter(self, airtable_read):
+        records = airtable_read.get_all(filterByFormula="COLUMN_ID='5'")
+        assert len(records) == 1
+        assert records[0]['fields']['COLUMN_ID'] == '5'
+
     def test_match(self, airtable_read):
         record = airtable_read.match('COLUMN_STR', 'DUPLICATE', view='ViewAll')
         assert isinstance(record, dict)
