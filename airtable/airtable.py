@@ -8,7 +8,7 @@ Airtable Python Wrapper
 """  #
 
 __author__ = 'Gui Talarico'
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 __release__ = 'dev1'
 
 import os
@@ -27,8 +27,10 @@ class Airtable():
     API_BASE_URL = 'https://api.airtable.com/'
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
-    _ALLOWED_PARAMS = 'view maxRecords offset pageSize fields'.split()
-    # Not implemented Params: 'fields sort filterByFormula'
+    _ALLOWED_PARAMS = ['view',  'maxRecords', 'offset', 'pageSize',
+                       'fields', 'filterByFormula']
+
+    # Not implemented Params: 'sort filterByFormula'
 
     def __init__(self, base_key, table_name, api_key=None):
         """
