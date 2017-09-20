@@ -8,7 +8,7 @@ Airtable Python Wrapper
 """  #
 
 __author__ = 'Gui Talarico'
-__version__ = '0.6.0'
+__version__ = '0.7.0'
 __release__ = 'dev1'
 
 import os
@@ -106,7 +106,7 @@ class Airtable():
                 The records will be sorted according to the order of the view.
             pageSize (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
-            fields (``list``): Name of fields to be retrieved. If provided,
+            fields (``list``): Name of fields to be retrieved. Default is all.
             sort (``list``): List of fields to sort by. Default order is
                 ascending. To control direction, use prefix '-' for descensing,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
@@ -138,7 +138,7 @@ class Airtable():
             maxRecords (``int``): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``list``): Name of fields to be retrieved. If provided,
+            fields (``list``): Name of fields to be retrieved. Default is all.
             sort (``list``): List of fields to sort by. Default order is
                 ascending. To control direction, use prefix '-' for descensing,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
@@ -170,7 +170,7 @@ class Airtable():
             maxRecords (``int``): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``list``): Name of fields to be retrieved. If provided,
+            fields (``list``): Name of fields to be retrieved. Default is all.
             sort (``list``): List of fields to sort by. Default order is
                 ascending. To control direction, use prefix '-' for descensing,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
@@ -201,7 +201,7 @@ class Airtable():
             maxRecords (``int``): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``list``): Name of fields to be retrieved. If provided,
+            fields (``list``): Name of fields to be retrieved. Default is all.
             sort (``list``): List of fields to sort by. Default order is
                 ascending. To control direction, use prefix '-' for descensing,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
@@ -223,8 +223,8 @@ class Airtable():
         >>> airtable.insert(record)
 
         Args:
-            fields(``dict``): Fields to add. Must be dictionary with Column names as Key.
-                Does not need to include key ``fields``
+            fields(``dict``): Fields to insert.
+                Must be dictionary with Column names as Key.
 
         Returns:
             record (``dict``): Inserted record
@@ -266,7 +266,8 @@ class Airtable():
 
         Args:
             record_id(``str``): Id of Record to update
-            fields(``dict``): Fields to add. Must be dictionary with Column names as Key
+            fields(``dict``): Fields to update.
+                Must be dictionary with Column names as Key
 
         Returns:
             record (``dict``): Updated record
@@ -284,7 +285,8 @@ class Airtable():
         Args:
             field_name(``str``): Name of the field to search
             field_value(``str``): Value to match
-            fields(``dict``): Fields to add. Must be dictionary with Column names as Key
+            fields(``dict``): Fields to update.
+                Must be dictionary with Column names as Key
 
         Keyword Args:
             view (``str``): Name of View
@@ -313,6 +315,26 @@ class Airtable():
         """
         record_url = self.record_url(record_id)
         return self._put(record_url, json_data={"fields": fields})
+
+    def replace_by_field(self, field_name, field_value, fields, **options):
+        """
+        Replaces a record with first match.
+
+        Args:
+            field_name(``str``): Name of the field to search
+            field_value(``str``): Value to match
+            fields(``dict``): Fields to replace with.
+                Must be dictionary with Column names as Key
+
+        Args:
+            record_id(``str``): Id of Record to update
+            fields(``dict``): Fields to replace. Must be dictionary with Column names as Key
+
+        Returns:
+            record (``dict``): New record
+        """
+        record = self.match(field_name, field_value, **options)
+        return {} if not record else self.replace(record['id'], fields)
 
     def delete(self, record_id):
         """
