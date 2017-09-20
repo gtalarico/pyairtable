@@ -19,6 +19,7 @@ import time
 from six.moves.urllib.parse import urlencode
 
 from .auth import AirtableAuth
+from .params import AirtableParams
 
 
 class Airtable():
@@ -27,10 +28,6 @@ class Airtable():
     API_BASE_URL = 'https://api.airtable.com/'
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
-    _ALLOWED_PARAMS = ['view',  'maxRecords', 'offset', 'pageSize',
-                       'fields', 'filterByFormula']
-
-    # Not implemented Params: 'sort filterByFormula'
 
     def __init__(self, base_key, table_name, api_key=None):
         """
@@ -54,16 +51,13 @@ class Airtable():
 
     def _process_params(self, params):
         """
-        Process params names or values as needed
-
-        Array String for example fields=['name1', 'name2'] must be encoded as
-        `fields[]=name1&fields[]=name2`
+        Process params names or values as needed using filters
         """
-        for param_name, param_value in params.items():
-            # URL Arrays must be named fields[]=...
-            if isinstance(param_value, (tuple, list)):
-                array_param_name = '{name}[]'.format(name=param_name)
-                params[array_param_name] = params.pop(param_name)
+        for param_name, param_value in params.copy().items():
+            param_value = params.pop(param_name)
+            ParamClass = AirtableParams.get(param_name)
+            new_param = ParamClass(param_value).to_param_dict()
+            params.update(new_param)
         return params
 
     def _process_response(self, response):
@@ -79,8 +73,6 @@ class Airtable():
         return self._process_response(response)
 
     def _get(self, url, **params):
-        if any([True for param in params if param not in self._ALLOWED_PARAMS]):
-            raise ValueError('invalid url param: {}'.format(params.keys()))
         processed_params = self._process_params(params)
         return self._request('get', url, params=processed_params)
 
@@ -115,6 +107,8 @@ class Airtable():
             pageSize (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
             fields (``list``): Name of fields to be retrieved. If provided,
+            sort (``list``): List of dictionaries. Each Dictionary must include
+                a 'field' and 'direction' keys. Key value must be 'asc' or 'desc'.
                 only the listed field names will be includede in the response.
 
             sort (``list``): Not Implemented
@@ -148,6 +142,8 @@ class Airtable():
             maxRecords (``int``): Maximum number of records to retrieve
             fields (``list``): Name of fields to be retrieved. If provided,
                 only the listed field names will be includede in the response.
+            sort (``list``): List of dictionaries. Each Dictionary must include
+                a 'field' and 'direction' keys. Key value must be 'asc' or 'desc'.
 
         Returns:
             records (``list``): List of Records
@@ -176,6 +172,8 @@ class Airtable():
             maxRecords (``int``): Maximum number of records to retrieve
             fields (``list``): Name of fields to be retrieved. If provided,
                 only the listed field names will be includede in the response.
+            sort (``list``): List of dictionaries. Each Dictionary must include
+                a 'field' and 'direction' keys. Key value must be 'asc' or 'desc'.
 
         Returns:
             record (``dict``): First record to match the field_value provided
@@ -203,6 +201,8 @@ class Airtable():
             maxRecords (``int``): Maximum number of records to retrieve
             fields (``list``): Name of fields to be retrieved. If provided,
                 only the listed field names will be includede in the response.
+            sort (``list``): List of dictionaries. Each Dictionary must include
+                a 'field' and 'direction' keys. Key value must be 'asc' or 'desc'.
 
         Returns:
             records (``list``): All records that matched ``field_value``
