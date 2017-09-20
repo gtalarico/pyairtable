@@ -27,8 +27,8 @@ Index
    self
    api
    authentication
-   release
 
+`Release Notes <https://github.com/gtalarico/airtable-python-wrapper/blob/master/HISTORY.md>`_
 
 
 Questions
