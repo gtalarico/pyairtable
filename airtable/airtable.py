@@ -8,7 +8,7 @@ Airtable Python Wrapper
 """  #
 
 __author__ = 'Gui Talarico'
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 __release__ = 'dev1'
 
 import os

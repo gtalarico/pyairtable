@@ -1,4 +1,6 @@
-RELEASE.md
+
+# 0.6.1-dev1
+* Fix Setup to install six.py
 
 # 0.6.0-dev1
 * Implemented Sort Filter
