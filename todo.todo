@@ -1,11 +1,10 @@
 Core:
-  ☐ Refactor/Rename Get/GetAll
   ☐ Use New Filters for Search/Match or Remove?
-  ☐ Study more complex search options, ex
+  ✔ Refactor/Rename Get/GetAll @done (17-09-20 17:35)
 
 Testing:
   ☐ Write Mock Tests
   ☐ Improve "Real" Tests to avoid breaking
 
-Help:
-  ☐ https://codepen.io/airtable/full/rLKkYB
+Links:
+  * https://codepen.io/airtable/full/rLKkYB

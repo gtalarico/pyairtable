@@ -1,4 +1,7 @@
 
+# 0.7.0-dev1
+* Added airtable.get() method to retrieve record
+
 # 0.6.1-dev1
 * Bugfix: Fix Setup to install six.py
 * Bugfix: Fix AitableAuth Docs

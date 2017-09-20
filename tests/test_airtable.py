@@ -100,6 +100,11 @@ class TestAuth():
 class TestAirtableGet():
 
     def test_get(self, airtable_read):
+        record = airtable_read.get('recwPQIfs4wKPyc9D')
+        assert isinstance(record, dict)
+        assert record['id'] == 'recwPQIfs4wKPyc9D'
+
+    def test_get_iter(self, airtable_read):
         for n, records in enumerate(airtable_read.get_iter(view='ViewAll'), 1):
             assert isinstance(records, list)
             assert len(records) == 100

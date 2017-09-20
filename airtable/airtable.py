@@ -88,6 +88,21 @@ class Airtable():
     def _delete(self, url):
         return self._request('delete', url)
 
+    def get(self, record_id):
+        """
+        Retrieves a record by its id
+
+        >>> record = airtable.get('recwPQIfs4wKPyc9D')
+
+        Args:
+            record_id(``str``): Airtable record id
+
+        Returns:
+            record (``dict``): Record
+        """
+        record_url = self.record_url(record_id)
+        return self._get(record_url)
+
     def get_iter(self, **options):
         """
         Record Retriever Iterator
