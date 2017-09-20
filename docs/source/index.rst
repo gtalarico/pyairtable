@@ -27,6 +27,7 @@ Index
    self
    api
    authentication
+   release
 
 
 
