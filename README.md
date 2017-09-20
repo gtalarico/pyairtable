@@ -15,20 +15,26 @@ pip install airtable-python-wrapper
 ## Documentation
 
 Full documentation here:
-http://airtable-python-wrapper.readthedocs.io/
+
 
 ### Usage Example
+
+Below are some of the methods available in the wrapper.
+For a full list visit the [docs](http://airtable-python-wrapper.readthedocs.io/)
 
 ```
 airtable = Airtable('baseKey', 'table_name')
 
-airtable.get(view='MyView', maxRecords=20)
+airtable.get_all(view='MyView', maxRecords=20)
 
 airtable.insert({'Name': 'Brian'})
 
 airtable.search('Name', 'Tom')
 
 airtable.update_by_field('Name', 'Tom', {'Phone': '1234-4445'})
+
+airtable.delete_by_field('Name', 'Tom')
+
 ```
 
 ## License
