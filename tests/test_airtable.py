@@ -100,7 +100,7 @@ class TestAuth():
 class TestAirtableGet():
 
     def test_get(self, airtable_read):
-        for n, records in enumerate(airtable_read.get(view='ViewAll'), 1):
+        for n, records in enumerate(airtable_read.get_iter(view='ViewAll'), 1):
             assert isinstance(records, list)
             assert len(records) == 100
             assert records[0]['fields']['COLUMN_ID'] in ['1', '101', '201']
@@ -111,7 +111,7 @@ class TestAirtableGet():
         assert len(records) == 300
 
     def test_get_pagesize(self, airtable_read):
-        for records in airtable_read.get(pageSize=60):
+        for records in airtable_read.get_iter(pageSize=60):
             assert len(records) == 60
             break
 

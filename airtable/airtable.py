@@ -88,14 +88,14 @@ class Airtable():
     def _delete(self, url):
         return self._request('delete', url)
 
-    def get(self, **options):
+    def get_iter(self, **options):
         """
         Record Retriever Iterator
 
         Returns iterator with lists in batches according to pageSize.
         To get all records at once use :any:`get_all`
 
-        >>> for records in airtable.get():
+        >>> for records in airtable.get_iter():
         >>>     print(records)
         [{'fields': ... }, ...]
 
@@ -107,13 +107,9 @@ class Airtable():
             pageSize (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
             fields (``list``): Name of fields to be retrieved. If provided,
-            sort (``list``): List of dictionaries. Each Dictionary must include
-                a 'field' and 'direction' keys. Key value must be 'asc' or 'desc'.
-                only the listed field names will be includede in the response.
-
-            sort (``list``): Not Implemented
-            filterByFormula (``str``): Not Implemented
-
+            sort (``list``): List of fields to sort by. Default order is
+                ascending. To control direction, use prefix '-' for descensing,
+                or pass tuples [('field', 'asc'), ('field', 'desc')]
 
         Returns:
             iterator (``list``): List of Records, grouped by pageSize
@@ -139,11 +135,13 @@ class Airtable():
 
         Keyword Args:
             view (``str``): Name of View
-            maxRecords (``int``): Maximum number of records to retrieve
+            maxRecords (``int``): The name or ID of a view.
+                If set, only the records in that view will be returned.
+                The records will be sorted according to the order of the view.
             fields (``list``): Name of fields to be retrieved. If provided,
-                only the listed field names will be includede in the response.
-            sort (``list``): List of dictionaries. Each Dictionary must include
-                a 'field' and 'direction' keys. Key value must be 'asc' or 'desc'.
+            sort (``list``): List of fields to sort by. Default order is
+                ascending. To control direction, use prefix '-' for descensing,
+                or pass tuples [('field', 'asc'), ('field', 'desc')]
 
         Returns:
             records (``list``): List of Records
@@ -152,7 +150,7 @@ class Airtable():
 
         """
         all_records = []
-        for records in self.get(**options):
+        for records in self.get_iter(**options):
             all_records.extend(records)
         return all_records
 
@@ -169,11 +167,13 @@ class Airtable():
 
         Keyword Args:
             view (``str``): Name of View
-            maxRecords (``int``): Maximum number of records to retrieve
+            maxRecords (``int``): The name or ID of a view.
+                If set, only the records in that view will be returned.
+                The records will be sorted according to the order of the view.
             fields (``list``): Name of fields to be retrieved. If provided,
-                only the listed field names will be includede in the response.
-            sort (``list``): List of dictionaries. Each Dictionary must include
-                a 'field' and 'direction' keys. Key value must be 'asc' or 'desc'.
+            sort (``list``): List of fields to sort by. Default order is
+                ascending. To control direction, use prefix '-' for descensing,
+                or pass tuples [('field', 'asc'), ('field', 'desc')]
 
         Returns:
             record (``dict``): First record to match the field_value provided
@@ -198,11 +198,13 @@ class Airtable():
 
         Keyword Args:
             view (``str``): Name of View
-            maxRecords (``int``): Maximum number of records to retrieve
+            maxRecords (``int``): The name or ID of a view.
+                If set, only the records in that view will be returned.
+                The records will be sorted according to the order of the view.
             fields (``list``): Name of fields to be retrieved. If provided,
-                only the listed field names will be includede in the response.
-            sort (``list``): List of dictionaries. Each Dictionary must include
-                a 'field' and 'direction' keys. Key value must be 'asc' or 'desc'.
+            sort (``list``): List of fields to sort by. Default order is
+                ascending. To control direction, use prefix '-' for descensing,
+                or pass tuples [('field', 'asc'), ('field', 'desc')]
 
         Returns:
             records (``list``): All records that matched ``field_value``
