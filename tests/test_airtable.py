@@ -247,7 +247,7 @@ class TestAirtableReplace():
 
     @pytest.fixture
     def new_field(self):
-        return {'COLUMN_UPDATE': 'B'}
+        return {'COLUMN_ID': '1', 'COLUMN_UPDATE': 'B'}
 
     def test_replace(self, airtable_read, new_field, old_field):
         record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
@@ -256,10 +256,24 @@ class TestAirtableReplace():
         airtable_read.replace(record['id'], new_field)
         record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
         assert record['fields']['COLUMN_UPDATE'] == 'B'
-        assert 'COLUMN_ID' not in record['fields']
         assert 'COLUMN_STR' not in record['fields']
 
         airtable_read.replace(record['id'], old_field)
+        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        assert record['fields']['COLUMN_UPDATE'] == 'A'
+        assert 'COLUMN_ID' in record['fields']
+        assert 'COLUMN_STR' in record['fields']
+
+    def test_replace_by_field(self, airtable_read, new_field, old_field):
+        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        assert record['fields']['COLUMN_UPDATE'] == 'A'
+
+        airtable_read.replace_by_field('COLUMN_ID', record['fields']['COLUMN_ID'], new_field)
+        record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
+        assert record['fields']['COLUMN_UPDATE'] == 'B'
+        assert 'COLUMN_STR' not in record['fields']
+
+        airtable_read.replace_by_field('COLUMN_ID', record['fields']['COLUMN_ID'], old_field)
         record = airtable_read.get_all(maxRecords=1, view='ViewAll')[0]
         assert record['fields']['COLUMN_UPDATE'] == 'A'
         assert 'COLUMN_ID' in record['fields']
