@@ -1,16 +1,20 @@
 """
 Authentication is handled by the :any:`Airtable` class.
+The class can handle authentication automatically
+if an environment variable `AIRTABLE_API_KEY` with your api key is set:
 
->>> airtable = Airtable('your_api_key')
+>>> airtable = Airtable(base_key, table_name)
 
-Alternatively, you can set an enviroment variable ``AIRTABLE_API_KEY``
+Alternatively, you can pass the key explicitly:
 
->>> airtable = Airtable()  # Will use enviroment variable
+>>> airtable = Airtable(base_key, table_name, api_key='key')
 
-You can also use this class to handle authentication for you if you are making your own wrapper.
+Note:
+    You can also use this class to handle authentication for you if you
+    are making your own wrapper:
 
->>> auth = AirtableAuth(api_key)
->>> response = requests.get('https://api.airtable.com/v0/appZkOEliMniglNQo/table', auth=auth)
+    >>> auth = AirtableAuth(api_key)
+    >>> response = requests.get('https://api.airtable.com/v0/{basekey}/{table_name}', auth=auth)
 
 """  #
 from __future__ import absolute_import
