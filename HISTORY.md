@@ -1,3 +1,5 @@
+# 0.7.1-alpha
+* Moved version to sep file to fix setup.py error
 
 # 0.7.0-dev1
 * Feature: Added airtable.get() method to retrieve record

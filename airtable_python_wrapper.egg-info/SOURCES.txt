@@ -1,0 +1,11 @@
+README.md
+setup.cfg
+airtable/__init__.py
+airtable/airtable.py
+airtable/auth.py
+airtable/params.py
+airtable_python_wrapper.egg-info/PKG-INFO
+airtable_python_wrapper.egg-info/SOURCES.txt
+airtable_python_wrapper.egg-info/dependency_links.txt
+airtable_python_wrapper.egg-info/requires.txt
+airtable_python_wrapper.egg-info/top_level.txt
