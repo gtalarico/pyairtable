@@ -106,7 +106,8 @@ class Airtable():
                 The records will be sorted according to the order of the view.
             pageSize (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
-            fields (``list``): Name of fields to be retrieved. Default is all.
+            fields (``str``, ``list``): Name of field or fields to be retrieved.
+                Default is all fields
             sort (``list``): List of fields to sort by. Default order is
                 ascending. To control direction, use prefix '-' for descensing,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
