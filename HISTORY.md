@@ -1,6 +1,9 @@
 
 # 0.7.0-dev1
-* Added airtable.get() method to retrieve record
+* Feature: Added airtable.get() method to retrieve record
+* Fix: sort/field string input to allow sting or list
+* Fix: AirtableAuth Docs
+* Fix: Keyargs Docs
 
 # 0.6.1-dev1
 * Bugfix: Fix Setup to install six.py

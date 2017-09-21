@@ -8,7 +8,7 @@ Airtable Python Wrapper
 """  #
 
 __author__ = 'Gui Talarico'
-__version__ = '0.6.1'
+__version__ = '0.7.0'
 __release__ = 'dev1'
 
 import os
@@ -121,10 +121,12 @@ class Airtable():
                 The records will be sorted according to the order of the view.
             pageSize (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
-            fields (``list``): Name of fields to be retrieved. Default is all.
+            fields (``str``, ``list``): Name of field or fields to be retrieved.
+                Default is all fields
             sort (``list``): List of fields to sort by. Default order is
-                ascending. To control direction, use prefix '-' for descensing,
+                ascending. To control direction, use prefix '-' for descending,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
+            formula (``str``): Airtable formula.
 
         Returns:
             iterator (``list``): List of Records, grouped by pageSize
@@ -153,10 +155,12 @@ class Airtable():
             maxRecords (``int``): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``list``): Name of fields to be retrieved. Default is all.
+            fields (``str``, ``list``): Name of field or fields to be retrieved.
+                Default is all fields
             sort (``list``): List of fields to sort by. Default order is
-                ascending. To control direction, use prefix '-' for descensing,
+                ascending. To control direction, use prefix '-' for descending,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
+            formula (``str``): Airtable formula.
 
         Returns:
             records (``list``): List of Records
@@ -185,10 +189,12 @@ class Airtable():
             maxRecords (``int``): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``list``): Name of fields to be retrieved. Default is all.
+            fields (``str``, ``list``): Name of field or fields to be retrieved.
+                Default is all fields
             sort (``list``): List of fields to sort by. Default order is
-                ascending. To control direction, use prefix '-' for descensing,
+                ascending. To control direction, use prefix '-' for descending,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
+            formula (``str``): Airtable formula.
 
         Returns:
             record (``dict``): First record to match the field_value provided
@@ -216,10 +222,12 @@ class Airtable():
             maxRecords (``int``): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``list``): Name of fields to be retrieved. Default is all.
+            fields (``str``, ``list``): Name of field or fields to be retrieved.
+                Default is all fields
             sort (``list``): List of fields to sort by. Default order is
-                ascending. To control direction, use prefix '-' for descensing,
+                ascending. To control direction, use prefix '-' for descending,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
+            formula (``str``): Airtable formula.
 
         Returns:
             records (``list``): All records that matched ``field_value``

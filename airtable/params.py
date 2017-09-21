@@ -39,7 +39,9 @@ class _BaseObjectArrayParam(_BaseParam):
     >>> [{field: "UUID", direction: "desc"}, {...}]
 
     Requests Params Input:
-    >>> params={'sort':[ {'field': 'FieldOne', 'direction': 'asc'}, ... ]})
+    >>> params={'sort': ['FieldOne', '-FieldTwo']}
+    or
+    >>> params={'sort': [('FieldOne', 'asc'), ('-FieldTwo', 'desc')]}
 
     Requests Url Params Encoding:
     >>> ?sort=field&sort=direction&sort=field&sort=direction
@@ -78,6 +80,11 @@ class AirtableParams():
         param_name = 'filterByFormula'
         kwarg = 'formula'
 
+        @classmethod
+        def and_formula(cls, *formulas):
+            combined_formula = 'AND({})'.format(','.format(*formulas))
+            super(FormulaParam, self).__init__(combined_formula)
+
     class OffsetParam(_BaseParam):
         param_name = 'offset'
         kwarg = param_name
@@ -108,6 +115,10 @@ class AirtableParams():
         kwarg = param_name
 
         def __init__(self, value):
+            # Wraps string into list to avoid string iteration
+            if hasattr(value, 'startswith'):
+                value = [value]
+
             self.value = []
             direction = 'asc'
 
