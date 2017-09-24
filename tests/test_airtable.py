@@ -150,25 +150,26 @@ class TestAirtableGet():
     def test_get_all_sort_asc(self, airtable_read):
         records = airtable_read.get_all(maxRecords=5, sort=['COLUMN_ID'])
         assert records[0]['fields']['COLUMN_ID'] == '1'
-        assert records[1]['fields']['COLUMN_ID'] == '2'
+        assert records[2]['fields']['COLUMN_ID'] == '3'
+
+    def test_get_all_sort_asc_str(self, airtable_read):
+        records = airtable_read.get_all(maxRecords=5, sort='COLUMN_ID')
+        assert records[0]['fields']['COLUMN_ID'] == '1'
         assert records[2]['fields']['COLUMN_ID'] == '3'
 
     def test_get_all_sort_desc(self, airtable_read):
         records = airtable_read.get_all(maxRecords=5, sort=['-COLUMN_ID'])
         assert records[0]['fields']['COLUMN_ID'] == '300'
-        assert records[1]['fields']['COLUMN_ID'] == '299'
         assert records[2]['fields']['COLUMN_ID'] == '298'
 
     def test_get_all_sort_desc_explicit(self, airtable_read):
         records = airtable_read.get_all(maxRecords=5, sort=[('COLUMN_ID', 'asc')])
         assert records[0]['fields']['COLUMN_ID'] == '1'
-        assert records[1]['fields']['COLUMN_ID'] == '2'
         assert records[2]['fields']['COLUMN_ID'] == '3'
 
     def test_get_all_sort_desc_explicit(self, airtable_read):
         records = airtable_read.get_all(maxRecords=5, sort=[('COLUMN_ID', 'desc')])
         assert records[0]['fields']['COLUMN_ID'] == '300'
-        assert records[1]['fields']['COLUMN_ID'] == '299'
         assert records[2]['fields']['COLUMN_ID'] == '298'
 
     def test_get_all_filter(self, airtable_read):
