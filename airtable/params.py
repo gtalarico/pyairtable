@@ -80,10 +80,10 @@ class AirtableParams():
         param_name = 'filterByFormula'
         kwarg = 'formula'
 
-        @classmethod
-        def and_formula(cls, *formulas):
-            combined_formula = 'AND({})'.format(','.format(*formulas))
-            super(FormulaParam, self).__init__(combined_formula)
+        # @classmethod
+        # def and_formula(cls, *formulas):
+        #     combined_formula = 'AND({})'.format(','.format(*formulas))
+        #     super(FormulaParam, self).__init__(combined_formula)
 
     class OffsetParam(_BaseParam):
         param_name = 'offset'
