@@ -4,6 +4,7 @@ import pytest
 import os
 import requests
 import uuid
+from requests.exceptions import HTTPError
 
 from airtable import Airtable
 from airtable.auth import AirtableAuth
@@ -47,6 +48,19 @@ def airtable_write():
     assert airtable.is_authenticated is True
     return airtable
 
+
+class TestAbout():
+
+    def test_get_about_info(self):
+        from airtable.__version__ import (__version__,
+                                          __name__,
+                                          __description__,
+                                          __url__,
+                                          __author__,
+                                          __license__,
+                                          __copyright__,
+                                          )
+        assert __version__
 
 class TestAuth():
 
@@ -128,6 +142,13 @@ class TestAirtableGet():
         with pytest.raises(ValueError) as excinfo:
             airtable_read.get_all(view='ViewOne', bad_param=True)
             assert 'invalid param keyword' in str(excinfo.value).lower()
+
+    def test_get_bad_request_decoded_msg(self, airtable_read):
+        with pytest.raises(HTTPError) as excinfo:
+            airtable_read.get_all(view='ViewOne', sort=['NON_EXISTING'], fields=['X'])
+            assert 'Unprocessable Entity for url(decoded)' in str(excinfo.value).lower()
+            assert 'sort[0]' in str(excinfo.value).lower()
+            assert 'fields[]=' in str(excinfo.value).lower()
 
     def test_get_all_fields_single(self, airtable_read):
         records = airtable_read.get_all(view='ViewAll', maxRecords=1,
