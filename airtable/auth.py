@@ -36,7 +36,8 @@ class AirtableAuth(requests.auth.AuthBase):
         try:
             self.api_key = api_key or os.environ['AIRTABLE_API_KEY']
         except KeyError:
-            raise KeyError('AIRTABLE_API_KEY not found')
+            raise KeyError('Api Key not found. Pass api_key as a kwarg \
+                            or set an env var AIRTABLE_API_KEY with your key')
 
     def __call__(self, request):
         request.headers.update({'Authorization': 'Bearer {}'.format(self.api_key)})
