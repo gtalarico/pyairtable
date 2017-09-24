@@ -3,7 +3,15 @@ Airtable Python Wrapper
 
 >>> airtable = Airtable('base_key', 'table_name')
 >>> airtable.get_all()
-[{{'fields': {{...}}, ...}}]
+[{id:'rec123asa23', fields': {'Column': 'Value'}, ...}]
+
+Examples:
+
+>>> airtable.get_all(view='ViewName')
+
+>>> airtable.search('ColumnA', 'SeachValue')
+
+>>> airtable.insert({'First Name', 'John'})
 
 """  #
 
