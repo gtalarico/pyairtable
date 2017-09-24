@@ -6,6 +6,8 @@
 
 Airtable API Client Wrapper for Python
 
+![project-logo](https://github.com/gtalarico/airtable-python-wrapper/blob/master/docs/logo.png)
+
 ## Installing
 
 ```
