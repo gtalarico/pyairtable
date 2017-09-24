@@ -6,6 +6,9 @@
 Airtable Python Wrapper Documentation
 ======================================
 
+.. image:: _static/logo.png
+  :scale: 75%
+
 For more information about the Airtable API see the
 `Airtable API Docs <https://airtable.com/api>`_
 

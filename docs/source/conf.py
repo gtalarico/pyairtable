@@ -60,10 +60,11 @@ napoleon_google_docstring = True
 napoleon_include_init_with_doc = True
 
 import airtable
-from airtable import __version__, __release__
-version = __version__
+from airtable.__version__ import __version__
+__version__ = __version__.split('-', 0)
+__release__ = __version__
 # The full version, including alpha/beta/rc tags.
-release = __release__
+# release = version
 
 import sphinx_rtd_theme
 html_theme = "sphinx_rtd_theme"

@@ -1,3 +1,6 @@
+# 0.7.2
+* Merge Fix
+
 # 0.7.1-alpha
 * Moved version to sep file to fix setup.py error
 * Removed urlencode import

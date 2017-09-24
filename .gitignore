@@ -4,3 +4,4 @@ env.bat
 .coverage
 docs/build
 .ipynb_checkpoints
+*egg-info
