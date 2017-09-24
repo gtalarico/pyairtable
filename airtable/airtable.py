@@ -10,9 +10,10 @@ Airtable Python Wrapper
 import os
 import json
 import requests
+from requests.exceptions import HTTPError
 import posixpath
 import time
-from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import unquote
 
 from .auth import AirtableAuth
 from .params import AirtableParams
@@ -57,6 +58,9 @@ class Airtable():
         return params
 
     def _process_response(self, response):
+        if response.status_code == 422:
+            raise HTTPError('Unprocessable Entity for url(decoded): {}'.format(
+                                                        unquote(response.url)))
         response.raise_for_status()
         return response.json()
 
