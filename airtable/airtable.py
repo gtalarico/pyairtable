@@ -67,9 +67,11 @@ class Airtable():
         return params
 
     def _process_response(self, response):
-        if response.status_code == 422:
-            raise HTTPError('Unprocessable Entity for url(decoded): {}'.format(
-                                                        unquote(response.url)))
+        # Removed due to IronPython Bug
+        # https://github.com/IronLanguages/ironpython2/issues/242
+        # if response.status_code == 422:
+        #     raise HTTPError('Unprocessable Entity for url(decoded): {}'.format(
+        #                                                 unquote(response.url)))
         response.raise_for_status()
         return response.json()
 
