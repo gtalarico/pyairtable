@@ -1,3 +1,6 @@
+# 0.7.3
+* Removed Unencoded Debug Msg due to IronPython Bug #242
+
 # 0.7.2
 * Merge Fix
 

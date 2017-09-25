@@ -42,6 +42,7 @@ class Airtable():
         session = requests.Session()
         session.auth = AirtableAuth(api_key=api_key)
         self.session = session
+        self.table_name = table_name
         self.url_table = posixpath.join(self.API_URL, base_key, table_name)
         self.is_authenticated = self.validate_session(self.url_table)
 
@@ -454,3 +455,6 @@ class Airtable():
         deleted_records = self.batch_delete(all_record_ids)
         new_records = self.batch_insert(records)
         return (new_records, deleted_records)
+
+    def __repr__(self):
+        return '<Airtable table:{}>'.format(self.table_name)
