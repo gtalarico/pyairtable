@@ -144,6 +144,7 @@ class Airtable():
         while True:
             data = self._get(self.url_table, offset=offset, **options)
             records = data.get('records', [])
+            time.sleep(self.API_LIMIT)
             yield records
             offset = data.get('offset')
             if not offset:
