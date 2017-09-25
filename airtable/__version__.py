@@ -1,4 +1,4 @@
-__version__ = '0.7.2'
+__version__ = '0.7.3'
 __name__ = 'airtable-python-wrapper'
 __description__ = 'Python API Wrapper for the Airtable API'
 __url__ = 'https://github.com/gtalarico/airtable-python-wrapper'

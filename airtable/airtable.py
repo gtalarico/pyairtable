@@ -42,6 +42,7 @@ class Airtable():
         session = requests.Session()
         session.auth = AirtableAuth(api_key=api_key)
         self.session = session
+        self.table_name = table_name
         self.url_table = posixpath.join(self.API_URL, base_key, table_name)
         self.is_authenticated = self.validate_session(self.url_table)
 
@@ -66,9 +67,11 @@ class Airtable():
         return params
 
     def _process_response(self, response):
-        if response.status_code == 422:
-            raise HTTPError('Unprocessable Entity for url(decoded): {}'.format(
-                                                        unquote(response.url)))
+        # Removed due to IronPython Bug
+        # https://github.com/IronLanguages/ironpython2/issues/242
+        # if response.status_code == 422:
+        #     raise HTTPError('Unprocessable Entity for url(decoded): {}'.format(
+        #                                                 unquote(response.url)))
         response.raise_for_status()
         return response.json()
 
@@ -144,6 +147,7 @@ class Airtable():
         while True:
             data = self._get(self.url_table, offset=offset, **options)
             records = data.get('records', [])
+            time.sleep(self.API_LIMIT)
             yield records
             offset = data.get('offset')
             if not offset:
@@ -453,3 +457,6 @@ class Airtable():
         deleted_records = self.batch_delete(all_record_ids)
         new_records = self.batch_insert(records)
         return (new_records, deleted_records)
+
+    def __repr__(self):
+        return '<Airtable table:{}>'.format(self.table_name)
