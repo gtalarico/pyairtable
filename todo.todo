@@ -1,5 +1,6 @@
 Core:
   ☐ Use New Filters for Search/Match or Remove?
+  ☐ Add default_params option (ie lock it to one view, or one max records)
   ✔ Refactor/Rename Get/GetAll @done (17-09-20 17:35)
 
 Testing:
