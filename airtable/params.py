@@ -81,7 +81,7 @@ class AirtableParams():
         Formula Param
 
         Usage:
-            >>> param = FormulaParams("FIND('WW')=1")
+            >>> param = FormulaParams("FIND('XX', COL_NAME)=1")
             >>> param.to_param_dict()
             {'formula': "FIND('WW')=1"}
 
