@@ -77,15 +77,20 @@ class AirtableParams():
         kwarg = 'page_size'
 
     class FormulaParam(_BaseParam):
+        """
+        Formula Param
+
+        Usage:
+            >>> param = FormulaParams("FIND('WW')=1")
+            >>> param.to_param_dict()
+            {'formula': "FIND('WW')=1"}
+
+        """
         param_name = 'filterByFormula'
         kwarg = 'formula'
 
-        # @classmethod
-        # def and_formula(cls, *formulas):
-        #     combined_formula = 'AND({})'.format(','.format(*formulas))
-        #     super(FormulaParam, self).__init__(combined_formula)
-
     class OffsetParam(_BaseParam):
+        """ Used Internally for offset retrieving """
         param_name = 'offset'
         kwarg = param_name
 
