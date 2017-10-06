@@ -158,7 +158,7 @@ class Airtable():
         Retrieves all records repetitively and returns a single list.
 
         >>> airtable.get_all()
-        >>> airtable.get_all(view='MyView')
+        >>> airtable.get_all(view='MyView', fields=['ColA', '-ColB'])
         >>> airtable.get_all(maxRecords=50)
         [{'fields': ... }, ...]
 
