@@ -113,6 +113,10 @@ class TestAuth():
 
 class TestAirtableGet():
 
+    def test_repr(self, airtable_read):
+        assert '<Airtable' in airtable_read.__repr__()
+        assert airtable_read.table_name in airtable_read.__repr__()
+
     def test_get(self, airtable_read):
         record = airtable_read.get('recwPQIfs4wKPyc9D')
         assert isinstance(record, dict)
