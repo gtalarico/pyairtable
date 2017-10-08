@@ -1,17 +1,88 @@
 """
-Airtable Python Wrapper
+
+Airtable Class Instance
+***********************
 
 >>> airtable = Airtable('base_key', 'table_name')
 >>> airtable.get_all()
 [{id:'rec123asa23', fields': {'Column': 'Value'}, ...}]
 
-Examples:
+For more information on Api Key and authentication see
+the :doc:`authentication`.
 
->>> airtable.get_all(view='ViewName')
+------------------------------------------------------------------------
+
+Examples
+********
+
+For a full list of available methods see the :any:`Airtable` class below.
+For more details on the Parameter filters see the documentation on the
+available :doc:`params` as well as the
+`Airtable API Docs <http://airtable.com/api>`_
+
+Record/Page Iterator:
+
+>>> for page in airtable.get_iter(view='ViewName',sort='COLUMN_A'):
+...     for record in page:
+...         value = record['fields']['COLUMN_A']
+
+Get all Records:
+
+>>> airtable.get_all(view='ViewName',sort='COLUMN_A')
+[{íd:'rec123asa23', 'fields': {'COLUMN_A': 'Value', ...}, ... ]
+
+Search:
 
 >>> airtable.search('ColumnA', 'SeachValue')
 
+Formulas:
+
+>>> airtable.get_all(formula="FIND('DUP', {COLUMN_STR})=1")
+
+
+Insert:
+
 >>> airtable.insert({'First Name', 'John'})
+
+Delete:
+
+>>> airtable.delete('recwPQIfs4wKPyc9D')
+
+------------------------------------------------------------------------
+
+Return Values
+**************
+
+Return Values: when records are returned,
+they will most often be a list of Airtable records (dictionary) in a format
+similar to this:
+
+>>> [{
+...     "records": [
+...         {
+...             "id": "recwPQIfs4wKPyc9D",
+...             "fields": {
+...                 "COLUMN_ID": "1",
+...             },
+...             "createdTime": "2017-03-14T22:04:31.000Z"
+...         },
+...         {
+...             "id": "rechOLltN9SpPHq5o",
+...             "fields": {
+...                 "COLUMN_ID": "2",
+...             },
+...             "createdTime": "2017-03-20T15:21:50.000Z"
+...         },
+...         {
+...             "id": "rec5eR7IzKSAOBHCz",
+...             "fields": {
+...                 "COLUMN_ID": "3",
+...             },
+...             "createdTime": "2017-08-05T21:47:52.000Z"
+...         }
+...     ],
+...     "offset": "rec5eR7IzKSAOBHCz"
+... }, ... ]
 
 """  #
 
@@ -61,7 +132,7 @@ class Airtable():
         """
         for param_name, param_value in params.copy().items():
             param_value = params.pop(param_name)
-            ParamClass = AirtableParams.get(param_name)
+            ParamClass = AirtableParams._get(param_name)
             new_param = ParamClass(param_value).to_param_dict()
             params.update(new_param)
         return params
@@ -70,8 +141,8 @@ class Airtable():
         # Removed due to IronPython Bug
         # https://github.com/IronLanguages/ironpython2/issues/242
         # if response.status_code == 422:
-        #     raise HTTPError('Unprocessable Entity for url(decoded): {}'.format(
-        #                                                 unquote(response.url)))
+        #     raise HTTPError('Unprocessable Entity for url(
+        #                        decoded): {}'.format(unquote(response.url)))
         response.raise_for_status()
         return response.json()
 
@@ -127,19 +198,17 @@ class Airtable():
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
-                that will be returned.
+                that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
-                If set, only the records in that view will be returned.
-                The records will be sorted according to the order of the view.
+                See :any:`ViewParam`.
             pageSize (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
+                See :any:`PageSizeParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
-                be retrieved. Default is all fields
+                be retrieved. Default is all fields. See :any:`FieldsParam`.
             sort (``list``, optional): List of fields to sort by.
-                Default order is ascending. To control direction,
-                use prefix '-' for descending,
-                or pass tuples [('field', 'asc'), ('field', 'desc')]
-            formula (``str``): Airtable formula.
+                Default order is ascending. See :any:`SortParam`.
+            formula (``str``): Airtable formula. See :any:`FormulaParam`.
 
         Returns:
             iterator (``list``): List of Records, grouped by pageSize
@@ -166,17 +235,14 @@ class Airtable():
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
-                that will be returned.
+                that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
-                If set, only the records in that view will be returned.
-                The records will be sorted according to the order of the view.
+                See :any:`ViewParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
-                be retrieved. Default is all fields
+                be retrieved. Default is all fields. See :any:`FieldsParam`.
             sort (``list``, optional): List of fields to sort by.
-                Default order is ascending. To control direction,
-                use prefix '-' for descending,
-                or pass tuples [('field', 'asc'), ('field', 'desc')]
-            formula (``str``): Airtable formula.
+                Default order is ascending. See :any:`SortParam`.
+            formula (``str``): Airtable formula. See :any:`FormulaParam`.
 
         Returns:
             records (``list``): List of Records
@@ -202,17 +268,14 @@ class Airtable():
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
-                that will be returned.
+                that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
-                If set, only the records in that view will be returned.
-                The records will be sorted according to the order of the view.
+                See :any:`ViewParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
-                be retrieved. Default is all fields
+                be retrieved. Default is all fields. See :any:`FieldsParam`.
             sort (``list``, optional): List of fields to sort by.
-                Default order is ascending. To control direction,
-                use prefix '-' for descending,
-                or pass tuples [('field', 'asc'), ('field', 'desc')]
-            formula (``str``): Airtable formula.
+                Default order is ascending. See :any:`SortParam`.
+            formula (``str``): Airtable formula. See :any:`FormulaParam`.
 
         Returns:
             record (``dict``): First record to match the field_value provided
@@ -237,17 +300,14 @@ class Airtable():
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
-                that will be returned.
+                that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
-                If set, only the records in that view will be returned.
-                The records will be sorted according to the order of the view.
+                See :any:`ViewParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
-                be retrieved. Default is all fields
+                be retrieved. Default is all fields. See :any:`FieldsParam`.
             sort (``list``, optional): List of fields to sort by.
-                Default order is ascending. To control direction,
-                use prefix '-' for descending,
-                or pass tuples [('field', 'asc'), ('field', 'desc')]
-            formula (``str``): Airtable formula.
+                Default order is ascending. See :any:`SortParam`.
+            formula (``str``): Airtable formula. See :any:`FormulaParam`.
 
         Returns:
             records (``list``): All records that matched ``field_value``
@@ -333,7 +393,7 @@ class Airtable():
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
-                that will be returned.
+                that will be returned. See :any:`MaxRecordsParam`
             maxRecords (``int``, optional): Maximum number of records to retrieve
 
         Returns:
@@ -408,7 +468,7 @@ class Airtable():
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
-                that will be returned.
+                that will be returned. See :any:`MaxRecordsParam`
             maxRecords (``int``, optional): Maximum number of records to retrieve
 
         Returns:
@@ -457,7 +517,7 @@ class Airtable():
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
-                that will be returned.
+                that will be returned. See :any:`MaxRecordsParam`
             maxRecords (``int``, optional): Maximum number of records to retrieve
 
         Returns:
