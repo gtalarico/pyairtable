@@ -28,7 +28,14 @@ Index
    :maxdepth: 2
 
    api
+   params
    authentication
+
+* :ref:`genindex`
+* :ref:`modindex`
+
+Release Notes
+*************
 
 `Release Notes <https://github.com/gtalarico/airtable-python-wrapper/blob/master/HISTORY.md>`_
 
@@ -36,16 +43,6 @@ Index
 Questions
 *********
 Post them over in the project's `Github Page <http://www.github.com/gtalarico/airtable-python-wrapper>`_
-
-
-_______________________________________________
-
-Indices and tables
-******************
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 _______________________________________________
 

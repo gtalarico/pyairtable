@@ -1,8 +1,8 @@
 Airtable Authentication
 =======================
 
-Usage
-*****
+Overview
+********
 
 .. automodule:: airtable.auth
 

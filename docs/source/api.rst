@@ -1,8 +1,8 @@
 Airtable Class
 ==============
 
-Usage
-*****
+Overview
+********
 
 .. automodule:: airtable.airtable
 
@@ -18,5 +18,6 @@ _______________________________________________
 
 Source Code
 ***********
+
 .. literalinclude:: ../../airtable/airtable.py
     :start-after: """  #

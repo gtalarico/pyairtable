@@ -1,3 +1,8 @@
+# 0.8.0
+* Docs: New Documentation on Parameter filters Docs
+* Docs: More documentation and examples.
+
+
 # 0.7.3
 * Removed Unencoded Debug Msg due to IronPython Bug #242
 
