@@ -126,16 +126,18 @@ class Airtable():
         [{'fields': ... }, ...]
 
         Keyword Args:
-            view (``str``): Name of View
-            maxRecords (``int``): The name or ID of a view.
+            maxRecords (``int``, optional): The maximum total number of records
+                that will be returned.
+            view (``str``, optional): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
             pageSize (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
-            fields (``str``, ``list``): Name of field or fields to be retrieved.
-                Default is all fields
-            sort (``list``): List of fields to sort by. Default order is
-                ascending. To control direction, use prefix '-' for descending,
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. To control direction,
+                use prefix '-' for descending,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
             formula (``str``): Airtable formula.
 
@@ -163,14 +165,16 @@ class Airtable():
         [{'fields': ... }, ...]
 
         Keyword Args:
-            view (``str``): Name of View
-            maxRecords (``int``): The name or ID of a view.
+            maxRecords (``int``, optional): The maximum total number of records
+                that will be returned.
+            view (``str``, optional): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``str``, ``list``): Name of field or fields to be retrieved.
-                Default is all fields
-            sort (``list``): List of fields to sort by. Default order is
-                ascending. To control direction, use prefix '-' for descending,
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. To control direction,
+                use prefix '-' for descending,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
             formula (``str``): Airtable formula.
 
@@ -197,14 +201,16 @@ class Airtable():
             field_value (``str``): Value of field to match
 
         Keyword Args:
-            view (``str``): Name of View
-            maxRecords (``int``): The name or ID of a view.
+            maxRecords (``int``, optional): The maximum total number of records
+                that will be returned.
+            view (``str``, optional): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``str``, ``list``): Name of field or fields to be retrieved.
-                Default is all fields
-            sort (``list``): List of fields to sort by. Default order is
-                ascending. To control direction, use prefix '-' for descending,
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. To control direction,
+                use prefix '-' for descending,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
             formula (``str``): Airtable formula.
 
@@ -230,14 +236,16 @@ class Airtable():
             field_value (``str``)
 
         Keyword Args:
-            view (``str``): Name of View
-            maxRecords (``int``): The name or ID of a view.
+            maxRecords (``int``, optional): The maximum total number of records
+                that will be returned.
+            view (``str``, optional): The name or ID of a view.
                 If set, only the records in that view will be returned.
                 The records will be sorted according to the order of the view.
-            fields (``str``, ``list``): Name of field or fields to be retrieved.
-                Default is all fields
-            sort (``list``): List of fields to sort by. Default order is
-                ascending. To control direction, use prefix '-' for descending,
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. To control direction,
+                use prefix '-' for descending,
                 or pass tuples [('field', 'asc'), ('field', 'desc')]
             formula (``str``): Airtable formula.
 
@@ -324,8 +332,9 @@ class Airtable():
                 Must be dictionary with Column names as Key
 
         Keyword Args:
-            view (``str``): Name of View
-            maxRecords (``int``): Maximum number of records to retrieve
+            maxRecords (``int``, optional): The maximum total number of records
+                that will be returned.
+            maxRecords (``int``, optional): Maximum number of records to retrieve
 
         Returns:
             record (``dict``): Updated record
@@ -398,8 +407,9 @@ class Airtable():
             field_value(``str``): Value to match
 
         Keyword Args:
-            view (``str``): Name of View
-            maxRecords (``int``): Maximum number of records to retrieve
+            maxRecords (``int``, optional): The maximum total number of records
+                that will be returned.
+            maxRecords (``int``, optional): Maximum number of records to retrieve
 
         Returns:
             record (``dict``): Deleted Record
@@ -446,8 +456,9 @@ class Airtable():
             records(``list``): Records to insert
 
         Keyword Args:
-            view (``str``): Name of View
-            maxRecords (``int``): Maximum number of records to retrieve
+            maxRecords (``int``, optional): The maximum total number of records
+                that will be returned.
+            maxRecords (``int``, optional): Maximum number of records to retrieve
 
         Returns:
             records (``tuple``): (new_records, deleted_records)
