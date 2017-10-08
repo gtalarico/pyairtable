@@ -192,8 +192,9 @@ class Airtable():
         Returns iterator with lists in batches according to pageSize.
         To get all records at once use :any:`get_all`
 
-        >>> for records in airtable.get_iter():
-        >>>     print(records)
+        >>> for page in airtable.get_iter():
+        ...     for record in page:
+        ...         print(record)
         [{'fields': ... }, ...]
 
         Keyword Args:
@@ -201,14 +202,15 @@ class Airtable():
                 that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
                 See :any:`ViewParam`.
-            pageSize (``int``): The number of records returned in each request.
-                Must be less than or equal to 100. Default is 100.
-                See :any:`PageSizeParam`.
+            pageSize (``int``, optional ): The number of records returned
+                in each request. Must be less than or equal to 100.
+                Default is 100. See :any:`PageSizeParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
                 be retrieved. Default is all fields. See :any:`FieldsParam`.
             sort (``list``, optional): List of fields to sort by.
                 Default order is ascending. See :any:`SortParam`.
-            formula (``str``): Airtable formula. See :any:`FormulaParam`.
+            formula (``str``, optional): Airtable formula.
+                See :any:`FormulaParam`.
 
         Returns:
             iterator (``list``): List of Records, grouped by pageSize
@@ -242,7 +244,8 @@ class Airtable():
                 be retrieved. Default is all fields. See :any:`FieldsParam`.
             sort (``list``, optional): List of fields to sort by.
                 Default order is ascending. See :any:`SortParam`.
-            formula (``str``): Airtable formula. See :any:`FormulaParam`.
+            formula (``str``, optional): Airtable formula.
+                See :any:`FormulaParam`.
 
         Returns:
             records (``list``): List of Records
@@ -263,8 +266,8 @@ class Airtable():
         {'fields': {'Name': 'John'} }
 
         Args:
-            field_name (``str``): Name of field to match (column name)
-            field_value (``str``): Value of field to match
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
@@ -275,28 +278,28 @@ class Airtable():
                 be retrieved. Default is all fields. See :any:`FieldsParam`.
             sort (``list``, optional): List of fields to sort by.
                 Default order is ascending. See :any:`SortParam`.
-            formula (``str``): Airtable formula. See :any:`FormulaParam`.
 
         Returns:
             record (``dict``): First record to match the field_value provided
         """
+        formula = "{{{name}}}={value}".format(name=field_name,
+                                              value=field_value)
+        options['formula'] = formula
         for record in self.get_all(**options):
-            if record.get('fields', {}).get(field_name) == field_value:
-                return record
+            return record
         else:
              return {}
 
     def search(self, field_name, field_value, record=None, **options):
         """
-        Returns All matching records found in :any:`get_all`
-
+        Returns all matching records found in :any:`get_all`
 
         >>> airtable.search('Gender', 'Male')
         [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
 
         Args:
-            field_name (``str``)
-            field_value (``str``)
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
 
         Keyword Args:
             maxRecords (``int``, optional): The maximum total number of records
@@ -307,12 +310,16 @@ class Airtable():
                 be retrieved. Default is all fields. See :any:`FieldsParam`.
             sort (``list``, optional): List of fields to sort by.
                 Default order is ascending. See :any:`SortParam`.
-            formula (``str``): Airtable formula. See :any:`FormulaParam`.
 
         Returns:
             records (``list``): All records that matched ``field_value``
+
         """
         records = []
+        formula = "{{{name}}}={value}".format(name=field_name,
+                                              value=field_value)
+        options['formula'] = formula
+
         for record in self.get_all(**options):
             if record.get('fields', {}).get(field_name) == field_value:
                 records.append(record)
@@ -331,6 +338,7 @@ class Airtable():
 
         Returns:
             record (``dict``): Inserted record
+
         """
         return self._post(self.url_table, json_data={"fields": fields})
 
@@ -345,7 +353,8 @@ class Airtable():
     def batch_insert(self, records):
         """
         Calls :any:`insert` repetitively, following set API Rate Limit (5/sec)
-        To change the rate limit use ``airtable.API_LIMIT = 0.2`` (5 per second)
+        To change the rate limit use ``airtable.API_LIMIT = 0.2``
+        (5 per second)
 
         >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
         >>> airtable.batch_insert(records)
@@ -361,7 +370,8 @@ class Airtable():
 
     def update(self, record_id, fields):
         """
-        Updates a record by its record id or by matching fields.
+        Updates a record by its record id.
+        Only Fields passed are updated, the rest are left as is.
 
         >>> record = airtable.match('Employee Id', 'DD13332454')
         >>> fields = {'Status': 'Fired'}
@@ -380,21 +390,23 @@ class Airtable():
 
     def update_by_field(self, field_name, field_value, fields, **options):
         """
-        Updates a record with first match.
+        Updates the first record to match field name and value.
+        Only Fields passed are updated, the rest are left as is.
 
         >>> record = {'Name': 'John', 'Tel': '540-255-5522'}
         >>> airtable.update_by_field('Name', 'John', record)
 
         Args:
-            field_name(``str``): Name of the field to search
-            field_value(``str``): Value to match
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
             fields(``dict``): Fields to update.
                 Must be dictionary with Column names as Key
 
         Keyword Args:
-            maxRecords (``int``, optional): The maximum total number of records
-                that will be returned. See :any:`MaxRecordsParam`
-            maxRecords (``int``, optional): Maximum number of records to retrieve
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParam`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParam`.
 
         Returns:
             record (``dict``): Updated record
@@ -404,7 +416,10 @@ class Airtable():
 
     def replace(self, record_id, fields):
         """
-        Replaces a record by its record id
+        Replaces a record by its record id.
+        All Fields are updated to match the new ``fields`` provided.
+        If a field is not included in ``fields``, value will bet set to null.
+        To update only selected fields, use :any:`update`.
 
         >>> record = airtable.match('Seat Number', '22A')
         >>> fields = {'PassangerName': 'Mike', 'Passport': 'YASD232-23'}
@@ -412,7 +427,8 @@ class Airtable():
 
         Args:
             record_id(``str``): Id of Record to update
-            fields(``dict``): Fields to replace. Must be dictionary with Column names as Key
+            fields(``dict``): Fields to replace with.
+                Must be dictionary with Column names as Key.
 
         Returns:
             record (``dict``): New record
@@ -422,17 +438,22 @@ class Airtable():
 
     def replace_by_field(self, field_name, field_value, fields, **options):
         """
-        Replaces a record with first match.
+        Replaces the first record to match field name and value.
+        All Fields are updated to match the new ``fields`` provided.
+        If a field is not included in ``fields``, value will bet set to null.
+        To update only selected fields, use :any:`update`.
 
         Args:
-            field_name(``str``): Name of the field to search
-            field_value(``str``): Value to match
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
             fields(``dict``): Fields to replace with.
-                Must be dictionary with Column names as Key
+                Must be dictionary with Column names as Key.
 
-        Args:
-            record_id(``str``): Id of Record to update
-            fields(``dict``): Fields to replace. Must be dictionary with Column names as Key
+        Keyword Args:
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParam`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParam`.
 
         Returns:
             record (``dict``): New record
@@ -458,23 +479,24 @@ class Airtable():
 
     def delete_by_field(self, field_name, field_value, **options):
         """
-        Deletes first record  to match provided field and value
+        Deletes first record  to match provided ``field_name`` and
+        ``field_value``.
 
         >>> record = airtable.delete_by_field('Employee Id', 'DD13332454')
 
         Args:
-            field_name(``str``): Name of the field to search
-            field_value(``str``): Value to match
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
 
         Keyword Args:
-            maxRecords (``int``, optional): The maximum total number of records
-                that will be returned. See :any:`MaxRecordsParam`
-            maxRecords (``int``, optional): Maximum number of records to retrieve
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParam`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParam`.
 
         Returns:
             record (``dict``): Deleted Record
         """
-
         record = self.match(field_name, field_value, **options)
         record_url = self.record_url(record['id'])
         return self._delete(record_url)
