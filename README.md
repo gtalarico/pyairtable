@@ -23,7 +23,10 @@ http://airtable-python-wrapper.readthedocs.io/
 ### Usage Example
 
 Below are some of the methods available in the wrapper.
-For a full list visit the [docs](http://airtable-python-wrapper.readthedocs.io/)
+
+For the full list and documentation visit the [docs](http://airtable-python-wrapper.readthedocs.io/)
+
+Additional examples also in the [Jupyter Notebook](https://github.com/gtalarico/airtable-python-wrapper/blob/master/Airtable.ipynb).
 
 ```
 airtable = Airtable('baseKey', 'table_name')
