@@ -29,7 +29,7 @@ Record/Page Iterator:
 Get all Records:
 
 >>> airtable.get_all(view='ViewName',sort='COLUMN_A')
-[{íd:'rec123asa23', 'fields': {'COLUMN_A': 'Value', ...}, ... ]
+[{id:'rec123asa23', 'fields': {'COLUMN_A': 'Value', ...}, ... ]
 
 Search:
 
