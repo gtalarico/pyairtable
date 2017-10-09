@@ -46,4 +46,4 @@ def test_url_escape(db_key, table_names, baseurl, monkeypatch):
     for name, escaped in table_names.items():
         tmp_at = Airtable(base_key=db_key, table_name=name, api_key='key1234')
         assert str(tmp_at.url_table) == _make_url(baseurl, escaped),\
-            "Class-generated url should be properly escaped."""
+            "Class-generated url should be properly escaped."
