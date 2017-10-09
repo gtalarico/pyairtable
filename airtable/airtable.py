@@ -48,6 +48,10 @@ Delete:
 
 >>> airtable.delete('recwPQIfs4wKPyc9D')
 
+
+You can see the Airtable Class in action in this
+`Jupyter Notebook <https://github.com/gtalarico/airtable-python-wrapper/blob/master/Airtable.ipynb>`_
+
 ------------------------------------------------------------------------
 
 Return Values

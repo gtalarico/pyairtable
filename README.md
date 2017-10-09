@@ -26,7 +26,7 @@ Below are some of the methods available in the wrapper.
 
 For the full list and documentation visit the [docs](http://airtable-python-wrapper.readthedocs.io/)
 
-Additional examples also in the [Jupyter Notebook](https://github.com/gtalarico/airtable-python-wrapper/blob/master/Airtable.ipynb).
+You can see the wrapper in action in this [Jupyter Notebook](https://github.com/gtalarico/airtable-python-wrapper/blob/master/Airtable.ipynb).
 
 ```
 airtable = Airtable('baseKey', 'table_name')
