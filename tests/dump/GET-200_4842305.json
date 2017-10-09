@@ -1,0 +1,24 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20READ?filterByFormula=%7BCOLUMN_STR%7D%3D%27DUPLICATE%27&view=ViewAll",
+    "method": "GET",
+    "response_json": {
+        "records": [
+            {
+                "createdTime": "2017-03-20T15:21:50.000Z",
+                "fields": {
+                    "COLUMN_ID": "2",
+                    "COLUMN_STR": "DUPLICATE"
+                },
+                "id": "rechOLltN9SpPHq5o"
+            },
+            {
+                "createdTime": "2017-08-05T21:47:52.000Z",
+                "fields": {
+                    "COLUMN_ID": "3",
+                    "COLUMN_STR": "DUPLICATE"
+                },
+                "id": "rec5eR7IzKSAOBHCz"
+            }
+        ]
+    }
+}

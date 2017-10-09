@@ -1,0 +1,10 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20READ?fields%5B%5D=X&sort%5B0%5D%5Bfield%5D=NON_EXISTING&view=ViewOne&sort%5B0%5D%5Bdirection%5D=asc",
+    "method": "GET",
+    "response_json": {
+        "error": {
+            "type": "UNKNOWN_FIELD_NAME",
+            "message": "Could not find a field named NON_EXISTING"
+        }
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20READ/recwPQIfs4wKPyc9D",
+    "method": "PUT",
+    "response_json": {
+        "createdTime": "2017-03-14T22:04:31.000Z",
+        "fields": {
+            "COLUMN_ID": "1",
+            "COLUMN_UPDATE": "B"
+        },
+        "id": "recwPQIfs4wKPyc9D"
+    }
+}

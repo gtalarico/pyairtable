@@ -1,0 +1,8 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20WRITE/reclIoucZv0XVI56B",
+    "method": "DELETE",
+    "response_json": {
+        "deleted": true,
+        "id": "reclIoucZv0XVI56B"
+    }
+}

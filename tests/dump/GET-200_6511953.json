@@ -1,0 +1,17 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20READ?view=ViewOne",
+    "method": "GET",
+    "response_json": {
+        "records": [
+            {
+                "createdTime": "2017-03-14T22:04:31.000Z",
+                "fields": {
+                    "COLUMN_ID": "1",
+                    "COLUMN_STR": "UNIQUE",
+                    "COLUMN_UPDATE": "A"
+                },
+                "id": "recwPQIfs4wKPyc9D"
+            }
+        ]
+    }
+}

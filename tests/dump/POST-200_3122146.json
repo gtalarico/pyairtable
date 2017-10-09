@@ -1,0 +1,12 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20WRITE",
+    "method": "POST",
+    "response_json": {
+        "createdTime": "2017-10-08T23:57:51.766Z",
+        "fields": {
+            "UUID": "5f4c9c52-0f08-40af-8c74-7e197ee3beab",
+            "String": "TestAirTableCreate"
+        },
+        "id": "recIC2sKHmjIeyUmM"
+    }
+}

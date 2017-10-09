@@ -1,0 +1,48 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20READ?sort%5B0%5D%5Bfield%5D=COLUMN_ID&maxRecords=5&sort%5B0%5D%5Bdirection%5D=asc",
+    "method": "GET",
+    "response_json": {
+        "records": [
+            {
+                "createdTime": "2017-03-14T22:04:31.000Z",
+                "fields": {
+                    "COLUMN_ID": "1",
+                    "COLUMN_STR": "UNIQUE",
+                    "COLUMN_UPDATE": "A"
+                },
+                "id": "recwPQIfs4wKPyc9D"
+            },
+            {
+                "createdTime": "2017-03-20T15:21:50.000Z",
+                "fields": {
+                    "COLUMN_ID": "2",
+                    "COLUMN_STR": "DUPLICATE"
+                },
+                "id": "rechOLltN9SpPHq5o"
+            },
+            {
+                "createdTime": "2017-08-05T21:47:52.000Z",
+                "fields": {
+                    "COLUMN_ID": "3",
+                    "COLUMN_STR": "DUPLICATE"
+                },
+                "id": "rec5eR7IzKSAOBHCz"
+            },
+            {
+                "createdTime": "2017-08-05T23:12:32.000Z",
+                "fields": {
+                    "COLUMN_ID": "4",
+                    "COLUMN_UPDATE": "A"
+                },
+                "id": "reczgig7DLuqvhPE3"
+            },
+            {
+                "createdTime": "2017-08-05T23:12:32.000Z",
+                "fields": {
+                    "COLUMN_ID": "5"
+                },
+                "id": "rec6YVuYv27rlzARi"
+            }
+        ]
+    }
+}

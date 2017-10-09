@@ -1,0 +1,12 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20WRITE",
+    "method": "POST",
+    "response_json": {
+        "createdTime": "2017-10-08T23:58:01.993Z",
+        "fields": {
+            "UUID": "4e8f9cfa-543b-492f-962b-e16930b49cae",
+            "String": "MIRROR"
+        },
+        "id": "recixrQH4gLELErp5"
+    }
+}

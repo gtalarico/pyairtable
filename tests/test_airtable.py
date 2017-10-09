@@ -220,6 +220,13 @@ class TestAirtableGet():
         assert records[1]['fields'].get('COLUMN_ID') == '3'
         assert all([True for r in records if r['fields']['COLUMN_STR'] == 'DUPLICATE'])
 
+    def test_formula_from_name_and_value(self, airtable_read):
+        formula = airtable_read.formula_from_name_and_value('COL', 'VAL')
+        assert formula == "{COL}='VAL'"
+
+        formula = airtable_read.formula_from_name_and_value('COL', 8)
+        assert formula == "{COL}=8"
+
 
 class TestAirtableCreate():
 

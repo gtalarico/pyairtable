@@ -1,0 +1,15 @@
+{
+    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20READ?filterByFormula=COLUMN_ID%3D%275%27",
+    "method": "GET",
+    "response_json": {
+        "records": [
+            {
+                "createdTime": "2017-08-05T23:12:32.000Z",
+                "fields": {
+                    "COLUMN_ID": "5"
+                },
+                "id": "rec6YVuYv27rlzARi"
+            }
+        ]
+    }
+}

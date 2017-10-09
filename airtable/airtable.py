@@ -152,7 +152,28 @@ class Airtable():
 
     def _request(self, method, url, params=None, json_data=None):
         response = self.session.request(method, url, params=params, json=json_data)
+        # self._dump_request_data(response)
         return self._process_response(response)
+
+    # def _dump_request_data(self, response):
+    #     """ For Debugging """
+    #     timestamp = str(time.time()).split('.')[-1]
+    #     url = response.request.url
+    #     method = response.request.method
+    #     response_json = response.json()
+    #     status = response.status_code
+    #     filepath = os.path.join('tests', 'dump', '{}-{}_{}.json'.format(
+    #                                                                 method,
+    #                                                                 status,
+    #                                                                 timestamp))
+    #     dump = {
+    #             'url': url,
+    #             'method': method,
+    #             'response_json': response_json,
+    #             }
+    #     with open(filepath, 'w') as fp:
+    #         json.dump(dump, fp, indent=4)
+
 
     def _get(self, url, **params):
         processed_params = self._process_params(params)
@@ -282,8 +303,7 @@ class Airtable():
         Returns:
             record (``dict``): First record to match the field_value provided
         """
-        formula = "{{{name}}}={value}".format(name=field_name,
-                                              value=field_value)
+        formula = self.formula_from_name_and_value(field_name, field_value)
         options['formula'] = formula
         for record in self.get_all(**options):
             return record
@@ -316,13 +336,9 @@ class Airtable():
 
         """
         records = []
-        formula = "{{{name}}}={value}".format(name=field_name,
-                                              value=field_value)
+        formula = self.formula_from_name_and_value(field_name, field_value)
         options['formula'] = formula
-
-        for record in self.get_all(**options):
-            if record.get('fields', {}).get(field_name) == field_value:
-                records.append(record)
+        records = self.get_all(**options)
         return records
 
     def insert(self, fields):
@@ -550,6 +566,16 @@ class Airtable():
         deleted_records = self.batch_delete(all_record_ids)
         new_records = self.batch_insert(records)
         return (new_records, deleted_records)
+
+    @staticmethod
+    def formula_from_name_and_value(field_name, field_value):
+        """ Creates a formula to match cells from from field_name and value """
+        if isinstance(field_value, str):
+            field_value = "'{}'".format(field_value)
+
+        formula = "{{{name}}}={value}".format(name=field_name,
+                                              value=field_value)
+        return formula
 
     def __repr__(self):
         return '<Airtable table:{}>'.format(self.table_name)
