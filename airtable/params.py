@@ -88,7 +88,7 @@ class AirtableParams():
 
         Usage:
 
-        >>> airtable.get_all(view='My View')
+        >>> airtable.get_all(max_records=10)
 
         Args:
             max_records (``int``): The maximum total number of records that
@@ -147,7 +147,7 @@ class AirtableParams():
         >>> airtable.get_all(page_size=50)
 
         Args:
-            formula (``int``): The number of records returned in each request.
+            page_size (``int``): The number of records returned in each request.
                 Must be less than or equal to 100. Default is 100.
 
         """

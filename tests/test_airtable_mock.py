@@ -5,57 +5,58 @@ from requests_mock import Mocker
 import requests
 import uuid
 import posixpath
+import os
+import json
+from six.moves.urllib.parse import urlencode, quote
 
 from airtable import Airtable
 from airtable.auth import AirtableAuth
 
-"""
-=======
-TABLE A
-=======
+tests_dir = os.path.dirname(__file__)
+dumps_dir = os.path.join(tests_dir, 'dump')
 
-ViewAll
-----------------------
-COLUMN_ID | COLUMN_STR
-    1           A
-    2           B
-    3           C
+def collect_dumps():
+    dumps = []
+    for dump in os.listdir(dumps_dir):
+        dump_filepath = os.path.join(dumps_dir, dump)
+        with open(dump_filepath) as fp:
+            dump_dict = json.load(fp)
+        dumps.append(dump_dict)
+    return dumps
 
-ViewOne (COLUMN_ID == 1)
-----------------------
-COLUMN_ID | COLUMN_STR
-    1           A
+dumps = collect_dumps()
 
-=======
-TABLE B
-=======
+def find_dump(url, method):
+    for dump in dumps:
+        if dump['url'] == url and dump['method'] == method:
+            return dump
+    else:
+        raise Exception('Dump not found')
 
-"""
+def build_url(table_name, params=None):
+    table_name = quote(table_name)
+    url = posixpath.join(Airtable.API_URL, TEST_BASE_KEY, table_name)
+    if params:
+        url += '?' + urlencode(params)
+    return url
+
+
+    # import re
+    # url_match = re.compile(Airtable.API_URL + '/.*')
+    # table_a_url = posixpath.join(Airtable.API_URL, TEST_BASE_KEY, TEST_TABLE_A)
+    # table_b_url = posixpath.join(Airtable.API_URL, TEST_BASE_KEY, TEST_TABLE_B)
+
+
 TEST_BASE_KEY = 'appJMY16gZDQrMWpA'
-TEST_TABLE_A = 'TABLE_READ'
-TEST_TABLE_B = 'TABLE_WRITE'
-
-import re
-url_match = re.compile(Airtable.API_URL + '/.*')
-table_a_url = posixpath.join(Airtable.API_URL, TEST_BASE_KEY, TEST_TABLE_A)
-table_b_url = posixpath.join(Airtable.API_URL, TEST_BASE_KEY, TEST_TABLE_B)
+TEST_TABLE_NAME = 'TABLE READ'
 
 @pytest.fixture(scope='session')
-def airtable_read():
+def airtable_mock():
     with Mocker() as m:
-        m.get(table_a_url, status_code=200)
-        airtable = Airtable(TEST_BASE_KEY, TEST_TABLE_A)
-    assert airtable.is_authenticated is True
+        url = build_url(TEST_TABLE_NAME, params={'maxRecords': 1})
+        m.get(url, status_code=200)
+        airtable = Airtable(TEST_BASE_KEY, TEST_TABLE_NAME)
     return airtable
-
-@pytest.fixture(scope='session')
-def airtable_write():
-    with Mocker() as m:
-        m.get(table_b_url, status_code=200)
-        airtable = Airtable(TEST_BASE_KEY, TEST_TABLE_B)
-    assert airtable.is_authenticated is True
-    return airtable
-
 
 class TestAuth():
 
@@ -75,19 +76,19 @@ class TestAuth():
         assert 'Authorization' in session.headers
         assert 'Bearer' in session.headers['Authorization']
 
-    def test_authorization_is(self, airtable_read):
-        assert airtable_read.is_authenticated
+    def test_authorization_is(self, airtable_mock):
+        assert airtable_mock.is_authenticated
 #
-# class TestAirtableGet():
+class TestAirtableGet():
 #
-#     def test_get(self, airtable_read):
-#         with Mocker() as m:
-#             m.get(table_a_url, status_code=200)
-#             iterator = airtable_read.get(view='ViewAll')
-#             for n, records in enumerate(iterator, 1):
-#                 assert isinstance(records, list)
-#                 assert len(records) == 100
-#                 assert records[0]['fields']['COLUMN_ID'] in ['1', '101', '201']
+    def test_get(self, airtable_mock):
+        with Mocker() as m:
+            m.get(table_a_url, status_code=200)
+            iterator = airtable_read.get(view='ViewAll')
+            for n, records in enumerate(iterator, 1):
+                assert isinstance(records, list)
+                assert len(records) == 100
+                assert records[0]['fields']['COLUMN_ID'] in ['1', '101', '201']
 
     # def test_get_all(self, airtable_read):
     #     records = airtable_read.get_all()

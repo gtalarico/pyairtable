@@ -223,11 +223,11 @@ class Airtable():
         [{'fields': ... }, ...]
 
         Keyword Args:
-            maxRecords (``int``, optional): The maximum total number of records
-                that will be returned. See :any:`MaxRecordsParam`
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
                 See :any:`ViewParam`.
-            pageSize (``int``, optional ): The number of records returned
+            page_size (``int``, optional ): The number of records returned
                 in each request. Must be less than or equal to 100.
                 Default is 100. See :any:`PageSizeParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
@@ -261,8 +261,8 @@ class Airtable():
         [{'fields': ... }, ...]
 
         Keyword Args:
-            maxRecords (``int``, optional): The maximum total number of records
-                that will be returned. See :any:`MaxRecordsParam`
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
                 See :any:`ViewParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
@@ -295,8 +295,8 @@ class Airtable():
             field_value (``str``): Value of field to match.
 
         Keyword Args:
-            maxRecords (``int``, optional): The maximum total number of records
-                that will be returned. See :any:`MaxRecordsParam`
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
                 See :any:`ViewParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
@@ -326,8 +326,8 @@ class Airtable():
             field_value (``str``): Value of field to match.
 
         Keyword Args:
-            maxRecords (``int``, optional): The maximum total number of records
-                that will be returned. See :any:`MaxRecordsParam`
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
                 See :any:`ViewParam`.
             fields (``str``, ``list``, optional): Name of field or fields to
@@ -558,9 +558,10 @@ class Airtable():
             records(``list``): Records to insert
 
         Keyword Args:
-            maxRecords (``int``, optional): The maximum total number of records
-                that will be returned. See :any:`MaxRecordsParam`
-            maxRecords (``int``, optional): Maximum number of records to retrieve
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParam`
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParam`.
 
         Returns:
             records (``tuple``): (new_records, deleted_records)
