@@ -94,6 +94,7 @@ import os
 import sys
 import json
 import requests
+from collections import OrderedDict
 from requests.exceptions import HTTPError
 import posixpath
 import time
@@ -138,12 +139,12 @@ class Airtable():
         """
         Process params names or values as needed using filters
         """
-        for param_name, param_value in params.copy().items():
-            param_value = params.pop(param_name)
+        new_params = OrderedDict()
+        for param_name, param_value in sorted(params.items()):
+            param_value = params[param_name]
             ParamClass = AirtableParams._get(param_name)
-            new_param = ParamClass(param_value).to_param_dict()
-            params.update(new_param)
-        return params
+            new_params.update(ParamClass(param_value).to_param_dict())
+        return new_params
 
     def _process_response(self, response):
         # Reports Decoded 422 Url for better troubleshooting
@@ -161,28 +162,7 @@ class Airtable():
 
     def _request(self, method, url, params=None, json_data=None):
         response = self.session.request(method, url, params=params, json=json_data)
-        # self._dump_request_data(response)
         return self._process_response(response)
-
-    # def _dump_request_data(self, response):
-    #     """ For Debugging """
-    #     timestamp = str(time.time()).split('.')[-1]
-    #     url = response.request.url
-    #     method = response.request.method
-    #     response_json = response.json()
-    #     status = response.status_code
-    #     filepath = os.path.join('tests', 'dump', '{}-{}_{}.json'.format(
-    #                                                                 method,
-    #                                                                 status,
-    #                                                                 timestamp))
-    #     dump = {
-    #             'url': url,
-    #             'method': method,
-    #             'response_json': response_json,
-    #             }
-    #     with open(filepath, 'w') as fp:
-    #         json.dump(dump, fp, indent=4)
-
 
     def _get(self, url, **params):
         processed_params = self._process_params(params)
@@ -312,7 +292,8 @@ class Airtable():
         Returns:
             record (``dict``): First record to match the field_value provided
         """
-        formula = self.formula_from_name_and_value(field_name, field_value)
+        from_name_and_value = AirtableParams.FormulaParam.from_name_and_value
+        formula = from_name_and_value(field_name, field_value)
         options['formula'] = formula
         for record in self.get_all(**options):
             return record
@@ -345,7 +326,8 @@ class Airtable():
 
         """
         records = []
-        formula = self.formula_from_name_and_value(field_name, field_value)
+        from_name_and_value = AirtableParams.FormulaParam.from_name_and_value
+        formula = from_name_and_value(field_name, field_value)
         options['formula'] = formula
         records = self.get_all(**options)
         return records
@@ -576,16 +558,6 @@ class Airtable():
         deleted_records = self.batch_delete(all_record_ids)
         new_records = self.batch_insert(records)
         return (new_records, deleted_records)
-
-    @staticmethod
-    def formula_from_name_and_value(field_name, field_value):
-        """ Creates a formula to match cells from from field_name and value """
-        if isinstance(field_value, str):
-            field_value = "'{}'".format(field_value)
-
-        formula = "{{{name}}}={value}".format(name=field_name,
-                                              value=field_value)
-        return formula
 
     def __repr__(self):
         return '<Airtable table:{}>'.format(self.table_name)

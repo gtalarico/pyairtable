@@ -16,7 +16,7 @@ def build_url(base_key, table_name, params=None):
     return url
 
 fake_api_key = 'FakeApiKey'
-real_api_key = os.environ['AIRTABLE_API_KEY']
+api = os.environ['AIRTABLE_API_KEY']
 base_key = 'appJMY16gZDQrMWpA'
 table_name = 'TABLE READ'
 table_url = build_url(base_key,table_name)
@@ -27,13 +27,13 @@ def mock_airtable():
     with Mocker() as m:
         mock_url = build_url(base_key, table_name, params={'maxRecords': 1})
         m.get(mock_url, status_code=200)
-        airtable = Airtable(base_key, table_name)
+        airtable = Airtable(base_key, table_name, api_key=fake_api_key)
     return airtable
 
 @pytest.fixture(scope='session')
 def airtable():
     """ Creates a Mock Airtable Base  """
-    airtable = Airtable(base_key, table_name)
+    airtable = Airtable(base_key, table_name, api_key=api_key)
     clear_table(airtable)
     populate_table(airtable)
     return airtable
