@@ -25,7 +25,7 @@ base_key = 'appJMY16gZDQrMWpA'
 table_name = 'TABLE READ'
 table_url = build_url(base_key,table_name)
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='class')
 def mock_airtable():
     """ Creates a Mock Airtable Base  """
     with Mocker() as m:
@@ -34,27 +34,39 @@ def mock_airtable():
         airtable = Airtable(base_key, table_name, api_key=fake_api_key)
     return airtable
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='class')
 def airtable():
     """ Creates a Mock Airtable Base  """
     airtable = Airtable(base_key, table_name, api_key=api_key)
-    reset_table(airtable)
     return airtable
 
+@pytest.fixture(scope='class')
+def clean_airtable():
+    airtable = Airtable(base_key, table_name, api_key=api_key)
+    reset_table(airtable)
+    yield
+    reset_table(airtable)
+
 def reset_table(airtable):
+    print('>>> Resetting Table')
     records = airtable.get_all(sort='COLUMN_INT')
     data = table_data()
     for n, row in enumerate(data, 0):
         try:
             record = records[n]
         except IndexError:
-            print('Creating Record: {}'.format(row))
+            print('>>> Creating Record: {}'.format(row))
             airtable.insert(row)
         else:
             if row != record['fields']:
                 airtable.replace(record['id'], row)
-                print('Updating Record: {}'.format(record))
-    print('Test Table Reset')
+                print('>>> Updating Record: {}'.format(record))
+
+    for record in records:
+        if record['fields']['COLUMN_INT'] not in range(1, 105):
+            airtable.delete(record['id'])
+            print('>>> Deleting Record: {}'.format(record))
+    print('>>> Test Table Reset Done')
 
 def table_data():
     data = []

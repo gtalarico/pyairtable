@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import pytest
 import os
 import requests
-import uuid
 from requests_mock import Mocker
 from posixpath import join as urljoin
 from collections import defaultdict
@@ -13,6 +12,7 @@ from airtable.params import AirtableParams
 
 from .pytest_fixtures import mock_airtable, airtable, Airtable, build_url
 from .pytest_fixtures import table_url, base_key, table_name, fake_api_key
+from .pytest_fixtures import table_data, reset_table, clean_airtable
 
 
 filepath = os.path.join('tests', 'mock_responses.json')
@@ -67,6 +67,7 @@ class TestAirtableMethods():
             airtable = Airtable(base_key, table_name, api_key=fake_api_key)
 
 
+@pytest.mark.usefixtures("clean_airtable")
 class TestAirtableGet():
 
     def test_get(self, airtable):
@@ -192,53 +193,48 @@ class TestAirtableGet():
         assert formula == "{COL}=8"
 
 
-# class TestAirtableCreate():
+@pytest.mark.usefixtures("clean_airtable")
+class TestCreate():
 
-#     @pytest.fixture
-#     def row(self):
-#         return  {'UUID': str(uuid.uuid4()), 'String': 'TestAirTableCreate'}
+    def test_create_one(self, airtable):
+        record = {'COLUMN_INT': 999}
+        response = airtable.insert(record)
+        assert 'id' in response
+        assert response['fields']['COLUMN_INT'] == 999
 
-#     def test_create_one(self, row, airtable_write):
-#         response = airtable_write.insert(row)
-#         assert 'id' in response
-
-#     def test_create_batch(self, airtable_write):
-#         rows = [self.row() for i in range(5)]
-#         responses = airtable_write.batch_insert(rows)
-#         for response in responses:
-#             assert 'id' in response
+    def test_create_batch(self, airtable):
+        rows = [{'COLUMN_INT': i} for i in range(200, 203)]
+        responses = airtable.batch_insert(rows)
+        assert len(responses) == 3
+        for response in responses:
+            assert 'id' in response
+            assert response['fields']['COLUMN_INT'] in range(200, 203)
 
 
-# class TestAirtableUpdate():
+@pytest.mark.usefixtures("clean_airtable")
+class TestUpdate():
 
-#     @pytest.fixture
-#     def old_field(self):
-#         return {'COLUMN_UPDATE': 'A'}
+    @pytest.fixture
+    def old_field(self):
+        return {'COLUMN_INT': 1}
 
-#     @pytest.fixture
-#     def new_field(self):
-#         return {'COLUMN_UPDATE': 'B'}
+    @pytest.fixture
+    def new_field(self):
+        return {'COLUMN_INT': 500}
 
-#     def test_update(self, airtable, new_field, old_field):
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'A'
+    def test_update(self, airtable, new_field, old_field):
+        record = airtable.match('COLUMN_INT', 104)
+        assert record['fields']['COLUMN_INT'] == 104
 
-#         airtable.update(record['id'], new_field)
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'B'
+        new_record = airtable.update(record['id'], new_field)
+        record = airtable.get(new_record['id'])
+        assert record['fields']['COLUMN_INT'] == 500
 
-#         airtable.update(record['id'], old_field)
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'A'
-
-#     def test_update_by_field(self, airtable, new_field, old_field):
-#         airtable.update_by_field('COLUMN_UPDATE', 'A', new_field)
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'B'
-
-#         airtable.update(record['id'], old_field)
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'A'
+    def test_update_by_field(self, airtable, new_field, old_field):
+        new_record = airtable.update_by_field('COLUMN_INT', 104,
+                                              new_field, sort='COLUMN_INT')
+        record = airtable.get(new_record['id'])
+        assert record['fields']['COLUMN_INT'] == 500
 
 
 # class TestAirtableReplace():
