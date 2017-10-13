@@ -91,6 +91,7 @@ similar to this:
 """  #
 
 import os
+import sys
 import json
 import requests
 from requests.exceptions import HTTPError
@@ -101,6 +102,7 @@ from six.moves.urllib.parse import unquote, quote
 from .auth import AirtableAuth
 from .params import AirtableParams
 
+IS_IPY = sys.implementation.name == 'ironpython'
 
 class Airtable():
 
@@ -144,11 +146,12 @@ class Airtable():
         return params
 
     def _process_response(self, response):
-        # Removed due to IronPython Bug
+        # Reports Decoded 422 Url for better troubleshooting
+        # Disabled in IronPython Bug:
         # https://github.com/IronLanguages/ironpython2/issues/242
-        # if response.status_code == 422:
-        #     raise HTTPError('Unprocessable Entity for url(
-        #                        decoded): {}'.format(unquote(response.url)))
+        if not IS_IPY and response.status_code == 422:
+            raise HTTPError('Unprocessable Entity for url(decoded): {}'.format(
+                                                        unquote(response.url)))
         response.raise_for_status()
         return response.json()
 
