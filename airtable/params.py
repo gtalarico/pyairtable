@@ -16,6 +16,8 @@ For more information see the full implementation below.
 
 """  #
 
+from collections import OrderedDict
+from operator import itemgetter
 
 class _BaseParam():
 
@@ -64,6 +66,7 @@ class _BaseObjectArrayParam(_BaseParam):
     """
 
     def to_param_dict(self):
+        """ Sorts to ensure Order is consistent for Testing """
         param_dict = {}
         for index, dictionary in enumerate(self.value):
             for key, value in dictionary.items():
@@ -72,7 +75,7 @@ class _BaseObjectArrayParam(_BaseParam):
                                                     index=index,
                                                     key=key)
                 param_dict[param_name] = value
-        return param_dict
+        return OrderedDict(sorted(param_dict.items()))
 
 
 class AirtableParams():
@@ -198,6 +201,15 @@ class AirtableParams():
         param_name = 'filterByFormula'
         kwarg = 'formula'
 
+    @staticmethod
+    def from_name_and_value(field_name, field_value):
+        """ Creates a formula to match cells from from field_name and value """
+        if isinstance(field_value, str):
+            field_value = "'{}'".format(field_value)
+
+        formula = "{{{name}}}={value}".format(name=field_name,
+                                              value=field_value)
+        return formula
 
 
     class _OffsetParam(_BaseParam):
