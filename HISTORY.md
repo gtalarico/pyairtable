@@ -1,3 +1,7 @@
+# 0.9.0
+* Docs: Revised Docs strings to show kebab case kwargs
+* Fix: Url Escape (PR#1)
+
 # 0.8.0
 * Docs: New Documentation on Parameter filters Docs
 * Docs: More documentation and examples.
