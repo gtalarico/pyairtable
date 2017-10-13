@@ -96,8 +96,7 @@ import requests
 from requests.exceptions import HTTPError
 import posixpath
 import time
-from six.moves.urllib.parse import unquote
-from six.moves.urllib.parse import quote
+from six.moves.urllib.parse import unquote, quote
 
 from .auth import AirtableAuth
 from .params import AirtableParams
@@ -119,9 +118,9 @@ class Airtable():
         session.auth = AirtableAuth(api_key=api_key)
         self.session = session
         self.table_name = table_name
-        urlsafe_table_name = quote(table_name, safe='')
+        url_safe_table_name = quote(table_name, safe='')
         self.url_table = posixpath.join(self.API_URL, base_key,
-                                        urlsafe_table_name)
+                                        url_safe_table_name)
         self.is_authenticated = self.validate_session(self.url_table)
 
     def validate_session(self, url):
