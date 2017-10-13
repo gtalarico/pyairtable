@@ -1,5 +1,6 @@
 import os
 import pytest
+from collections import OrderedDict
 from requests_mock import Mocker
 from posixpath import join as urljoin
 from six.moves.urllib.parse import urlencode, quote
@@ -9,9 +10,10 @@ from airtable import Airtable
 
 def build_url(base_key, table_name, params=None):
     """ Builds Airtable Api Url Manually for mock testing """
-    table_name = quote(table_name)
+    table_name = quote(table_name, safe='')
     url = urljoin(Airtable.API_URL, base_key, table_name)
     if params:
+        params = OrderedDict(sorted(params.items()))
         url += '?' + urlencode(params)
     return url
 
@@ -38,16 +40,15 @@ def airtable():
     populate_table(airtable)
     return airtable
 
-def clear_table(airtable):
-    records = airtable.get_all()
-    if records:
-        print('Clearing table...')
-        airtable.mirror([])
-        print('Table cleared')
-
-def populate_table(airtable):
+@pytest.fixture()
+def table_data():
+    data = []
     for i in range(1, 150):
         row = {'COLUMN_INT': str(i), 'COLUMN_STR': i}
-        resp = airtable_write.insert(row)
-        assert resp.ok
+        data.append(row)
+    return data
+
+def populate_table(airtable, table_data):
+    resp = airtable_write.mirror(table_data)
+    assert resp.ok
 

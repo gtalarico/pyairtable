@@ -9,6 +9,7 @@ import os
 import json
 from six.moves.urllib.parse import urlencode, quote
 
+
 from airtable import Airtable
 from airtable.auth import AirtableAuth
 

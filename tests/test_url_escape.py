@@ -1,7 +1,8 @@
 import pytest
+from requests_mock import Mocker
 
 from airtable import Airtable
-from .pytest_fixtures import mock_airtable
+from .pytest_fixtures import build_url, base_key, fake_api_key
 
 
 @pytest.fixture
@@ -16,16 +17,16 @@ def table_names():
             'percentage % table': 'percentage%20%25%20table'
             }
 
-def test_url_escape(base_key, table_names, api_key):
+
+def test_url_escape(table_names):
     """Test for proper escaping of urls including unsafe characters in table
     names (which airtable allows).
     """
     for table_name, escaped in table_names.items():
         with Mocker() as m:
-            url = build_url_manual(base_key, table_name,
-                                   params={'maxRecords': 1})
+            url = build_url(base_key, table_name)
             m.get(url, status_code=200)
-            airtable = Airtable(base_key, table_name, api_key=api_key)
+            airtable = Airtable(base_key, table_name, api_key=fake_api_key)
 
-        assert str(tmp_at.url_table) == _make_url(baseurl, escaped),\
-            "Class-generated url should be properly escaped."
+        # Class-generated url should be properly escaped
+        assert escaped in airtable.url_table

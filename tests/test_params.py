@@ -3,16 +3,30 @@ from __future__ import absolute_import
 import pytest
 import os
 import requests
+from requests_mock import Mocker
 from six.moves.urllib.parse import quote
 
 from airtable import Airtable
 from airtable.auth import AirtableAuth
 
 from .pytest_fixtures import mock_airtable
+from .pytest_fixtures import build_url, base_key, table_name, fake_api_key
 
 @pytest.fixture()
 def any_url():
     return 'http://www.google.com'
+
+class TestParamsIntegration():
+
+    def test_params_integration(self, mock_airtable):
+        params = {'max_records': 1, 'view': 'View', 'sort': 'Name'}
+        with Mocker() as m:
+            mock_url = 'https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20READ?maxRecords=1&sort%5B0%5D%5Bdirection%5D=asc&sort%5B0%5D%5Bfield%5D=Name&view=View'
+            m.get(mock_url, status_code=200, json={})
+            mock_airtable.get_all(**params)
+
+        # TODO: assert get mocked response
+
 
 class TestParamsProcess():
     # Ensure kwargs received build a proper params
