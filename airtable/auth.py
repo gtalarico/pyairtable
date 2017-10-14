@@ -40,5 +40,6 @@ class AirtableAuth(requests.auth.AuthBase):
                             or set an env var AIRTABLE_API_KEY with your key')
 
     def __call__(self, request):
-        request.headers.update({'Authorization': 'Bearer {}'.format(self.api_key)})
+        auth_token = {'Authorization': 'Bearer {}'.format(self.api_key)}
+        request.headers.update(auth_token)
         return request

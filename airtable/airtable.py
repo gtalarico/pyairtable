@@ -90,9 +90,7 @@ similar to this:
 
 """  #
 
-import os
 import sys
-import json
 import requests
 from collections import OrderedDict
 from requests.exceptions import HTTPError
@@ -104,6 +102,7 @@ from .auth import AirtableAuth
 from .params import AirtableParams
 
 IS_IPY = sys.implementation.name == 'ironpython'
+
 
 class Airtable():
 
@@ -161,7 +160,8 @@ class Airtable():
         return posixpath.join(self.url_table, record_id)
 
     def _request(self, method, url, params=None, json_data=None):
-        response = self.session.request(method, url, params=params, json=json_data)
+        response = self.session.request(method, url, params=params,
+                                        json=json_data)
         return self._process_response(response)
 
     def _get(self, url, **params):
@@ -298,7 +298,7 @@ class Airtable():
         for record in self.get_all(**options):
             return record
         else:
-             return {}
+            return {}
 
     def search(self, field_name, field_value, record=None, **options):
         """
@@ -512,7 +512,8 @@ class Airtable():
     def batch_delete(self, record_ids):
         """
         Calls :any:`delete` repetitively, following set API Rate Limit (5/sec)
-        To change the rate limit use ``airtable.API_LIMIT = 0.2`` (5 per second)
+        To change the rate limit set value of ``airtable.API_LIMIT`` to
+        the time in seconds it should sleep before calling the funciton again.
 
         >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
         >>> airtable.batch_delete(records)
@@ -525,7 +526,6 @@ class Airtable():
 
         """
         return self._batch_request(self.delete, record_ids)
-
 
     def mirror(self, records, **options):
         """

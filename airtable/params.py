@@ -17,7 +17,7 @@ For more information see the full implementation below.
 """  #
 
 from collections import OrderedDict
-from operator import itemgetter
+
 
 class _BaseParam():
 
@@ -203,14 +203,15 @@ class AirtableParams():
 
         @staticmethod
         def from_name_and_value(field_name, field_value):
-            """ Creates a formula to match cells from from field_name and value """
+            """
+            Creates a formula to match cells from from field_name and value
+            """
             if isinstance(field_value, str):
                 field_value = "'{}'".format(field_value)
 
             formula = "{{{name}}}={value}".format(name=field_name,
                                                   value=field_value)
             return formula
-
 
     class _OffsetParam(_BaseParam):
         """
