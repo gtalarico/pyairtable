@@ -5,7 +5,6 @@ import os
 import requests
 from requests_mock import Mocker
 from posixpath import join as urljoin
-from collections import defaultdict
 from requests.exceptions import HTTPError
 
 from airtable.params import AirtableParams
@@ -15,35 +14,7 @@ from .pytest_fixtures import table_url, base_key, table_name, fake_api_key
 from .pytest_fixtures import table_data, reset_table, clean_airtable
 
 
-filepath = os.path.join('tests', 'mock_responses.json')
-
-responses = {'GET': defaultdict(list),
-             'POST': defaultdict(list),
-             'DELETE': defaultdict(list),
-             'PATCH': defaultdict(list)
-             }
-
-def _dump_request_data(process_response_func):
-    def wrapper(self, response):
-        url = response.request.url
-        method = response.request.method
-        status = response.status_code
-        try:
-            response_json = response.json()
-        except:
-            response_json = None
-
-        responses[method] = {'url': url,
-                             'status': status,
-                             ' response_json': response_json}
-        return process_response_func(self, response)
-    return wrapper
-
-Airtable._process_response = _dump_request_data(Airtable._process_response)
-
-
 class TestInit():
-
 
     def test_repr(self, mock_airtable):
         assert '<Airtable' in mock_airtable.__repr__()
@@ -68,7 +39,7 @@ class TestMethods():
 
 
 @pytest.mark.usefixtures("clean_airtable")
-class TestGett():
+class TestGet():
 
     def test_get(self, airtable):
         record = airtable.get('rec0LQoJ4Vgp8fPty')

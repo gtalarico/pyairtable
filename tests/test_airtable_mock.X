@@ -25,31 +25,6 @@ def collect_dumps():
         dumps.append(dump_dict)
     return dumps
 
-dumps = collect_dumps()
-
-def find_dump(url, method):
-    for dump in dumps:
-        if dump['url'] == url and dump['method'] == method:
-            return dump
-    else:
-        raise Exception('Dump not found')
-
-def build_url(table_name, params=None):
-    table_name = quote(table_name)
-    url = posixpath.join(Airtable.API_URL, TEST_BASE_KEY, table_name)
-    if params:
-        url += '?' + urlencode(params)
-    return url
-
-
-    # import re
-    # url_match = re.compile(Airtable.API_URL + '/.*')
-    # table_a_url = posixpath.join(Airtable.API_URL, TEST_BASE_KEY, TEST_TABLE_A)
-    # table_b_url = posixpath.join(Airtable.API_URL, TEST_BASE_KEY, TEST_TABLE_B)
-
-
-TEST_BASE_KEY = 'appJMY16gZDQrMWpA'
-TEST_TABLE_NAME = 'TABLE READ'
 
 @pytest.fixture(scope='session')
 def airtable_mock():
@@ -58,6 +33,7 @@ def airtable_mock():
         m.get(url, status_code=200)
         airtable = Airtable(TEST_BASE_KEY, TEST_TABLE_NAME)
     return airtable
+
 
 class TestAuth():
 
@@ -79,9 +55,10 @@ class TestAuth():
 
     def test_authorization_is(self, airtable_mock):
         assert airtable_mock.is_authenticated
-#
+
+
 class TestAirtableGet():
-#
+
     def test_get(self, airtable_mock):
         with Mocker() as m:
             m.get(table_a_url, status_code=200)
@@ -198,6 +175,7 @@ class TestAirtableGet():
 #         assert 'COLUMN_ID' in record['fields']
 #         assert 'COLUMN_STR' in record['fields']
 #
+#
 # class TestAirtableDelete():
 #
 #     @pytest.fixture
@@ -223,6 +201,7 @@ class TestAirtableGet():
 #         assert responses[0].get('deleted') is True
 #         assert responses[1].get('deleted') is True
 #
+#
 # class TestAirtableMirror():
 #
 #     @pytest.fixture
@@ -234,9 +213,3 @@ class TestAirtableGet():
 #         records = [row, row]
 #         airtable_write.mirror(records, view='Mirror')
 #         assert len(airtable_write.get_all(view='Mirror')) == 2
-#
-# def populate_table_a(self, airtable_write):
-#     for i in range(4, 300):
-#         row = {'COLUMN_ID': str(i)}
-#         resp = airtable_write.insert(row)
-#         assert resp.ok

@@ -1,7 +1,0 @@
-{
-    "url": "https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20WRITE?view=Mirror",
-    "method": "GET",
-    "response_json": {
-        "records": []
-    }
-}
