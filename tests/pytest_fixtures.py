@@ -81,6 +81,8 @@ def table_data():
 Once Reset Actual Test Table should look like this
 
 * There Should be one View Called `One` so tests can check view filters
+
+ Data:
  _____________________________________
 | COLUMN_INT (int) | COLUMN_STR (str) |
  -------------------------------------
@@ -91,5 +93,12 @@ Once Reset Actual Test Table should look like this
 |       104.0      |      '104'       |
 |       104.0      |      '104'       |
  -------------------------------------
+
+  View (name: 'One') - Filter: Where COLUMN_INT == 1
+  _____________________________________
+ | COLUMN_INT (int) | COLUMN_STR (str) |
+  -------------------------------------
+ |        1.0       |       '1'        |
+   -------------------------------------
 
 """

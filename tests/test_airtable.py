@@ -42,7 +42,7 @@ def _dump_request_data(process_response_func):
 Airtable._process_response = _dump_request_data(Airtable._process_response)
 
 
-class TestAirtableInit():
+class TestInit():
 
 
     def test_repr(self, mock_airtable):
@@ -53,7 +53,7 @@ class TestAirtableInit():
         assert mock_airtable.is_authenticated
 
 
-class TestAirtableMethods():
+class TestMethods():
 
     def test_record_url(self, mock_airtable):
         record_id = 'rec123456'
@@ -68,7 +68,7 @@ class TestAirtableMethods():
 
 
 @pytest.mark.usefixtures("clean_airtable")
-class TestAirtableGet():
+class TestGett():
 
     def test_get(self, airtable):
         record = airtable.get('rec0LQoJ4Vgp8fPty')
@@ -229,6 +229,7 @@ class TestUpdate():
         new_record = airtable.update(record['id'], new_field)
         record = airtable.get(new_record['id'])
         assert record['fields']['COLUMN_INT'] == 500
+        assert 'COLUMN_STR' in record['fields']
 
     def test_update_by_field(self, airtable, new_field, old_field):
         new_record = airtable.update_by_field('COLUMN_INT', 104,
@@ -236,92 +237,72 @@ class TestUpdate():
         record = airtable.get(new_record['id'])
         assert record['fields']['COLUMN_INT'] == 500
 
+@pytest.mark.usefixtures("clean_airtable")
+class TestReplace():
 
-# class TestAirtableReplace():
+    @pytest.fixture
+    def old_field(self):
+        return {'COLUMN_INT': 1}
 
-#     @pytest.fixture
-#     def old_field(self):
-#         return {'COLUMN_INT': '1', 'COLUMN_STR': 'UNIQUE', 'COLUMN_UPDATE': 'A'}
+    @pytest.fixture
+    def new_field(self):
+        return {'COLUMN_INT': 500}
 
-#     @pytest.fixture
-#     def new_field(self):
-#         return {'COLUMN_INT': '1', 'COLUMN_UPDATE': 'B'}
+    def test_replace(self, airtable, new_field, old_field):
+        record = airtable.match('COLUMN_INT', 104)
+        assert record['fields']['COLUMN_INT'] == 104
 
-#     def test_replace(self, airtable, new_field, old_field):
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'A'
+        new_record = airtable.replace(record['id'], new_field)
+        record = airtable.get(new_record['id'])
+        assert record['fields']['COLUMN_INT'] == 500
+        assert 'COLUMN_STR' not in record['fields']
 
-#         airtable.replace(record['id'], new_field)
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'B'
-#         assert 'COLUMN_STR' not in record['fields']
+    def test_replace_by_field(self, airtable, new_field, old_field):
+        new_record = airtable.replace_by_field('COLUMN_INT', 103,
+                                              new_field, sort='COLUMN_INT')
+        record = airtable.get(new_record['id'])
+        assert record['fields']['COLUMN_INT'] == 500
+        assert 'COLUMN_STR' not in record['fields']
 
-#         airtable.replace(record['id'], old_field)
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'A'
-#         assert 'COLUMN_INT' in record['fields']
-#         assert 'COLUMN_STR' in record['fields']
 
-#     def test_replace_by_field(self, airtable, new_field, old_field):
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'A'
+@pytest.mark.usefixtures("clean_airtable")
+class TestDelete():
 
-#         airtable.replace_by_field('COLUMN_INT', record['fields']['COLUMN_INT'], new_field)
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'B'
-#         assert 'COLUMN_STR' not in record['fields']
+    def test_delete(self, airtable):
+        record = airtable.match('COLUMN_INT', 100)
+        assert record['fields']['COLUMN_INT'] == 100
 
-#         airtable.replace_by_field('COLUMN_INT', record['fields']['COLUMN_INT'], old_field)
-#         record = airtable.get_all(maxRecords=1, view='ViewAll')[0]
-#         assert record['fields']['COLUMN_UPDATE'] == 'A'
-#         assert 'COLUMN_INT' in record['fields']
-#         assert 'COLUMN_STR' in record['fields']
+        record = airtable.delete(record['id'])
+        assert record.get('deleted') is True
+        assert 'id' in record
 
-# class TestAirtableDelete():
+        assert len(airtable.match('COLUMN_INT', 100)) == 0
 
-#     @pytest.fixture
-#     def row(self):
-#         return  {'UUID': '4e8f9cfa-543b-492f-962b-e16930b49cae',
-#                  'String': 'Deleted Test'}
 
-#     def test_delete(self, airtable_write, row):
-#         record = airtable_write.match('UUID', row['UUID'])
-#         if not record:
-#             record = airtable_write.insert(row)
+    def test_batch_delete(self, airtable):
+        record = airtable.match('COLUMN_INT', 104)
+        assert record['fields']['COLUMN_INT'] == 104
+        record2 = airtable.match('COLUMN_INT', 103)
+        assert record2['fields']['COLUMN_INT'] == 103
 
-#         response = airtable_write.delete(record['id'])
-#         assert response.get('deleted') is True
-#         assert 'id' in response
-#         airtable_write.insert(row)
+        records = airtable.batch_delete([record['id'], record2['id']])
+        assert records[0].get('deleted') is True
+        assert records[1].get('deleted') is True
 
-#     def test_batch_delete(self, airtable_write, row):
-#         records = [airtable_write.insert(row)['id'],
-#                    airtable_write.insert(row)['id']]
+    def test_delete_by_field(self, airtable):
+        record = airtable.match('COLUMN_INT', 102)
+        assert record['fields']['COLUMN_INT'] == 102
 
-#         responses = airtable_write.batch_delete(records)
-#         assert responses[0].get('deleted') is True
-#         assert responses[1].get('deleted') is True
+        record = airtable.delete_by_field('COLUMN_INT', 102)
+        assert record.get('deleted') is True
 
-#     def test_batch_delete_by_field(self, airtable_write, row):
-#         record = airtable_write.match('UUID', row['UUID'])
-#         if not record:
-#             record = airtable_write.insert(row)
+@pytest.mark.usefixtures("clean_airtable")
+class TestAirtableMirror():
 
-#         response = airtable_write.delete_by_field('UUID', row['UUID'])
-#         assert response.get('deleted') is True
-#         airtable_write.insert(row)
-
-# class TestAirtableMirror():
-
-#     @pytest.fixture
-#     def row(self):
-#         return  {'UUID': '4e8f9cfa-543b-492f-962b-e16930b49cae',
-#                  'String': 'MIRROR'}
-
-#     def test_mirror(self, airtable_write, row):
-#         records = [row, row]
-#         airtable_write.mirror(records, view='Mirror')
-#         new_records = airtable_write.get_all(view='Mirror')
-#         assert len(new_records) == 2
+    def test_mirror(self, airtable):
+        records = [{'COLUMN_INT': 1}, {'COLUMN_INT': 1}, {'COLUMN_INT': 1}]
+        airtable.mirror(records, view='One')
+        new_records = airtable.get_all(view='One')
+        assert len(new_records) == 3
 
 

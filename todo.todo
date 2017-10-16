@@ -1,11 +1,12 @@
-Core:
-  ☐ Use New Filters for Search/Match or Remove?
+Features:
   ☐ Add default_params option (ie lock it to one view, or one max records)
+  ☐ Optimize Mirror to Only delete/recreate diffs (currently wipes and re-writes)
+  ✔ Use New Filters for Search/Match or Remove? @done (17-10-16 16:07)
   ✔ Refactor/Rename Get/GetAll @done (17-09-20 17:35)
 
 Testing:
   ☐ Write Mock Tests
-  ☐ Improve "Real" Tests to avoid breaking
+  ☐ Improve "Real" Tests to avoid breaking (WIP)
 
 Links:
   * https://codepen.io/airtable/full/rLKkYB
