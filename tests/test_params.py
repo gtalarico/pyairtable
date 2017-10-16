@@ -21,7 +21,7 @@ class TestParamsIntegration():
     def test_params_integration(self, mock_airtable):
         params = {'max_records': 1, 'view': 'View', 'sort': 'Name'}
         with Mocker() as m:
-            mock_url = 'https://api.airtable.com/v0/appJMY16gZDQrMWpA/TABLE%20READ?maxRecords=1&sort%5B0%5D%5Bdirection%5D=asc&sort%5B0%5D%5Bfield%5D=Name&view=View'
+            mock_url = 'https://api.airtable.com/v0/appJMY16gZDQrMWpA/Table%20Name?maxRecords=1&sort%5B0%5D%5Bdirection%5D=asc&sort%5B0%5D%5Bfield%5D=Name&view=View'
             m.get(mock_url, status_code=200, json={})
             mock_airtable.get_all(**params)
 

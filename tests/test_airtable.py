@@ -300,7 +300,7 @@ class TestDelete():
 class TestAirtableMirror():
 
     def test_mirror(self, airtable):
-        records = [{'COLUMN_INT': 1}, {'COLUMN_INT': 1}, {'COLUMN_INT': 1}]
+        records = [{'COLUMN_INT': 100}, {'COLUMN_INT': 100}, {'COLUMN_INT': 100}]
         airtable.mirror(records, view='One')
         new_records = airtable.get_all(view='One')
         assert len(new_records) == 3

@@ -22,7 +22,7 @@ def build_url(base_key, table_name, params=None):
 fake_api_key = 'FakeApiKey'
 api_key = os.environ['AIRTABLE_API_KEY']
 base_key = 'appJMY16gZDQrMWpA'
-table_name = 'TABLE READ'
+table_name = 'Table Name'
 table_url = build_url(base_key,table_name)
 
 @pytest.fixture(scope='class')
@@ -78,11 +78,11 @@ def table_data():
 
 """
 
-Once Reset Actual Test Table should look like this
+Once Reset Actual Test Table should look like the table below.
+The data will be populate by the test suite, but the columns must
+be configured properly:
 
-* There Should be one View Called `One` so tests can check view filters
-
- Data:
+ Table Name: 'Table Name'
  _____________________________________
 | COLUMN_INT (int) | COLUMN_STR (str) |
  -------------------------------------
@@ -94,6 +94,7 @@ Once Reset Actual Test Table should look like this
 |       104.0      |      '104'       |
  -------------------------------------
 
+* There Should be one View Called `One` so tests can check view filters
   View (name: 'One') - Filter: Where COLUMN_INT == 1
   _____________________________________
  | COLUMN_INT (int) | COLUMN_STR (str) |
