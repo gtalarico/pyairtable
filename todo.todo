@@ -1,3 +1,7 @@
+Fix:
+  ☐ Handle Quote on formula field (github issue #)
+  ☐ Make table/table_url property with setter so table name can be changed without requiring new class
+
 Features:
   ☐ Add default_params option (ie lock it to one view, or one max records)
   ☐ Optimize Mirror to Only delete/recreate diffs (currently wipes and re-writes)
