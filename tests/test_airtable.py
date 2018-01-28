@@ -181,6 +181,14 @@ class TestCreate():
             assert 'id' in response
             assert response['fields']['COLUMN_INT'] in range(200, 203)
 
+    def test_create_type_mismatch(self, airtable):
+        """ Verify Exception and Exception Message on Type Mismatch """
+        record = {'COLUMN_INT': 'aaa'}
+        with pytest.raises(requests.exceptions.HTTPError) as exc:
+            response = airtable.insert(record)
+        assert 'INVALID_VALUE_FOR_COLUMN' in str(exc)
+        assert 'Field COLUMN_INT can not accept value aaa' in str(exc)
+
 
 @pytest.mark.usefixtures("clean_airtable")
 class TestUpdate():
