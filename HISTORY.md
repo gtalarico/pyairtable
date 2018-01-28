@@ -1,4 +1,7 @@
 # 0.9.0
+* Feature: Better exception message for 422 (Issue #16)
+
+# 0.9.0
 * Docs: Revised Docs strings to show kebab case kwargs
 * Fix: Url Escape (PR#1)
 
