@@ -101,7 +101,10 @@ from six.moves.urllib.parse import unquote, quote
 from .auth import AirtableAuth
 from .params import AirtableParams
 
-IS_IPY = sys.implementation.name == 'ironpython'
+try:
+    IS_IPY = sys.implementation.name == 'ironpython'
+except AttributeError:
+    IS_IPY = False
 
 
 class Airtable():

@@ -1,5 +1,6 @@
-# 0.9.0
+# 0.9.1
 * Feature: Better exception message for 422 (Issue #16)
+* Fix: 2.7 Compat with sys.implementation
 
 # 0.9.0
 * Docs: Revised Docs strings to show kebab case kwargs
