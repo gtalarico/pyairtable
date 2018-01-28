@@ -132,7 +132,8 @@ class Airtable():
         elif response.status_code == 404:
             raise ValueError('Invalid base or table name: {}'.format(url))
         else:
-            raise ValueError('Authentication failed: {}'.format(response.reason))
+            raise ValueError(
+                'Authentication failed: {}'.format(response.reason))
 
     def _process_params(self, params):
         """
@@ -146,14 +147,29 @@ class Airtable():
         return new_params
 
     def _process_response(self, response):
-        # Reports Decoded 422 Url for better troubleshooting
-        # Disabled in IronPython Bug:
-        # https://github.com/IronLanguages/ironpython2/issues/242
-        if not IS_IPY and response.status_code == 422:
-            raise HTTPError('Unprocessable Entity for url(decoded): {}'.format(
-                                                        unquote(response.url)))
-        response.raise_for_status()
-        return response.json()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            err_msg = str(exc)
+
+            # Reports Decoded 422 Url for better troubleshooting
+            # Disabled in IronPython Bug:
+            # https://github.com/IronLanguages/ironpython2/issues/242
+            if not IS_IPY and response.status_code == 422:
+                err_msg = err_msg.replace(response.url, unquote(response.url))
+                err_msg += (' (Decoded URL)')
+
+            # Attempt to get Error message from response, Issue #16
+            try:
+                error_dict = response.json()
+            except json.decoder.JSONDecodeError:
+                pass
+            else:
+                if 'error' in error_dict:
+                    err_msg += ' [Error: {}]'.format(error_dict['error'])
+            raise requests.exceptions.HTTPError(err_msg)
+        else:
+            return response.json()
 
     def record_url(self, record_id):
         """ Builds URL with record id """
@@ -507,7 +523,6 @@ class Airtable():
         record = self.match(field_name, field_value, **options)
         record_url = self.record_url(record['id'])
         return self._delete(record_url)
-
 
     def batch_delete(self, record_ids):
         """
