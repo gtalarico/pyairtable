@@ -351,7 +351,7 @@ class Airtable():
         records = self.get_all(**options)
         return records
 
-    def insert(self, fields):
+    def insert(self, fields, typecast=False):
         """
         Inserts a record
 
@@ -361,12 +361,14 @@ class Airtable():
         Args:
             fields(``dict``): Fields to insert.
                 Must be dictionary with Column names as Key.
+                
+            typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
             record (``dict``): Inserted record
 
         """
-        return self._post(self.url_table, json_data={"fields": fields})
+        return self._post(self.url_table, json_data={"fields": fields, "typecast": typecast})
 
     def _batch_request(self, func, iterable):
         """ Internal Function to limit batch calls to API limit """
