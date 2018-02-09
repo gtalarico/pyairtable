@@ -1,3 +1,6 @@
+# 0.11.1
+* Feature: Merged PR#17 - Added typecast to update, update_by_field, replace, replace_by_field
+
 # 0.10.1
 * Feature: Added typcase option to batch_insert
 
