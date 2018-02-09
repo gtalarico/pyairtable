@@ -16,5 +16,4 @@ install:
   - pip install -r requirements-dev.txt
   - pip install codecov
 after_success:
-  - pytest
-  - codecov
+    - codecov
