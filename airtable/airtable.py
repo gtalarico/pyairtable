@@ -361,7 +361,6 @@ class Airtable():
         Args:
             fields(``dict``): Fields to insert.
                 Must be dictionary with Column names as Key.
-                
             typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
@@ -378,7 +377,7 @@ class Airtable():
             time.sleep(self.API_LIMIT)
         return responses
 
-    def batch_insert(self, records):
+    def batch_insert(self, records, typecast=False):
         """
         Calls :any:`insert` repetitively, following set API Rate Limit (5/sec)
         To change the rate limit use ``airtable.API_LIMIT = 0.2``
@@ -389,6 +388,7 @@ class Airtable():
 
         Args:
             records(``list``): Records to insert
+            typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
             records (``list``): list of added records

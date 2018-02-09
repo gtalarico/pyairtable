@@ -1,3 +1,6 @@
+# 0.10.1
+* Feature: Added typcase option to batch_insert
+
 # 0.10.0
 * Feature: Merged PR#17 - typecase kwarg
 
