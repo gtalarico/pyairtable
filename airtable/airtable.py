@@ -396,7 +396,7 @@ class Airtable():
         """
         return self._batch_request(self.insert, records)
 
-    def update(self, record_id, fields):
+    def update(self, record_id, fields, typecast=False):
         """
         Updates a record by its record id.
         Only Fields passed are updated, the rest are left as is.
@@ -409,14 +409,15 @@ class Airtable():
             record_id(``str``): Id of Record to update
             fields(``dict``): Fields to update.
                 Must be dictionary with Column names as Key
+            typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
             record (``dict``): Updated record
         """
         record_url = self.record_url(record_id)
-        return self._patch(record_url, json_data={"fields": fields})
+        return self._patch(record_url, json_data={"fields": fields, "typecast": typecast})
 
-    def update_by_field(self, field_name, field_value, fields, **options):
+    def update_by_field(self, field_name, field_value, fields, typecast=False, **options):
         """
         Updates the first record to match field name and value.
         Only Fields passed are updated, the rest are left as is.
@@ -429,6 +430,7 @@ class Airtable():
             field_value (``str``): Value of field to match.
             fields(``dict``): Fields to update.
                 Must be dictionary with Column names as Key
+            typecast(``boolean``): Automatic data conversion from string values.
 
         Keyword Args:
             view (``str``, optional): The name or ID of a view.
@@ -440,9 +442,9 @@ class Airtable():
             record (``dict``): Updated record
         """
         record = self.match(field_name, field_value, **options)
-        return {} if not record else self.update(record['id'], fields)
+        return {} if not record else self.update(record['id'], fields, typecast)
 
-    def replace(self, record_id, fields):
+    def replace(self, record_id, fields, typecast=False):
         """
         Replaces a record by its record id.
         All Fields are updated to match the new ``fields`` provided.
@@ -457,14 +459,15 @@ class Airtable():
             record_id(``str``): Id of Record to update
             fields(``dict``): Fields to replace with.
                 Must be dictionary with Column names as Key.
+            typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
             record (``dict``): New record
         """
         record_url = self.record_url(record_id)
-        return self._put(record_url, json_data={"fields": fields})
+        return self._put(record_url, json_data={"fields": fields, "typecast": typecast})
 
-    def replace_by_field(self, field_name, field_value, fields, **options):
+    def replace_by_field(self, field_name, field_value, fields, typecast=False, **options):
         """
         Replaces the first record to match field name and value.
         All Fields are updated to match the new ``fields`` provided.
@@ -476,6 +479,7 @@ class Airtable():
             field_value (``str``): Value of field to match.
             fields(``dict``): Fields to replace with.
                 Must be dictionary with Column names as Key.
+            typecast(``boolean``): Automatic data conversion from string values.
 
         Keyword Args:
             view (``str``, optional): The name or ID of a view.
@@ -487,7 +491,7 @@ class Airtable():
             record (``dict``): New record
         """
         record = self.match(field_name, field_value, **options)
-        return {} if not record else self.replace(record['id'], fields)
+        return {} if not record else self.replace(record['id'], fields, typecast)
 
     def delete(self, record_id):
         """
