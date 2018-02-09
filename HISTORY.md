@@ -1,3 +1,6 @@
+# 0.10.0
+* Feature: Merged PR#17 - typecase kwarg
+
 # 0.9.1
 * Feature: Better exception message for 422 (Issue #16)
 * Fix: 2.7 Compat with sys.implementation
