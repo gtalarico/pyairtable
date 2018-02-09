@@ -173,6 +173,12 @@ class TestCreate():
         assert 'id' in response
         assert response['fields']['COLUMN_INT'] == 999
 
+    def test_create_one_typecast(self, airtable):
+        record = {'COLUMN_INT': '50'}
+        response = airtable.insert(record, typecast=True)
+        assert 'id' in response
+        assert response['fields']['COLUMN_INT'] == 50
+
     def test_create_batch(self, airtable):
         rows = [{'COLUMN_INT': i} for i in range(200, 203)]
         responses = airtable.batch_insert(rows)
@@ -283,5 +289,3 @@ class TestAirtableMirror():
         airtable.mirror(records, view='One')
         new_records = airtable.get_all(view='One')
         assert len(new_records) == 3
-
-
