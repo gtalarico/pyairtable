@@ -33,7 +33,7 @@ Get all Records:
 
 Search:
 
->>> airtable.search('ColumnA', 'SeachValue')
+>>> airtable.search('ColumnA', 'SearchValue')
 
 Formulas:
 
@@ -537,16 +537,16 @@ class Airtable():
         """
         Calls :any:`delete` repetitively, following set API Rate Limit (5/sec)
         To change the rate limit set value of ``airtable.API_LIMIT`` to
-        the time in seconds it should sleep before calling the funciton again.
+        the time in seconds it should sleep before calling the function again.
 
         >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
-        >>> airtable.batch_delete(records)
+        >>> airtable.batch_delete(records_ids)
 
         Args:
             records(``list``): Record Ids to delete
 
         Returns:
-            records (``list``): list of records deleted
+            records(``list``): list of records deleted
 
         """
         return self._batch_request(self.delete, record_ids)
