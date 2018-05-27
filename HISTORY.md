@@ -1,3 +1,7 @@
+# 0.11.2
+* Fixed: Add sdist and universal for 2.7 dist
+* Fixed: Long dist set to markdown
+
 # 0.11.1
 * Feature: Merged PR#17 - Added typecast to update, update_by_field, replace, replace_by_field
 

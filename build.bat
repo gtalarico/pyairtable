@@ -1,4 +1,4 @@
-python setup.py bdist_wheel
+python setup.py sdist bdist_wheel --universal
 twine upload dist\*
 rmdir /S dist\
 rmdir /S build\
