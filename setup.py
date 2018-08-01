@@ -23,6 +23,10 @@ setup(
     url=about['__url__'],
     version=about['__version__'],
     packages=['airtable'],
+    package_data={
+        '': ['README.md', 'HISTORY.md', 'LICENSE.txt'],
+        'airtable': ['__version__.py']
+    },
     install_requires=['requests>=2.18.3', 'six>=1.10.0'],
     keywords=['airtable', 'api'],
     license=about['__license__'],

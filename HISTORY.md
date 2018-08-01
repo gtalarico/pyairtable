@@ -1,3 +1,6 @@
+# 0.11.3
+* Fixed: Added HISTORY, LICENSE, etc to dist release
+
 # 0.11.2
 * Fixed: Add sdist and universal for 2.7 dist
 * Fixed: Long dist set to markdown

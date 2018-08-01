@@ -5,3 +5,4 @@ env.bat
 docs/build
 .ipynb_checkpoints
 *egg-info
+.vscode
