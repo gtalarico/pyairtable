@@ -1,57 +1,40 @@
-from __future__ import absolute_import
+import os
 
 import pytest
-import os
-import requests
 
-from airtable import Airtable
 from airtable.auth import AirtableAuth
+from requests import Session
 
-from .pytest_fixtures import table_name, base_key
+API_KEY_ENV_NAME = 'AIRTABLE_API_KEY'
 
-class TestAuth():
 
-    def test_authorization_scheme(self):
-        session = requests.Session()
-        session.auth = AirtableAuth()
-        resp = session.get('http://www.google.com')
-        assert 'Authorization' in resp.request.headers
-        assert 'Bearer' in resp.request.headers['Authorization']
+class Environ:
 
-    def test_authorization_manual_call(self):
-        session = requests.Session()
+    def __enter__(self):
+        self.envvar = os.environ.get(API_KEY_ENV_NAME)
+
+    def __exit__(self, *args):
+        if self.envvar is not None:
+            os.environ[API_KEY_ENV_NAME] = self.envvar
+
+
+def test_api_key_provided():
+    auth = AirtableAuth('API Key')
+    assert auth.api_key == 'API Key'
+
+    request = auth(Session())
+    assert request.headers['Authorization'] == 'Bearer API Key'
+
+
+def test_api_key_found_in_environ_var():
+    with Environ():
+        os.environ[API_KEY_ENV_NAME] = 'ENV API Key'
         auth = AirtableAuth()
-        session = auth.__call__(session)
-        assert 'Authorization' in session.headers
-        assert 'Bearer' in session.headers['Authorization']
+        assert auth.api_key == 'ENV API Key'
 
-    def test_authorization_missing(self):
-        key = os.environ.pop('AIRTABLE_API_KEY')
-        session = requests.Session()
+
+def test_api_key_not_provided():
+    with Environ():
+        del os.environ[API_KEY_ENV_NAME]
         with pytest.raises(KeyError):
-            session.auth = AirtableAuth()
-        os.environ['AIRTABLE_API_KEY'] = key
-
-    def test_authorization_manual_key(self):
-        key = os.environ['AIRTABLE_API_KEY']
-        session = requests.Session()
-        session.auth = AirtableAuth(api_key=key)
-        resp = session.get('http://www.google.com')
-        assert 'Authorization' in resp.request.headers
-        assert 'Bearer' in resp.request.headers['Authorization']
-
-    def test_authorization_fail(self, ):
-        with pytest.raises(ValueError) as excinfo:
-            # Raises Invalid Base Key or Table Name
-            fake_airtable = Airtable(base_key='XXX', table_name='YYY')
-        errmsg = str(excinfo.value).lower()
-        assert 'invalid' in errmsg and 'base' in errmsg
-
-    def test_authorization_bad_credentials(self, ):
-        with pytest.raises(ValueError) as excinfo:
-            # Raises Invalid Table Name
-            fake_airtable = Airtable(base_key=base_key,
-                                     table_name=table_name,
-                                     api_key='BADKEY')
-        assert 'authentication failed' in str(excinfo.value).lower()
-
+            AirtableAuth()
