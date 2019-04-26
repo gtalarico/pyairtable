@@ -1,27 +1,25 @@
-"""High-level request tests
+"""High-level HTTP request tests.
 
-We don't need to test the requests package it has it's own tests.
-All we care about is that we are sending the right arguments,
-keyword argument and session data to the correct request method.
+We don't need to test the requests package it has it's own set of tests.
+All we care about is that we are sending exactly the right arguments,
+keyword options and session data to the correct request method.
 
-We don't need to test the real Airtable responses here either.
-If the data is bad it should be caught and discrepencies reported in
-the exception handlers when validating the data against the JSON schema.
+However, we do need to simulate a response for multi-page requests to
+check that the pagination code is working correctly.
+
+We also don't need to test the real Airtable responses here either,
+that's dealt with through schema validation and exception handling.
 The API responses are essentially a contract based on the API version.
 In otherwords it's the service provider's job to not change the API
-response schema without changing the version, and they are responsible
+response schema without bumping the version, and they are responsible
 for still maintainng the old API version when a new version is released.
 It is possible after a long period of time an API version is deprecated
 but that would be caught by exception handling and it's the service
 provider's job to provide an error message indicating that the version
 is deprecated.
 
-We do need to simulate a response however for multi-page requests so
-that we can check that the pagination code is working correctly.
-
-Most of the tests were taken from examples in the documentation or
-source code docstrings, including README.md and
-https://airtable-python-wrapper.readthedocs.io
+Most of the tests were taken from examples in the docs, docstrings,
+and README file.
 
 Some of the Airtable.get tests are currently marked as skipped because
 either the Parameters section of the documentation is incorrect or
@@ -40,6 +38,7 @@ from .test_airtable import air_table as at
 
 
 Params = namedtuple('Params', ['kwds', 'params'])
+HEADER_BASE_PARAMS = {'User-Agent', 'Accept-Encoding', 'Accept', 'Connection'}
 
 
 def generate_responses(*args, **kwds):
@@ -80,9 +79,23 @@ def generate_responses(*args, **kwds):
 
 @pytest.fixture
 def air_table(at):
+
+    # make sure we are starting with a pristine session and that what
+    # we are testing is the full complement of what is being sent in
+    # the request
+    assert at.session.params == {}
+    assert set(at.session.headers) == HEADER_BASE_PARAMS
+    assert vars(at.session.auth) == {'api_key': 'API Key'}
+
     at.session.request = Mock()
     at.session.request.request_for_status.return_value = None
-    return at
+    yield at
+
+    # make sure the session didn't change somewhere along the way and
+    # send additional untested information
+    assert at.session.params == {}
+    assert set(at.session.headers) == HEADER_BASE_PARAMS
+    assert vars(at.session.auth) == {'api_key': 'API Key'}
 
 
 @pytest.fixture
@@ -113,8 +126,6 @@ def airtable_pages(air_table):
         params=[('offset', 'itr1/rec1')]),
 ])
 def test_get_with_options(kwds, params, air_table):
-    assert air_table.session.params == {}
-    assert vars(air_table.session.auth) == {'api_key': 'API Key'}
     air_table.get(**kwds)
     air_table.session.request.assert_called_with(
         'get', 'https://api.airtable.com/v0/Base Key/Table%20Name',
@@ -122,10 +133,37 @@ def test_get_with_options(kwds, params, air_table):
     air_table.session.request.assert_called_once()
 
 
+# --- CREATE RECORDS ---
+
+
+@pytest.mark.insert
+@pytest.mark.parametrize('fields', [
+    {'Name': 'Brian'},
+    {'First Name': 'John'}
+])
+def test_insert(fields, air_table):
+    air_table.insert(fields)
+    air_table.session.request.assert_called_with(
+        'post', 'https://api.airtable.com/v0/Base Key/Table%20Name',
+        json={'fields': fields, 'typecast': False}, params=None)
+    air_table.session.request.assert_called_once()
+
+
+@pytest.mark.insert
+def test_batch_insert(air_table):
+    air_table.insert([{'Name': 'John'}, {'Name': 'Marc'}])
+    air_table.session.request.assert_called_with(
+        'post', 'https://api.airtable.com/v0/Base Key/Table%20Name',
+        json={'fields': [{'Name': 'John'}, {'Name': 'Marc'}],
+              'typecast': False}, params=None)
+    air_table.session.request.assert_called_once()
+
+
+# --- READ RECORDS ---
+
+
 @pytest.mark.test_get
 def test_get(air_table):
-    assert air_table.session.params == {}
-    assert vars(air_table.session.auth) == {'api_key': 'API Key'}
     air_table.get('recwPQIfs4wKPyc9D')
     air_table.session.request.assert_called_with(
         'get',
@@ -179,8 +217,6 @@ def test_get(air_table):
                 ('view', 'All')]),
 ])
 def test_get_all(kwds, params, airtable_pages):
-    assert airtable_pages.session.params == {}
-    assert vars(airtable_pages.session.auth) == {'api_key': 'API Key'}
     records = airtable_pages.get_all(**kwds)
     airtable_pages.session.request.assert_called_with(
         'get', 'https://api.airtable.com/v0/Base Key/Table%20Name',
@@ -191,8 +227,6 @@ def test_get_all(kwds, params, airtable_pages):
 
 @pytest.mark.test_get_iter
 def test_get_iter(airtable_pages):
-    assert airtable_pages.session.params == {}
-    assert vars(airtable_pages.session.auth) == {'api_key': 'API Key'}
     for page in airtable_pages.get_iter(view='ViewName', sort='COLUMN_A'):
         for num, record in enumerate(page, 1):
             assert record['fields']['COLUMN_ID'] == str(num)
@@ -204,20 +238,13 @@ def test_get_iter(airtable_pages):
     assert airtable_pages.session.request.call_count == 3
 
 
-@pytest.mark.insert
-@pytest.mark.parametrize('fields', [
-    {'Name': 'Brian'},
-    {'First Name': 'John'}
-])
-def test_insert(fields, air_table):
-    air_table.insert(fields)
-    assert air_table.session.params == {}
-    assert vars(air_table.session.auth) == {'api_key': 'API Key'}
-    air_table.session.request.assert_called_with(
-        'post', 'https://api.airtable.com/v0/Base Key/Table%20Name',
-        json={'fields': fields, 'typecast': False}, params=None
-    )
-    air_table.session.request.assert_called_once()
+# --- UPDATE RECORDS ---
+
+
+# --- DELETE RECORDS ---
+
+
+# --- SEARCH RECORDS ---
 
 
 @pytest.mark.search
@@ -236,8 +263,6 @@ def test_insert(fields, air_table):
 ])
 def test_search(args, params, airtable_pages):
     records = airtable_pages.search(*args)
-    assert airtable_pages.session.params == {}
-    assert vars(airtable_pages.session.auth) == {'api_key': 'API Key'}
     airtable_pages.session.request.assert_called_with(
         'get', 'https://api.airtable.com/v0/Base Key/Table%20Name',
         json=None, params=OrderedDict(params))
@@ -261,8 +286,6 @@ def test_search(args, params, airtable_pages):
 ])
 def test_match(args, params, airtable_pages):
     airtable_pages.match(*args)
-    assert airtable_pages.session.params == {}
-    assert vars(airtable_pages.session.auth) == {'api_key': 'API Key'}
     airtable_pages.session.request.assert_called_with(
         'get', 'https://api.airtable.com/v0/Base Key/Table%20Name',
         json=None, params=OrderedDict(params))
@@ -270,18 +293,18 @@ def test_match(args, params, airtable_pages):
     assert airtable_pages.session.request.call_count == 3
 
 
+@pytest.mark.skip
+@pytest.mark.match
 def test_match_returns_first_record_only(air_table):
-    assert air_table.session.params == {}
-    assert vars(air_table.session.auth) == {'api_key': 'API Key'}
     air_table.session.request.return_value = {"records": []}
     record = air_table.match('COLUMN_ID', '1')
     assert air_table.session.request.assert_called_once()
     assert record == {'fields': {'COLUMN_ID': '1'}}
 
 
+@pytest.mark.skip
+@pytest.mark.match
 def test_no_match_found(air_table):
-    assert air_table.session.params == {}
-    assert vars(air_table.session.auth) == {'api_key': 'API Key'}
     air_table.session.request.return_value = {"records": []}
     record = air_table.match('Name', 'John')
     assert air_table.session.request.assert_called_once()
@@ -289,9 +312,42 @@ def test_no_match_found(air_table):
 
 
 '''
-def test_search(air_table):
+TODO
+====
 
+CREATE
+------
 
+# destructive creation
+>>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
+>>> record = airtable.,mirror(records)
+>>> record = airtable.mirror(records, view='View')
+([{'id': 'recwPQIfs4wKPyc9D', ... }], [{'deleted': True, ... }])
 
-    airtable.search('Name', 'Tom')
+UPDATE
+------
+
+>> fields = {'Status': 'Fired'}
+>>> airtable.update(record['id'], fields)
+
+airtable.update_by_field('Name', 'Tom', {'Phone': '1234-4445'})
+
+>>> record = {'Name': 'John', 'Tel': '540-255-5522'}
+>>> airtable.update_by_field('Name', 'John', record)
+
+>>> fields = {'PassangerName': 'Mike', 'Passport': 'YASD232-23'}
+>>> airtable.replace(record['id'], fields)
+
+DELETE
+------
+
+>>> airtable.delete(record['id'])
+>>> airtable.delete('recwPQIfs4wKPyc9D')
+
+>>> record = airtable.delete_by_field('Employee Id', 'DD13332454')
+
+airtable.delete_by_field('Name', 'Tom')
+>>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
+>>> airtable.batch_delete(records_ids)
+
 '''
