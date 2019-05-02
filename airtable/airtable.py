@@ -114,7 +114,9 @@ class Airtable():
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
 
-    def __init__(self, base_key, table_name, api_key=None):
+    def __init__(
+        self, base_key, table_name, api_key=None, validate_session=True
+    ):
         """
         If api_key is not provided, :any:`AirtableAuth` will attempt
         to use ``os.environ['AIRTABLE_API_KEY']``
@@ -126,7 +128,10 @@ class Airtable():
         url_safe_table_name = quote(table_name, safe='')
         self.url_table = posixpath.join(self.API_URL, base_key,
                                         url_safe_table_name)
-        self.is_authenticated = self.validate_session(self.url_table)
+        if validate_session:
+            self.is_authenticated = self.validate_session(self.url_table)
+        else:
+            self.is_authenticated = None
 
     def validate_session(self, url):
         response = self.session.get(url, params={'maxRecords': 1})

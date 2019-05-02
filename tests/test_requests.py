@@ -34,8 +34,9 @@ from unittest.mock import Mock
 
 import pytest
 
+import airtable.airtable as airtable
 from .test_airtable import air_table as at
-
+from .test_airtable import Airtable
 
 Params = namedtuple('Params', ['kwds', 'params'])
 HEADER_BASE_PARAMS = {'User-Agent', 'Accept-Encoding', 'Accept', 'Connection'}
@@ -149,7 +150,7 @@ def test_insert(fields, air_table):
     air_table.session.request.assert_called_once()
 
 
-@pytest.mark.insert
+@pytest.mark.batch_insert
 def test_batch_insert(air_table):
     air_table.insert([{'Name': 'John'}, {'Name': 'Marc'}])
     air_table.session.request.assert_called_with(
@@ -157,6 +158,21 @@ def test_batch_insert(air_table):
         json={'fields': [{'Name': 'John'}, {'Name': 'Marc'}],
               'typecast': False}, params=None)
     air_table.session.request.assert_called_once()
+
+
+@pytest.mark.skip
+@pytest.mark.mirror
+def test_mirror(airtable_pages):
+    # destructive creation: batch_delete followed by a batch_insert
+    records = [{'Name': 'John'}, {'Name': 'Marc'}]
+    record = airtable_pages.mirror(records)
+    air_table.session.request.assert_called_with(
+        'post', 'https://api.airtable.com/v0/Base Key/Table%20Name',
+        json={'fields': [{'Name': 'John'}, {'Name': 'Marc'}],
+              'typecast': False}, params=None)
+    assert airtable_pages.session.request.call_count == 2
+    # record = airtable.mirror(records, view='View')
+    # ([{'id': 'recwPQIfs4wKPyc9D', ... }], [{'deleted': True, ... }])
 
 
 # --- READ RECORDS ---
@@ -225,6 +241,17 @@ def test_get_all(kwds, params, airtable_pages):
     assert len(records) == 6
 
 
+@pytest.mark.get_all
+@pytest.mark.parametrize('rate', [0, 0.2])
+def test_get_all_rate_limit(rate, airtable_pages):
+    Airtable.API_LIMIT = rate
+    airtable.time.sleep = Mock()
+    airtable_pages.get_all()
+    airtable.time.sleep.assert_called_with(rate)
+    assert airtable.time.sleep.call_count == 3
+    Airtable.API_LIMIT = 0
+
+
 @pytest.mark.test_get_iter
 def test_get_iter(airtable_pages):
     for page in airtable_pages.get_iter(view='ViewName', sort='COLUMN_A'):
@@ -241,7 +268,44 @@ def test_get_iter(airtable_pages):
 # --- UPDATE RECORDS ---
 
 
+@pytest.mark.update
+@pytest.mark.parametrize('fields', [
+    {'Status': 'Fired'}
+])
+def test_insert(fields, air_table):
+    air_table.update('recwPQIfs4wKPyc9D', fields)
+    air_table.session.request.assert_called_with(
+        'patch',
+        'https://api.airtable.com/v0/Base Key/Table%20Name/recwPQIfs4wKPyc9D',
+        json={'fields': {'Status': 'Fired'}, 'typecast': False}, params=None)
+    air_table.session.request.assert_called_once()
+
+
 # --- DELETE RECORDS ---
+
+
+@pytest.mark.delete
+def test_insert(air_table):
+    air_table.delete('recwPQIfs4wKPyc9D')
+    air_table.session.request.assert_called_with(
+        'delete',
+        'https://api.airtable.com/v0/Base Key/Table%20Name/recwPQIfs4wKPyc9D',
+        json=None, params=None)
+    air_table.session.request.assert_called_once()
+
+
+@pytest.mark.batch_delete
+def test_batch_delete(air_table):
+    record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
+    air_table.batch_delete(record_ids)
+    air_table.session.request.any_call(
+        'delete',
+        'https://api.airtable.com/v0/Base Key/Table%20Name/recwPQIfs4wKPyc9D',
+        json=None, params=None)
+    air_table.session.request.any_call(
+        'delete',
+        'https://api.airtable.com/v0/Base Key/Table%20Name/recwDxIfs3wDPyc3F',
+        json=None, params=None)
 
 
 # --- SEARCH RECORDS ---
@@ -315,23 +379,10 @@ def test_no_match_found(air_table):
 TODO
 ====
 
-CREATE
-------
-
-# destructive creation
->>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
->>> record = airtable.,mirror(records)
->>> record = airtable.mirror(records, view='View')
-([{'id': 'recwPQIfs4wKPyc9D', ... }], [{'deleted': True, ... }])
-
 UPDATE
 ------
 
->> fields = {'Status': 'Fired'}
->>> airtable.update(record['id'], fields)
-
 airtable.update_by_field('Name', 'Tom', {'Phone': '1234-4445'})
-
 >>> record = {'Name': 'John', 'Tel': '540-255-5522'}
 >>> airtable.update_by_field('Name', 'John', record)
 
@@ -341,12 +392,9 @@ airtable.update_by_field('Name', 'Tom', {'Phone': '1234-4445'})
 DELETE
 ------
 
->>> airtable.delete(record['id'])
->>> airtable.delete('recwPQIfs4wKPyc9D')
-
 >>> record = airtable.delete_by_field('Employee Id', 'DD13332454')
-
 airtable.delete_by_field('Name', 'Tom')
+
 >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
 >>> airtable.batch_delete(records_ids)
 
