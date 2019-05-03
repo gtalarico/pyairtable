@@ -75,7 +75,7 @@ def generate_responses(*args, **kwds):
     * Page 1 & 2 include an offset key/value along with the records.
     * Page 3 doesn't have an offset key; indicating it's the last page.
     """
-    responses = [Mock() for i in range(3)]
+    responses = [Mock(name='response') for i in range(3)]
     for response in responses:
         response.raise_for_status.return_value = False
         response.data = deepcopy(TEST_DATA)
@@ -99,7 +99,7 @@ def air_table(at):
     assert set(at.session.headers) == HEADER_BASE_PARAMS
     assert vars(at.session.auth) == {'api_key': 'API Key'}
 
-    at.session.request = Mock()
+    at.session.request = Mock(name='request')
     at.session.request.request_for_status.return_value = None
     yield at
 
@@ -419,8 +419,7 @@ def test_update(fields, air_table):
 def test_update_by_field(
     field_name, field_value, fields, record_id, airtable_pages
 ):
-    airtable_pages.match = Mock()
-    airtable_pages.match.side_effect = match
+    airtable_pages.match = Mock(side_effect=match)
     result = airtable_pages.update_by_field(field_name, field_value, fields)
     assert airtable_pages.match.called_with(field_name, field_value)
     assert airtable_pages.match.called_once()
@@ -465,7 +464,7 @@ def test_delete(air_table):
     air_table.session.request.assert_called_once()
 
 
-@pytest.mark.batch_delete
+@pytest.mark.delete
 def test_batch_delete(air_table):
     record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
     air_table.batch_delete(record_ids)
@@ -483,7 +482,7 @@ def test_batch_delete(air_table):
     )
 
 
-@pytest.mark.update
+@pytest.mark.delete
 @pytest.mark.parametrize(
     'field_name,field_value,record_id', [
         ('Name', 'Tom', '2'),
@@ -495,8 +494,7 @@ def test_delete_by_field(field_name, field_value, record_id, airtable_pages):
     # when field/value match is not found.  update_by_field contains
     # logic to handle this, delete_by_field does not
     # once working add ('Name', 'Joe', None) to the parmaeters.
-    airtable_pages.match = Mock()
-    airtable_pages.match.side_effect = match
+    airtable_pages.match = Mock(side_effect=match)
     result = airtable_pages.delete_by_field(field_name, field_value)
     assert airtable_pages.match.called_with(field_name, field_value)
     assert airtable_pages.match.called_once()
@@ -551,7 +549,7 @@ def test_search(args, params, airtable_pages):
     assert len(records) == 6
 
 
-@pytest.mark.match
+@pytest.mark.search
 @pytest.mark.parametrize('args,params', [
     (
         ['Name', 'John'],
@@ -575,7 +573,7 @@ def test_match(args, params, airtable_pages):
 
 
 @pytest.mark.skip
-@pytest.mark.match
+@pytest.mark.search
 def test_match_returns_first_record_only(air_table):
     air_table.session.request.return_value = {"records": []}
     record = air_table.match('COLUMN_ID', '1')
@@ -584,22 +582,9 @@ def test_match_returns_first_record_only(air_table):
 
 
 @pytest.mark.skip
-@pytest.mark.match
+@pytest.mark.search
 def test_no_match_found(air_table):
     air_table.session.request.return_value = {"records": []}
     record = air_table.match('Name', 'John')
     assert air_table.session.request.assert_called_once()
     assert record == {}
-
-
-'''
-TODO
-====
-
-DELETE
-------
-
->>> record = airtable.delete_by_field('Employee Id', 'DD13332454')
-airtable.delete_by_field('Name', 'Tom')
-
-'''

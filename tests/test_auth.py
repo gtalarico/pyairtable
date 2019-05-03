@@ -1,7 +1,9 @@
 import os
+from unittest.mock import Mock
 
 import pytest
 
+from airtable.airtable import Airtable
 from airtable.auth import AirtableAuth
 from requests import Session
 
@@ -38,3 +40,13 @@ def test_api_key_not_provided():
         del os.environ[API_KEY_ENV_NAME]
         with pytest.raises(KeyError):
             AirtableAuth()
+
+
+def test_airtable_validate_session_option():
+    AirtableAuth = Mock(name='AirtableAuth')
+    Airtable.validate_session = Mock(
+        name='validate_session', return_value=True
+    )
+    at = Airtable('base_key', 'api_key')
+    Airtable.validate_session.called_with(at.url_table)
+    Airtable.validate_session.called_once()
