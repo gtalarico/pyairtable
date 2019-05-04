@@ -128,3 +128,8 @@ from .test_airtable import air_table
 )
 def test_params(given, expected, air_table):
     assert air_table._process_params(given) == expected
+
+
+def test_invalid_param(air_table):
+    with pytest.raises(ValueError):
+        air_table._process_params({'invalid_key': None})
