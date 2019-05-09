@@ -43,7 +43,7 @@ HEADER_BASE_PARAMS = {'User-Agent', 'Accept-Encoding', 'Accept', 'Connection'}
 
 TEST_DATA = {
     "records": [
-         {
+        {
             "id": "1",
             "fields": {
                 "Name": "John",
@@ -51,7 +51,7 @@ TEST_DATA = {
                 "State": "CA"
             },
             "createdTime": "2017-03-14T22:04:31.000Z"
-         }, {
+        }, {
             "id": "2",
             "fields": {
                 "Name": "Tom",
@@ -59,7 +59,7 @@ TEST_DATA = {
                 "State": "FL"
             },
             "createdTime": "2017-03-20T15:21:50.000Z"
-         }
+        }
     ],
     "offset": "itr1/rec1"
 }
@@ -117,6 +117,81 @@ def airtable_pages(air_table):
     return air_table
 
 
+# --- CREATE RECORDS ---
+
+
+@pytest.mark.create
+@pytest.mark.parametrize('fields', [
+    {'Name': 'Brian'},
+    {'First Name': 'John'}
+])
+def test_insert(fields, air_table):
+    air_table.insert(fields)
+    air_table.session.request.assert_called_with(
+        'post',
+        'https://api.airtable.com/v0/Base Key/Table%20Name',
+        json={
+            'fields': fields,
+            'typecast': False
+        },
+        params=None
+    )
+    air_table.session.request.assert_called_once()
+
+
+@pytest.mark.create
+def test_batch_insert(air_table):
+    air_table.insert([{'Name': 'John'}, {'Name': 'Marc'}])
+    air_table.session.request.assert_called_with(
+        'post',
+        'https://api.airtable.com/v0/Base Key/Table%20Name',
+        json={
+            'fields': [
+                {'Name': 'John'},
+                {'Name': 'Marc'}
+            ],
+            'typecast': False
+        },
+        params=None
+    )
+    air_table.session.request.assert_called_once()
+
+
+@pytest.mark.mirror
+def test_mirror(airtable_pages):
+    # destructive creation: batch_delete followed by a batch_insert
+    records = [{'Name': 'John'}, {'Name': 'Marc'}]
+    airtable_pages.batch_delete = Mock()
+    airtable_pages.batch_insert = Mock()
+    airtable_pages.mirror(records)
+    airtable_pages.session.request.assert_called_with(
+        'get',
+        'https://api.airtable.com/v0/Base Key/Table%20Name',
+        json=None,
+        params=OrderedDict([('offset', 'itr1/rec1')])
+    )
+    assert airtable_pages.session.request.call_count == 3
+    airtable_pages.batch_delete.assert_called_with(
+        ['1', '2', '1', '2', '1', '2']
+    )
+    airtable_pages.batch_insert.assert_called_with(records)
+
+
+# --- READ RECORDS ---
+
+
+@pytest.mark.read
+def test_get(air_table):
+    air_table.get('recwPQIfs4wKPyc9D')
+    air_table.session.request.assert_called_with(
+        'get',
+        'https://api.airtable.com/v0/Base Key/Table%20Name/recwPQIfs4wKPyc9D',
+        json=None,
+        params=OrderedDict()
+    )
+    air_table.session.request.assert_called_once()
+
+
 # See https://airtable-python-wrapper.readthedocs.io/en/master/params.html
 @pytest.mark.skip(reason="Examples from docs that are not currently supported")
 @pytest.mark.get
@@ -171,84 +246,6 @@ def test_get_with_options(kwds, params, air_table):
         'get', 'https://api.airtable.com/v0/Base Key/Table%20Name',
         json=None,
         params=OrderedDict(params)
-    )
-    air_table.session.request.assert_called_once()
-
-
-# --- CREATE RECORDS ---
-
-
-@pytest.mark.create
-@pytest.mark.parametrize('fields', [
-    {'Name': 'Brian'},
-    {'First Name': 'John'}
-])
-def test_insert(fields, air_table):
-    air_table.insert(fields)
-    air_table.session.request.assert_called_with(
-        'post',
-        'https://api.airtable.com/v0/Base Key/Table%20Name',
-        json={
-            'fields': fields,
-            'typecast': False
-        },
-        params=None
-    )
-    air_table.session.request.assert_called_once()
-
-
-@pytest.mark.create
-def test_batch_insert(air_table):
-    air_table.insert([{'Name': 'John'}, {'Name': 'Marc'}])
-    air_table.session.request.assert_called_with(
-        'post',
-        'https://api.airtable.com/v0/Base Key/Table%20Name',
-        json={
-            'fields': [
-                {'Name': 'John'},
-                {'Name': 'Marc'}
-            ],
-            'typecast': False
-        },
-        params=None
-    )
-    air_table.session.request.assert_called_once()
-
-
-@pytest.mark.skip
-@pytest.mark.mirror
-def test_mirror(airtable_pages):
-    # destructive creation: batch_delete followed by a batch_insert
-    records = [{'Name': 'John'}, {'Name': 'Marc'}]
-    record = airtable_pages.mirror(records)
-    air_table.session.request.assert_called_with(
-        'post',
-        'https://api.airtable.com/v0/Base Key/Table%20Name',
-        json={
-            'fields': [
-                {'Name': 'John'},
-                {'Name': 'Marc'}
-            ],
-            'typecast': False
-        },
-        params=None
-    )
-    assert airtable_pages.session.request.call_count == 2
-    # record = airtable.mirror(records, view='View')
-    # ([{'id': 'recwPQIfs4wKPyc9D', ... }], [{'deleted': True, ... }])
-
-
-# --- READ RECORDS ---
-
-
-@pytest.mark.read
-def test_get(air_table):
-    air_table.get('recwPQIfs4wKPyc9D')
-    air_table.session.request.assert_called_with(
-        'get',
-        'https://api.airtable.com/v0/Base Key/Table%20Name/recwPQIfs4wKPyc9D',
-        json=None,
-        params=OrderedDict()
     )
     air_table.session.request.assert_called_once()
 
@@ -413,7 +410,7 @@ def test_update(fields, air_table):
 @pytest.mark.update
 @pytest.mark.parametrize('field_name,field_value,fields,record_id', [
     ('Name', 'Tom', {'Phone': '1234-4445'}, '2'),
-    ('Name', 'John',  {'Name': 'Johnny', 'Tel': '540-255-5522'}, '1'),
+    ('Name', 'John', {'Name': 'Johnny', 'Tel': '540-255-5522'}, '1'),
     ('Name', 'Joe', {'Phone': '1234-4445'}, None),
 ])
 def test_update_by_field(
@@ -486,7 +483,7 @@ def test_batch_delete(air_table):
 @pytest.mark.parametrize(
     'field_name,field_value,record_id', [
         ('Name', 'Tom', '2'),
-        ('Name', 'John',  '1')
+        ('Name', 'John', '1')
     ]
 )
 def test_delete_by_field(field_name, field_value, record_id, airtable_pages):
@@ -534,7 +531,7 @@ def test_delete_by_field(field_name, field_value, record_id, airtable_pages):
         (
             ['Gender', 'Male'],
             [
-                ('filterByFormula',"{Gender}='Male'"),
+                ('filterByFormula', "{Gender}='Male'"),
                 ('offset', 'itr1/rec1')
             ]
         )
@@ -570,6 +567,13 @@ def test_match(args, params, airtable_pages):
         json=None, params=OrderedDict(params))
     # TODO: why not use get_iter instead of always reading in all pages?
     assert airtable_pages.session.request.call_count == 3
+
+
+@pytest.mark.search
+def test_match_empty_table(airtable_pages):
+    airtable_pages.get_all = Mock(return_value=[])
+    result = airtable_pages.match('Name', 'John')
+    assert result == {}
 
 
 @pytest.mark.skip

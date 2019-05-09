@@ -3,6 +3,7 @@ from collections import OrderedDict
 import pytest
 
 from .test_airtable import air_table
+from airtable.params import AirtableParams
 
 
 @pytest.mark.parametrize(
@@ -133,3 +134,17 @@ def test_params(given, expected, air_table):
 def test_invalid_param(air_table):
     with pytest.raises(ValueError):
         air_table._process_params({'invalid_key': None})
+
+
+def test_from_name_and_str_value():
+    result = AirtableParams.FormulaParam.from_name_and_value(
+        field_name='desc', field_value='test'
+    )
+    assert result == "{desc}='test'"
+
+
+def test_from_name_and_non_str_value():
+    result = AirtableParams.FormulaParam.from_name_and_value(
+        field_name='desc', field_value=12
+    )
+    assert result == "{desc}=12"
