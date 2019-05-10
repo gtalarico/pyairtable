@@ -78,4 +78,8 @@ def test_process_response(air_table):
     response.json = Mock(return_value='{}')
     result = air_table._process_response(response)
     assert result == '{}'
-    # TODO: HTTPError processing
+
+
+def test_repr(air_table):
+    assert '<Airtable' in air_table.__repr__()
+    assert TABLE_NAME in air_table.__repr__()

@@ -141,20 +141,30 @@ def test_insert(fields, air_table):
 
 @pytest.mark.create
 def test_batch_insert(air_table):
-    air_table.insert([{'Name': 'John'}, {'Name': 'Marc'}])
-    air_table.session.request.assert_called_with(
+    air_table.batch_insert([{'Name': 'John'}, {'Name': 'Marc'}])
+    air_table.session.request.any_call(
         'post',
         'https://api.airtable.com/v0/Base Key/Table%20Name',
         json={
-            'fields': [
-                {'Name': 'John'},
-                {'Name': 'Marc'}
-            ],
+            'fields': {
+                'Name': 'John'
+            },
             'typecast': False
         },
         params=None
     )
-    air_table.session.request.assert_called_once()
+    air_table.session.request.any_call(
+        'post',
+        'https://api.airtable.com/v0/Base Key/Table%20Name',
+        json={
+            'fields': {
+                'Name': 'Marc'
+            },
+            'typecast': False
+        },
+        params=None
+    )
+    air_table.session.request.call_count == 2
 
 
 @pytest.mark.mirror
@@ -427,7 +437,6 @@ def test_update_by_field(
             json={'fields': fields, 'typecast': False},
             params=None
         )
-        airtable_pages.session.request.assert_called_once()
     else:
         airtable_pages.session.request.assert_not_called()
         assert result == {}
@@ -435,7 +444,7 @@ def test_update_by_field(
 
 @pytest.mark.update
 def test_replace(air_table):
-    fields = {'PassangerName': 'Mike', 'Passport': 'YASD232-23'}
+    fields = {'Name': 'Billy'}
     air_table.replace('recwPQIfs4wKPyc9D', fields)
     air_table.session.request.assert_called_with(
         'put',
@@ -443,7 +452,27 @@ def test_replace(air_table):
         json={'fields': fields, 'typecast': False},
         params=None
     )
-    air_table.session.request.assert_called_once()
+
+
+@pytest.mark.update
+def test_replace_by_field(airtable_pages):
+    airtable_pages.match = Mock(side_effect=match)
+    field_name = 'Name'
+    field_value = 'Tom'
+    record_id = '2'
+    fields = {'Name': 'Billy'}
+    result = airtable_pages.replace_by_field(field_name, field_value, fields)
+    assert airtable_pages.match.called_with(field_name, field_value)
+    if record_id:
+        airtable_pages.session.request.assert_called_with(
+            'put',
+            'https://api.airtable.com/v0/Base Key/Table%20Name/' + record_id,
+            json={'fields': fields, 'typecast': False},
+            params=None
+        )
+    else:
+        airtable_pages.session.request.assert_not_called()
+        assert result == {}
 
 
 # --- DELETE RECORDS ---
@@ -574,21 +603,3 @@ def test_match_empty_table(airtable_pages):
     airtable_pages.get_all = Mock(return_value=[])
     result = airtable_pages.match('Name', 'John')
     assert result == {}
-
-
-@pytest.mark.skip
-@pytest.mark.search
-def test_match_returns_first_record_only(air_table):
-    air_table.session.request.return_value = {"records": []}
-    record = air_table.match('COLUMN_ID', '1')
-    assert air_table.session.request.assert_called_once()
-    assert record == {'fields': {'COLUMN_ID': '1'}}
-
-
-@pytest.mark.skip
-@pytest.mark.search
-def test_no_match_found(air_table):
-    air_table.session.request.return_value = {"records": []}
-    record = air_table.match('Name', 'John')
-    assert air_table.session.request.assert_called_once()
-    assert record == {}
