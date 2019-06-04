@@ -1,9 +1,9 @@
 import os
-from unittest.mock import Mock
 
 import pytest
+from mock import Mock
 
-from airtable.airtable import Airtable
+from airtable.table import Airtable
 from airtable.auth import AirtableAuth
 from requests import Session
 

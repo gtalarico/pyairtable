@@ -1,13 +1,12 @@
-import json
 import sys
-from importlib import reload
-from unittest.mock import Mock
 
 import pytest
+from mock import Mock
 from requests import HTTPError
+from six.moves import reload_module as reload
 
 
-import airtable.airtable
+import airtable.table
 from .test_airtable import air_table
 
 
@@ -28,7 +27,7 @@ def http_error_with_url():
 
 
 def json_decoder_error():
-    raise json.decoder.JSONDecodeError(msg='', doc='{}', pos=0)
+    raise ValueError()
 
 
 
@@ -72,8 +71,8 @@ def test_422_error_not_ipy(air_table, response):
 def test_422_error_using_ipy(air_table, response):
     sys.implementation.name = Mock()
     sys.implementation.name = 'ironpython'
-    reload(airtable.airtable)
-    assert airtable.airtable.IS_IPY
+    reload(airtable.table)
+    assert airtable.table.IS_IPY
     response.status_code = 422
     response.json.side_effect = json_decoder_error
     response.raise_for_status.side_effect = http_error_with_url
@@ -81,14 +80,14 @@ def test_422_error_using_ipy(air_table, response):
         air_table._process_response(response)
     assert str(e).endswith('unable to process page%20url')
     sys.implementation.name = 'cpython'
-    reload(airtable.airtable)
+    reload(airtable.table)
 
 
 def test_not_422_error_using_ipy(air_table, response):
     sys.implementation.name = Mock()
     sys.implementation.name = 'ironpython'
-    reload(airtable.airtable)
-    assert airtable.airtable.IS_IPY
+    reload(airtable.table)
+    assert airtable.table.IS_IPY
     response.status_code = 404
     response.json.side_effect = json_decoder_error
     response.raise_for_status.side_effect = http_error_with_url
@@ -96,4 +95,4 @@ def test_not_422_error_using_ipy(air_table, response):
         air_table._process_response(response)
     assert str(e).endswith('unable to process page%20url')
     sys.implementation.name = 'cpython'
-    reload(airtable.airtable)
+    reload(airtable.table)

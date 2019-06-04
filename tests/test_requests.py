@@ -30,11 +30,11 @@ arguments which are not part of the Airtable.get method signature.
 
 from collections import OrderedDict, namedtuple
 from copy import deepcopy
-from unittest.mock import Mock
 
 import pytest
+from mock import Mock
 
-import airtable.airtable as airtable
+import airtable.table as table
 from .test_airtable import air_table as at
 from .test_airtable import Airtable
 
@@ -377,10 +377,10 @@ def test_get_all(kwds, params, airtable_pages):
 @pytest.mark.parametrize('rate', [0, 0.2])
 def test_get_all_rate_limit(rate, airtable_pages):
     Airtable.API_LIMIT = rate
-    airtable.time.sleep = Mock()
+    table.time.sleep = Mock()
     airtable_pages.get_all()
-    airtable.time.sleep.assert_called_with(rate)
-    assert airtable.time.sleep.call_count == 3
+    table.time.sleep.assert_called_with(rate)
+    assert table.time.sleep.call_count == 3
     Airtable.API_LIMIT = 0
 
 

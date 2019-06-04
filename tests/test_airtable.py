@@ -1,11 +1,12 @@
-import os
 import sys
-from importlib import reload
-from unittest.mock import Mock
+
+from mock import Mock
+from six.moves import reload_module as reload
 
 import pytest
-import airtable
-from airtable.airtable import Airtable
+
+import airtable.table
+from airtable.table import Airtable
 
 Airtable.VERSION = 'v0'
 Airtable.API_BASE_URL = 'https://api.airtable.com/'
@@ -60,16 +61,17 @@ def test_airtable_invalid_sessions(air_table):
 
 
 def test_ipy():
-    sys.implementation.name = Mock()
+    sys.implementation = Mock()
     sys.implementation.name = 'cpython'
-    reload(airtable.airtable)
-    assert not airtable.airtable.IS_IPY
+
+    reload(airtable.table)
+    assert not airtable.table.IS_IPY
     sys.implementation.name = 'ironpython'
-    reload(airtable.airtable)
-    assert airtable.airtable.IS_IPY
+    reload(airtable.table)
+    assert airtable.table.IS_IPY
     sys.implementation = Mock(spec=[], cache_tag='cpython')
-    reload(airtable.airtable)
-    assert not airtable.airtable.IS_IPY
+    reload(airtable.table)
+    assert not airtable.table.IS_IPY
 
 
 def test_process_response(air_table):
