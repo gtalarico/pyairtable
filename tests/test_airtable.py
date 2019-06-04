@@ -1,7 +1,11 @@
 import sys
 
+import six
 from mock import Mock
-from six.moves import reload_module as reload
+try:
+    from importlib import reload
+except ImportError:
+    from six.moves import reload_module as reload
 
 import pytest
 
@@ -61,7 +65,8 @@ def test_airtable_invalid_sessions(air_table):
 
 
 def test_ipy():
-    sys.implementation = Mock()
+    if six.PY2:
+        sys.implementation = Mock()
     sys.implementation.name = 'cpython'
 
     reload(airtable.table)
