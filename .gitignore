@@ -5,3 +5,7 @@ env.bat
 docs/build
 .ipynb_checkpoints
 *egg-info
+*.pyc
+*~
+.venv
+.tox/
