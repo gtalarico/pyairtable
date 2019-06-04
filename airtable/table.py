@@ -91,12 +91,13 @@ similar to this:
 """  #
 
 import sys
-import requests
 from collections import OrderedDict
-from requests.exceptions import HTTPError
 import posixpath
 import time
+
 from six.moves.urllib.parse import unquote, quote
+
+import requests
 
 from .auth import AirtableAuth
 from .params import AirtableParams
@@ -170,7 +171,7 @@ class Airtable():
             # Attempt to get Error message from response, Issue #16
             try:
                 error_dict = response.json()
-            except json.decoder.JSONDecodeError:
+            except ValueError:
                 pass
             else:
                 if 'error' in error_dict:

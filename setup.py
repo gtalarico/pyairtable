@@ -1,5 +1,7 @@
-from setuptools import setup
 import os
+from io import open
+from setuptools import setup
+
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -10,13 +12,11 @@ with open(os.path.join(here, 'airtable', '__version__.py'),
 
 with open('README.md', mode='r', encoding='utf-8') as f:
     readme = f.read()
-with open('HISTORY.md', mode='r', encoding='utf-8') as f:
-    history = f.read()
 
 setup(
     name=about['__name__'],
     description=about['__description__'],
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     long_description_content_type='text/markdown',
     author=about['__author__'],
     author_email=about['__authoremail__'],
