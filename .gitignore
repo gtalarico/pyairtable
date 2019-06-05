@@ -1,7 +1,6 @@
 dist/
 build/
 docs/build
-.coverage
 .ipynb_checkpoints
 .eggs
 .tox

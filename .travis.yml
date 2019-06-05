@@ -7,10 +7,6 @@ python:
   # - "3.5"
   # - "3.6"
   - "3.7"
-branches:
-  only:
-  - master
-  - dev/main
 install:
   - pip install .
   - pip install tox
@@ -20,4 +16,4 @@ script:
   - tox
 after_success:
     - pip install codecov
-    - codecov
+    - codecov -t "be693bf3-8461-44e7-b372-0f01b0ac9360"
