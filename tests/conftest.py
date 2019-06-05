@@ -1,8 +1,5 @@
-import os
-import json
 import pytest
-from collections import OrderedDict, defaultdict
-from requests_mock import Mocker
+from collections import OrderedDict
 from posixpath import join as urljoin
 from six.moves.urllib.parse import urlencode, quote
 
@@ -15,7 +12,7 @@ def url_builder():
 
     def _url_builder(base_key, table_name, params=None):
         urltable_name = quote(table_name, safe="")
-        url = urljoin(Airtable.API_URL, base_key, table_name)
+        url = urljoin(Airtable.API_URL, base_key, urltable_name)
         if params:
             params = OrderedDict(sorted(params.items()))
             url += "?" + urlencode(params)

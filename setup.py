@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 import os
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -12,14 +12,11 @@ with open(
 with open(os.path.join(here, "README.md"), mode="r", encoding="utf-8") as f:
     readme = f.read()
 
-# with open(os.path.join(here, 'HISTORY.md'), mode='r', encoding='utf-8') as f:
-#     history = f.read()
-history = ""
+with open(os.path.join(here, "HISTORY.md"), mode="r", encoding="utf-8") as f:
+    history = f.read()
 
 setup_requires = ["pytest-runner"]
-
 install_requires = ["requests>=2", "six>=1.10"]
-
 tests_require = ["requests-mock", "requests"]
 
 setup(

@@ -2,7 +2,6 @@ import pytest
 import os
 import requests
 from requests_mock import Mocker
-from airtable import Airtable
 from airtable.auth import AirtableAuth
 
 
@@ -25,6 +24,6 @@ class TestAuth:
         assert "Bearer" in request.headers["Authorization"]
 
     def test_authorization_missing(self):
-        key = os.environ.pop("AIRTABLE_API_KEY", None)
+        os.environ.pop("AIRTABLE_API_KEY", None)
         with pytest.raises(KeyError):
             AirtableAuth()

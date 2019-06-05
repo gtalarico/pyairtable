@@ -1,5 +1,4 @@
 import pytest
-from requests_mock import Mocker
 
 from airtable import Airtable
 

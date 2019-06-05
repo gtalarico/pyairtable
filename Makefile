@@ -18,6 +18,12 @@ deploy:
 ## test: Run tests
 test:
 	tox
+	make clean
+
+## lint: Lint and format
+lint:
+	flake8 .
+	black --check .
 
 ## docs: Generate docs locally
 docs:

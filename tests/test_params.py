@@ -1,14 +1,11 @@
 from __future__ import absolute_import
 
 import pytest
-import os
 import requests
 from requests_mock import Mocker
-from six.moves.urllib.parse import quote
 
 from airtable import Airtable
 from airtable.params import AirtableParams
-from airtable.auth import AirtableAuth
 
 
 class TestParamsIntegration:

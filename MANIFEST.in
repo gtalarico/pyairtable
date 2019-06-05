@@ -1,0 +1,6 @@
+include *.py
+include *.rst
+include tox.ini
+include LICENSE
+include HISTORY.md
+include README.md

@@ -1,3 +1,7 @@
+# 0.12.0
+* Fixed: Rewrote tests
+* Fixed: Improve CI and deployment
+
 # 0.11.2
 * Fixed: Add sdist and universal for 2.7 dist
 * Fixed: Long dist set to markdown

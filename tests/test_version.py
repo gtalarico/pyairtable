@@ -1,11 +1,6 @@
-import pytest
-
-from airtable import Airtable
-
-
 class TestAbout:
     def test_get_about_info(self):
-        from airtable.__version__ import (
+        from airtable.__version__ import (  # noqa
             __version__,
             __name__,
             __description__,
