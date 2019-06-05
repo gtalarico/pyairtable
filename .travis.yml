@@ -12,6 +12,7 @@ branches:
   - master
   - dev/main
 script:
+  - flake8
   - tox
 install:
   - pip install .

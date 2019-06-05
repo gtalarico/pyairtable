@@ -8,3 +8,6 @@ tox-travis
 sphinx
 sphinx-rtd-theme
 sphinxcontrib-napoleon
+
+wheel
+twine

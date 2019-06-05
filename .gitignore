@@ -1,7 +1,8 @@
-.cache
-*__pycache__
-.coverage
 docs/build
+.coverage
 .ipynb_checkpoints
+.eggs
 .tox
 *egg-info
+*__pycache__
+.cache
