@@ -126,17 +126,6 @@ class Airtable():
         url_safe_table_name = quote(table_name, safe='')
         self.url_table = posixpath.join(self.API_URL, base_key,
                                         url_safe_table_name)
-        self.is_authenticated = self.validate_session(self.url_table)
-
-    def validate_session(self, url):
-        response = self.session.get(url, params={'maxRecords': 1})
-        if response.ok:
-            return True
-        elif response.status_code == 404:
-            raise ValueError('Invalid base or table name: {}'.format(url))
-        else:
-            raise ValueError(
-                'Authentication failed: {}'.format(response.reason))
 
     def _process_params(self, params):
         """
