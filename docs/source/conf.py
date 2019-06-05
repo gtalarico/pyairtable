@@ -31,16 +31,17 @@
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
-              'sphinx.ext.todo',
-              'sphinx.ext.coverage',
-              'sphinx.ext.viewcode',
-              'sphinx.ext.githubpages',
-              'sphinxcontrib.napoleon'
-              ]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.githubpages",
+    "sphinxcontrib.napoleon",
+]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 ################################
 # CUSTOM
@@ -48,12 +49,13 @@ templates_path = ['_templates']
 
 import sys
 import os
+
 source_dir = os.path.dirname(__file__)
-print('SOURCE_DIR: {}'.format(source_dir))
+print("SOURCE_DIR: {}".format(source_dir))
 doc_dir = os.path.dirname(source_dir)
-print('DOC_DIR: {}'.format(doc_dir))
+print("DOC_DIR: {}".format(doc_dir))
 root_dir = os.path.dirname(doc_dir)
-print('ROOT_DIR: {}'.format(root_dir))
+print("ROOT_DIR: {}".format(root_dir))
 sys.path.append(root_dir)
 
 napoleon_google_docstring = True
@@ -61,12 +63,14 @@ napoleon_include_init_with_doc = True
 
 import airtable
 from airtable.__version__ import __version__
-__version__ = __version__.split('-', 0)
+
+__version__ = __version__.split("-", 0)
 __release__ = __version__
 # The full version, including alpha/beta/rc tags.
 # release = version
 
 import sphinx_rtd_theme
+
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
@@ -78,15 +82,15 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'Airtable Python Wrapper'
-copyright = '2017, Gui Talarico'
-author = 'Gui Talarico'
+project = "Airtable Python Wrapper"
+copyright = "2017, Gui Talarico"
+author = "Gui Talarico"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -110,7 +114,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
@@ -132,7 +136,7 @@ todo_include_todos = True
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -140,12 +144,12 @@ html_static_path = ['_static']
 # This is required for the alabaster theme
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
-        'donate.html',
+    "**": [
+        "about.html",
+        "navigation.html",
+        "relations.html",  # needs 'show_related': True theme option to display
+        "searchbox.html",
+        "donate.html",
     ]
 }
 
@@ -153,7 +157,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'AirtablePythonWrapperdoc'
+htmlhelp_basename = "AirtablePythonWrapperdoc"
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -162,15 +166,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -180,8 +181,13 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'AirtablePythonWrapper.tex', 'Airtable Python Wrapper Documentation',
-     'Gui Talarico', 'manual'),
+    (
+        master_doc,
+        "AirtablePythonWrapper.tex",
+        "Airtable Python Wrapper Documentation",
+        "Gui Talarico",
+        "manual",
+    )
 ]
 
 
@@ -190,8 +196,13 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'airtablepythonwrapper', 'Airtable Python Wrapper Documentation',
-     [author], 1)
+    (
+        master_doc,
+        "airtablepythonwrapper",
+        "Airtable Python Wrapper Documentation",
+        [author],
+        1,
+    )
 ]
 
 
@@ -201,7 +212,13 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'AirtablePythonWrapper', 'Airtable Python Wrapper Documentation',
-     author, 'AirtablePythonWrapper', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "AirtablePythonWrapper",
+        "Airtable Python Wrapper Documentation",
+        author,
+        "AirtablePythonWrapper",
+        "One line description of project.",
+        "Miscellaneous",
+    )
 ]

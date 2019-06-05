@@ -19,8 +19,7 @@ For more information see the full implementation below.
 from collections import OrderedDict
 
 
-class _BaseParam():
-
+class _BaseParam:
     def __init__(self, value):
         self.value = value
 
@@ -44,7 +43,7 @@ class _BaseStringArrayParam(_BaseParam):
     """
 
     def to_param_dict(self):
-        encoded_param = self.param_name + '[]'
+        encoded_param = self.param_name + "[]"
         return {encoded_param: self.value}
 
 
@@ -70,16 +69,14 @@ class _BaseObjectArrayParam(_BaseParam):
         param_dict = {}
         for index, dictionary in enumerate(self.value):
             for key, value in dictionary.items():
-                param_name = '{param_name}[{index}][{key}]'.format(
-                    param_name=self.param_name,
-                    index=index,
-                    key=key)
+                param_name = "{param_name}[{index}][{key}]".format(
+                    param_name=self.param_name, index=index, key=key
+                )
                 param_dict[param_name] = value
         return OrderedDict(sorted(param_dict.items()))
 
 
-class AirtableParams():
-
+class AirtableParams:
     class MaxRecordsParam(_BaseParam):
         """
         Max Records Param
@@ -105,8 +102,8 @@ class AirtableParams():
         # >>> filter.to_param_dict()
         # {'maxRecords: 100}
 
-        param_name = 'maxRecords'
-        kwarg = 'max_records'
+        param_name = "maxRecords"
+        kwarg = "max_records"
 
     class ViewParam(_BaseParam):
         """
@@ -132,7 +129,7 @@ class AirtableParams():
         # >>> filter.to_param_dict()
         # {'view: 'Name or Id Of View'}
 
-        param_name = 'view'
+        param_name = "view"
         kwarg = param_name
 
     class PageSizeParam(_BaseParam):
@@ -154,13 +151,14 @@ class AirtableParams():
                 Must be less than or equal to 100. Default is 100.
 
         """
+
         # Class Input > Output
         # >>> filter = PageSizeParam(50)
         # >>> filter.to_param_dict()
         # {'pageSize: 50}
 
-        param_name = 'pageSize'
-        kwarg = 'page_size'
+        param_name = "pageSize"
+        kwarg = "page_size"
 
     class FormulaParam(_BaseParam):
         """
@@ -198,8 +196,8 @@ class AirtableParams():
         # >>> param.to_param_dict()
         # {'formula': "FIND('WW')=1"}
 
-        param_name = 'filterByFormula'
-        kwarg = 'formula'
+        param_name = "filterByFormula"
+        kwarg = "formula"
 
         @staticmethod
         def from_name_and_value(field_name, field_value):
@@ -209,8 +207,7 @@ class AirtableParams():
             if isinstance(field_value, str):
                 field_value = "'{}'".format(field_value)
 
-            formula = "{{{name}}}={value}".format(name=field_name,
-                                                  value=field_value)
+            formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
             return formula
 
     class _OffsetParam(_BaseParam):
@@ -235,12 +232,13 @@ class AirtableParams():
             record_id (``str``, ``list``):
 
         """
+
         # Class Input > Output
         # >>> filter = _OffsetParam('recqgqThAnETLuH58')
         # >>> filter.to_param_dict()
         # {'offset: 'recqgqThAnETLuH58'}
 
-        param_name = 'offset'
+        param_name = "offset"
         kwarg = param_name
 
     class FieldsParam(_BaseStringArrayParam):
@@ -272,7 +270,7 @@ class AirtableParams():
         # >>> param.to_param_dict()
         # {'fields[]': ['FieldOne', 'FieldTwo']}
 
-        param_name = 'fields'
+        param_name = "fields"
         kwarg = param_name
 
     class SortParam(_BaseObjectArrayParam):
@@ -314,28 +312,28 @@ class AirtableParams():
         # >>> filter.to_param_dict()
         # {'sort[0]['field']: 'col', sort[0]['direction']: 'asc'}
 
-        param_name = 'sort'
+        param_name = "sort"
         kwarg = param_name
 
         def __init__(self, value):
             # Wraps string into list to avoid string iteration
-            if hasattr(value, 'startswith'):
+            if hasattr(value, "startswith"):
                 value = [value]
 
             self.value = []
-            direction = 'asc'
+            direction = "asc"
 
             for item in value:
-                if not hasattr(item, 'startswith'):
+                if not hasattr(item, "startswith"):
                     field_name, direction = item
                 else:
-                    if item.startswith('-'):
-                        direction = 'desc'
+                    if item.startswith("-"):
+                        direction = "desc"
                         field_name = item[1:]
                     else:
                         field_name = item
 
-                sort_param = {'field': field_name, 'direction': direction}
+                sort_param = {"field": field_name, "direction": direction}
                 self.value.append(sort_param)
 
     @classmethod
@@ -352,7 +350,7 @@ class AirtableParams():
             filters = {}
             for param_class_name in dir(cls):
                 param_class = getattr(cls, param_class_name)
-                if hasattr(param_class, 'kwarg'):
+                if hasattr(param_class, "kwarg"):
                     filters[param_class.kwarg] = param_class
                     filters[param_class.param_name] = param_class
             cls.filters = filters
@@ -365,6 +363,6 @@ class AirtableParams():
         try:
             param_class = param_classes[kwarg_name]
         except KeyError:
-            raise ValueError('invalid param keyword {}'.format(kwarg_name))
+            raise ValueError("invalid param keyword {}".format(kwarg_name))
         else:
             return param_class
