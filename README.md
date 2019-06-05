@@ -47,14 +47,3 @@ airtable.delete_by_field('Name', 'Tom')
 ## License
 [MIT](https://opensource.org/licenses/MIT)
 
-## Requires
-* requests
-* six
-
-#### Requirements [Testing + Docs]
-* pytest
-* pytest-ordering
-* pytest-cov
-* coverage
-* sphinx
-* sphinxcontrib-napoleon
