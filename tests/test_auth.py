@@ -6,26 +6,25 @@ from airtable import Airtable
 from airtable.auth import AirtableAuth
 
 
-class TestAuth():
-
+class TestAuth:
     def test_authorization_key(self, table):
-        FAKE_URL = 'http://www.fake.com'
+        FAKE_URL = "http://www.fake.com"
         session = requests.Session()
-        session.auth = AirtableAuth(api_key='xxx')
+        session.auth = AirtableAuth(api_key="xxx")
         with Mocker() as m:
             m.get(FAKE_URL)
             resp = session.get(FAKE_URL)
-        assert 'Authorization' in resp.request.headers
-        assert 'Bearer xxx' in resp.request.headers['Authorization']
+        assert "Authorization" in resp.request.headers
+        assert "Bearer xxx" in resp.request.headers["Authorization"]
 
     def test_authorization_manual_call(self):
         request = requests.Request()
-        auth = AirtableAuth(api_key='x')
+        auth = AirtableAuth(api_key="x")
         request = auth.__call__(request)
-        assert 'Authorization' in request.headers
-        assert 'Bearer' in request.headers['Authorization']
+        assert "Authorization" in request.headers
+        assert "Bearer" in request.headers["Authorization"]
 
     def test_authorization_missing(self):
-        key = os.environ.pop('AIRTABLE_API_KEY', None)
+        key = os.environ.pop("AIRTABLE_API_KEY", None)
         with pytest.raises(KeyError):
             AirtableAuth()

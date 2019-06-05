@@ -93,24 +93,24 @@ similar to this:
 import sys
 import requests
 from collections import OrderedDict
-from requests.exceptions import HTTPError
 import posixpath
 import time
+import json
 from six.moves.urllib.parse import unquote, quote
 
 from .auth import AirtableAuth
 from .params import AirtableParams
 
 try:
-    IS_IPY = sys.implementation.name == 'ironpython'
+    IS_IPY = sys.implementation.name == "ironpython"
 except AttributeError:
     IS_IPY = False
 
 
-class Airtable():
+class Airtable:
 
-    VERSION = 'v0'
-    API_BASE_URL = 'https://api.airtable.com/'
+    VERSION = "v0"
+    API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
 
@@ -123,9 +123,8 @@ class Airtable():
         session.auth = AirtableAuth(api_key=api_key)
         self.session = session
         self.table_name = table_name
-        url_safe_table_name = quote(table_name, safe='')
-        self.url_table = posixpath.join(self.API_URL, base_key,
-                                        url_safe_table_name)
+        url_safe_table_name = quote(table_name, safe="")
+        self.url_table = posixpath.join(self.API_URL, base_key, url_safe_table_name)
 
     def _process_params(self, params):
         """
@@ -149,7 +148,7 @@ class Airtable():
             # https://github.com/IronLanguages/ironpython2/issues/242
             if not IS_IPY and response.status_code == 422:
                 err_msg = err_msg.replace(response.url, unquote(response.url))
-                err_msg += (' (Decoded URL)')
+                err_msg += " (Decoded URL)"
 
             # Attempt to get Error message from response, Issue #16
             try:
@@ -157,8 +156,8 @@ class Airtable():
             except json.decoder.JSONDecodeError:
                 pass
             else:
-                if 'error' in error_dict:
-                    err_msg += ' [Error: {}]'.format(error_dict['error'])
+                if "error" in error_dict:
+                    err_msg += " [Error: {}]".format(error_dict["error"])
             raise requests.exceptions.HTTPError(err_msg)
         else:
             return response.json()
@@ -168,25 +167,24 @@ class Airtable():
         return posixpath.join(self.url_table, record_id)
 
     def _request(self, method, url, params=None, json_data=None):
-        response = self.session.request(method, url, params=params,
-                                        json=json_data)
+        response = self.session.request(method, url, params=params, json=json_data)
         return self._process_response(response)
 
     def _get(self, url, **params):
         processed_params = self._process_params(params)
-        return self._request('get', url, params=processed_params)
+        return self._request("get", url, params=processed_params)
 
     def _post(self, url, json_data):
-        return self._request('post', url, json_data=json_data)
+        return self._request("post", url, json_data=json_data)
 
     def _put(self, url, json_data):
-        return self._request('put', url, json_data=json_data)
+        return self._request("put", url, json_data=json_data)
 
     def _patch(self, url, json_data):
-        return self._request('patch', url, json_data=json_data)
+        return self._request("patch", url, json_data=json_data)
 
     def _delete(self, url):
-        return self._request('delete', url)
+        return self._request("delete", url)
 
     def get(self, record_id):
         """
@@ -237,10 +235,10 @@ class Airtable():
         offset = None
         while True:
             data = self._get(self.url_table, offset=offset, **options)
-            records = data.get('records', [])
+            records = data.get("records", [])
             time.sleep(self.API_LIMIT)
             yield records
-            offset = data.get('offset')
+            offset = data.get("offset")
             if not offset:
                 break
 
@@ -302,7 +300,7 @@ class Airtable():
         """
         from_name_and_value = AirtableParams.FormulaParam.from_name_and_value
         formula = from_name_and_value(field_name, field_value)
-        options['formula'] = formula
+        options["formula"] = formula
         for record in self.get_all(**options):
             return record
         else:
@@ -336,7 +334,7 @@ class Airtable():
         records = []
         from_name_and_value = AirtableParams.FormulaParam.from_name_and_value
         formula = from_name_and_value(field_name, field_value)
-        options['formula'] = formula
+        options["formula"] = formula
         records = self.get_all(**options)
         return records
 
@@ -356,7 +354,9 @@ class Airtable():
             record (``dict``): Inserted record
 
         """
-        return self._post(self.url_table, json_data={"fields": fields, "typecast": typecast})
+        return self._post(
+            self.url_table, json_data={"fields": fields, "typecast": typecast}
+        )
 
     def _batch_request(self, func, iterable):
         """ Internal Function to limit batch calls to API limit """
@@ -404,9 +404,13 @@ class Airtable():
             record (``dict``): Updated record
         """
         record_url = self.record_url(record_id)
-        return self._patch(record_url, json_data={"fields": fields, "typecast": typecast})
+        return self._patch(
+            record_url, json_data={"fields": fields, "typecast": typecast}
+        )
 
-    def update_by_field(self, field_name, field_value, fields, typecast=False, **options):
+    def update_by_field(
+        self, field_name, field_value, fields, typecast=False, **options
+    ):
         """
         Updates the first record to match field name and value.
         Only Fields passed are updated, the rest are left as is.
@@ -431,7 +435,7 @@ class Airtable():
             record (``dict``): Updated record
         """
         record = self.match(field_name, field_value, **options)
-        return {} if not record else self.update(record['id'], fields, typecast)
+        return {} if not record else self.update(record["id"], fields, typecast)
 
     def replace(self, record_id, fields, typecast=False):
         """
@@ -456,7 +460,9 @@ class Airtable():
         record_url = self.record_url(record_id)
         return self._put(record_url, json_data={"fields": fields, "typecast": typecast})
 
-    def replace_by_field(self, field_name, field_value, fields, typecast=False, **options):
+    def replace_by_field(
+        self, field_name, field_value, fields, typecast=False, **options
+    ):
         """
         Replaces the first record to match field name and value.
         All Fields are updated to match the new ``fields`` provided.
@@ -480,7 +486,7 @@ class Airtable():
             record (``dict``): New record
         """
         record = self.match(field_name, field_value, **options)
-        return {} if not record else self.replace(record['id'], fields, typecast)
+        return {} if not record else self.replace(record["id"], fields, typecast)
 
     def delete(self, record_id):
         """
@@ -519,7 +525,7 @@ class Airtable():
             record (``dict``): Deleted Record
         """
         record = self.match(field_name, field_value, **options)
-        record_url = self.record_url(record['id'])
+        record_url = self.record_url(record["id"])
         return self._delete(record_url)
 
     def batch_delete(self, record_ids):
@@ -567,10 +573,10 @@ class Airtable():
             records (``tuple``): (new_records, deleted_records)
         """
 
-        all_record_ids = [r['id'] for r in self.get_all(**options)]
+        all_record_ids = [r["id"] for r in self.get_all(**options)]
         deleted_records = self.batch_delete(all_record_ids)
         new_records = self.batch_insert(records)
         return (new_records, deleted_records)
 
     def __repr__(self):
-        return '<Airtable table:{}>'.format(self.table_name)
+        return "<Airtable table:{}>".format(self.table_name)

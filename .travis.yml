@@ -2,18 +2,20 @@ language: python
 git:
   depth: 2
 python:
-  - 2.7
-  # - 3.4
-  # - 3.5
-  - 3.6
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "3.7"
 branches:
   only:
   - master
   - dev/main
 script:
-  - pytest --cov=airtable --cov-report=xml
+  - flake8
+  - tox
 install:
-  - pip install -r requirements-dev.txt
+  - pip install .
   - pip install codecov
 after_success:
     - codecov
