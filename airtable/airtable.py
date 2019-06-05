@@ -93,9 +93,9 @@ similar to this:
 import sys
 import requests
 from collections import OrderedDict
-from requests.exceptions import HTTPError
 import posixpath
 import time
+import json
 from six.moves.urllib.parse import unquote, quote
 
 from .auth import AirtableAuth

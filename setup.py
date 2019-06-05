@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -8,10 +8,26 @@ with open(os.path.join(here, 'airtable', '__version__.py'),
           mode='r', encoding='utf-8') as f:
     exec(f.read(), about)
 
-with open('README.md', mode='r', encoding='utf-8') as f:
+with open(os.path.join(here, 'README.md'), mode='r', encoding='utf-8') as f:
     readme = f.read()
-with open('HISTORY.md', mode='r', encoding='utf-8') as f:
-    history = f.read()
+
+# with open(os.path.join(here, 'HISTORY.md'), mode='r', encoding='utf-8') as f:
+#     history = f.read()
+history = ''
+
+setup_requires = [
+    "pytest-runner"
+]
+
+install_requires = [
+    'requests>=2',
+    'six>=1.10'
+]
+
+tests_require = [
+    'requests-mock',
+    'requests',
+]
 
 setup(
     name=about['__name__'],
@@ -23,7 +39,9 @@ setup(
     url=about['__url__'],
     version=about['__version__'],
     packages=['airtable'],
-    install_requires=['requests>=2.18.3', 'six>=1.10.0'],
+    setup_requires=setup_requires,
+    install_requires=install_requires,
+    tests_require=tests_require,
     keywords=['airtable', 'api'],
     license=about['__license__'],
     classifiers=[

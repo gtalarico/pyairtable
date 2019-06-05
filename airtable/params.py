@@ -71,9 +71,9 @@ class _BaseObjectArrayParam(_BaseParam):
         for index, dictionary in enumerate(self.value):
             for key, value in dictionary.items():
                 param_name = '{param_name}[{index}][{key}]'.format(
-                                                    param_name=self.param_name,
-                                                    index=index,
-                                                    key=key)
+                    param_name=self.param_name,
+                    index=index,
+                    key=key)
                 param_dict[param_name] = value
         return OrderedDict(sorted(param_dict.items()))
 

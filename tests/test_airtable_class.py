@@ -1,12 +1,10 @@
 
 import pytest
 from posixpath import join as urljoin
-from functools import partial
 from requests_mock import Mocker
 
-from .utils import match_request_data, dict_equals
-
 from airtable import Airtable
+
 
 def test_repr(table):
     assert '<Airtable' in table.__repr__()
@@ -53,47 +51,63 @@ def test_get_all(table, mock_response_list, mock_records):
 
 
 def test_insert(table, mock_response_single):
-    _id = mock_response_single['id']
     with Mocker() as mock:
         post_data = mock_response_single['fields']
         mock.post(table.url_table, status_code=201, json=mock_response_single,
-                 additional_matcher=match_request_data(post_data))
+                  additional_matcher=match_request_data(post_data))
         resp = table.insert(post_data)
     assert dict_equals(resp, mock_response_single)
-
 
 
 @pytest.mark.skip('Todo')
 def test_match(table, mock_response_single):
     pass
 
+
 @pytest.mark.skip('Todo')
 def test_search(table, mock_response_single):
     pass
+
 
 @pytest.mark.skip('Todo')
 def test_batch_insert(table, mock_response_single):
     pass
 
+
 @pytest.mark.skip('Todo')
 def test_update(table, mock_response_single):
     pass
+
 
 @pytest.mark.skip('Todo')
 def test_replace(table, mock_response_single):
     pass
 
+
 @pytest.mark.skip('Todo')
 def test_replace_by_field(table, mock_response_single):
     pass
 
+
 @pytest.mark.skip('Todo')
 def test_delete_by_field(table, mock_response_single):
     pass
+
 
 @pytest.mark.skip('Todo')
 def test_batch_delete(table, mock_response_single):
     pass
 
 
+# Helpers
 
+def match_request_data(post_data):
+    """ Custom Matches, check that provided Request data is correct"""
+    def _match_request_data(request):
+        request_data_fields = request.json()['fields']
+        return dict_equals(request_data_fields, post_data)
+    return _match_request_data
+
+
+def dict_equals(d1, d2):
+    return sorted(d1.items()) == sorted(d2.items())

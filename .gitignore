@@ -1,7 +1,7 @@
-env.bat
 .cache
 *__pycache__
 .coverage
 docs/build
 .ipynb_checkpoints
+.tox
 *egg-info
