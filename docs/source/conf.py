@@ -38,6 +38,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinxcontrib.napoleon",
+    # "autoapi.extension",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -57,6 +58,10 @@ print("DOC_DIR: {}".format(doc_dir))
 root_dir = os.path.dirname(doc_dir)
 print("ROOT_DIR: {}".format(root_dir))
 sys.path.append(root_dir)
+
+# Document Python Code
+autoapi_type = "python"
+autoapi_dirs = [os.path.join(root_dir, "airtable")]
 
 napoleon_google_docstring = True
 napoleon_include_init_with_doc = True

@@ -13,7 +13,7 @@ branches:
   - dev/main
 install:
   - pip install .
-  - pip tox
+  - pip install tox
   - pip install flake8
 script:
   - flake8

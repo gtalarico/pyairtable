@@ -34,8 +34,12 @@ Index
    params
    authentication
 
+
+
 * :ref:`genindex`
 * :ref:`modindex`
+
+Version: |version|
 
 Release Notes
 *************
