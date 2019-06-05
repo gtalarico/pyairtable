@@ -12,8 +12,8 @@ usage:
 ## deploy: Deploy
 deploy:
 	python setup.py sdist bdist_wheel --universal
+	twine upload ./dist/*
 	make clean
-	# twine upload dist\*
 
 ## test: Run tests
 test:
