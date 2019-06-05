@@ -1,11 +1,6 @@
 import pytest
-import requests
-from requests_mock import Mocker
-import posixpath
-from six.moves.urllib.parse import urlencode, quote
 
 from airtable import Airtable
-from .pytest_fixtures import mock_airtable, table_url, table_name
 
 class TestAbout():
 
