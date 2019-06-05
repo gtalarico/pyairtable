@@ -13,7 +13,7 @@ usage:
 deploy:
 	python setup.py sdist bdist_wheel --universal
 	make clean
-	# twine upload dist\*
+	twine upload dist\*
 
 ## test: Run tests
 test:
