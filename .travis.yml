@@ -15,7 +15,6 @@ script:
   - flake8
   - tox
 after_success:
-    - pip install pytest pytest-cov requests requests-mock
-    - pytest --cov=airtable
-    - pip install codecov
-    - codecov -t "be693bf3-8461-44e7-b372-0f01b0ac9360"
+    - pip install pytest requests requests-mock coveralls
+    - coverage run --source=airtable setup.py test
+    - coveralls
