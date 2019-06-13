@@ -79,8 +79,6 @@ def test_insert(table, mock_response_single):
 
 def test_match(table, mock_response_single):
     params = urlencode({"FilterByFormula": "{Value}='abc'"})
-    print(table.url_table)
-    print(params)
     with Mocker() as mock:
         mock.get(
             table.url_table + "?" + params,
