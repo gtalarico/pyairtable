@@ -85,7 +85,12 @@ def test_match(table, mock_response_single):
         mock.get(
             table.url_table + "?" + params,
             status_code=200,
-            json={"records": [mock_response_single]},
+            json={
+                "records": [
+                    mock_response_single,
+                    mock_response_single
+                ]
+            },
         )
         resp = table.match("Value", "abc")
     assert resp == mock_response_single
@@ -94,7 +99,8 @@ def test_match(table, mock_response_single):
 def test_match_not_found(table, mock_response_single):
     params = urlencode({"FilterByFormula": "{Value}='abc'"})
     with Mocker() as mock:
-        mock.get(table.url_table + "?" + params,
+        mock.get(
+            table.url_table + "?" + params,
             status_code=200,
             json={"records": []}
         )
