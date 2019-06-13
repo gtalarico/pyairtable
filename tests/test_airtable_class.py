@@ -106,9 +106,31 @@ def test_match_not_found(table, mock_response_single):
     assert resp == {}
 
 
-@pytest.mark.skip("Todo")
 def test_search(table, mock_response_single):
-    pass
+    expected = [mock_response_single, mock_response_single]
+    params = urlencode({"FilterByFormula": "{Value}='abc'"})
+    with Mocker() as mock:
+        mock.get(
+            table.url_table + "?" + params,
+            status_code=200,
+            json={
+                "records": expected
+            },
+        )
+        resp = table.search("Value", "abc")
+    assert resp == expected
+
+
+def test_search_not_found(table, mock_response_single):
+    params = urlencode({"FilterByFormula": "{Value}='abc'"})
+    with Mocker() as mock:
+        mock.get(
+            table.url_table + "?" + params,
+            status_code=200,
+            json={"records": []},
+        )
+        resp = table.search("Value", "abc")
+    assert resp == []
 
 
 @pytest.mark.skip("Todo")
