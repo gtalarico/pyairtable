@@ -199,9 +199,19 @@ def test_delete_by_field(table, mock_response_single):
     pass
 
 
-@pytest.mark.skip("Todo")
-def test_batch_delete(table, mock_response_single):
-    pass
+def test_batch_delete(table, mock_records):
+    ids = [i['id'] for i in mock_records]
+    with Mocker() as mock:
+        for id_ in ids:
+            mock.delete(
+                urljoin(table.url_table, id_),
+                status_code=201,
+                json={'delete': True, 'id': id_}
+            )
+        records = [i['id'] for i in mock_records]
+        resp = table.batch_delete(records)
+    expected = [{'delete': True, 'id': i} for i in ids]
+    assert resp == expected
 
 
 # Helpers
