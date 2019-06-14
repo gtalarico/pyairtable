@@ -133,9 +133,18 @@ def test_search_not_found(table, mock_response_single):
     assert resp == []
 
 
-@pytest.mark.skip("Todo")
-def test_batch_insert(table, mock_response_single):
-    pass
+def test_batch_insert(table, mock_records):
+    with Mocker() as mock:
+        for record in mock_records:
+            mock.post(
+                table.url_table,
+                status_code=201,
+                json=record,
+                additional_matcher=match_request_data(record['fields']),
+            )
+        records = [i['fields'] for i in mock_records]
+        resp = table.batch_insert(records)
+    assert seq_equals(resp, mock_records)
 
 
 @pytest.mark.skip("Todo")
@@ -178,3 +187,7 @@ def match_request_data(post_data):
 
 def dict_equals(d1, d2):
     return sorted(d1.items()) == sorted(d2.items())
+
+
+def seq_equals(s1, s2):
+    return all(dict_equals(s1, s2) for s1, s2 in zip(s1, s2))
