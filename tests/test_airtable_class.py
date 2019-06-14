@@ -180,6 +180,20 @@ def test_replace_by_field(table, mock_response_single):
     pass
 
 
+def test_delete(table, mock_response_single):
+    id_ = mock_response_single['id']
+    expected = {'delete': True, 'id': id_}
+    print(urljoin(table.url_table, id_))
+    with Mocker() as mock:
+        mock.delete(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=expected
+        )
+        resp = table.delete(id_)
+    assert resp == expected
+
+
 @pytest.mark.skip("Todo")
 def test_delete_by_field(table, mock_response_single):
     pass
