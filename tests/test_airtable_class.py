@@ -133,19 +133,46 @@ def test_search_not_found(table, mock_response_single):
     assert resp == []
 
 
-@pytest.mark.skip("Todo")
-def test_batch_insert(table, mock_response_single):
-    pass
+def test_batch_insert(table, mock_records):
+    with Mocker() as mock:
+        for record in mock_records:
+            mock.post(
+                table.url_table,
+                status_code=201,
+                json=record,
+                additional_matcher=match_request_data(record['fields']),
+            )
+        records = [i['fields'] for i in mock_records]
+        resp = table.batch_insert(records)
+    assert seq_equals(resp, mock_records)
 
 
-@pytest.mark.skip("Todo")
 def test_update(table, mock_response_single):
-    pass
+    id_ = mock_response_single['id']
+    post_data = mock_response_single['fields']
+    with Mocker() as mock:
+        mock.patch(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=mock_response_single,
+            additional_matcher=match_request_data(post_data),
+        )
+        resp = table.update(id_, post_data)
+    assert dict_equals(resp, mock_response_single)
 
 
-@pytest.mark.skip("Todo")
 def test_replace(table, mock_response_single):
-    pass
+    id_ = mock_response_single['id']
+    post_data = mock_response_single['fields']
+    with Mocker() as mock:
+        mock.put(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=mock_response_single,
+            additional_matcher=match_request_data(post_data),
+        )
+        resp = table.replace(id_, post_data)
+    assert dict_equals(resp, mock_response_single)
 
 
 @pytest.mark.skip("Todo")
@@ -153,14 +180,38 @@ def test_replace_by_field(table, mock_response_single):
     pass
 
 
+def test_delete(table, mock_response_single):
+    id_ = mock_response_single['id']
+    expected = {'delete': True, 'id': id_}
+    print(urljoin(table.url_table, id_))
+    with Mocker() as mock:
+        mock.delete(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=expected
+        )
+        resp = table.delete(id_)
+    assert resp == expected
+
+
 @pytest.mark.skip("Todo")
 def test_delete_by_field(table, mock_response_single):
     pass
 
 
-@pytest.mark.skip("Todo")
-def test_batch_delete(table, mock_response_single):
-    pass
+def test_batch_delete(table, mock_records):
+    ids = [i['id'] for i in mock_records]
+    with Mocker() as mock:
+        for id_ in ids:
+            mock.delete(
+                urljoin(table.url_table, id_),
+                status_code=201,
+                json={'delete': True, 'id': id_}
+            )
+        records = [i['id'] for i in mock_records]
+        resp = table.batch_delete(records)
+    expected = [{'delete': True, 'id': i} for i in ids]
+    assert resp == expected
 
 
 # Helpers
@@ -178,3 +229,7 @@ def match_request_data(post_data):
 
 def dict_equals(d1, d2):
     return sorted(d1.items()) == sorted(d2.items())
+
+
+def seq_equals(s1, s2):
+    return all(dict_equals(s1, s2) for s1, s2 in zip(s1, s2))
