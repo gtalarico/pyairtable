@@ -147,9 +147,18 @@ def test_batch_insert(table, mock_records):
     assert seq_equals(resp, mock_records)
 
 
-@pytest.mark.skip("Todo")
 def test_update(table, mock_response_single):
-    pass
+    id_ = mock_response_single['id']
+    post_data = mock_response_single['fields']
+    with Mocker() as mock:
+        mock.patch(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=mock_response_single,
+            additional_matcher=match_request_data(post_data),
+        )
+        resp = table.update(id_, post_data)
+    assert dict_equals(resp, mock_response_single)
 
 
 @pytest.mark.skip("Todo")
