@@ -92,6 +92,7 @@ similar to this:
 
 import sys
 import requests
+from functools import partial
 from collections import OrderedDict
 import posixpath
 import time
@@ -107,14 +108,14 @@ except AttributeError:
     IS_IPY = False
 
 
-class Airtable:
+class AirtableBase:
 
     VERSION = "v0"
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
 
-    def __init__(self, base_key, table_name, api_key=None):
+    def __init__(self, base_key, api_key=None):
         """
         If api_key is not provided, :any:`AirtableAuth` will attempt
         to use ``os.environ['AIRTABLE_API_KEY']``
@@ -122,20 +123,20 @@ class Airtable:
         session = requests.Session()
         session.auth = AirtableAuth(api_key=api_key)
         self.session = session
-        self.table_name = table_name
-        url_safe_table_name = quote(table_name, safe="")
-        self.url_table = posixpath.join(self.API_URL, base_key, url_safe_table_name)
 
-    def _process_params(self, params):
+        self.base_url = posixpath.join(self.API_URL, base_key)
+
+    def _process_parameters(self, parameters):
         """
-        Process params names or values as needed using filters
+        Process parameters names or values as needed using filters
         """
-        new_params = OrderedDict()
-        for param_name, param_value in sorted(params.items()):
-            param_value = params[param_name]
-            ParamClass = AirtableParams._get(param_name)
-            new_params.update(ParamClass(param_value).to_param_dict())
-        return new_params
+        new_parameters = OrderedDict()
+        for param_name, param_value in sorted(parameters.items()):
+            param_value = parameters[param_name]
+            parameters_class = AirtableParams.get(param_name)
+            new_parameters.update(parameters_class(
+                param_value).to_param_dict())
+        return new_parameters
 
     def _process_response(self, response):
         try:
@@ -162,9 +163,10 @@ class Airtable:
         else:
             return response.json()
 
-    def record_url(self, record_id):
+    def record_url(self, table_name, record_id):
         """ Builds URL with record id """
-        return posixpath.join(self.url_table, record_id)
+        url_safe_table_name = quote(table_name, safe="")
+        return posixpath.join(self.base_url, url_safe_table_name, record_id)
 
     def _request(self, method, url, params=None, json_data=None):
         response = self.session.request(method, url, params=params, json=json_data)
@@ -185,6 +187,373 @@ class Airtable:
 
     def _delete(self, url):
         return self._request("delete", url)
+
+    def get(self, table_name, record_id):
+        """
+        Retrieves a record by its id
+        >>> record = airtable.get('recwPQIfs4wKPyc9D')
+        Args:
+            table_name(``str``): Airtable table name
+            record_id(``str``): Airtable record id
+        Returns:
+            record (``dict``): Record
+        """
+        url = self.record_url(table_name, record_id)
+        return self._get(url)
+
+    def get_iter(self, table_name, **options):
+        """
+        Record Retriever Iterator
+        Returns iterator with lists in batches according to pageSize.
+        To get all records at once use :any:`get_all`
+        >>> for page in airtable.get_iter(table_name):
+        ...     for record in page:
+        ...         print(record)
+        [{'fields': ... }, ...]
+        Args:
+            table_name(``str``): Airtable table name
+        Keyword Args:
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParameter`
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParameter`.
+            page_size (``int``, optional ): The number of records returned
+                in each request. Must be less than or equal to 100.
+                Default is 100. See :any:`PageSizeParameter`.
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields. See :any:`FieldsParameter`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParameter`.
+            formula (``str``, optional): Airtable formula.
+                See :any:`FormulaParameter`.
+        Returns:
+            iterator (``list``): List of Records, grouped by pageSize
+        """
+        offset = None
+        url_safe_table_name = quote(table_name, safe="")
+        url = posixpath.join(self.base_url, url_safe_table_name)
+        while True:
+            data = self._get(url, offset=offset, **options)
+            records = data.get("records", [])
+            time.sleep(self.API_LIMIT)
+            yield records
+            offset = data.get("offset")
+            if not offset:
+                break
+
+    def get_all(self, table_name, **options):
+        """
+        Retrieves all records repetitively and returns a single list.
+        >>> airtable.get_all()
+        >>> airtable.get_all(view='MyView', fields=['ColA', '-ColB'])
+        >>> airtable.get_all(maxRecords=50)
+        [{'fields': ... }, ...]
+        Args:
+            table_name(``str``): Airtable table name
+        Keyword Args:
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParameter`
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParameter`.
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields. See :any:`FieldsParameter`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParameter`.
+            formula (``str``, optional): Airtable formula.
+                See :any:`FormulaParameter`.
+        Returns:
+            records (``list``): List of Records
+        >>> records = get_all(maxRecords=3, view='All')
+        """
+        all_records = []
+        for records in self.get_iter(table_name, **options):
+            all_records.extend(records)
+        return all_records
+
+    def match(self, table_name, field_name, field_value, **options):
+        """
+        Returns first match found in :any:`get_all`
+        >>> airtable.match('Name', 'John')
+        {'fields': {'Name': 'John'} }
+        Args:
+            table_name(``str``): Airtable table name
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
+        Keyword Args:
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParameter`
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParameter`.
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields. See :any:`FieldsParameter`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParameter`.
+        Returns:
+            record (``dict``): First record to match the field_value provided
+        """
+        from_name_and_value = AirtableParams.FormulaParameter.from_name_and_value
+        formula = from_name_and_value(field_name, field_value)
+        options["formula"] = formula
+        for record in self.get_all(table_name, **options):
+            return record
+        return {}
+
+    def search(self, table_name, field_name, field_value, **options):
+        """
+        Returns all matching records found in :any:`get_all`
+        >>> airtable.search('Gender', 'Male')
+        [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
+        Args:
+            table_name(``str``): Airtable table name
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
+        Keyword Args:
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParameter`
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParameter`.
+            fields (``str``, ``list``, optional): Name of field or fields to
+                be retrieved. Default is all fields. See :any:`FieldsParameter`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParameter`.
+        Returns:
+            records (``list``): All records that matched ``field_value``
+        """
+        records = []
+        from_name_and_value = AirtableParams.FormulaParameter.from_name_and_value
+        formula = from_name_and_value(field_name, field_value)
+        options["formula"] = formula
+        records = self.get_all(table_name, **options)
+        return records
+
+    def insert(self, table_name, fields, typecast=False):
+        """
+        Inserts a record
+        >>> record = {'Name': 'John'}
+        >>> airtable.insert(record)
+        Args:
+            table_name(``str``): Airtable table name
+            fields(``dict``): Fields to insert.
+                Must be dictionary with Column names as Key.
+            typecast(``boolean``): Automatic data conversion from string values.
+        Returns:
+            record (``dict``): Inserted record
+        """
+        url_safe_table_name = quote(table_name, safe="")
+        url = posixpath.join(self.base_url, url_safe_table_name)
+        return self._post(
+            url, json_data={"fields": fields, "typecast": typecast}
+        )
+
+    def _batch_request(self, func, iterable):
+        """ Internal Function to limit batch calls to API limit """
+        responses = []
+        for item in iterable:
+            responses.append(func(item))
+            time.sleep(self.API_LIMIT)
+        return responses
+
+    def batch_insert(self, table_name, records, typecast=False):
+        """
+        Calls :any:`insert` repetitively, following set API Rate Limit (5/sec)
+        To change the rate limit use ``airtable.API_LIMIT = 0.2``
+        (5 per second)
+        >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
+        >>> airtable.batch_insert(records)
+        Args:
+            table_name(``str``): Airtable table name
+            records(``list``): Records to insert
+        Returns:
+            records (``list``): list of added records
+        """
+        table_insert = partial(self.insert, table_name, typecast=typecast)
+        return self._batch_request(table_insert, records)
+
+    def update(self, table_name, record_id, fields, typecast=False):
+        """
+        Updates a record by its record id.
+        Only Fields passed are updated, the rest are left as is.
+        >>> record = airtable.match('Employee Id', 'DD13332454')
+        >>> fields = {'Status': 'Fired'}
+        >>> airtable.update(record['id'], fields)
+        Args:
+            table_name(``str``): Airtable table name
+            fields(``dict``): Fields to update.
+                Must be dictionary with Column names as Key
+            typecast(``boolean``): Automatic data conversion from string values.
+        Returns:
+            record (``dict``): Updated record
+        """
+        url = self.record_url(table_name, record_id)
+        return self._patch(
+            url, json_data={"fields": fields, "typecast": typecast}
+        )
+
+    def update_by_field(
+        self, table_name, field_name, field_value, fields, typecast=False, **options
+    ):
+        """
+        Updates the first record to match field name and value.
+        Only Fields passed are updated, the rest are left as is.
+        >>> record = {'Name': 'John', 'Tel': '540-255-5522'}
+        >>> airtable.update_by_field('Name', 'John', record)
+        Args:
+            table_name(``str``): Airtable table name
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
+            fields(``dict``): Fields to update.
+                Must be dictionary with Column names as Key
+            typecast(``boolean``): Automatic data conversion from string values.
+        Keyword Args:
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParameter`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParameter`.
+        Returns:
+            record (``dict``): Updated record
+        """
+        record = self.match(table_name, field_name, field_value, **options)
+        return {} if not record else self.update(table_name, record["id"], fields, typecast)
+
+    def replace(self, table_name, record_id, fields, typecast=False):
+        """
+        Replaces a record by its record id.
+        All Fields are updated to match the new ``fields`` provided.
+        If a field is not included in ``fields``, value will bet set to null.
+        To update only selected fields, use :any:`update`.
+        >>> record = airtable.match('Seat Number', '22A')
+        >>> fields = {'PassangerName': 'Mike', 'Passport': 'YASD232-23'}
+        >>> airtable.replace(record['id'], fields)
+        Args:
+            table_name(``str``): Airtable table name
+            record_id(``str``): Id of Record to update
+            fields(``dict``): Fields to replace with.
+                Must be dictionary with Column names as Key.
+            typecast(``boolean``): Automatic data conversion from string values.
+        Returns:
+            record (``dict``): New record
+        """
+        record_url = self.record_url(table_name, record_id)
+        return self._put(record_url, json_data={"fields": fields, "typecast": typecast})
+
+    def replace_by_field(
+        self, table_name, field_name, field_value, fields, typecast=False, **options
+    ):
+        """
+        Replaces the first record to match field name and value.
+        All Fields are updated to match the new ``fields`` provided.
+        If a field is not included in ``fields``, value will bet set to null.
+        To update only selected fields, use :any:`update`.
+        Args:
+            table_name(``str``): Airtable table name
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
+            fields(``dict``): Fields to replace with.
+                Must be dictionary with Column names as Key.
+            typecast(``boolean``): Automatic data conversion from string values.
+        Keyword Args:
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParameter`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParameter`.
+        Returns:
+            record (``dict``): New record
+        """
+        record = self.match(table_name, field_name, field_value, **options)
+        return {} if not record else self.replace(table_name, record["id"], fields, typecast)
+
+    def delete(self, table_name, record_id):
+        """
+        Deletes a record by its id
+        >>> record = airtable.match('Employee Id', 'DD13332454')
+        >>> airtable.delete(record['id'])
+        Args:
+            table_name(``str``): Airtable table name
+            record_id(``str``): Airtable record id
+        Returns:
+            record (``dict``): Deleted Record
+        """
+        record_url = self.record_url(table_name, record_id)
+        return self._delete(record_url)
+
+    def delete_by_field(self, table_name, field_name, field_value, **options):
+        """
+        Deletes first record  to match provided ``field_name`` and
+        ``field_value``.
+        >>> record = airtable.delete_by_field('Employee Id', 'DD13332454')
+        Args:
+            table_name(``str``): Airtable table name
+            field_name (``str``): Name of field to match (column name).
+            field_value (``str``): Value of field to match.
+        Keyword Args:
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParameter`.
+            sort (``list``, optional): List of fields to sort by.
+                Default order is ascending. See :any:`SortParameter`.
+        Returns:
+            record (``dict``): Deleted Record
+        """
+        record = self.match(table_name, field_name, field_value, **options)
+        record_url = self.record_url(table_name, record["id"])
+        return self._delete(record_url)
+
+    def batch_delete(self, table_name, record_ids):
+        """
+        Calls :any:`delete` repetitively, following set API Rate Limit (5/sec)
+        To change the rate limit set value of ``airtable.API_LIMIT`` to
+        the time in seconds it should sleep before calling the function again.
+        >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
+        >>> airtable.batch_delete(records_ids)
+        Args:
+            table_name(``str``): Airtable table name
+            records(``list``): Record Ids to delete
+        Returns:
+            records(``list``): list of records deleted
+        """
+        table_delete = partial(self.delete, table_name)
+        return self._batch_request(table_delete, record_ids)
+
+    def mirror(self, table_name, records, **options):
+        """
+        Deletes all records on table or view and replaces with records.
+        >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
+        >>> record = airtable.mirror(records)
+        If view options are provided, only records visible on that view will
+        be deleted.
+        >>> record = airtable.mirror(records, view='View')
+        ([{'id': 'recwPQIfs4wKPyc9D', ... }], [{'deleted': True, ... }])
+        Args:
+            table_name(``str``): Airtable table name
+            records(``list``): Records to insert
+        Keyword Args:
+            max_records (``int``, optional): The maximum total number of
+                records that will be returned. See :any:`MaxRecordsParameter`
+            view (``str``, optional): The name or ID of a view.
+                See :any:`ViewParameter`.
+        Returns:
+            records (``tuple``): (new_records, deleted_records)
+        """
+
+        all_record_ids = [r["id"] for r in self.get_all(table_name, **options)]
+        deleted_records = self.batch_delete(table_name, all_record_ids)
+        new_records = self.batch_insert(table_name, records)
+        return (new_records, deleted_records)
+
+
+class Airtable(AirtableBase):
+
+    def __init__(self, base_key, table_name, api_key=None):
+        """
+        If api_key is not provided, :any:`AirtableAuth` will attempt
+        to use ``os.environ['AIRTABLE_API_KEY']``
+        """
+        super().__init__(base_key, api_key=api_key)
+        url_safe_table_name = quote(table_name, safe="")
+        self.url_table = posixpath.join(self.base_url, url_safe_table_name)
+
+    def record_url(self, record_id):
+        """ Builds URL with record id """
+        return posixpath.join(self.url_table, record_id)
 
     def get(self, record_id):
         """
@@ -358,14 +727,6 @@ class Airtable:
             self.url_table, json_data={"fields": fields, "typecast": typecast}
         )
 
-    def _batch_request(self, func, iterable):
-        """ Internal Function to limit batch calls to API limit """
-        responses = []
-        for item in iterable:
-            responses.append(func(item))
-            time.sleep(self.API_LIMIT)
-        return responses
-
     def batch_insert(self, records, typecast=False):
         """
         Calls :any:`insert` repetitively, following set API Rate Limit (5/sec)
@@ -383,7 +744,8 @@ class Airtable:
             records (``list``): list of added records
 
         """
-        return self._batch_request(self.insert, records)
+        table_insert = partial(self.insert, typecast=typecast)
+        return self._batch_request(table_insert, records)
 
     def update(self, record_id, fields, typecast=False):
         """
