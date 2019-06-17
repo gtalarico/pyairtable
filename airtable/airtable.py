@@ -126,17 +126,17 @@ class AirtableBase:
 
         self.base_url = posixpath.join(self.API_URL, base_key)
 
-    def _process_parameters(self, parameters):
+    def _process_params(self, params):
         """
-        Process parameters names or values as needed using filters
+        Process params names or values as needed using filters
         """
-        new_parameters = OrderedDict()
-        for param_name, param_value in sorted(parameters.items()):
-            param_value = parameters[param_name]
-            parameters_class = AirtableParams.get(param_name)
-            new_parameters.update(parameters_class(
+        new_params = OrderedDict()
+        for param_name, param_value in sorted(params.items()):
+            param_value = params[param_name]
+            params_class = AirtableParams._get(param_name)
+            new_params.update(params_class(
                 param_value).to_param_dict())
-        return new_parameters
+        return new_params
 
     def _process_response(self, response):
         try:
@@ -549,6 +549,7 @@ class Airtable(AirtableBase):
         """
         super().__init__(base_key, api_key=api_key)
         url_safe_table_name = quote(table_name, safe="")
+        self.table_name = table_name
         self.url_table = posixpath.join(self.base_url, url_safe_table_name)
 
     def record_url(self, record_id):
