@@ -914,7 +914,7 @@ class Airtable(AirtableBase):
 
         >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
 
-        >>> record = airtable.,mirror(records)
+        >>> record = airtable.mirror(records)
 
         If view options are provided, only records visible on that view will
         be deleted.
