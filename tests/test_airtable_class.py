@@ -183,7 +183,6 @@ def test_replace_by_field(table, mock_response_single):
 def test_delete(table, mock_response_single):
     id_ = mock_response_single['id']
     expected = {'delete': True, 'id': id_}
-    print(urljoin(table.url_table, id_))
     with Mocker() as mock:
         mock.delete(
             urljoin(table.url_table, id_),
