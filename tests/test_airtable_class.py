@@ -214,9 +214,29 @@ def test_delete(table, mock_response_single):
     assert resp == expected
 
 
-@pytest.mark.skip("Todo")
 def test_delete_by_field(table, mock_response_single):
-    pass
+    id_ = mock_response_single['id']
+    expected = {'delete': True, 'id': id_}
+    match_params = urlencode({'FilterByFormula': "{Value}='abc'"})
+    match_url = table.url_table + "?" + match_params
+    with Mocker() as mock:
+        mock.get(
+            match_url,
+            status_code=200,
+            json={
+                "records": [
+                    mock_response_single,
+                    mock_response_single
+                ]
+            },
+        )
+        mock.delete(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=expected
+        )
+        resp = table.delete_by_field("value", "abc")
+    assert resp == expected
 
 
 def test_batch_delete(table, mock_records):
