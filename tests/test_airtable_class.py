@@ -161,6 +161,32 @@ def test_update(table, mock_response_single):
     assert dict_equals(resp, mock_response_single)
 
 
+def test_update_by_field(table, mock_response_single):
+    id_ = mock_response_single['id']
+    post_data = mock_response_single['fields']
+    match_params = urlencode({'FilterByFormula': "{Value}='abc'"})
+    match_url = table.url_table + "?" + match_params
+    with Mocker() as mock:
+        mock.get(
+            match_url,
+            status_code=200,
+            json={
+                "records": [
+                    mock_response_single,
+                    mock_response_single
+                ]
+            },
+        )
+        mock.patch(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=mock_response_single,
+            additional_matcher=match_request_data(post_data),
+        )
+        resp = table.update_by_field("Value", "abc", post_data)
+    assert dict_equals(resp, mock_response_single)
+
+
 def test_replace(table, mock_response_single):
     id_ = mock_response_single['id']
     post_data = mock_response_single['fields']
