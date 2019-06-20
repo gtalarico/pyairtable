@@ -4,6 +4,7 @@ coveralls
 requests-mock
 black
 flake8
+mock
 tox-travis
 
 sphinx
