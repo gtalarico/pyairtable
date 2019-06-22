@@ -1,6 +1,9 @@
 import pytest
 from collections import OrderedDict
 from posixpath import join as urljoin
+
+from mock import Mock
+from requests import HTTPError
 from six.moves.urllib.parse import urlencode, quote
 
 from airtable import Airtable
@@ -24,14 +27,18 @@ def url_builder():
 @pytest.fixture
 def constants():
     return dict(
-        API_KEY="FakeApiKey", BASE_KEY="appJMY16gZDQrMWpA", TABLE_NAME="Table Name"
+        API_KEY="FakeApiKey",
+        BASE_KEY="appJMY16gZDQrMWpA",
+        TABLE_NAME="Table Name"
     )
 
 
 @pytest.fixture()
 def table(constants):
     return Airtable(
-        constants["API_KEY"], constants["TABLE_NAME"], api_key=constants["BASE_KEY"]
+        constants["API_KEY"],
+        constants["TABLE_NAME"],
+        api_key=constants["BASE_KEY"]
     )
 
 
@@ -94,3 +101,15 @@ def mock_response_iterator(mock_response_list):
         return v
 
     return _response_iterator
+
+
+def http_error():
+    raise HTTPError('Not Found')
+
+
+@pytest.fixture
+def response():
+    response = Mock()
+    response.raise_for_status.side_effect = http_error
+    response.url = 'page%20url'
+    return response

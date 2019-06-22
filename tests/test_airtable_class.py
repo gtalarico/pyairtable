@@ -161,6 +161,32 @@ def test_update(table, mock_response_single):
     assert dict_equals(resp, mock_response_single)
 
 
+def test_update_by_field(table, mock_response_single):
+    id_ = mock_response_single['id']
+    post_data = mock_response_single['fields']
+    match_params = urlencode({'FilterByFormula': "{Value}='abc'"})
+    match_url = table.url_table + "?" + match_params
+    with Mocker() as mock:
+        mock.get(
+            match_url,
+            status_code=200,
+            json={
+                "records": [
+                    mock_response_single,
+                    mock_response_single
+                ]
+            },
+        )
+        mock.patch(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=mock_response_single,
+            additional_matcher=match_request_data(post_data),
+        )
+        resp = table.update_by_field("Value", "abc", post_data)
+    assert dict_equals(resp, mock_response_single)
+
+
 def test_replace(table, mock_response_single):
     id_ = mock_response_single['id']
     post_data = mock_response_single['fields']
@@ -175,15 +201,35 @@ def test_replace(table, mock_response_single):
     assert dict_equals(resp, mock_response_single)
 
 
-@pytest.mark.skip("Todo")
 def test_replace_by_field(table, mock_response_single):
-    pass
+    id_ = mock_response_single['id']
+    post_data = mock_response_single['fields']
+    match_params = urlencode({'FilterByFormula': "{Value}='abc'"})
+    match_url = table.url_table + "?" + match_params
+    with Mocker() as mock:
+        mock.get(
+            match_url,
+            status_code=200,
+            json={
+                "records": [
+                    mock_response_single,
+                    mock_response_single
+                ]
+            },
+        )
+        mock.put(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=mock_response_single,
+            additional_matcher=match_request_data(post_data),
+        )
+        resp = table.replace_by_field("Value", "abc", post_data)
+    assert dict_equals(resp, mock_response_single)
 
 
 def test_delete(table, mock_response_single):
     id_ = mock_response_single['id']
     expected = {'delete': True, 'id': id_}
-    print(urljoin(table.url_table, id_))
     with Mocker() as mock:
         mock.delete(
             urljoin(table.url_table, id_),
@@ -194,9 +240,29 @@ def test_delete(table, mock_response_single):
     assert resp == expected
 
 
-@pytest.mark.skip("Todo")
 def test_delete_by_field(table, mock_response_single):
-    pass
+    id_ = mock_response_single['id']
+    expected = {'delete': True, 'id': id_}
+    match_params = urlencode({'FilterByFormula': "{Value}='abc'"})
+    match_url = table.url_table + "?" + match_params
+    with Mocker() as mock:
+        mock.get(
+            match_url,
+            status_code=200,
+            json={
+                "records": [
+                    mock_response_single,
+                    mock_response_single
+                ]
+            },
+        )
+        mock.delete(
+            urljoin(table.url_table, id_),
+            status_code=201,
+            json=expected
+        )
+        resp = table.delete_by_field("value", "abc")
+    assert resp == expected
 
 
 def test_batch_delete(table, mock_records):
