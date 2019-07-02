@@ -16,17 +16,15 @@ def json_decoder_error():
 def test_error_mesg_in_json(table, response):
     response.status_code = 400
     response.json = Mock(return_value={"error": "here's what went wrong"})
-    with pytest.raises(HTTPError) as e:
+    with pytest.raises(HTTPError):
         table._process_response(response)
-    assert str(e).endswith("Not Found [Error: here's what went wrong]")
 
 
 def test_error_without_mesg_in_json(table, response):
     response.status_code = 404
     response.json = Mock(return_value={})
-    with pytest.raises(HTTPError) as e:
+    with pytest.raises(HTTPError):
         table._process_response(response)
-    assert str(e).endswith("Not Found")
 
 
 def test_non_422_error_with_json_decode_error(table, response):
