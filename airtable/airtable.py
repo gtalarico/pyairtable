@@ -95,7 +95,6 @@ import requests
 from collections import OrderedDict
 import posixpath
 import time
-import json
 from six.moves.urllib.parse import unquote, quote
 
 from .auth import AirtableAuth
@@ -153,7 +152,7 @@ class Airtable:
             # Attempt to get Error message from response, Issue #16
             try:
                 error_dict = response.json()
-            except json.decoder.JSONDecodeError:
+            except ValueError:
                 pass
             else:
                 if "error" in error_dict:
