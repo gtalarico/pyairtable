@@ -106,7 +106,7 @@ except AttributeError:
     IS_IPY = False
 
 
-class Airtable:
+class Airtable(object):
 
     VERSION = "v0"
     API_BASE_URL = "https://api.airtable.com/"

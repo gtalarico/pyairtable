@@ -5,7 +5,7 @@ from requests_mock import Mocker
 from airtable.auth import AirtableAuth
 
 
-class TestAuth:
+class TestAuth(object):
     def test_authorization_key(self, table):
         FAKE_URL = "http://www.fake.com"
         session = requests.Session()

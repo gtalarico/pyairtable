@@ -19,7 +19,7 @@ For more information see the full implementation below.
 from collections import OrderedDict
 
 
-class _BaseParam:
+class _BaseParam(object):
     def __init__(self, value):
         self.value = value
 
@@ -76,7 +76,7 @@ class _BaseObjectArrayParam(_BaseParam):
         return OrderedDict(sorted(param_dict.items()))
 
 
-class AirtableParams:
+class AirtableParams(object):
     class MaxRecordsParam(_BaseParam):
         """
         Max Records Param

@@ -8,7 +8,7 @@ from airtable import Airtable
 from airtable.params import AirtableParams
 
 
-class TestParamsIntegration:
+class TestParamsIntegration(object):
     def test_params_integration(self, table, mock_records, mock_response_iterator):
         params = {"max_records": 1, "view": "View", "sort": "Name"}
         with Mocker() as m:
