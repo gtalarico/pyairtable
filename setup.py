@@ -24,6 +24,7 @@ setup(
     setup_requires=setup_requires,
     install_requires=install_requires,
     tests_require=tests_require,
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
     keywords=["airtable", "api"],
     license=about["__license__"],
     classifiers=[
