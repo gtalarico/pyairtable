@@ -9,3 +9,4 @@ docs/build
 .pytest_cache
 .cache
 coverage.xml
+.coverage
