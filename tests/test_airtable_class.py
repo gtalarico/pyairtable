@@ -3,6 +3,7 @@ from posixpath import join as urljoin
 import pytest
 from requests_mock import Mocker
 from six.moves.urllib.parse import urlencode
+from unittest.mock import MagicMock, call
 
 from airtable import Airtable
 
@@ -134,17 +135,12 @@ def test_search_not_found(table, mock_response_single):
 
 
 def test_batch_insert(table, mock_records):
-    with Mocker() as mock:
-        for record in mock_records:
-            mock.post(
-                table.url_table,
-                status_code=201,
-                json=record,
-                additional_matcher=match_request_data(record['fields']),
-            )
-        records = [i['fields'] for i in mock_records]
-        resp = table.batch_insert(records)
+    table.insert = MagicMock(side_effect=[r for r in mock_records])
+    records = [r['fields'] for r in mock_records]
+    resp = table.batch_insert(records, typecast=True)
     assert seq_equals(resp, mock_records)
+    calls = [(call(r, typecast=True)) for r in records]
+    table.insert.assert_has_calls(calls)
 
 
 def test_update(table, mock_response_single):
