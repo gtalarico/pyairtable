@@ -166,8 +166,8 @@ class Airtable:
         """ Builds URL with record id """
         return posixpath.join(self.url_table, record_id)
 
-    def _request(self, method, url, params=None, json_data=None, timeout=(10, 30)):
-        response = self.session.request(method, url, params=params, json=json_data)
+    def _request(self, method, url, params=None, json_data=None):
+        response = self.session.request(method, url, params=params, json=json_data, timeout=(10, 30))
         return self._process_response(response)
 
     def _get(self, url, **params):
