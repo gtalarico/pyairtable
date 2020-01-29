@@ -96,7 +96,9 @@ from collections import OrderedDict
 import posixpath
 import time
 import json
-from six.moves.urllib.parse import unquote, quote
+from six.moves.urllib.parse import unquote, quote, urlencode
+from six.moves import range
+from six import string_types
 
 from .auth import AirtableAuth
 from .params import AirtableParams
@@ -113,6 +115,7 @@ class Airtable:
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
+    MAX_RECORDS_PER_CALL = 10
 
     def __init__(self, base_key, table_name, api_key=None):
         """
@@ -338,31 +341,64 @@ class Airtable:
         records = self.get_all(**options)
         return records
 
-    def insert(self, fields, typecast=False):
+    def insert(self, fields_or_records, typecast=False):
         """
-        Inserts a record
+        Inserts up to airtable.MAX_RECORDS_PER_CALL records
+
+        Insert a single record:
 
         >>> record = {'Name': 'John'}
         >>> airtable.insert(record)
 
+        Insert multiple records:
+
+        >>> records = [{'Name': 'John'}, {'Name': 'Steve'}]
+        >>> airtable.insert(records)
+
         Args:
-            fields(``dict``): Fields to insert.
-                Must be dictionary with Column names as Key.
+            fields_or_records(``dict`` or ``Iterable``): Fields or records to insert.
+                Must be either dictionary with Column names as Key or Iterable of such dictionaries.
             typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
-            record (``dict``): Inserted record
+            records (``dict`` or ``list``): Inserted record or list of inserted records.
 
         """
+
+        # if fields_or_records is a dict, assume it's the fields for a single record
+        if isinstance(fields_or_records, dict):
+            fields = fields_or_records
+
+            return self._post(
+                self.url_table, json_data={"fields": fields, "typecast": typecast}
+            )
+
+        # otherwise, assume an iterable of records was passed in.
+        records = list(fields_or_records)
+
+        if len(records) > self.MAX_RECORDS_PER_CALL:
+            raise RuntimeError(
+                'Only {} records can be inserted per call'.format(self.MAX_RECORDS_PER_CALL)
+            )
+
         return self._post(
-            self.url_table, json_data={"fields": fields, "typecast": typecast}
+            self.url_table, json_data={"records": records, "typecast": typecast}
         )
 
-    def _batch_request(self, func, iterable):
+    def chunker(self, seq):
+        """
+        Iterates over chunks of an iterable.
+        Each chunk has length less than or equal to self.MAX_RECORDS_PER_CALL
+        Based on nosklo's answer to this Stack Overflow question:
+        https://stackoverflow.com/questions/434287/what-is-the-most-pythonic-way-to-iterate-over-a-list-in-chunks
+        """
+        return (seq[pos:pos + self.MAX_RECORDS_PER_CALL] for pos in range(0, len(seq), self.MAX_RECORDS_PER_CALL))
+
+    def _batch_request(self, func, iterable, **kwargs):
         """ Internal Function to limit batch calls to API limit """
         responses = []
-        for item in iterable:
-            responses.append(func(item))
+        for iterable_chunk in self.chunker(iterable):
+            responses.extend(func(iterable_chunk, **kwargs))
             time.sleep(self.API_LIMIT)
         return responses
 
@@ -383,29 +419,80 @@ class Airtable:
             records (``list``): list of added records
 
         """
-        return self._batch_request(self.insert, records)
+        return self._batch_request(self.insert, records, typecast=typecast)
 
-    def update(self, record_id, fields, typecast=False):
+    def update_records(self, records, typecast=False):
         """
-        Updates a record by its record id.
+        Updates up to airtable.MAX_RECORDS_PER_CALL records
+        Also used for batch_update
+
+        >>> records = [airtable.match('Employee Id', 'DD13332454'), airtable.match('Employee Id', 'DD12312378')]
+        >>> updates = [{'id': records[0]['id'], 'Status': 'Fired'}, {'id': records[1]['id'], 'Status': 'Hired'}]
+        >>> airtable.update_records(updates)
+
+        Args:
+            records(``Iterable``): Iterable of dictionaries with Column names as Key and 'id' equal to Id of Record.
+            typecast(``boolean``): Automatic data conversion from string values.
+
+        Returns:
+            records (``list``): List of inserted records.
+
+        """
+
+        records = list(records)
+
+        if len(records) > self.MAX_RECORDS_PER_CALL:
+            raise RuntimeError(
+                'Only {} records can be updated per call'.format(self.MAX_RECORDS_PER_CALL)
+            )
+
+        return self._patch(
+            self.url_table, json_data={"records": records, "typecast": typecast}
+        )
+
+    def update(self, record_id=None, fields=None, typecast=False, records=None):
+        """
+        Updates up to airtable.MAX_RECORDS_PER_CALL records by record_id
         Only Fields passed are updated, the rest are left as is.
+
+        Update a single record:
 
         >>> record = airtable.match('Employee Id', 'DD13332454')
         >>> fields = {'Status': 'Fired'}
         >>> airtable.update(record['id'], fields)
 
+        Update multiple records:
+
+        >>> records = [airtable.match('Employee Id', 'DD13332454'), airtable.match('Employee Id', 'DD12312378')]
+        >>> updates = [{'id': records[0]['id'], 'Status': 'Fired'}, {'id': records[1]['id'], 'Status': 'Hired'}]
+        >>> airtable.update(records=updates)
+
         Args:
-            record_id(``str``): Id of Record to update
-            fields(``dict``): Fields to update.
+            record_id(``str``): Id of Record to update (if updating single record)
+            fields(``dict``): Fields to update (if updating single record)
                 Must be dictionary with Column names as Key
             typecast(``boolean``): Automatic data conversion from string values.
+            records(``Iterable``): Iterable of dictionaries with Column names as Key and 'id' equal to Id of Record.
+                Only required if updating multiple records.
 
         Returns:
-            record (``dict``): Updated record
+            record (``dict`` or ``list``): Updated record or list of updated records
         """
-        record_url = self.record_url(record_id)
-        return self._patch(
-            record_url, json_data={"fields": fields, "typecast": typecast}
+
+        # if record_id is set, assume we are updating a single record
+        if record_id and fields:
+            record_url = self.record_url(record_id)
+            return self._patch(
+                record_url, json_data={"fields": fields, "typecast": typecast}
+            )
+
+        # otherwise, check for records:
+        if records:
+            self.update_records(records)
+
+        # inputs were not set correctly
+        raise RuntimeError(
+            'update must have record_id and fields set OR records set'
         )
 
     def update_by_field(
@@ -436,6 +523,25 @@ class Airtable:
         """
         record = self.match(field_name, field_value, **options)
         return {} if not record else self.update(record["id"], fields, typecast)
+
+    def batch_update(self, records, typecast=False):
+        """
+        Calls :any:`update_records` repetitively, following set API Rate Limit (5/sec)
+        To change the rate limit use ``airtable.API_LIMIT = 0.2``
+        (5 per second)
+
+        >>> records = [{'id': 'recXXXXXXXXXXXXXX', 'Name': 'John'}, {'id': 'recYYYYYYYYYYYYYY', 'Name': 'Marc'}]
+        >>> airtable.batch_update(records)
+
+        Args:
+            records(``list``): Records to update
+            typecast(``boolean``): Automatic data conversion from string values.
+
+        Returns:
+            records (``list``): list of updated records
+
+        """
+        return self._batch_request(self.update_records, records, typecast=typecast)
 
     def replace(self, record_id, fields, typecast=False):
         """
@@ -488,21 +594,43 @@ class Airtable:
         record = self.match(field_name, field_value, **options)
         return {} if not record else self.replace(record["id"], fields, typecast)
 
-    def delete(self, record_id):
+    def delete(self, record_id_or_record_ids):
         """
-        Deletes a record by its id
+        Deletes up to airtable.MAX_RECORDS_PER_CALL records by record_id
 
+        For a single record:
         >>> record = airtable.match('Employee Id', 'DD13332454')
         >>> airtable.delete(record['id'])
 
+        For multiple records:
+        >>> records = [airtable.match('Employee Id', 'DD13332454'), airtable.match('Employee Id', 'QQ4545433')]
+        >>> airtable.delete([record['id'] for record in records])
+
         Args:
-            record_id(``str``): Airtable record id
+            record_id(``str`` or ``Iterable``): Airtable record id or Iterable of record_ids
 
         Returns:
-            record (``dict``): Deleted Record
+            record (``dict`` or ``list``): Deleted Record or list of deleted records
         """
-        record_url = self.record_url(record_id)
-        return self._delete(record_url)
+
+        # if a string was passed, assume it's a record_id
+        if isinstance(record_id_or_record_ids, string_types):
+            record_id = record_id_or_record_ids
+            record_url = self.record_url(record_id)
+            return self._delete(record_url)
+
+        # otherwise, assume an iterable of record_ids
+        record_ids = list(record_id_or_record_ids)
+
+        if len(record_ids) > self.MAX_RECORDS_PER_CALL:
+            raise RuntimeError(
+                'Only {} records can be deleted per call'.format(self.MAX_RECORDS_PER_CALL)
+            )
+
+        params = {'records[]': record_ids}
+        url_encoded_record_ids = urlencode(params, True)
+        delete_url = '{}?{}'.format(self.url_table, url_encoded_record_ids)
+        return self._delete(delete_url)
 
     def delete_by_field(self, field_name, field_value, **options):
         """
