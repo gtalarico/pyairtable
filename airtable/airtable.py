@@ -374,7 +374,7 @@ class Airtable:
             )
 
         # otherwise, assume an iterable of records was passed in.
-        records = list(fields_or_records)
+        records = [{'fields': fields} for fields in fields_or_records]
 
         if len(records) > self.MAX_RECORDS_PER_CALL:
             raise RuntimeError(
@@ -431,7 +431,7 @@ class Airtable:
         >>> airtable.update_records(updates)
 
         Args:
-            records(``Iterable``): Iterable of dictionaries with Column names as Key and 'id' equal to Id of Record.
+            records(``Iterable``): Iterable of dictionaries with 'fields' equal to a dictionary of Column names as Key and 'id' equal to Id of Record.
             typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
@@ -472,7 +472,7 @@ class Airtable:
             fields(``dict``): Fields to update (if updating single record)
                 Must be dictionary with Column names as Key
             typecast(``boolean``): Automatic data conversion from string values.
-            records(``Iterable``): Iterable of dictionaries with Column names as Key and 'id' equal to Id of Record.
+            records(``Iterable``): Iterable of dictionaries with 'fields' equal to a dictionary of Column names as Key and 'id' equal to Id of Record.
                 Only required if updating multiple records.
 
         Returns:
@@ -488,7 +488,7 @@ class Airtable:
 
         # otherwise, check for records:
         if records:
-            self.update_records(records)
+            return self.update_records(records)
 
         # inputs were not set correctly
         raise RuntimeError(
