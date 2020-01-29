@@ -427,7 +427,7 @@ class Airtable:
         Also used for batch_update
 
         >>> records = [airtable.match('Employee Id', 'DD13332454'), airtable.match('Employee Id', 'DD12312378')]
-        >>> updates = [{'id': records[0]['id'], 'Status': 'Fired'}, {'id': records[1]['id'], 'Status': 'Hired'}]
+        >>> updates = [{'id': records[0]['id'], 'fields': {'Status': 'Fired'}}, {'id': records[1]['id'], 'fields': {'Status': 'Hired'}}]
         >>> airtable.update_records(updates)
 
         Args:
@@ -464,7 +464,7 @@ class Airtable:
         Update multiple records:
 
         >>> records = [airtable.match('Employee Id', 'DD13332454'), airtable.match('Employee Id', 'DD12312378')]
-        >>> updates = [{'id': records[0]['id'], 'Status': 'Fired'}, {'id': records[1]['id'], 'Status': 'Hired'}]
+        >>> updates = [{'id': records[0]['id'], 'fields': {'Status': 'Fired'}}, {'id': records[1]['id'], 'fields': {'Status': 'Hired'}}]
         >>> airtable.update(records=updates)
 
         Args:
@@ -530,8 +530,9 @@ class Airtable:
         To change the rate limit use ``airtable.API_LIMIT = 0.2``
         (5 per second)
 
-        >>> records = [{'id': 'recXXXXXXXXXXXXXX', 'Name': 'John'}, {'id': 'recYYYYYYYYYYYYYY', 'Name': 'Marc'}]
-        >>> airtable.batch_update(records)
+        >>> records = [airtable.match('Employee Id', 'DD13332454'), airtable.match('Employee Id', 'DD12312378')]
+        >>> updates = [{'id': records[0]['id'], 'fields': {'Status': 'Fired'}}, {'id': records[1]['id'], 'fields': {'Status': 'Hired'}}]
+        >>> airtable.batch_update(updates)
 
         Args:
             records(``Iterable``): Records to update
