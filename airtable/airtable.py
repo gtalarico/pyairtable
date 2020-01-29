@@ -479,7 +479,7 @@ class Airtable:
             record (``dict`` or ``list``): Updated record or list of updated records
         """
 
-        # if record_id is set, assume we are updating a single record
+        # if record_id and fields are set, assume we are updating a single record
         if record_id and fields:
             record_url = self.record_url(record_id)
             return self._patch(
@@ -534,7 +534,7 @@ class Airtable:
         >>> airtable.batch_update(records)
 
         Args:
-            records(``list``): Records to update
+            records(``Iterable``): Records to update
             typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
