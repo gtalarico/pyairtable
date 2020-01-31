@@ -383,7 +383,7 @@ class Airtable:
 
         return self._post(
             self.url_table, json_data={"records": records, "typecast": typecast}
-        )
+        )['records']
 
     def chunker(self, seq):
         """
@@ -448,7 +448,7 @@ class Airtable:
 
         return self._patch(
             self.url_table, json_data={"records": records, "typecast": typecast}
-        )
+        )['records']
 
     def update(self, record_id=None, fields=None, typecast=False, records=None):
         """
@@ -631,7 +631,7 @@ class Airtable:
         params = {'records[]': record_ids}
         url_encoded_record_ids = urlencode(params, True)
         delete_url = '{}?{}'.format(self.url_table, url_encoded_record_ids)
-        return self._delete(delete_url)
+        return self._delete(delete_url)['records']
 
     def delete_by_field(self, field_name, field_value, **options):
         """
