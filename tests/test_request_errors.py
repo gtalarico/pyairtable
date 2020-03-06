@@ -1,6 +1,6 @@
 import pytest
-from mock import Mock
 from requests import HTTPError
+from mock import Mock
 
 
 def http_error_with_url():
