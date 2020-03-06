@@ -11,14 +11,13 @@ python:
 matrix:
   include:
     python: "3.7"
-    env:
-      TOXENV=lint
+    env: TOXENV=lint
 
 install:
   - pip install .
   - pip install tox tox-travis
 script: tox
 after_success:
-    - pip install pytest requests requests-mock coveralls
-    - coverage run --source=airtable setup.py test
-    - coveralls
+  - pip install pytest requests requests-mock mock coveralls
+  - coverage run --source=airtable setup.py test
+  - coveralls

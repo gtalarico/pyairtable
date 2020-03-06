@@ -1,10 +1,6 @@
 import pytest
 from requests import HTTPError
-
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
+from mock import Mock
 
 
 def http_error_with_url():

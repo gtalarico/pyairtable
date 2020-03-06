@@ -4,11 +4,7 @@ from posixpath import join as urljoin
 
 from requests import HTTPError
 from six.moves.urllib.parse import urlencode, quote
-
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
+from mock import Mock
 
 from airtable import Airtable
 
