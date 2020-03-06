@@ -34,9 +34,7 @@ def constants():
 @pytest.fixture()
 def table(constants):
     return Airtable(
-        constants["BASE_KEY"],
-        constants["TABLE_NAME"],
-        api_key=constants["API_KEY"]
+        constants["BASE_KEY"], constants["TABLE_NAME"], api_key=constants["API_KEY"]
     )
 
 

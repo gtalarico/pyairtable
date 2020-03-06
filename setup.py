@@ -4,9 +4,7 @@ import os
 here = os.path.abspath(os.path.dirname(__file__))
 
 about = {}
-with open(
-    os.path.join(here, "airtable", "__version__.py"), mode="r"
-) as f:
+with open(os.path.join(here, "airtable", "__version__.py"), mode="r") as f:
     exec(f.read(), about)
 
 setup_requires = ["pytest-runner"]

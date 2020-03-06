@@ -311,7 +311,7 @@ class Airtable(object):
 
         >>> airtable.search('Gender', 'Male')
         [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
-        
+
         >>> airtable.search('Checkbox Field', 1)
         [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
 
