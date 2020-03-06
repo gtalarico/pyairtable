@@ -9,7 +9,7 @@ with open(os.path.join(here, "airtable", "__version__.py"), mode="r") as f:
 
 setup_requires = ["pytest-runner"]
 install_requires = ["requests>=2", "six>=1.10"]
-tests_require = ["requests-mock", "requests"]
+tests_require = ["requests-mock", "requests", "mock"]
 
 setup(
     name=about["__name__"],
