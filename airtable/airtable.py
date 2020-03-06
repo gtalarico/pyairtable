@@ -360,11 +360,11 @@ class Airtable(object):
             self.url_table, json_data={"fields": fields, "typecast": typecast}
         )
 
-    def _batch_request(self, func, iterable):
+    def _batch_request(self, func, iterable, **kwargs):
         """ Internal Function to limit batch calls to API limit """
         responses = []
         for item in iterable:
-            responses.append(func(item))
+            responses.append(func(item, **kwargs))
             time.sleep(self.API_LIMIT)
         return responses
 
@@ -385,7 +385,7 @@ class Airtable(object):
             records (``list``): list of added records
 
         """
-        return self._batch_request(self.insert, records)
+        return self._batch_request(self.insert, records, typecast=typecast)
 
     def update(self, record_id, fields, typecast=False):
         """

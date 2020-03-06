@@ -3,6 +3,7 @@ from posixpath import join as urljoin
 import pytest
 from requests_mock import Mocker
 from six.moves.urllib.parse import urlencode
+from unittest.mock import call
 
 from airtable import Airtable
 
@@ -128,6 +129,8 @@ def test_batch_insert(table, mock_records):
         records = [i["fields"] for i in mock_records]
         resp = table.batch_insert(records)
     assert seq_equals(resp, mock_records)
+    calls = [(call(r, typecast=True)) for r in records]
+    table.insert.assert_has_calls(calls)
 
 
 def test_update(table, mock_response_single):
