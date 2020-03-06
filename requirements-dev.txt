@@ -2,7 +2,6 @@ pytest
 pytest-cov
 coveralls
 requests-mock
-black
 flake8
 mock
 tox-travis
@@ -14,3 +13,7 @@ sphinx-autoapi
 
 wheel
 twine
+
+# Only installed in environments that can handle it; don't try running the `lint`
+# tox environment on Python < 3.6.
+black  ; python_version >="3.6"

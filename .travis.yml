@@ -1,19 +1,23 @@
+dist: bionic
 language: python
 git:
   depth: 2
 python:
-  # - "2.7"
-  # - "3.4"
-  # - "3.5"
-  # - "3.6"
+  - "2.7"
+  - "3.5"
+  - "3.6"
   - "3.7"
+  - "3.8"
+matrix:
+  include:
+    python: "3.7"
+    env:
+      TOXENV=lint
+
 install:
   - pip install .
-  - pip install tox
-  - pip install flake8
-script:
-  - flake8
-  - tox
+  - pip install tox tox-travis
+script: tox
 after_success:
     - pip install pytest requests requests-mock coveralls
     - coverage run --source=airtable setup.py test

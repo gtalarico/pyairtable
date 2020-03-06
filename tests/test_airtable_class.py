@@ -83,12 +83,7 @@ def test_match(table, mock_response_single):
         mock.get(
             table.url_table + "?" + params,
             status_code=200,
-            json={
-                "records": [
-                    mock_response_single,
-                    mock_response_single
-                ]
-            },
+            json={"records": [mock_response_single, mock_response_single]},
         )
         resp = table.match("Value", "abc")
     assert resp == mock_response_single
@@ -97,11 +92,7 @@ def test_match(table, mock_response_single):
 def test_match_not_found(table, mock_response_single):
     params = urlencode({"FilterByFormula": "{Value}='abc'"})
     with Mocker() as mock:
-        mock.get(
-            table.url_table + "?" + params,
-            status_code=200,
-            json={"records": []}
-        )
+        mock.get(table.url_table + "?" + params, status_code=200, json={"records": []})
         resp = table.match("Value", "abc")
     assert resp == {}
 
@@ -111,11 +102,7 @@ def test_search(table, mock_response_single):
     params = urlencode({"FilterByFormula": "{Value}='abc'"})
     with Mocker() as mock:
         mock.get(
-            table.url_table + "?" + params,
-            status_code=200,
-            json={
-                "records": expected
-            },
+            table.url_table + "?" + params, status_code=200, json={"records": expected}
         )
         resp = table.search("Value", "abc")
     assert resp == expected
@@ -124,11 +111,7 @@ def test_search(table, mock_response_single):
 def test_search_not_found(table, mock_response_single):
     params = urlencode({"FilterByFormula": "{Value}='abc'"})
     with Mocker() as mock:
-        mock.get(
-            table.url_table + "?" + params,
-            status_code=200,
-            json={"records": []},
-        )
+        mock.get(table.url_table + "?" + params, status_code=200, json={"records": []})
         resp = table.search("Value", "abc")
     assert resp == []
 
@@ -140,16 +123,16 @@ def test_batch_insert(table, mock_records):
                 table.url_table,
                 status_code=201,
                 json=record,
-                additional_matcher=match_request_data(record['fields']),
+                additional_matcher=match_request_data(record["fields"]),
             )
-        records = [i['fields'] for i in mock_records]
+        records = [i["fields"] for i in mock_records]
         resp = table.batch_insert(records)
     assert seq_equals(resp, mock_records)
 
 
 def test_update(table, mock_response_single):
-    id_ = mock_response_single['id']
-    post_data = mock_response_single['fields']
+    id_ = mock_response_single["id"]
+    post_data = mock_response_single["fields"]
     with Mocker() as mock:
         mock.patch(
             urljoin(table.url_table, id_),
@@ -162,20 +145,15 @@ def test_update(table, mock_response_single):
 
 
 def test_update_by_field(table, mock_response_single):
-    id_ = mock_response_single['id']
-    post_data = mock_response_single['fields']
-    match_params = urlencode({'FilterByFormula': "{Value}='abc'"})
+    id_ = mock_response_single["id"]
+    post_data = mock_response_single["fields"]
+    match_params = urlencode({"FilterByFormula": "{Value}='abc'"})
     match_url = table.url_table + "?" + match_params
     with Mocker() as mock:
         mock.get(
             match_url,
             status_code=200,
-            json={
-                "records": [
-                    mock_response_single,
-                    mock_response_single
-                ]
-            },
+            json={"records": [mock_response_single, mock_response_single]},
         )
         mock.patch(
             urljoin(table.url_table, id_),
@@ -188,8 +166,8 @@ def test_update_by_field(table, mock_response_single):
 
 
 def test_replace(table, mock_response_single):
-    id_ = mock_response_single['id']
-    post_data = mock_response_single['fields']
+    id_ = mock_response_single["id"]
+    post_data = mock_response_single["fields"]
     with Mocker() as mock:
         mock.put(
             urljoin(table.url_table, id_),
@@ -202,20 +180,15 @@ def test_replace(table, mock_response_single):
 
 
 def test_replace_by_field(table, mock_response_single):
-    id_ = mock_response_single['id']
-    post_data = mock_response_single['fields']
-    match_params = urlencode({'FilterByFormula': "{Value}='abc'"})
+    id_ = mock_response_single["id"]
+    post_data = mock_response_single["fields"]
+    match_params = urlencode({"FilterByFormula": "{Value}='abc'"})
     match_url = table.url_table + "?" + match_params
     with Mocker() as mock:
         mock.get(
             match_url,
             status_code=200,
-            json={
-                "records": [
-                    mock_response_single,
-                    mock_response_single
-                ]
-            },
+            json={"records": [mock_response_single, mock_response_single]},
         )
         mock.put(
             urljoin(table.url_table, id_),
@@ -228,55 +201,42 @@ def test_replace_by_field(table, mock_response_single):
 
 
 def test_delete(table, mock_response_single):
-    id_ = mock_response_single['id']
-    expected = {'delete': True, 'id': id_}
+    id_ = mock_response_single["id"]
+    expected = {"delete": True, "id": id_}
     with Mocker() as mock:
-        mock.delete(
-            urljoin(table.url_table, id_),
-            status_code=201,
-            json=expected
-        )
+        mock.delete(urljoin(table.url_table, id_), status_code=201, json=expected)
         resp = table.delete(id_)
     assert resp == expected
 
 
 def test_delete_by_field(table, mock_response_single):
-    id_ = mock_response_single['id']
-    expected = {'delete': True, 'id': id_}
-    match_params = urlencode({'FilterByFormula': "{Value}='abc'"})
+    id_ = mock_response_single["id"]
+    expected = {"delete": True, "id": id_}
+    match_params = urlencode({"FilterByFormula": "{Value}='abc'"})
     match_url = table.url_table + "?" + match_params
     with Mocker() as mock:
         mock.get(
             match_url,
             status_code=200,
-            json={
-                "records": [
-                    mock_response_single,
-                    mock_response_single
-                ]
-            },
+            json={"records": [mock_response_single, mock_response_single]},
         )
-        mock.delete(
-            urljoin(table.url_table, id_),
-            status_code=201,
-            json=expected
-        )
+        mock.delete(urljoin(table.url_table, id_), status_code=201, json=expected)
         resp = table.delete_by_field("value", "abc")
     assert resp == expected
 
 
 def test_batch_delete(table, mock_records):
-    ids = [i['id'] for i in mock_records]
+    ids = [i["id"] for i in mock_records]
     with Mocker() as mock:
         for id_ in ids:
             mock.delete(
                 urljoin(table.url_table, id_),
                 status_code=201,
-                json={'delete': True, 'id': id_}
+                json={"delete": True, "id": id_},
             )
-        records = [i['id'] for i in mock_records]
+        records = [i["id"] for i in mock_records]
         resp = table.batch_delete(records)
-    expected = [{'delete': True, 'id': i} for i in ids]
+    expected = [{"delete": True, "id": i} for i in ids]
     assert resp == expected
 
 

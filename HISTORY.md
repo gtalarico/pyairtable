@@ -1,3 +1,8 @@
+# 0.13.0
+* Fixed: Python 2 compatibility issues
+* Start CI testing on all supported Python versions
+* **Breaking**: Drop implicit support for Python 3.4, officially support 3.7 and 3.8.
+
 # 0.12.0
 * Fixed: Rewrote tests
 * Fixed: Improve CI and deployment
