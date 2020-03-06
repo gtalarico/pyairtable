@@ -311,6 +311,9 @@ class Airtable(object):
 
         >>> airtable.search('Gender', 'Male')
         [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
+        
+        >>> airtable.search('Checkbox Field', 1)
+        [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
 
         Args:
             field_name (``str``): Name of field to match (column name).
