@@ -95,7 +95,6 @@ import requests
 from collections import OrderedDict
 import posixpath
 import time
-import json
 from six.moves.urllib.parse import unquote, quote
 
 from .auth import AirtableAuth
@@ -107,7 +106,7 @@ except AttributeError:
     IS_IPY = False
 
 
-class Airtable:
+class Airtable(object):
 
     VERSION = "v0"
     API_BASE_URL = "https://api.airtable.com/"
@@ -153,7 +152,7 @@ class Airtable:
             # Attempt to get Error message from response, Issue #16
             try:
                 error_dict = response.json()
-            except json.decoder.JSONDecodeError:
+            except ValueError:
                 pass
             else:
                 if "error" in error_dict:
@@ -311,6 +310,9 @@ class Airtable:
         Returns all matching records found in :any:`get_all`
 
         >>> airtable.search('Gender', 'Male')
+        [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
+        
+        >>> airtable.search('Checkbox Field', 1)
         [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
 
         Args:

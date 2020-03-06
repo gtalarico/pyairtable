@@ -1,4 +1,4 @@
-class TestAbout:
+class TestAbout(object):
     def test_get_about_info(self):
         from airtable.__version__ import (  # noqa
             __version__,

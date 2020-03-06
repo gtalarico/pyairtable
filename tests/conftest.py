@@ -27,9 +27,7 @@ def url_builder():
 @pytest.fixture
 def constants():
     return dict(
-        API_KEY="FakeApiKey",
-        BASE_KEY="appJMY16gZDQrMWpA",
-        TABLE_NAME="Table Name"
+        API_KEY="FakeApiKey", BASE_KEY="appJMY16gZDQrMWpA", TABLE_NAME="Table Name"
     )
 
 
@@ -104,12 +102,12 @@ def mock_response_iterator(mock_response_list):
 
 
 def http_error():
-    raise HTTPError('Not Found')
+    raise HTTPError("Not Found")
 
 
 @pytest.fixture
 def response():
     response = Mock()
     response.raise_for_status.side_effect = http_error
-    response.url = 'page%20url'
+    response.url = "page%20url"
     return response

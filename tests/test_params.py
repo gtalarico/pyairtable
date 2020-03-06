@@ -8,7 +8,7 @@ from airtable import Airtable
 from airtable.params import AirtableParams
 
 
-class TestParamsIntegration:
+class TestParamsIntegration(object):
     def test_params_integration(self, table, mock_records, mock_response_iterator):
         params = {"max_records": 1, "view": "View", "sort": "Name"}
         with Mocker() as m:
@@ -102,4 +102,4 @@ def test_formula_from_name_and_value():
 
 def test_get_invalid_param_keyword():
     with pytest.raises(ValueError):
-        AirtableParams._get('unknown parameter')
+        AirtableParams._get("unknown parameter")
