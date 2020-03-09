@@ -1,6 +1,6 @@
 # Airtable Python Wrapper
 
-[![Build Status](https://travis-ci.org/gtalarico/airtable-python-wrapper.svg?branch=master)](https://travis-ci.org/gtalarico/airtable-python-wrapper)
+[![Build Status](https://travis-ci.com/gtalarico/airtable-python-wrapper.svg?branch=master)](https://travis-ci.com/gtalarico/airtable-python-wrapper)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/airtable-python-wrapper.svg?label=pypi%20downloads)](https://pypi.org/project/airtable-python-wrapper/)
 [![Coverage Status](https://coveralls.io/repos/github/gtalarico/airtable-python-wrapper/badge.svg?branch=master)](https://coveralls.io/github/gtalarico/airtable-python-wrapper?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/airtable-python-wrapper/badge/?version=latest)](http://airtable-python-wrapper.readthedocs.io/en/latest/?badge=latest)
