@@ -548,37 +548,5 @@ class Airtable(object):
         """
         return self._batch_request(self.delete, record_ids)
 
-    def mirror(self, records, **options):
-        """
-        Deletes all records on table or view and replaces with records.
-
-        >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
-
-        >>> record = airtable.,mirror(records)
-
-        If view options are provided, only records visible on that view will
-        be deleted.
-
-        >>> record = airtable.mirror(records, view='View')
-        ([{'id': 'recwPQIfs4wKPyc9D', ... }], [{'deleted': True, ... }])
-
-        Args:
-            records(``list``): Records to insert
-
-        Keyword Args:
-            max_records (``int``, optional): The maximum total number of
-                records that will be returned. See :any:`MaxRecordsParam`
-            view (``str``, optional): The name or ID of a view.
-                See :any:`ViewParam`.
-
-        Returns:
-            records (``tuple``): (new_records, deleted_records)
-        """
-
-        all_record_ids = [r["id"] for r in self.get_all(**options)]
-        deleted_records = self.batch_delete(all_record_ids)
-        new_records = self.batch_insert(records)
-        return (new_records, deleted_records)
-
     def __repr__(self):
         return "<Airtable table:{}>".format(self.table_name)

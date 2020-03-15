@@ -1,3 +1,7 @@
+# 0.14.0
+* Removed `mirror()` method.
+*
+
 # 0.13.0
 * Fixed: Python 2 compatibility issues
 * Start CI testing on all supported Python versions
