@@ -119,6 +119,10 @@ class Airtable(object):
 
         >>> table = Airtable('basekey', "tablename")
 
+        With timeout:
+
+        >>> table = Airtable('basekey', "tablename", timeout=(1, 1))
+
         Args:
             base_key(``str``): Airtable base identifier
             table_name(``str``): Airtable table name. Value will be url encoded, so
