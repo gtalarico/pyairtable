@@ -1,6 +1,6 @@
 # 0.14.0
 * Removed `mirror()` method.
-*
+* Feature: Configurable request timeout
 
 # 0.13.0
 * Fixed: Python 2 compatibility issues

@@ -113,10 +113,24 @@ class Airtable(object):
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
 
-    def __init__(self, base_key, table_name, api_key=None):
+    def __init__(self, base_key, table_name, api_key=None, timeout=None):
         """
-        If api_key is not provided, :any:`AirtableAuth` will attempt
-        to use ``os.environ['AIRTABLE_API_KEY']``
+        Instantiates a new Airtable instance
+
+        >>> table = Airtable('basekey', "tablename")
+
+        Args:
+            base_key(``str``): Airtable base identifier
+            table_name(``str``): Airtable table name. Value will be url encoded, so
+                use value as shown in Airtable.
+
+        Keyword Args:
+            api_key (``str``, optional): Optional API key. If not provided,
+                it will attempt to use ``os.environ['AIRTABLE_API_KEY']``
+            timeout (``int``, ``Tuple[int, int]``, optional): Optional timeout
+                parameters to be used in request. `See requests timeout docs.
+                <https://requests.readthedocs.io/en/master/user/advanced/#timeouts>`_
+
         """
         session = requests.Session()
         session.auth = AirtableAuth(api_key=api_key)
@@ -124,6 +138,7 @@ class Airtable(object):
         self.table_name = table_name
         url_safe_table_name = quote(table_name, safe="")
         self.url_table = posixpath.join(self.API_URL, base_key, url_safe_table_name)
+        self.timeout = timeout
 
     def _process_params(self, params):
         """
@@ -166,7 +181,9 @@ class Airtable(object):
         return posixpath.join(self.url_table, record_id)
 
     def _request(self, method, url, params=None, json_data=None):
-        response = self.session.request(method, url, params=params, json=json_data)
+        response = self.session.request(
+            method, url, params=params, json=json_data, timeout=self.timeout
+        )
         return self._process_response(response)
 
     def _get(self, url, **params):
@@ -212,7 +229,8 @@ class Airtable(object):
         ...         print(record)
         [{'fields': ... }, ...]
 
-        Keyword Args:
+
+    Keyword Args:
             max_records (``int``, optional): The maximum total number of
                 records that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
@@ -250,7 +268,8 @@ class Airtable(object):
         >>> airtable.get_all(maxRecords=50)
         [{'fields': ... }, ...]
 
-        Keyword Args:
+
+    Keyword Args:
             max_records (``int``, optional): The maximum total number of
                 records that will be returned. See :any:`MaxRecordsParam`
             view (``str``, optional): The name or ID of a view.
