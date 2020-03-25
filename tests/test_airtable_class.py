@@ -208,6 +208,32 @@ def test_delete(table, mock_response_single):
     assert resp == expected
 
 
+def test_delete_records(table, create_random_records):
+    rand_ids = [
+        record["id"]
+        for record in create_random_records(Airtable.API_MAX_RECORDS_PER_REQUEST)
+    ]
+    for size in range(1, len(rand_ids)):
+        ids = rand_ids[:size]
+        expected = {"records": [{"deleted": True, "id": id_} for id_ in ids]}
+        query_string = "/?" + "&".join(("records[]=" + id_) for id_ in ids)
+        with Mocker() as mock:
+            mock.register_uri("DELETE", query_string, complete_qs=True)
+            mock.delete(table.url_table, json=expected)
+            resp = table.delete(ids)
+        assert resp == expected["records"]
+
+
+def test_delete_over_limit(table, create_random_records):
+    ids = create_random_records(Airtable.API_MAX_RECORDS_PER_REQUEST + 1)
+    with pytest.raises(RuntimeError) as exc_info:
+        table.delete(ids)
+    assert (
+        "up to {0} records".format(Airtable.API_MAX_RECORDS_PER_REQUEST)
+        in exc_info.value.args[0]
+    )
+
+
 def test_delete_by_field(table, mock_response_single):
     id_ = mock_response_single["id"]
     expected = {"delete": True, "id": id_}

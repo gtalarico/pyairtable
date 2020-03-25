@@ -96,6 +96,7 @@ from collections import OrderedDict
 import posixpath
 import time
 from six.moves.urllib.parse import unquote, quote
+from itertools import islice
 
 from .auth import AirtableAuth
 from .params import AirtableParams
@@ -112,6 +113,7 @@ class Airtable(object):
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
+    API_MAX_RECORDS_PER_REQUEST = 10
 
     def __init__(self, base_key, table_name, api_key=None, timeout=None):
         """
@@ -203,8 +205,8 @@ class Airtable(object):
     def _patch(self, url, json_data):
         return self._request("patch", url, json_data=json_data)
 
-    def _delete(self, url):
-        return self._request("delete", url)
+    def _delete(self, url, params=None):
+        return self._request("delete", url, params=params)
 
     def get(self, record_id):
         """
@@ -519,15 +521,39 @@ class Airtable(object):
 
         >>> record = airtable.match('Employee Id', 'DD13332454')
         >>> airtable.delete(record['id'])
+        {'deleted': True, 'id': 'recvgwzOzEaoByIMg'}
+
+        >>> airtable.delete(["recVCZrGNgSiKUn9r", "rec0b94xyGPDzpyA1"])
+        [{"deleted": True, "id": "recVCZrGNgSiKUn9r"},
+         {"deleted": True, "id": "rec0b94xyGPDzpyA1"}]
 
         Args:
-            record_id(``str``): Airtable record id
+            record_id(``str``, or ``Iterable[str]``):
+                Airtable record id, or an iterable of ids
 
         Returns:
-            record (``dict``): Deleted Record
+            record (``dict``, or ``list``): Deleted Record, or list of deleted records
+
+        Raises:
+            RuntimeError: If number of ids exceeds the API limit
         """
-        record_url = self.record_url(record_id)
-        return self._delete(record_url)
+        if isinstance(record_id, str):
+            record_url = self.record_url(record_id)
+            return self._delete(record_url)
+
+        record_it = iter(record_id)
+        record_ids = list(islice(record_it, self.API_MAX_RECORDS_PER_REQUEST))
+        try:
+            next(record_it)
+            raise RuntimeError(
+                "Only up to {0} records can be deleted once.".format(
+                    self.API_MAX_RECORDS_PER_REQUEST
+                )
+            )
+        except StopIteration:
+            pass
+
+        return self._delete(self.url_table, params={"records[]": record_ids})["records"]
 
     def delete_by_field(self, field_name, field_value, **options):
         """

@@ -1,3 +1,7 @@
+import random
+import string
+from datetime import datetime
+import time
 import pytest
 from collections import OrderedDict
 from posixpath import join as urljoin
@@ -7,6 +11,12 @@ from six.moves.urllib.parse import urlencode, quote
 from mock import Mock
 
 from airtable import Airtable
+
+
+def rand_string_letter_digit(length):
+    return "".join(
+        random.choice(string.ascii_letters + string.digits) for _ in range(length)
+    )
 
 
 @pytest.fixture
@@ -57,6 +67,25 @@ def mock_records():
             "createdTime": "2017-06-06T18:30:57.000Z",
         },
     ]
+
+
+@pytest.fixture
+def create_random_record():
+    return lambda: {
+        "id": "rec" + rand_string_letter_digit(14),
+        "fields": {
+            "SameFields": random.randint(100, 9999),
+            "Value": rand_string_letter_digit(5),
+        },
+        "createdTime": datetime.fromtimestamp(
+            random.randint(1, int(time.time()))
+        ).isoformat(),
+    }
+
+
+@pytest.fixture
+def create_random_records(create_random_record):
+    return lambda size: [create_random_record() for _ in range(size)]
 
 
 @pytest.fixture
