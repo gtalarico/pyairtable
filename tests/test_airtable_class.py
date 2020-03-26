@@ -201,7 +201,7 @@ def test_replace_by_field(table, mock_response_single):
 
 def test_delete(table, mock_response_single):
     id_ = mock_response_single["id"]
-    expected = {"delete": True, "id": id_}
+    expected = {"deleted": True, "id": id_}
     with Mocker() as mock:
         mock.delete(urljoin(table.url_table, id_), status_code=201, json=expected)
         resp = table.delete(id_)
@@ -236,7 +236,7 @@ def test_delete_over_limit(table, create_random_records):
 
 def test_delete_by_field(table, mock_response_single):
     id_ = mock_response_single["id"]
-    expected = {"delete": True, "id": id_}
+    expected = {"deleted": True, "id": id_}
     match_params = urlencode({"FilterByFormula": "{Value}='abc'"})
     match_url = table.url_table + "?" + match_params
     with Mocker() as mock:
@@ -257,11 +257,11 @@ def test_batch_delete(table, mock_records):
             mock.delete(
                 urljoin(table.url_table, id_),
                 status_code=201,
-                json={"delete": True, "id": id_},
+                json={"deleted": True, "id": id_},
             )
         records = [i["id"] for i in mock_records]
         resp = table.batch_delete(records)
-    expected = [{"delete": True, "id": i} for i in ids]
+    expected = [{"deleted": True, "id": i} for i in ids]
     assert resp == expected
 
 
