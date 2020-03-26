@@ -515,9 +515,13 @@ class Airtable(object):
         record = self.match(field_name, field_value, **options)
         return {} if not record else self.replace(record["id"], fields, typecast)
 
-    def delete(self, record_id):
+    def delete(self, record_id_or_iterable):
         """
-        Deletes a record by its id
+        Deletes record(s) by one id, or an iterable of ids.
+
+        Deletes at most 10 records as per limit of one API call
+        (set by ``airtable.API_MAX_RECORDS_PER_REQUEST``).
+        If you want to delete more than 10 records, call :any:`batch_delete`.
 
         >>> record = airtable.match('Employee Id', 'DD13332454')
         >>> airtable.delete(record['id'])
@@ -528,20 +532,20 @@ class Airtable(object):
          {"deleted": True, "id": "rec0b94xyGPDzpyA1"}]
 
         Args:
-            record_id(``str``, or ``Iterable[str]``):
+            record_id_or_iterable(``str``, or ``Iterable[str]``):
                 Airtable record id, or an iterable of ids
 
         Returns:
             record (``dict``, or ``list``): Deleted Record, or list of deleted records
 
         Raises:
-            RuntimeError: If number of ids exceeds the API limit
+            RuntimeError: If number of ids exceeds the limit per request
         """
-        if isinstance(record_id, str):
-            record_url = self.record_url(record_id)
+        if isinstance(record_id_or_iterable, str):
+            record_url = self.record_url(record_id_or_iterable)
             return self._delete(record_url)
 
-        record_it = iter(record_id)
+        record_it = iter(record_id_or_iterable)
         record_ids = list(islice(record_it, self.API_MAX_RECORDS_PER_REQUEST))
         try:
             next(record_it)
@@ -581,9 +585,12 @@ class Airtable(object):
 
     def batch_delete(self, record_ids):
         """
-        Calls :any:`delete` repetitively, following set API Rate Limit (5/sec)
+        Calls :any:`delete` repetitively, following set API Rate Limit (5/sec).
         To change the rate limit set value of ``airtable.API_LIMIT`` to
         the time in seconds it should sleep before calling the function again.
+
+        Makes as few API calls as possible by putting up to 10 ids in one request.
+        If more than 10 ids are provided, multiple requests will be sent.
 
         >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
         >>> airtable.batch_delete(records_ids)
@@ -591,7 +598,7 @@ class Airtable(object):
          {'deleted': True, 'id': 'recwDxIfs3wDPyc3F'}]
 
         Args:
-            records(``Iterable[str]``): Record Ids to delete
+            record_ids (``Iterable[str]``): Record Ids to delete
 
         Returns:
             records(``list``): list of records deleted
@@ -604,6 +611,8 @@ class Airtable(object):
 
     def __repr__(self):
         return "<Airtable table:{}>".format(self.table_name)
+
+    # Helpers
 
     @staticmethod
     def _slice_iterable_as_lists(iterable, size):
