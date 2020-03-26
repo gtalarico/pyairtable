@@ -10,8 +10,11 @@ docs/build
 .tox
 *egg-info
 *__pycache__
+*.pyc
 .pytest_cache
 .cache
 coverage.xml
 .coverage
 test.py
+.python-version
+.mypy_cache
