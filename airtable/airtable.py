@@ -96,7 +96,7 @@ from collections import OrderedDict
 import posixpath
 import time
 from six.moves.urllib.parse import unquote, quote
-from itertools import islice
+from itertools import islice, chain
 
 from .auth import AirtableAuth
 from .params import AirtableParams
@@ -587,15 +587,43 @@ class Airtable(object):
 
         >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
         >>> airtable.batch_delete(records_ids)
+        [{'deleted': True, 'id': 'recwPQIfs4wKPyc9D'},
+         {'deleted': True, 'id': 'recwDxIfs3wDPyc3F'}]
 
         Args:
-            records(``list``): Record Ids to delete
+            records(``Iterable[str]``): Record Ids to delete
 
         Returns:
             records(``list``): list of records deleted
-
         """
-        return self._batch_request(self.delete, record_ids)
+        ret_lst = self._batch_request(
+            self.delete,
+            self._slice_iterable_as_lists(record_ids, self.API_MAX_RECORDS_PER_REQUEST),
+        )
+        return list(chain.from_iterable(ret_lst))
 
     def __repr__(self):
         return "<Airtable table:{}>".format(self.table_name)
+
+    @staticmethod
+    def _slice_iterable_as_lists(iterable, size):
+        """
+        Slices an iterable into lists of equal-sized chunks.
+
+        >>> it = slice_iterable_as_lists(range(3), 2)
+        >>> next(it)
+        [0, 1]
+        >>> next(it)
+        [2]
+
+        Last group may be smaller than ``size``.
+
+        Args:
+            iterable(``Iterable``): any iterable
+            size(``int``): max size of each chunk
+
+        Returns:
+            Split iterable(``Iterable[Iterable]``):
+        """
+        iter_ = iter(iterable)
+        return iter(lambda: list(islice(iter_, size)), [])

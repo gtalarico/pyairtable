@@ -215,13 +215,15 @@ def test_delete_records(table, create_random_records):
     ]
     for size in range(1, len(rand_ids)):
         ids = rand_ids[:size]
-        expected = {"records": [{"deleted": True, "id": id_} for id_ in ids]}
-        query_string = "/?" + "&".join(("records[]=" + id_) for id_ in ids)
+        api_resp = {"records": [{"deleted": True, "id": id_} for id_ in ids]}
         with Mocker() as mock:
-            mock.register_uri("DELETE", query_string, complete_qs=True)
-            mock.delete(table.url_table, json=expected)
-            resp = table.delete(ids)
-        assert resp == expected["records"]
+            mock.delete(
+                table.url_table + build_record_ids_query_string(ids),
+                complete_qs=True,
+                json=api_resp,
+            )
+            ret = table.delete(ids)
+        assert ret == api_resp["records"]
 
 
 def test_delete_over_limit(table, create_random_records):
@@ -252,17 +254,43 @@ def test_delete_by_field(table, mock_response_single):
 
 def test_batch_delete(table, mock_records):
     ids = [i["id"] for i in mock_records]
+    api_resp = {"records": [{"deleted": True, "id": id_} for id_ in ids]}
     with Mocker() as mock:
-        for id_ in ids:
-            mock.delete(
-                urljoin(table.url_table, id_),
-                status_code=201,
-                json={"deleted": True, "id": id_},
-            )
-        records = [i["id"] for i in mock_records]
-        resp = table.batch_delete(records)
-    expected = [{"deleted": True, "id": i} for i in ids]
-    assert resp == expected
+        mock.delete(
+            table.url_table + build_record_ids_query_string(ids),
+            complete_qs=True,
+            status_code=201,
+            json=api_resp,
+        )
+        ret = table.batch_delete(ids)
+    expected_ret = [{"deleted": True, "id": i} for i in ids]
+    assert ret == expected_ret
+
+
+def test_batch_delete_over_limit_per_request(table, create_random_records):
+    limit = Airtable.API_MAX_RECORDS_PER_REQUEST
+    ids = [rec["id"] for rec in create_random_records(int(limit * 1.5))]
+    api_resp_lst = [
+        {"records": [{"deleted": True, "id": id_} for id_ in ids[:limit]]},
+        {"records": [{"deleted": True, "id": id_} for id_ in ids[limit:]]},
+    ]
+
+    with Mocker() as mock:
+        mock.delete(
+            table.url_table + build_record_ids_query_string(ids[:limit]),
+            complete_qs=True,
+            status_code=201,
+            json=api_resp_lst[0],
+        )
+        mock.delete(
+            table.url_table + build_record_ids_query_string(ids[limit:]),
+            complete_qs=True,
+            status_code=201,
+            json=api_resp_lst[1],
+        )
+        ret = table.batch_delete(ids)
+    expected_ret = [{"deleted": True, "id": i} for i in ids]
+    assert seq_equals(expected_ret, ret)
 
 
 # Helpers
@@ -284,3 +312,7 @@ def dict_equals(d1, d2):
 
 def seq_equals(s1, s2):
     return all(dict_equals(s1, s2) for s1, s2 in zip(s1, s2))
+
+
+def build_record_ids_query_string(ids):
+    return "?" + "&".join(("records[]=" + id_) for id_ in ids)
