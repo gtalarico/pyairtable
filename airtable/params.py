@@ -160,6 +160,99 @@ class AirtableParams(object):
         param_name = "pageSize"
         kwarg = "page_size"
 
+    class CellFormatParam(_BaseParam):
+        """
+        cellFormat Param
+
+        Kwargs:
+            ``cellFormat=``
+
+        If set, the format that should be used for cell values. Supported values are:
+           json: cells will be formatted as JSON, depending on the field type.
+           string: cells will be formatted as user-facing strings, regardless of the field type.
+                   Note: You should not rely on the format of these strings, as it is subject to change.
+
+        The default is json.
+
+        Usage:
+
+        >>> airtable.get_all(cellFormat='json')
+
+        Args:
+            cellFormat (``str``): The format to use.
+
+        """
+
+        # Class Input > Output
+        # >>> filter = CellFormatParam('The format to use.')
+        # >>> filter.to_param_dict()
+        # {'cellFormat: 'The format to use.'}
+
+        param_name = "cellFormat"
+        kwarg = param_name
+
+    class TimeZoneParam(_BaseParam):
+        """
+        timeZone Param
+
+        Kwargs:
+            ``timeZone=``
+
+        The time zone that should be used to format dates when using string as the cellFormat.
+        This parameter is required when using string as the cellFormat.
+        List of accepted values:
+        https://support.airtable.com/hc/en-us/articles/216141558-Supported-timezones-for-SET-TIMEZONE
+
+        No default. It is MANDATORY WHEN USING string as CellFormat.
+
+        Usage:
+
+        >>> airtable.get_all(timeZone='Europe/London')
+
+        Args:
+            timeZone (``str``): One of https://support.airtable.com/hc/en-us/articles/216141558-Supported-timezones-for-SET-TIMEZONE
+
+        """
+
+        # Class Input > Output
+        # >>> filter = TimeZoneParam('The timeZone to use.')
+        # >>> filter.to_param_dict()
+        # {'timeZone: 'The timeZone to use.'}
+
+        param_name = "timeZone"
+        kwarg = param_name
+
+    class UserLocaleParam(_BaseParam):
+        """
+        userLocale Param
+
+        Kwargs:
+            ``userLocale=``
+
+        The user locale that should be used to format dates when using string as the cellFormat.
+        This parameter is required when using string as the cellFormat.
+        List of accepted values:
+        https://support.airtable.com/hc/en-us/articles/220340268-Supported-locale-modifiers-for-SET-LOCALE
+
+        No default. It is MANDATORY WHEN USING string as CellFormat.
+
+        Usage:
+
+        >>> airtable.get_all(userLocale='en-gb')
+
+        Args:
+            userLocale (``str``): One of https://support.airtable.com/hc/en-us/articles/220340268-Supported-locale-modifiers-for-SET-LOCALE
+
+        """
+
+        # Class Input > Output
+        # >>> filter = UserLocaleParam('The userLocale to use.')
+        # >>> filter.to_param_dict()
+        # {'userLocale: 'The userLocale to use.'}
+
+        param_name = "userLocale"
+        kwarg = param_name
+
     class FormulaParam(_BaseParam):
         """
         Formula Param
