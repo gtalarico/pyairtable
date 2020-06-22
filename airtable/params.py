@@ -205,7 +205,14 @@ class AirtableParams(object):
             Creates a formula to match cells from from field_name and value
             """
             if isinstance(field_value, str):
-                field_value = "'{}'".format(field_value)
+                # field_value = "'{}'".format(field_value)
+                
+                if "'" in field_value:
+                    field_value = '"{}"'.format(field_value)
+                elif '"' in field_value:
+                    field_value = "'{}'".format(field_value)
+                else:
+                    field_value = "'{}'".format(field_value)
 
             formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
             return formula
