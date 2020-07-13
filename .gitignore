@@ -15,4 +15,3 @@ docs/build
 coverage.xml
 .coverage
 test.py
-experiment.py
