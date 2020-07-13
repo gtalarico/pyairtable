@@ -197,7 +197,6 @@ class Airtable(object):
         response = self.session.request(
             method, url, params=params, json=json_data, timeout=self.timeout
         )
-        print(response.url)
         return self._process_response(response)
 
     def _get(self, url, **params):
@@ -400,7 +399,7 @@ class Airtable(object):
     def batch_insert(self, records, typecast=False):
         """
         Breaks records into chunks of 10 and inserts them in batches.
-        Follows the set API reat.
+        Follows the set API rate.
         To change the rate limit use ``airtable.API_LIMIT = 0.2``
         (5 per second)
 
@@ -419,11 +418,7 @@ class Airtable(object):
             new_records = self._build_batch_record_objects(chunk)
             response = self._post(self.url_table, json_data={
                 "records": new_records, "typecast": typecast})
-            print('INNSERT BATCH RESPONSE >>>>>>>>>>>>')
-            print(response)
             inserted_records += response['records']
-            print('inserted records<<<<<<')
-            print(inserted_records)
             time.sleep(self.API_LIMIT)
         return inserted_records
 
