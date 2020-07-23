@@ -112,6 +112,7 @@ class Airtable(object):
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
+    MAX_RECORDS_PER_REQUEST = 10
 
     def __init__(self, base_key, table_name, api_key=None, timeout=None):
         """
@@ -154,6 +155,14 @@ class Airtable(object):
             ParamClass = AirtableParams._get(param_name)
             new_params.update(ParamClass(param_value).to_param_dict())
         return new_params
+
+    def _chunk(self, iterable, chunk_size):
+        """Break iterable into chunks."""
+        for i in range(0, len(iterable), chunk_size):
+            yield iterable[i:i + chunk_size]
+
+    def _build_batch_record_objects(self, records):
+        return [{'fields': record} for record in records]
 
     def _process_response(self, response):
         try:
@@ -205,6 +214,10 @@ class Airtable(object):
 
     def _delete(self, url):
         return self._request("delete", url)
+
+    def _delete_batch(self, record_ids):
+        return self._request("delete", self.url_table,
+                             params={'records': record_ids})
 
     def get(self, record_id):
         """
@@ -383,17 +396,10 @@ class Airtable(object):
             self.url_table, json_data={"fields": fields, "typecast": typecast}
         )
 
-    def _batch_request(self, func, iterable, **kwargs):
-        """ Internal Function to limit batch calls to API limit """
-        responses = []
-        for item in iterable:
-            responses.append(func(item, **kwargs))
-            time.sleep(self.API_LIMIT)
-        return responses
-
     def batch_insert(self, records, typecast=False):
         """
-        Calls :any:`insert` repetitively, following set API Rate Limit (5/sec)
+        Breaks records into chunks of 10 and inserts them in batches.
+        Follows the set API rate.
         To change the rate limit use ``airtable.API_LIMIT = 0.2``
         (5 per second)
 
@@ -406,9 +412,15 @@ class Airtable(object):
 
         Returns:
             records (``list``): list of added records
-
         """
-        return self._batch_request(self.insert, records, typecast=typecast)
+        inserted_records = []
+        for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+            new_records = self._build_batch_record_objects(chunk)
+            response = self._post(self.url_table, json_data={
+                "records": new_records, "typecast": typecast})
+            inserted_records += response['records']
+            time.sleep(self.API_LIMIT)
+        return inserted_records
 
     def update(self, record_id, fields, typecast=False):
         """
@@ -555,7 +567,8 @@ class Airtable(object):
 
     def batch_delete(self, record_ids):
         """
-        Calls :any:`delete` repetitively, following set API Rate Limit (5/sec)
+        Breaks records into batches of 10 and deletes in batches, following set
+        API Rate Limit (5/sec).
         To change the rate limit set value of ``airtable.API_LIMIT`` to
         the time in seconds it should sleep before calling the function again.
 
@@ -569,7 +582,13 @@ class Airtable(object):
             records(``list``): list of records deleted
 
         """
-        return self._batch_request(self.delete, record_ids)
+        chunks = self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST)
+        deleted_records = []
+        for chunk in chunks:
+            response = self._delete_batch(chunk)
+            deleted_records += response['records']
+            time.sleep(self.API_LIMIT)
+        return deleted_records
 
     def __repr__(self):
         return "<Airtable table:{}>".format(self.table_name)
