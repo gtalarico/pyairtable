@@ -207,8 +207,7 @@ class AirtableParams(object):
             if isinstance(field_value, str):
                 field_value = "'{}'".format(field_value)
 
-            formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
-            return formula
+            return "{{{name}}}={value}".format(name=field_name, value=field_value)
 
     class _OffsetParam(_BaseParam):
         """

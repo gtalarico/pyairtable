@@ -7,10 +7,10 @@ from airtable.auth import AirtableAuth
 
 class TestAuth(object):
     def test_authorization_key(self, table):
-        FAKE_URL = "http://www.fake.com"
         session = requests.Session()
         session.auth = AirtableAuth(api_key="xxx")
         with Mocker() as m:
+            FAKE_URL = "http://www.fake.com"
             m.get(FAKE_URL)
             resp = session.get(FAKE_URL)
         assert "Authorization" in resp.request.headers
