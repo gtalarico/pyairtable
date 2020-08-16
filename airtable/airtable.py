@@ -90,20 +90,14 @@ similar to this:
 
 """  #
 
-import sys
 import requests
 from collections import OrderedDict
 import posixpath
 import time
-from six.moves.urllib.parse import unquote, quote
+from urllib.parse import unquote, quote
 
 from .auth import AirtableAuth
 from .params import AirtableParams
-
-try:
-    IS_IPY = sys.implementation.name == "ironpython"
-except AttributeError:
-    IS_IPY = False
 
 
 class Airtable(object):
@@ -168,13 +162,6 @@ class Airtable(object):
             response.raise_for_status()
         except requests.exceptions.HTTPError as exc:
             err_msg = str(exc)
-
-            # Reports Decoded 422 Url for better troubleshooting
-            # Disabled in IronPython Bug:
-            # https://github.com/IronLanguages/ironpython2/issues/242
-            if not IS_IPY and response.status_code == 422:
-                err_msg = err_msg.replace(response.url, unquote(response.url))
-                err_msg += " (Decoded URL)"
 
             # Attempt to get Error message from response, Issue #16
             try:
