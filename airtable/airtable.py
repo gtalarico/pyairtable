@@ -114,7 +114,7 @@ class Airtable(object):
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
 
-    def __init__(self, base_key, table_name, api_key=None, timeout=None):
+    def __init__(self, base_key, table_name, api_key, timeout=None):
         """
         Instantiates a new Airtable instance
 
@@ -128,10 +128,9 @@ class Airtable(object):
             base_key(``str``): Airtable base identifier
             table_name(``str``): Airtable table name. Value will be url encoded, so
                 use value as shown in Airtable.
+            api_key (``str``): API key.
 
         Keyword Args:
-            api_key (``str``, optional): Optional API key. If not provided,
-                it will attempt to use ``os.environ['AIRTABLE_API_KEY']``
             timeout (``int``, ``Tuple[int, int]``, optional): Optional timeout
                 parameters to be used in request. `See requests timeout docs.
                 <https://requests.readthedocs.io/en/master/user/advanced/#timeouts>`_
@@ -159,10 +158,10 @@ class Airtable(object):
     def _chunk(self, iterable, chunk_size):
         """Break iterable into chunks."""
         for i in range(0, len(iterable), chunk_size):
-            yield iterable[i:i + chunk_size]
+            yield iterable[i : i + chunk_size]
 
     def _build_batch_record_objects(self, records):
-        return [{'fields': record} for record in records]
+        return [{"fields": record} for record in records]
 
     def _process_response(self, response):
         try:
@@ -216,8 +215,7 @@ class Airtable(object):
         return self._request("delete", url)
 
     def _delete_batch(self, record_ids):
-        return self._request("delete", self.url_table,
-                             params={'records': record_ids})
+        return self._request("delete", self.url_table, params={"records": record_ids})
 
     def get(self, record_id):
         """
@@ -416,9 +414,10 @@ class Airtable(object):
         inserted_records = []
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             new_records = self._build_batch_record_objects(chunk)
-            response = self._post(self.url_table, json_data={
-                "records": new_records, "typecast": typecast})
-            inserted_records += response['records']
+            response = self._post(
+                self.url_table, json_data={"records": new_records, "typecast": typecast}
+            )
+            inserted_records += response["records"]
             time.sleep(self.API_LIMIT)
         return inserted_records
 
@@ -586,7 +585,7 @@ class Airtable(object):
         deleted_records = []
         for chunk in chunks:
             response = self._delete_batch(chunk)
-            deleted_records += response['records']
+            deleted_records += response["records"]
             time.sleep(self.API_LIMIT)
         return deleted_records
 

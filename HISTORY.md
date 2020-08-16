@@ -1,5 +1,9 @@
+# 0.15.0
+* **Breaking**: Drop Api config from ENV variable - use `api_key` arg instead
+
+
 # 0.14.0
-* Removed `mirror()` method.
+* Removed: `mirror()` method.
 * Feature: Configurable request timeout
 
 # 0.13.0
