@@ -9,8 +9,8 @@ usage:
 	@echo "$(L_GREEN)Choose a command: $(PWD) $(NC)"
 	@bash -c "sed -ne 's/^##//p' ./Makefile | column -t -s ':' |  sed -e 's/^/ /'"
 
-## deploy: Deploy
-deploy:
+## release: Release new version
+release:
 	python setup.py sdist bdist_wheel --universal
 	twine upload ./dist/*
 	make clean
