@@ -1,5 +1,3 @@
-import pytest
-import os
 import requests
 from requests_mock import Mocker
 from airtable.auth import AirtableAuth
@@ -22,4 +20,3 @@ class TestAuth(object):
         request = auth.__call__(request)
         assert "Authorization" in request.headers
         assert "Bearer" in request.headers["Authorization"]
-
