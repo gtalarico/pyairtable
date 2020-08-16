@@ -93,8 +93,7 @@ def mock_response_iterator(mock_response_list):
     i = iter(mock_response_list)
 
     def _response_iterator(request, context):
-        v = next(i)
-        return v
+        return next(i)
 
     return _response_iterator
 

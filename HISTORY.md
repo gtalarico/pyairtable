@@ -1,4 +1,4 @@
-# 0.15.0
+# 0.15.0 (WIP)
 * **Breaking**: Drop Api config from ENV variable - use `api_key` arg instead
 * **Breaking**: Drop Python 2 / IronPython Support
 * Feature: On HTTP Errors, Raise Original Exception, but with Helpful Errors added
