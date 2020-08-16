@@ -3,14 +3,6 @@ from requests import HTTPError
 from mock import Mock
 
 
-def http_error_with_url():
-    raise HTTPError("unable to process page%20url")
-
-
-def json_decoder_error():
-    raise ValueError()
-
-
 def test_error_mesg_in_json(table, response):
     response.status_code = 400
     response.json = Mock(return_value={"error": "here's what went wrong"})

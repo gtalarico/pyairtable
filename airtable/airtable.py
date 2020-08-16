@@ -158,19 +158,24 @@ class Airtable(object):
         return [{"fields": record} for record in records]
 
     def _process_response(self, response):
-        """ Pass through exception so we can check status, inject error"""
         try:
             response.raise_for_status()
-        except requests.HTTPError as exc:
+        except requests.exceptions.HTTPError as exc:
+            err_msg = str(exc)
+
+            # Attempt to get Error message from response, Issue #16
             try:
-                # Try to inject additional details about into exception
-                # this helps users see error details for when record write
-                # mismatches the Base
-                exc.args = (*exc.args, exc.response.json())
+                error_dict = response.json()
             except ValueError:
                 pass
-            raise
-        return response.json()
+            else:
+                if "error" in error_dict:
+                    err_msg += " [Error: {}]".format(error_dict["error"])
+            # TODO raise original exc instead to pass full HTTP error and response
+            # exc.args = (*exc.args, exc.response.json())
+            raise requests.exceptions.HTTPError(err_msg)
+        else:
+            return response.json()
 
     def record_url(self, record_id):
         """ Builds URL with record id """

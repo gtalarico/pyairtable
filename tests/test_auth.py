@@ -23,7 +23,3 @@ class TestAuth(object):
         assert "Authorization" in request.headers
         assert "Bearer" in request.headers["Authorization"]
 
-    def test_authorization_missing(self):
-        os.environ.pop("AIRTABLE_API_KEY", None)
-        with pytest.raises(KeyError):
-            AirtableAuth()
