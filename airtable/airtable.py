@@ -186,24 +186,39 @@ class Airtable(object):
         )
         return self._process_response(response)
 
+    def _retriable_request(self, method, url, params=None, json_data=None):
+        retry = getattr(self, "_retry", None)
+        if not retry:
+            return self._request(method, url, params=None, json_data=None)
+        for n in range(retry.retry_count):
+            try:
+                return self._request(method, url, params=None, json_data=None)
+            except requests.exceptions.HTTPError as exc:
+                if exc.response.status_code == 429:
+                    retry.wait()
+                    continue
+                raise
+
     def _get(self, url, **params):
         processed_params = self._process_params(params)
-        return self._request("get", url, params=processed_params)
+        return self._retriable_request("get", url, params=processed_params)
 
     def _post(self, url, json_data):
-        return self._request("post", url, json_data=json_data)
+        return self._retriable_request("post", url, json_data=json_data)
 
     def _put(self, url, json_data):
-        return self._request("put", url, json_data=json_data)
+        return self._retriable_request("put", url, json_data=json_data)
 
     def _patch(self, url, json_data):
-        return self._request("patch", url, json_data=json_data)
+        return self._retriable_request("patch", url, json_data=json_data)
 
     def _delete(self, url):
-        return self._request("delete", url)
+        return self._retriable_request("delete", url)
 
     def _delete_batch(self, record_ids):
-        return self._request("delete", self.url_table, params={"records": record_ids})
+        return self._retriable_request(
+            "delete", self.url_table, params={"records": record_ids}
+        )
 
     def get(self, record_id):
         """
@@ -579,3 +594,44 @@ class Airtable(object):
 
     def __repr__(self):
         return "<Airtable table:{}>".format(self.table_name)
+
+
+class RateLimitRetry:
+    """
+    RateLimitRetry
+    ***********************
+    """
+
+    def __init__(self, airtable, retry_count=3, wait_seconds=30):
+        """
+        Allow to retry if response is Rate Limit Error.
+        All outbound requests will retry `retry_count` times.
+        Only HTTPError with status code 429 are retried.
+
+        >>> airtable = Airtable(...)
+        >>> for record in records:
+        ...     with RateLimitRetry(airtable):
+        ...         airtable.insert(record)
+
+        Args:
+            airtable(``Airtable``): Airtable instance.
+
+        Keyword Args:
+            retry_count(``int``, optional): Number of times it should retry.
+                Default is `3` times.
+            wait_seconds(``int``, optional): Wait time in seconds in between each retry.
+                Default is `3` seconds.
+
+        """
+        self.airtable = airtable
+        self.retry_count = retry_count
+        self.wait_seconds = wait_seconds
+
+    def __enter__(self):
+        self.airtable._retry = self
+
+    def __exit__(self, *exc):
+        del self.airtable._retry
+
+    def wait(self):
+        time.sleep(self.wait_seconds)
