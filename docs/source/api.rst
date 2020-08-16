@@ -8,10 +8,16 @@ Overview
 
 _______________________________________________
 
-Class API
+Airtable
 *********
 
 .. autoclass:: airtable.Airtable
+    :members:
+
+RateLimitRetry
+**************
+
+.. autoclass:: airtable.RateLimitRetry
     :members:
 
 _______________________________________________
