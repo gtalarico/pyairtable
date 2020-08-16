@@ -1,7 +1,8 @@
 # 0.15.0
 * **Breaking**: Drop Api config from ENV variable - use `api_key` arg instead
 * **Breaking**: Drop Python 2 / IronPython Support
-
+* **Breaking**: Removed "delete_by_field" - use match and then delete
+* Feature: Inject HTTP Error message into exception
 
 # 0.14.0
 * Removed: `mirror()` method.
