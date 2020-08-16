@@ -1,5 +1,11 @@
+# 0.15.0 (WIP)
+* **Breaking**: Drop Api config from ENV variable - use `api_key` arg instead
+* **Breaking**: Drop Python 2 / IronPython Support
+* Feature: On HTTP Errors, Raise Original Exception, but with Helpful Errors added
+* Fix: #86 formulas with string values
+
 # 0.14.0
-* Removed `mirror()` method.
+* Removed: `mirror()` method.
 * Feature: Configurable request timeout
 
 # 0.13.0

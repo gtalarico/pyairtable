@@ -3,7 +3,7 @@ from collections import OrderedDict
 from posixpath import join as urljoin
 
 from requests import HTTPError
-from six.moves.urllib.parse import urlencode, quote
+from urllib.parse import urlencode, quote
 from mock import Mock
 
 from airtable import Airtable
@@ -93,8 +93,7 @@ def mock_response_iterator(mock_response_list):
     i = iter(mock_response_list)
 
     def _response_iterator(request, context):
-        v = next(i)
-        return v
+        return next(i)
 
     return _response_iterator
 
