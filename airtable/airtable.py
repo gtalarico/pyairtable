@@ -171,9 +171,8 @@ class Airtable(object):
             else:
                 if "error" in error_dict:
                     err_msg += " [Error: {}]".format(error_dict["error"])
-            # TODO raise original exc instead to pass full HTTP error and response
-            # exc.args = (*exc.args, exc.response.json())
-            raise requests.exceptions.HTTPError(err_msg)
+            exc.args = (*exc.args, err_msg)
+            raise exc
         else:
             return response.json()
 
