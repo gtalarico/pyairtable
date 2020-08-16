@@ -94,7 +94,7 @@ import requests
 from collections import OrderedDict
 import posixpath
 import time
-from urllib.parse import unquote, quote
+from urllib.parse import quote
 
 from .auth import AirtableAuth
 from .params import AirtableParams
