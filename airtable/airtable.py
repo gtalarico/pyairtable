@@ -42,7 +42,7 @@ Formulas:
 
 Insert:
 
->>> airtable.insert({'First Name', 'John'})
+>>> airtable.insert({'First Name': 'John'})
 
 Delete:
 
