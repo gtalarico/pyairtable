@@ -55,7 +55,15 @@ _______________________________________________
 
 Contribute
 **********
-https://www.github.com/gtalarico/airtable-python-wrapper
+
+.. code-block:: python
+  :linenos:
+
+   git clone git@github.com:gtalarico/airtable-python-wrapper.git
+   cd airtable-python-wrapper.git
+   python setup.py develop
+   python setup.py test
+
 
 License
 *******
