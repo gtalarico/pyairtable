@@ -245,6 +245,9 @@ def test_batch_delete(table, mock_records):
     expected = [{"delete": True, "id": i} for i in ids]
     assert resp == expected
 
+def test_batch_delete_single_record(table, mock_response_single):
+    test_batch_delete(table, [mock_response_single])
+
 
 # Helpers
 
