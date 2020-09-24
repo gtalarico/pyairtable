@@ -238,8 +238,11 @@ def test_batch_delete(table, mock_records):
             json = (
                 {"records": [{"delete": True, "id": id_} for id_ in chunk]} if len(chunk) > 1
                 else {"delete": True,  "id": chunk[0]})
+            url = (
+                table.url_table + "?" + params_encode if len(chunk) > 1 
+                else urljoin(table.url_table, chunk[0]))
             mock.delete(
-                table.url_table + "?" + params_encode,
+                url,
                 status_code=201,
                 json=json,
             )
