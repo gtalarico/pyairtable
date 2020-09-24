@@ -203,6 +203,9 @@ class Airtable(object):
         return self._request("delete", url)
 
     def _delete_batch(self, record_ids):
+        if len(record_ids) == 1:
+            return self.delete(record_ids[0])
+
         return self._request("delete", self.url_table, params={"records": record_ids})
 
     def get(self, record_id):
@@ -573,7 +576,7 @@ class Airtable(object):
         deleted_records = []
         for chunk in chunks:
             response = self._delete_batch(chunk)
-            deleted_records += response["records"]
+            deleted_records += response["records"] if len(chunk) > 1 else [response]
             time.sleep(self.API_LIMIT)
         return deleted_records
 
