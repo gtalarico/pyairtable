@@ -127,9 +127,7 @@ def test_batch_insert(table, mock_records):
     with Mocker() as mock:
         for chunk in _chunk(mock_records, 10):
             mock.post(
-                table.url_table,
-                status_code=201,
-                json={"records": chunk},
+                table.url_table, status_code=201, json={"records": chunk},
             )
         records = [i["fields"] for i in mock_records]
         resp = table.batch_insert(records)
@@ -248,9 +246,7 @@ def test_batch_delete(table, mock_records):
                 else urljoin(table.url_table, chunk[0])
             )
             mock.delete(
-                url,
-                status_code=201,
-                json=json,
+                url, status_code=201, json=json,
             )
 
         resp = table.batch_delete(ids)

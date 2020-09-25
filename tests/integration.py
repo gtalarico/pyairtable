@@ -34,4 +34,3 @@ records = airtable.batch_insert(
 # Batch Delete
 records = airtable.batch_delete([r["id"] for r in records])
 assert len(records) == 100
-
