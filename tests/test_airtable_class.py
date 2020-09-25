@@ -127,7 +127,9 @@ def test_batch_insert(table, mock_records):
     with Mocker() as mock:
         for chunk in _chunk(mock_records, 10):
             mock.post(
-                table.url_table, status_code=201, json={"records": chunk},
+                table.url_table,
+                status_code=201,
+                json={"records": chunk},
             )
         records = [i["fields"] for i in mock_records]
         resp = table.batch_insert(records)
@@ -235,15 +237,29 @@ def test_batch_delete(table, mock_records):
         for chunk in _chunk(ids, 10):
             params = [("records", id_) for id_ in chunk]
             params_encode = urlencode(params)
+            json = (
+                {"records": [{"delete": True, "id": id_} for id_ in chunk]}
+                if len(chunk) > 1
+                else {"delete": True, "id": chunk[0]}
+            )
+            url = (
+                table.url_table + "?" + params_encode
+                if len(chunk) > 1
+                else urljoin(table.url_table, chunk[0])
+            )
             mock.delete(
-                table.url_table + "?" + params_encode,
+                url,
                 status_code=201,
-                json={"records": [{"delete": True, "id": id_} for id_ in chunk]},
+                json=json,
             )
 
         resp = table.batch_delete(ids)
     expected = [{"delete": True, "id": i} for i in ids]
     assert resp == expected
+
+
+def test_batch_delete_single_record(table, mock_response_single):
+    test_batch_delete(table, [mock_response_single])
 
 
 # Helpers
