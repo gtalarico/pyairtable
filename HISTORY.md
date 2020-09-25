@@ -1,3 +1,6 @@
+# 0.15.1
+* Fix: [batch delete](https://github.com/gtalarico/airtable-python-wrapper/pull/100)
+
 # 0.15.0
 * **Breaking**: Drop Api config from ENV variable - use `api_key` arg instead
 * **Breaking**: Drop Python 2 / IronPython Support
