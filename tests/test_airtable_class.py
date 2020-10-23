@@ -148,6 +148,18 @@ def test_update(table, mock_response_single):
     assert dict_equals(resp, mock_response_single)
 
 
+def test_batch_update(table, mock_response_batch):
+    records = [{"id": x["id"], "fields": x["fields"]} for x in mock_response_batch["records"]]
+    with Mocker() as mock:
+        for chunk in _chunk(mock_response_batch["records"], 10):
+            mock.patch(
+                table.url_table, status_code=201, json={"records": chunk},
+            )
+        #
+        resp = table.batch_update(records)
+    assert resp == mock_response_batch["records"]
+
+
 def test_update_by_field(table, mock_response_single):
     id_ = mock_response_single["id"]
     post_data = mock_response_single["fields"]
