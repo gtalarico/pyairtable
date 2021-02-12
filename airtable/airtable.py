@@ -440,7 +440,8 @@ class Airtable(object):
         Updates a records by their record id's in batch.
 
         Args:
-            records(``dict``): List of dict: [{"id": record_id, "field": fields_to_update_dict}]
+            records(``list``): List of dict: [{"id": record_id, "field": fields_to_update_dict}]
+            typecast(``boolean``): Automatic data conversion from string values.
 
         Returns:
             records(``list``): list of updated records
