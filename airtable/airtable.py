@@ -435,6 +435,27 @@ class Airtable(object):
             record_url, json_data={"fields": fields, "typecast": typecast}
         )
 
+    def batch_update(self, records, typecast=False):
+        """
+        Updates a records by their record id's in batch.
+
+        Args:
+            records(``list``): List of dict: [{"id": record_id, "field": fields_to_update_dict}]
+            typecast(``boolean``): Automatic data conversion from string values.
+
+        Returns:
+            records(``list``): list of updated records
+        """
+        updated_records = []
+        for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+            chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in chunk]
+            response = self._patch(
+                self.url_table, json_data={"records": chunk_records, "typecast": typecast}
+            )
+            updated_records += response["records"]
+        #
+        return updated_records
+
     def update_by_field(
         self, field_name, field_value, fields, typecast=False, **options
     ):
