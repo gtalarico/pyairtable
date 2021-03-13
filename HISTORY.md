@@ -1,3 +1,6 @@
+# 0.15.2
+* Added Batch update method
+
 # 0.15.1
 * Fix: [batch delete](https://github.com/gtalarico/airtable-python-wrapper/pull/100)
 
