@@ -11,15 +11,15 @@ def test_repr(table):
 
 
 @pytest.mark.parametrize(
-    "base_key,table_name,table_url_suffix",
+    "base_id,table_name,table_url_suffix",
     [
         ("abc", "My Table", "abc/My%20Table"),
         ("abc", "SomeTable", "abc/SomeTable"),
         ("abc", "Table-fake", "abc/Table-fake"),
     ],
 )
-def test_url(base_key, table_name, table_url_suffix):
-    table = Airtable(base_key, table_name, api_key="x")
+def test_url(base_id, table_name, table_url_suffix):
+    table = Airtable(base_id, table_name, api_key="x")
     assert table.url_table == "{0}/{1}".format(table.API_URL, table_url_suffix)
 
 

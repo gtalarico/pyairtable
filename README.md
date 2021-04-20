@@ -30,7 +30,7 @@ For the full list and documentation visit the [docs](http://airtable-python-wrap
 You can see the wrapper in action in this [Jupyter Notebook](https://github.com/gtalarico/airtable-python-wrapper/blob/master/Airtable.ipynb).
 
 ```
-airtable = Airtable('baseKey', 'table_name')
+airtable = Airtable('base_id', 'table_name')
 
 airtable.get_all(view='MyView', maxRecords=20)
 
