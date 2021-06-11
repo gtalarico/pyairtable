@@ -138,6 +138,26 @@ class Airtable(object):
         self.url_table = posixpath.join(self.API_URL, base_key, url_safe_table_name)
         self.timeout = timeout
 
+    def __enter__(self):
+        """
+        Context manager setup logic. Called during `with` block setup.
+
+        >>> with Airtable("base_key", "table_name") as airtable:
+        >>>     records = airtable.get_all()
+        """
+        return self
+
+    def __exit__(self, exc_type=None, exc_value=None, exc_tb=None):
+        """
+        Context manager teardown logic. Called at the end of the `with` block.
+
+        Args:
+            exc_type: Stores exception type, if any.
+            exc_value: Stores exception value, if any.
+            exc_tb: Stores traceback info, if any.
+        """
+        self.close()
+
     def _process_params(self, params):
         """
         Process params names or values as needed using filters
