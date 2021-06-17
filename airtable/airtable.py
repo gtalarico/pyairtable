@@ -3,7 +3,7 @@
 Airtable Class Instance
 ***********************
 
->>> airtable = Airtable('base_key', 'table_name')
+>>> airtable = Airtable('base_id', 'table_name')
 >>> airtable.get_all()
 [{id:'rec123asa23', fields': {'Column': 'Value'}, ...}]
 
@@ -108,18 +108,18 @@ class Airtable(object):
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
 
-    def __init__(self, base_key, table_name, api_key, timeout=None):
+    def __init__(self, base_id, table_name, api_key, timeout=None):
         """
         Instantiates a new Airtable instance
 
-        >>> table = Airtable('basekey', "tablename")
+        >>> table = Airtable('base_id', "tablename")
 
         With timeout:
 
-        >>> table = Airtable('basekey', "tablename", timeout=(1, 1))
+        >>> table = Airtable('base_id', "tablename", timeout=(1, 1))
 
         Args:
-            base_key(``str``): Airtable base identifier
+            base_id(``str``): Airtable base identifier
             table_name(``str``): Airtable table name. Value will be url encoded, so
                 use value as shown in Airtable.
             api_key (``str``): API key.
@@ -135,7 +135,7 @@ class Airtable(object):
         self.session = session
         self.table_name = table_name
         url_safe_table_name = quote(table_name, safe="")
-        self.url_table = posixpath.join(self.API_URL, base_key, url_safe_table_name)
+        self.url_table = posixpath.join(self.API_URL, base_id, url_safe_table_name)
         self.timeout = timeout
 
     def _process_params(self, params):

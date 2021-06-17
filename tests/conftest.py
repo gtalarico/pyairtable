@@ -13,9 +13,9 @@ from airtable import Airtable
 def url_builder():
     """ Builds Airtable Api Url Manually for mock testing """
 
-    def _url_builder(base_key, table_name, params=None):
+    def _url_builder(base_id, table_name, params=None):
         urltable_name = quote(table_name, safe="")
-        url = urljoin(Airtable.API_URL, base_key, urltable_name)
+        url = urljoin(Airtable.API_URL, base_id, urltable_name)
         if params:
             params = OrderedDict(sorted(params.items()))
             url += "?" + urlencode(params)
@@ -27,14 +27,14 @@ def url_builder():
 @pytest.fixture
 def constants():
     return dict(
-        API_KEY="FakeApiKey", BASE_KEY="appJMY16gZDQrMWpA", TABLE_NAME="Table Name"
+        API_KEY="FakeApiKey", BASE_ID="appJMY16gZDQrMWpA", TABLE_NAME="Table Name"
     )
 
 
 @pytest.fixture()
 def table(constants):
     return Airtable(
-        constants["BASE_KEY"], constants["TABLE_NAME"], api_key=constants["API_KEY"]
+        constants["BASE_ID"], constants["TABLE_NAME"], api_key=constants["API_KEY"]
     )
 
 
