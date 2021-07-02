@@ -66,7 +66,7 @@ class _BaseObjectArrayParam(_BaseParam):
     """
 
     def to_param_dict(self):
-        """Sorts to ensure Order is consistent for Testing"""
+        """ Sorts to ensure Order is consistent for Testing """
         param_dict = {}
         for index, dictionary in enumerate(self.value):
             for key, value in dictionary.items():
@@ -360,7 +360,7 @@ class AirtableParams(object):
 
     @classmethod
     def _get(cls, kwarg_name):
-        """Returns a Param Class Instance, by its kwarg or param name"""
+        """ Returns a Param Class Instance, by its kwarg or param name """
         param_classes = cls._discover_params()
         try:
             param_class = param_classes[kwarg_name]

@@ -80,7 +80,7 @@ class TestParamsIntegration(object):
     ],
 )
 def test_process_params(kwargs, url_params):
-    """Ensure kwargs received build a proper params"""
+    """ Ensure kwargs received build a proper params """
     # https://codepen.io/airtable/full/rLKkYB
 
     FAKE_URL = "http://www.fake.com"
