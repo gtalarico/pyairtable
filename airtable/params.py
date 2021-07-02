@@ -17,6 +17,7 @@ For more information see the full implementation below.
 """  #
 
 from collections import OrderedDict
+import re
 
 
 class _BaseParam(object):
@@ -65,7 +66,7 @@ class _BaseObjectArrayParam(_BaseParam):
     """
 
     def to_param_dict(self):
-        """ Sorts to ensure Order is consistent for Testing """
+        """Sorts to ensure Order is consistent for Testing"""
         param_dict = {}
         for index, dictionary in enumerate(self.value):
             for key, value in dictionary.items():
@@ -205,6 +206,7 @@ class AirtableParams(object):
             Creates a formula to match cells from from field_name and value
             """
             if isinstance(field_value, str):
+                field_value = re.sub("(?<!\\\\)'", "\\'", field_value)
                 field_value = "'{}'".format(field_value)
 
             formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
@@ -358,7 +360,7 @@ class AirtableParams(object):
 
     @classmethod
     def _get(cls, kwarg_name):
-        """ Returns a Param Class Instance, by its kwarg or param name """
+        """Returns a Param Class Instance, by its kwarg or param name"""
         param_classes = cls._discover_params()
         try:
             param_class = param_classes[kwarg_name]
