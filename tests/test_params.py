@@ -80,7 +80,7 @@ class TestParamsIntegration(object):
     ],
 )
 def test_process_params(kwargs, url_params):
-    """ Ensure kwargs received build a proper params """
+    """Ensure kwargs received build a proper params"""
     # https://codepen.io/airtable/full/rLKkYB
 
     FAKE_URL = "http://www.fake.com"
@@ -93,6 +93,12 @@ def test_process_params(kwargs, url_params):
 def test_formula_from_name_and_value():
     formula = AirtableParams.FormulaParam.from_name_and_value("COL", "VAL")
     assert formula == r"{COL}='VAL'"
+
+    formula = AirtableParams.FormulaParam.from_name_and_value("COL", "'VAL'")
+    assert formula == r"{COL}='\'VAL\''"
+
+    formula = AirtableParams.FormulaParam.from_name_and_value("COL", "\\'VAL\\'")
+    assert formula == r"{COL}='\'VAL\''"
 
     formula = AirtableParams.FormulaParam.from_name_and_value("COL", 8)
     assert formula == r"{COL}=8"
