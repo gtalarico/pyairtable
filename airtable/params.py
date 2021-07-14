@@ -15,356 +15,151 @@ the parameter names and values on the request url.
 For more information see the full implementation below.
 
 """  #
-
+from typing import List, Dict, Any
 from collections import OrderedDict
 import re
 
 
-class _BaseParam(object):
-    def __init__(self, value):
-        self.value = value
+class InvalidParamException(ValueError):
+    """Raise when invalid parameters are used"""
 
-    def to_param_dict(self):
-        return {self.param_name: self.value}
+    def __init__(self, message, *args):
+        self.message = message
+        super().__init__(message, *args)
 
 
-class _BaseStringArrayParam(_BaseParam):
+def dict_list_to_request_params(param_name: str, values: List[dict]) -> str:
     """
-    Api Expects Array Of Strings:
-    >>> ['FieldOne', 'Field2']
+    Returns dict to be used by request params from dict list
 
-    Requests Params Input:
-    >>> params={'fields': ['FieldOne', 'FieldTwo']}
+    Expected Airtable Url Params is:
+        `?sort[0][field]=FieldOne&sort[0][direction]=asc`
 
-    Requests Url Params Encoding:
-    >>> ?fields=FieldOne&fields=FieldTwo
+    >>> objects = [
+    ...    { "field": "FieldOne", "direction": "asc"},
+    ...    { "field": "FieldTwo", "direction": "desc"},
+    ... ]
+    >>> dict_list_to_request_params("sort", objects)
+    {'sort': [('FieldOne', 'asc'), ('FieldTwo', 'desc')]}
 
-    Expected Url Params:
-    >>> ?fields[]=FieldOne&fields[]=FieldTwo
+    """
+    param_dict = {}
+    for index, dictionary in enumerate(values):
+        for key, value in dictionary.items():
+            field_name = "{param_name}[{index}][{key}]".format(
+                param_name=param_name, index=index, key=key
+            )
+            param_dict[field_name] = value
+    return OrderedDict(sorted(param_dict.items()))
+
+
+class ParamDocStrings:
+
+    # Library
+    record_id = """
+        record_id(``str``): Airtable record id
+    """
+    table_name = """
+        table_name(``str``): Airtable table name. Value will be url encoded, so
+                use value as shown in Airtable.
     """
 
-    def to_param_dict(self):
-        encoded_param = self.param_name + "[]"
-        return {encoded_param: self.value}
-
-
-class _BaseObjectArrayParam(_BaseParam):
+    # Official, Public
+    max_records = """
+        max_records (``int``, optional): The maximum total number of
+            records that will be returned.
     """
-    Api Expects Array of Objects:
-    >>> [{field: "UUID", direction: "desc"}, {...}]
-
-    Requests Params Input:
-    >>> params={'sort': ['FieldOne', '-FieldTwo']}
-    or
-    >>> params={'sort': [('FieldOne', 'asc'), ('-FieldTwo', 'desc')]}
-
-    Requests Url Params Encoding:
-    >>> ?sort=field&sort=direction&sort=field&sort=direction
-
-    Expected Url Params:
-    >>> ?sort[0][field]=FieldOne&sort[0][direction]=asc
+    view = """
+        view (``str``, optional): The name or ID of a view.
+            If set, only the records in that view will be returned.
+            The records will be sorted according to the order of the view.
     """
-
-    def to_param_dict(self):
-        """ Sorts to ensure Order is consistent for Testing """
-        param_dict = {}
-        for index, dictionary in enumerate(self.value):
-            for key, value in dictionary.items():
-                param_name = "{param_name}[{index}][{key}]".format(
-                    param_name=self.param_name, index=index, key=key
-                )
-                param_dict[param_name] = value
-        return OrderedDict(sorted(param_dict.items()))
-
-
-class AirtableParams(object):
-    class MaxRecordsParam(_BaseParam):
-        """
-        Max Records Param
-
-        Kwargs:
-            ``max_records=`` or ``maxRecords=``
-
-        The maximum total number of records that will be returned.
-
-        Usage:
-
-        >>> airtable.get_all(max_records=10)
-
-        Args:
-            max_records (``int``): The maximum total number of records that
-                will be returned.
-
-
-        """
-
-        # Class Input > Output
-        # >>> filter = MaxRecordsParam(100)
-        # >>> filter.to_param_dict()
-        # {'maxRecords: 100}
-
-        param_name = "maxRecords"
-        kwarg = "max_records"
-
-    class ViewParam(_BaseParam):
-        """
-        View Param
-
-        Kwargs:
-            ``view=``
-
-        If set, only the records in that view will be returned.
-        The records will be sorted according to the order of the view.
-
-        Usage:
-
-        >>> airtable.get_all(view='My View')
-
-        Args:
-            view (``str``): The name or ID of a view.
-
-        """
-
-        # Class Input > Output
-        # >>> filter = ViewParam('Name or Id Of View')
-        # >>> filter.to_param_dict()
-        # {'view: 'Name or Id Of View'}
-
-        param_name = "view"
-        kwarg = param_name
-
-    class PageSizeParam(_BaseParam):
-        """
-        Page Size Param
-
-        Kwargs:
-            ``page_size=`` or ``pageSize=``
-
-        Limits the maximum number of records returned in each request.
-        Default is 100.
-
-        Usage:
-
-        >>> airtable.get_all(page_size=50)
-
-        Args:
-            page_size (``int``): The number of records returned in each request.
-                Must be less than or equal to 100. Default is 100.
-
-        """
-
-        # Class Input > Output
-        # >>> filter = PageSizeParam(50)
-        # >>> filter.to_param_dict()
-        # {'pageSize: 50}
-
-        param_name = "pageSize"
-        kwarg = "page_size"
-
-    class FormulaParam(_BaseParam):
-        """
-        Formula Param
-
-        Kwargs:
-            ``formula=`` or ``filterByFormula=``
-
-        The formula will be evaluated for each record, and if the result
-        is not 0, false, "", NaN, [], or #Error! the record will be included
-        in the response.
-
-        If combined with view, only records in that view which satisfy the
-        formula will be returned. For example, to only include records where
-        ``COLUMN_A`` isn't empty, pass in: ``"NOT({COLUMN_A}='')"``
-
-        For more information see
-        `Airtable Docs on formulas. <https://airtable.com/api>`_
-
-        Usage - Text Column is not empty:
-
-        >>> airtable.get_all(formula="NOT({COLUMN_A}='')")
-
-        Usage - Text Column contains:
-
-        >>> airtable.get_all(formula="FIND('SomeSubText', {COLUMN_STR})=1")
-
-        Args:
-            formula (``str``): A valid Airtable formula.
-
-        """
-
-        # Class Input > Output
-        # >>> param = FormulaParams("FIND('DUP', {COLUMN_STR})=1")
-        # >>> param.to_param_dict()
-        # {'formula': "FIND('WW')=1"}
-
-        param_name = "filterByFormula"
-        kwarg = "formula"
-
-        @staticmethod
-        def from_name_and_value(field_name, field_value):
-            """
-            Creates a formula to match cells from from field_name and value
-            """
-            if isinstance(field_value, str):
-                field_value = re.sub("(?<!\\\\)'", "\\'", field_value)
-                field_value = "'{}'".format(field_value)
-
-            formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
-            return formula
-
-    class _OffsetParam(_BaseParam):
-        """
-        Offset Param
-
-        Kwargs:
-            ``offset=``
-
-        If there are more records what was in the response,
-        the response body will contain an offset value.
-        To fetch the next page of records,
-        include offset in the next request's parameters.
-
-        This is used internally by :any:`get_all` and :any:`get_iter`.
-
-        Usage:
-
-        >>> airtable.get_iter(offset='recjAle5lryYOpMKk')
-
-        Args:
-            record_id (``str``, ``list``):
-
-        """
-
-        # Class Input > Output
-        # >>> filter = _OffsetParam('recqgqThAnETLuH58')
-        # >>> filter.to_param_dict()
-        # {'offset: 'recqgqThAnETLuH58'}
-
-        param_name = "offset"
-        kwarg = param_name
-
-    class FieldsParam(_BaseStringArrayParam):
-        """
-        Fields Param
-
-        Kwargs:
-            ``fields=``
-
-        Only data for fields whose names are in this list will be included in
-        the records. If you don't need every field, you can use this parameter
-        to reduce the amount of data transferred.
-
-        Usage:
-
-        >>> airtable.get(fields='ColumnA')
-
-        Multiple Columns:
-
-        >>> airtable.get(fields=['ColumnA', 'ColumnB'])
-
-        Args:
-            fields (``str``, ``list``): Name of columns you want to retrieve.
-
-        """
-
-        # Class Input > Output
-        # >>> param = FieldsParam(['FieldOne', 'FieldTwo'])
-        # >>> param.to_param_dict()
-        # {'fields[]': ['FieldOne', 'FieldTwo']}
-
-        param_name = "fields"
-        kwarg = param_name
-
-    class SortParam(_BaseObjectArrayParam):
-        """
-        Sort Param
-
-        Kwargs:
-            ``sort=``
-
-        Specifies how the records will be ordered. If you set the view
-        parameter, the returned records in that view will be sorted by these
-        fields.
-
-        If sorting by multiple columns, column names can be passed as a list.
-        Sorting Direction is ascending by default, but can be reversed by
-        prefixing the column name with a minus sign ``-``, or passing
-        ``COLUMN_NAME, DIRECTION`` tuples. Direction options
-        are ``asc`` and ``desc``.
-
-        Usage:
-
-        >>> airtable.get(sort='ColumnA')
-
-        Multiple Columns:
-
-        >>> airtable.get(sort=['ColumnA', '-ColumnB'])
-
-        Explicit Directions:
-
-        >>> airtable.get(sort=[('ColumnA', 'asc'), ('ColumnB', 'desc')])
-
-        Args:
-            fields (``str``, ``list``): Name of columns and directions.
-
-        """
-
-        # Class Input > Output
-        # >>> filter = SortParam([{'field': 'col', 'direction': 'asc'}])
-        # >>> filter.to_param_dict()
-        # {'sort[0]['field']: 'col', sort[0]['direction']: 'asc'}
-
-        param_name = "sort"
-        kwarg = param_name
-
-        def __init__(self, value):
-            # Wraps string into list to avoid string iteration
-            if hasattr(value, "startswith"):
-                value = [value]
-
-            self.value = []
+    page_size = """
+        page_size (``int``, optional ): The number of records returned
+            in each request. Must be less than or equal to 100.
+            Default is 100.
+    """
+    fields = """
+        fields (``str``, ``list``, optional): Name of field or fields  to
+            be retrieved. Default is all fields.
+            Only data for fields whose names are in this list will be included in
+            the records. If you don't need every field, you can use this parameter
+            to reduce the amount of data transferred.
+    """
+    sort = """
+        sort (``list``, optional): List of fields to sort by.
+            Default order is ascending.
+            This parameter specifies how the records will be ordered. If you set the view
+            parameter, the returned records in that view will be sorted by these
+            fields.
+
+            If sorting by multiple columns, column names can be passed as a list.
+            Sorting Direction is ascending by default, but can be reversed by
+            prefixing the column name with a minus sign ``-``.
+    """
+    formula = """
+        formula (``str``, optional): An Airtable formula.
+            The formula will be evaluated for each record, and if the result
+            is not 0, false, "", NaN, [], or #Error! the record will be included
+            in the response.
+
+            If combined with view, only records in that view which satisfy the
+            formula will be returned. For example, to only include records where
+            ``COLUMN_A`` isn't empty, pass in: ``"NOT({COLUMN_A}='')"``
+
+            For more information see
+                `Airtable Docs on formulas. <https://airtable.com/api>`_
+    """
+    typescast = """
+        typecast(``boolean``): Automatic data conversion from string values.
+    """
+    # Others
+    # offset: str
+    # records[]: str
+
+
+def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
+
+    values = []
+
+    for field_name in field_names:
+
+        if field_name.startswith("-"):
+            direction = "desc"
+            field_name = field_name[1:]
+        else:
             direction = "asc"
 
-            for item in value:
-                if not hasattr(item, "startswith"):
-                    field_name, direction = item
-                else:
-                    if item.startswith("-"):
-                        direction = "desc"
-                        field_name = item[1:]
-                    else:
-                        field_name = item
+        sort_param = {"field": field_name, "direction": direction}
+        values.append(sort_param)
+    return values
 
-                sort_param = {"field": field_name, "direction": direction}
-                self.value.append(sort_param)
 
-    @classmethod
-    def _discover_params(cls):
-        """
-        Returns a dict where filter keyword is key, and class is value.
-        To handle param alias (maxRecords or max_records), both versions are
-        added.
-        """
-
-        try:
-            return cls.filters
-        except AttributeError:
-            filters = {}
-            for param_class_name in dir(cls):
-                param_class = getattr(cls, param_class_name)
-                if hasattr(param_class, "kwarg"):
-                    filters[param_class.kwarg] = param_class
-                    filters[param_class.param_name] = param_class
-            cls.filters = filters
-        return cls.filters
-
-    @classmethod
-    def _get(cls, kwarg_name):
-        """ Returns a Param Class Instance, by its kwarg or param name """
-        param_classes = cls._discover_params()
-        try:
-            param_class = param_classes[kwarg_name]
-        except KeyError:
-            raise ValueError("invalid param keyword {}".format(kwarg_name))
-        else:
-            return param_class
+def get_param_dict(param_name: str, value: Any):
+    """ Returns a dictionary for use in Request 'params' """
+    if param_name == "max_records":
+        return {"maxRecords": value}
+    elif param_name == "view":
+        return {"view": value}
+    elif param_name == "page_size":
+        return {"pageSize": value}
+    elif param_name == "offset":
+        return {"pageSize": value}
+    elif param_name == "formula":
+        return {"filterByFormula": value}
+    elif param_name == "fields":
+        return {"fields[]": value}
+    elif param_name == "sort":
+        sorting_dict = field_names_to_sorting_dict(value)
+        return dict_list_to_request_params(sorting_dict)
+    # Internals
+    elif param_name == "offset":
+        # If there are more records what was in the response,
+        # the response body will contain an offset value.
+        # To fetch the next page of records,
+        # include offset in the next request's parameters.
+        # This is used internally by :any:`get_all` and :any:`get_iter`.
+        return {"offset": value}
+    else:
+        msg = "'{0}' is not a supported parameter".format(param_name)
+        raise InvalidParamException(msg)
