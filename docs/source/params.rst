@@ -8,14 +8,6 @@ Overview
 
 _______________________________________________
 
-Parameter Filters
-*****************
-
-.. autoclass:: airtable.params.AirtableParams
-	:members:
-
-_______________________________________________
-
 Source Code
 ***********
 

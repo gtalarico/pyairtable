@@ -1,5 +1,5 @@
 """
-Authentication is handled by the :any:`Airtable` class.
+Authentication is handled by the :any:`Base` class.
 
 >>> airtable = Airtable(base_id, table_name, api_key)
 

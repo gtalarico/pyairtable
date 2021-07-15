@@ -65,6 +65,7 @@ autoapi_dirs = [os.path.join(root_dir, "airtable")]
 
 napoleon_google_docstring = True
 napoleon_include_init_with_doc = True
+napoleon_attr_annotations = True
 
 import airtable
 from airtable.__version__ import __version__

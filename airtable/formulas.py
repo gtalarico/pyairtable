@@ -23,9 +23,23 @@ def field_equals_value(field_name, field_value):
     return formula
 
 
-# TODO
-# def and_query(**params: dict) -> str:
-#     params_str = ", ".join([f"{k}={repr(v)}" for k, v in params.items()])
-#     return f"AND({params_str})"
+def EQUAL(left, right):
+    # if isinstance(field_value, str):
+    # field_value = "'{}'".format(field_value)
+    # formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
+    return "{}={}".format(left, right)
 
-# formula = and_query(**{"Name": "A", "Age": 20})
+
+def IF(logical, value1, value2):
+    return "IF({}, {}, {})".format(logical, value1, value2)
+
+
+def AND(*args):
+    return "AND({})".formate(",".join(args))
+
+
+def FIND(find, where, start_from=None):
+    ...
+    # FIND(stringToFind, whereToSearch,[startFromPosition])
+    # airtable.get_all(formula="FIND('SomeSubText', {COLUMN_STR})=1")
+    # return "FIND('SomeSubText', {COLUMN_STR})=1"

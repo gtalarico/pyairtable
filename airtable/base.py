@@ -15,7 +15,7 @@ the :doc:`authentication`.
 Examples
 ********
 
-For a full list of available methods see the :any:`Airtable` class below.
+For a full list of available methods see the :any:`Base` class below.
 For more details on the Parameter filters see the documentation on the
 available :doc:`params` as well as the
 `Airtable API Docs <http://airtable.com/api>`_
@@ -99,7 +99,7 @@ import time
 from urllib.parse import quote
 
 from .auth import AirtableAuth
-from .params import get_param_dict
+from .params import get_param_dict, doc_strings
 from .formulas import field_equals_value
 
 
@@ -147,15 +147,20 @@ class Base(object):
         table_url = posixpath.join(self.API_URL, self.base_id, url_safe_table_name)
         return table_url
 
-    def _process_params(self, params):
+    @lru_cache
+    def record_url(self, table_name, record_id):
+        """ Builds URL with record id """
+        table_url = self.table_url(table_name)
+        return posixpath.join(table_url, record_id)
+
+    def _process_kwargs(self, **kwargs):
         """
         Process params names or values as needed using filters
         """
-        new_params = OrderedDict()
-        for param_name, param_value in sorted(params.items()):
-            params_dict = get_param_dict(param_name, param_value)
-            new_params.update(params_dict)
-        return new_params
+        params = OrderedDict()
+        for name, value in sorted(kwargs.items()):
+            params.update(get_param_dict(name, value))
+        return params
 
     def _chunk(self, iterable, chunk_size):
         """ Break iterable into chunks """
@@ -184,19 +189,14 @@ class Base(object):
         else:
             return response.json()
 
-    @lru_cache
-    def record_url(self, table_url, record_id):
-        """ Builds URL with record id """
-        return posixpath.join(table_url, record_id)
-
     def _request(self, method, url, params=None, json_data=None):
         response = self.session.request(
             method, url, params=params, json=json_data, timeout=self.timeout
         )
         return self._process_response(response)
 
-    def _get(self, url, **params):
-        processed_params = self._process_params(params)
+    def _get(self, url, **kwargs):
+        processed_params = self._process_kwargs(**kwargs)
         return self._request("get", url, params=processed_params)
 
     def _post(self, url, json_data):
@@ -226,41 +226,36 @@ class Base(object):
         record_url = self.record_url(table_name, record_id)
         return self._get(record_url)
 
-    def get_iter(self, **options):
+    def get_iter(self, table_name, **options):
+        # self, table_name, view="", page_size=None, fields=None, sort=None, formula=""
         """
-            Record Retriever Iterator
+        Record Retriever Iterator
 
-            Returns iterator with lists in batches according to pageSize.
-            To get all records at once use :any:`get_all`
+        |max_records|
 
-            >>> for page in airtable.get_iter():
-            ...     for record in page:
-            ...         print(record)
-            [{'fields': ... }, ...]
+        Returns iterator with lists in batches according to pageSize.
+        To get all records at once use :any:`get_all`
+
+        >>> for page in airtable.get_iter():
+        ...     for record in page:
+        ...         print(record)
+        [{'fields': ... }, ...]
 
 
-        Keyword Args:
-                max_records (``int``, optional): The maximum total number of
-                    records that will be returned. See :any:`MaxRecordsParam`
-                view (``str``, optional): The name or ID of a view.
-                    See :any:`ViewParam`.
-                page_size (``int``, optional ): The number of records returned
-                    in each request. Must be less than or equal to 100.
-                    Default is 100. See :any:`PageSizeParam`.
-                fields (``str``, ``list``, optional): Name of field or fields  to
-                    be retrieved. Default is all fields. See :any:`FieldsParam`.
-                sort (``list``, optional): List of fields to sort by.
-                    Default order is ascending. See :any:`SortParam`.
-                formula (``str``, optional): Airtable formula.
-                    See :any:`FormulaParam`.
+        |view|
+        |page_size|
+        |fields|
+        |sort|
+        |formula|
 
-            Returns:
-                iterator (``list``): List of Records, grouped by pageSize
+        Returns:
+            iterator (``list``): List of Records, grouped by pageSize
 
         """
         offset = None
         while True:
-            data = self._get(self.url_table, offset=offset, **options)
+            table_url = self.table_url(table_name)
+            data = self._get(table_url, offset=offset, **options)
             records = data.get("records", [])
             time.sleep(self.API_LIMIT)
             yield records
@@ -279,16 +274,11 @@ class Base(object):
 
 
         Keyword Args:
-                max_records (``int``, optional): The maximum total number of
-                    records that will be returned. See :any:`MaxRecordsParam`
-                view (``str``, optional): The name or ID of a view.
-                    See :any:`ViewParam`.
-                fields (``str``, ``list``, optional): Name of field or fields to
-                    be retrieved. Default is all fields. See :any:`FieldsParam`.
-                sort (``list``, optional): List of fields to sort by.
-                    Default order is ascending. See :any:`SortParam`.
-                formula (``str``, optional): Airtable formula.
-                    See :any:`FormulaParam`.
+                |max_records|
+                |view|
+                |fields|
+                |sort|
+                |formula|
 
             Returns:
                 records (``list``): List of Records
@@ -297,43 +287,10 @@ class Base(object):
 
         """
         all_records = []
-        for records in self.get_iter(**options):
+
+        for records in self.get_iter(table_name, **options):
             all_records.extend(records)
         return all_records
-
-    def search(self, table_name, field_name, field_value, record=None, **options):
-        """
-        Returns all matching records found in :any:`get_all`
-
-        >>> airtable.search('Gender', 'Male')
-        [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
-
-        >>> airtable.search('Checkbox Field', 1)
-        [{'fields': {'Name': 'John', 'Gender': 'Male'}, ... ]
-
-        Args:
-            field_name (``str``): Name of field to match (column name).
-            field_value (``str``): Value of field to match.
-
-        Keyword Args:
-            max_records (``int``, optional): The maximum total number of
-                records that will be returned. See :any:`MaxRecordsParam`
-            view (``str``, optional): The name or ID of a view.
-                See :any:`ViewParam`.
-            fields (``str``, ``list``, optional): Name of field or fields to
-                be retrieved. Default is all fields. See :any:`FieldsParam`.
-            sort (``list``, optional): List of fields to sort by.
-                Default order is ascending. See :any:`SortParam`.
-
-        Returns:
-            records (``list``): All records that matched ``field_value``
-
-        """
-        records = []
-        formula = field_equals_value(field_name, field_value)
-        options["formula"] = formula
-        records = self.get_all(table_name, **options)
-        return records
 
     def create(self, table_name, fields, typecast=False):
         """
@@ -345,7 +302,9 @@ class Base(object):
         Args:
             fields(``dict``): Fields to insert.
                 Must be dictionary with Column names as Key.
-            typecast(``boolean``): Automatic data conversion from string values.
+
+        Keyword Args:
+            |typecast|
 
         Returns:
             record (``dict``): Inserted record
@@ -369,7 +328,9 @@ class Base(object):
 
         Args:
             records(``list``): Records to insert
-            typecast(``boolean``): Automatic data conversion from string values.
+
+        Keyword Args:
+            |typecast|
 
         Returns:
             records (``list``): list of added records
@@ -385,7 +346,14 @@ class Base(object):
             time.sleep(self.API_LIMIT)
         return inserted_records
 
-    def update(self, table_name: str, record_id: str, fields: dict, typecast=False):
+    def update(
+        self,
+        table_name: str,
+        record_id: str,
+        fields: dict,
+        replace=False,
+        typecast=False,
+    ):
         """
         Updates a record by its record id.
         Only Fields passed are updated, the rest are left as is.
@@ -398,31 +366,46 @@ class Base(object):
             record_id(``str``): Id of Record to update
             fields(``dict``): Fields to update.
                 Must be dictionary with Column names as Key
-            typecast(``boolean``): Automatic data conversion from string values.
+
+        Keyword Args:
+            replace (``bool``, optional): If ``True``, record is replaced in its entirety
+                by provided fields - eg. if a field is not included its value will
+                bet set to null. If False, only provided fields are updated.
+                Default is ``False``.
+            |typecast|
 
         Returns:
             record (``dict``): Updated record
         """
         record_url = self.record_url(table_name, record_id)
-        return self._patch(
-            record_url, json_data={"fields": fields, "typecast": typecast}
-        )
 
-    def batch_update(self, table_name: str, records: List[dict], typecast=False):
+        method = self._put if replace else self._patch
+        return method(record_url, json_data={"fields": fields, "typecast": typecast})
+
+    def batch_update(
+        self, table_name: str, records: List[dict], replace=False, typecast=False
+    ):
         """
         Updates a records by their record id's in batch.
 
         Args:
             records(``list``): List of dict: [{"id": record_id, "field": fields_to_update_dict}]
-            typecast(``boolean``): Automatic data conversion from string values.
+
+        Keyword Args:
+            replace (``bool``, optional): If ``True``, record is replaced in its entirety
+                by provided fields - eg. if a field is not included its value will
+                bet set to null. If False, only provided fields are updated.
+                Default is ``False``.
+            |typecast|
 
         Returns:
             records(``list``): list of updated records
         """
         updated_records = []
+        method = self._put if replace else self._patch
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
-            response = self._patch(
+            response = method(
                 self.url_table,
                 json_data={"records": chunk_records, "typecast": typecast},
             )
@@ -430,30 +413,7 @@ class Base(object):
         #
         return updated_records
 
-    def replace(self, table_name: str, record_id: str, fields: dict, typecast=False):
-        """
-        Replaces a record by its record id.
-        All Fields are updated to match the new ``fields`` provided.
-        If a field is not included in ``fields``, value will bet set to null.
-        To update only selected fields, use :any:`update`.
-
-        >>> record = airtable.match('Seat Number', '22A')
-        >>> fields = {'PassangerName': 'Mike', 'Passport': 'YASD232-23'}
-        >>> airtable.replace(record['id'], fields)
-
-        Args:
-            record_id(``str``): Id of Record to update
-            fields(``dict``): Fields to replace with.
-                Must be dictionary with Column names as Key.
-            typecast(``boolean``): Automatic data conversion from string values.
-
-        Returns:
-            record (``dict``): New record
-        """
-        record_url = self.record_url(table_name, record_id)
-        return self._put(record_url, json_data={"fields": fields, "typecast": typecast})
-
-    def delete(self, record_id: str):
+    def delete(self, table_name: str, record_id: str):
         """
         Deletes a record by its id
 
@@ -466,10 +426,10 @@ class Base(object):
         Returns:
             record (``dict``): Deleted Record
         """
-        record_url = self.record_url(record_id)
+        record_url = self.record_url(table_name, record_id)
         return self._delete(record_url)
 
-    def batch_delete(self, record_ids: List[str]):
+    def batch_delete(self, table_name: str, record_ids: List[str]):
         """
         Breaks records into batches of 10 and deletes in batches, following set
         API Rate Limit (5/sec).
@@ -487,9 +447,10 @@ class Base(object):
 
         """
         deleted_records = []
-        url = self.url_table
+        url = self.table_url(table_name)
         for record_ids in self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST):
-            deleted_records += self._delete(url, params={"records[]": record_ids})
+            delete_results = self._delete(url, params={"records[]": record_ids})
+            deleted_records.extend(delete_results["records"])
             time.sleep(self.API_LIMIT)
         return deleted_records
 

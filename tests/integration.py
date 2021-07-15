@@ -1,36 +1,112 @@
 import os
-from airtable import Airtable
+from airtable import Base, Table
 
-test_base = "appaPqizdsNHDvlEm"
-test_table = "table"
-airtable = Airtable(test_base, test_table, api_key=os.environ["AIRTABLE_API_KEY"])
+base_id = "appaPqizdsNHDvlEm"
+table_name = "table"
+table = Table(base_id, table_name, os.environ["AIRTABLE_API_KEY"])
 
-# Insert
-rec = airtable.insert({"text": "A", "number": 1, "boolean": True})
+# rec = table.create({"text": "A", "number": 1, "boolean": True})
+# assert table.get(rec["id"])
 
-# Get
-assert airtable.get(rec["id"])
+# rv = table.update(rec["id"], {"text": "B"})
+# assert rv["fields"]["text"] == "B"
+# assert rv["fields"]["number"] == 1
 
-# Update
-rv = airtable.update(rec["id"], {"text": "B"})
-assert rv["fields"]["text"] == "B"
+# rv = table.update(rec["id"], {"number": 2}, replace=True)
+# assert rv["fields"] == {"number": 2}
 
-# Replace
-rv = airtable.replace(rec["id"], {"text": "C"})
-assert rv["fields"]["text"] == "C"
+# # Get all
+# assert table.get_all()
 
-# Get all
-assert airtable.get_all()
-
-# Delete
-assert airtable.delete(rec["id"])
+# # Delete
+# assert table.delete(rec["id"])
 
 
-# Batch Insert
-records = airtable.batch_insert(
-    [{"text": "A", "number": 1, "boolean": True} for _ in range(100)]
+# # Batch Insert
+# records = table.batch_create(
+#     [{"text": "A", "number": 1, "boolean": True} for _ in range(15)]
+# )
+
+# # Batch Delete
+# records = table.batch_delete([r["id"] for r in records])
+# assert len(records) == 15
+
+
+# base = Base(base_id, os.environ["AIRTABLE_API_KEY"])
+
+# rec = base.create(table_name, {"text": "A", "number": 1, "boolean": True})
+# assert base.get(table_name, rec["id"])
+
+# rv = base.update(table_name, rec["id"], {"text": "B"})
+# assert rv["fields"]["text"] == "B"
+
+# rv = base.update(table_name, rec["id"], {"number": 2}, replace=True)
+# assert rv["fields"] == {"number": 2}
+
+# # Get all
+# assert base.get_all(table_name)
+
+# # Delete
+# assert base.delete(table_name, rec["id"])
+
+
+# # Batch Insert
+# records = base.batch_create(
+#     table_name, [{"text": "A", "number": 1, "boolean": True} for _ in range(15)]
+# )
+
+# # Batch Delete
+# records = base.batch_delete(table_name, [r["id"] for r in records])
+# assert len(records) == 15
+
+
+from airtable.orm import Model
+from airtable.orm import fields as f
+
+
+class Address(Model):
+    street = f.TextField("Street")
+    number = f.TextField("Number")
+
+    class Meta:
+        base_id = "appaPqizdsNHDvlEm"
+        table_name = "Address"
+        api_key = os.environ["AIRTABLE_API_KEY"]
+
+
+class Contact(Model):
+
+    first_name = f.TextField("First Name")
+    last_name = f.TextField("Last Name")
+    email = f.EmailField("Email")
+    is_registered = f.BooleanField("Registered")
+    link = f.LinkField("Link", Address, lazy=True)
+    # link = f.MultiLinkField("Link", Address, lazy=True)
+
+    class Meta:
+        base_id = "appaPqizdsNHDvlEm"
+        table_name = "Contact"
+        api_key = os.environ["AIRTABLE_API_KEY"]
+
+
+contact = Contact(
+    first_name="Gui", last_name="Talarico", email="gui@gui.com", is_registered=True
 )
+contact.first_name
+assert contact.first_name == "Gui"
+assert contact.save()
+assert contact.id
+contact.first_name = "Not Gui"
+assert not contact.save()
+# assert contact.delete()
 
-# Batch Delete
-records = airtable.batch_delete([r["id"] for r in records])
-assert len(records) == 100
+print(contact.to_record())
+print(Address().to_record())
+contact2 = Contact.from_id("recwnBLPIeQJoYVt4")
+print(Address().to_record())
+# assert contact2.id
+
+address = contact2.link
+print(address.to_record())
+address.reload()
+print(address.to_record())
