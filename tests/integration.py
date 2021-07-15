@@ -60,53 +60,69 @@ table = Table(base_id, table_name, os.environ["AIRTABLE_API_KEY"])
 # assert len(records) == 15
 
 
-from airtable.orm import Model
-from airtable.orm import fields as f
+# from airtable.orm import Model
+# from airtable.orm import fields as f
 
 
-class Address(Model):
-    street = f.TextField("Street")
-    number = f.TextField("Number")
+# class Address(Model):
+#     street = f.TextField("Street")
+#     number = f.TextField("Number")
 
-    class Meta:
-        base_id = "appaPqizdsNHDvlEm"
-        table_name = "Address"
-        api_key = os.environ["AIRTABLE_API_KEY"]
-
-
-class Contact(Model):
-
-    first_name = f.TextField("First Name")
-    last_name = f.TextField("Last Name")
-    email = f.EmailField("Email")
-    is_registered = f.BooleanField("Registered")
-    link = f.LinkField("Link", Address, lazy=True)
-    # link = f.MultiLinkField("Link", Address, lazy=True)
-
-    class Meta:
-        base_id = "appaPqizdsNHDvlEm"
-        table_name = "Contact"
-        api_key = os.environ["AIRTABLE_API_KEY"]
+#     class Meta:
+#         base_id = "appaPqizdsNHDvlEm"
+#         table_name = "Address"
+#         api_key = os.environ["AIRTABLE_API_KEY"]
 
 
-contact = Contact(
-    first_name="Gui", last_name="Talarico", email="gui@gui.com", is_registered=True
+# class Contact(Model):
+
+#     first_name = f.TextField("First Name")
+#     last_name = f.TextField("Last Name")
+#     email = f.EmailField("Email")
+#     is_registered = f.BooleanField("Registered")
+#     link = f.LinkField("Link", Address, lazy=True)
+#     # link = f.MultiLinkField("Link", Address, lazy=True)
+
+#     class Meta:
+#         base_id = "appaPqizdsNHDvlEm"
+#         table_name = "Contact"
+#         api_key = os.environ["AIRTABLE_API_KEY"]
+
+
+# contact = Contact(
+#     first_name="Gui", last_name="Talarico", email="gui@gui.com", is_registered=True
+# )
+# contact.first_name
+# assert contact.first_name == "Gui"
+# assert contact.save()
+# assert contact.id
+# contact.first_name = "Not Gui"
+# assert not contact.save()
+# # assert contact.delete()
+
+# print(contact.to_record())
+# print(Address().to_record())
+# contact2 = Contact.from_id("recwnBLPIeQJoYVt4")
+# print(Address().to_record())
+# # assert contact2.id
+
+# address = contact2.link
+# print(address.to_record())
+# address.reload()
+# print(address.to_record())
+
+
+from airtable.formulas import AND, EQUAL, FIELD, VALUE
+
+
+table = Table(base_id, "Contact", os.environ["AIRTABLE_API_KEY"])
+
+# formula = EQUAL("{First Name}", "'A'")
+# print(table.get_all(formula=formula))
+
+formula = AND(
+    EQUAL(FIELD("First Name"), VALUE("A")),
+    EQUAL(FIELD("Last Name"), VALUE("Talarico")),
+    EQUAL(FIELD("Age"), VALUE(15)),
 )
-contact.first_name
-assert contact.first_name == "Gui"
-assert contact.save()
-assert contact.id
-contact.first_name = "Not Gui"
-assert not contact.save()
-# assert contact.delete()
-
-print(contact.to_record())
-print(Address().to_record())
-contact2 = Contact.from_id("recwnBLPIeQJoYVt4")
-print(Address().to_record())
-# assert contact2.id
-
-address = contact2.link
-print(address.to_record())
-address.reload()
-print(address.to_record())
+print(table.get_all(formula=formula))

@@ -30,12 +30,20 @@ def EQUAL(left, right):
     return "{}={}".format(left, right)
 
 
+def FIELD(name):
+    return "{%s}" % name
+
+
+def VALUE(value):
+    return "'%s'" % value
+
+
 def IF(logical, value1, value2):
     return "IF({}, {}, {})".format(logical, value1, value2)
 
 
 def AND(*args):
-    return "AND({})".formate(",".join(args))
+    return "AND({})".format(",".join(args))
 
 
 def FIND(find, where, start_from=None):
