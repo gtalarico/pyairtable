@@ -42,7 +42,7 @@ class Base(AirtableApi):
         Returns:
             record (``dict``): Record
         """
-        super()._get_record(self.base_id, table_name, record_id)
+        return super()._get_record(self.base_id, table_name, record_id)
 
     def get_iter(self, table_name, **options):
         # self, table_name, view="", page_size=None, fields=None, sort=None, formula=""

@@ -6,7 +6,7 @@ table_name = "table"
 table = Table(base_id, table_name, os.environ["AIRTABLE_API_KEY"])
 
 print(table.first())
-exit()
+
 
 rec = table.create({"text": "A", "number": 1, "boolean": True})
 assert table.get(rec["id"])
@@ -72,8 +72,8 @@ class Address(Model):
     number = f.TextField("Number")
 
     class Meta:
-        base_id = "appaPqizdsNHDvlEm"
-        table_name = "Address"
+        # base_id = "appaPqizdsNHDvlEm"
+        # table_name = "Address"
         api_key = os.environ["AIRTABLE_API_KEY"]
 
 
@@ -110,12 +110,13 @@ print(Address().to_record())
 # assert contact2.id
 
 address = contact2.link
+assert address
 print(address.to_record())
 address.reload()
 print(address.to_record())
 
 
-from airtable.formulas import AND, EQUAL, FIELD, VALUE
+from airtable.formulas import AND, EQUAL, FIELD, STR_VALUE
 
 
 table = Table(base_id, "Contact", os.environ["AIRTABLE_API_KEY"])
@@ -124,8 +125,8 @@ table = Table(base_id, "Contact", os.environ["AIRTABLE_API_KEY"])
 # print(table.get_all(formula=formula))
 
 formula = AND(
-    EQUAL(FIELD("First Name"), VALUE("A")),
-    EQUAL(FIELD("Last Name"), VALUE("Talarico")),
-    EQUAL(FIELD("Age"), VALUE(15)),
+    EQUAL(FIELD("First Name"), STR_VALUE("A")),
+    EQUAL(FIELD("Last Name"), STR_VALUE("Talarico")),
+    EQUAL(FIELD("Age"), STR_VALUE(15)),
 )
 print(table.get_all(formula=formula))

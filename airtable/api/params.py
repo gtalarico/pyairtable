@@ -41,7 +41,12 @@ def dict_list_to_request_params(param_name: str, values: List[dict]) -> dict:
     ...    { "field": "FieldTwo", "direction": "desc"},
     ... ]
     >>> dict_list_to_request_params("sort", objects)
-    {'sort': [('FieldOne', 'asc'), ('FieldTwo', 'desc')]}
+    {
+        "sort[0][field]": "FieldOne",
+        "sort[0][direction]: "asc",
+        "sort[1][field]": "FieldTwo",
+        "sort[1][direction]: "desc",
+    }
 
     """
     param_dict = {}
@@ -55,7 +60,15 @@ def dict_list_to_request_params(param_name: str, values: List[dict]) -> dict:
 
 
 def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
+    # TODO edge case fields starting with '-'
+    """
 
+    >>> field_names_to_sorting_dict(["Name", "-Age"])
+    [
+        { "field": "FieldOne", "direction": "asc"},
+        { "field": "FieldTwo", "direction": "desc"},
+    ]
+    """
     values = []
 
     for field_name in field_names:
@@ -71,7 +84,7 @@ def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
     return values
 
 
-def get_param_dict(param_name: str, value: Any):
+def to_params_dict(param_name: str, value: Any):
     """ Returns a dictionary for use in Request 'params' """
     if param_name == "max_records":
         return {"maxRecords": value}
@@ -88,14 +101,6 @@ def get_param_dict(param_name: str, value: Any):
     elif param_name == "sort":
         sorting_dict_list = field_names_to_sorting_dict(value)
         return dict_list_to_request_params("sort", sorting_dict_list)
-    # Internals
-    elif param_name == "offset":
-        # If there are more records what was in the response,
-        # the response body will contain an offset value.
-        # To fetch the next page of records,
-        # include offset in the next request's parameters.
-        # This is used internally by :any:`get_all` and :any:`get_iter`.
-        return {"offset": value}
     else:
         msg = "'{0}' is not a supported parameter".format(param_name)
         raise InvalidParamException(msg)

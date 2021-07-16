@@ -17,7 +17,7 @@ def field_equals_value(field_name, field_value):
     Creates a formula to match cells from from field_name and value
     """
     if isinstance(field_value, str):
-        field_value = STRING_VALUE(field_value)
+        field_value = STR_VALUE(field_value)
 
     formula = EQUAL(FIELD(field_name), field_value)
     return formula
@@ -31,7 +31,7 @@ def FIELD(name):
     return "{%s}" % name
 
 
-def STRING_VALUE(value):
+def STR_VALUE(value):
     return "'%s'" % value
 
 

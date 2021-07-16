@@ -99,7 +99,7 @@ import time
 from urllib.parse import quote
 
 from .auth import AirtableAuth
-from .params import get_param_dict
+from .params import to_params_dict
 
 # from .formulas import field_equals_value
 
@@ -136,13 +136,15 @@ class AirtableApi:
         table_url = self.get_table_url(base_id, table_name)
         return posixpath.join(table_url, record_id)
 
-    def _process_kwargs(self, **kwargs):
+    def _options_to_params(self, **options):
         """
         Process params names or values as needed using filters
         """
-        params = OrderedDict()
-        for name, value in sorted(kwargs.items()):
-            params.update(get_param_dict(name, value))
+        # Does it need to be ordered + sorted ?
+        # return {to_params_dict(name, value) for name, value in options.items()}
+        params = {}
+        for name, value in options.items():
+            params.update(to_params_dict(name, value))
         return params
 
     def _chunk(self, iterable, chunk_size):
@@ -178,21 +180,21 @@ class AirtableApi:
         )
         return self._process_response(response)
 
-    def _get(self, url, **kwargs):
-        processed_params = self._process_kwargs(**kwargs)
-        return self._request("get", url, params=processed_params)
+    # def _get(self, url, **kwargs):
+    #     processed_params = self._process_kwargs(**kwargs)
+    #     return self._request("get", url, params=processed_params)
 
-    def _post(self, url, json_data):
-        return self._request("post", url, json_data=json_data)
+    # def _post(self, url, json_data):
+    #     return self._request("post", url, json_data=json_data)
 
-    def _put(self, url, json_data):
-        return self._request("put", url, json_data=json_data)
+    # def _put(self, url, json_data):
+    #     return self._request("put", url, json_data=json_data)
 
-    def _patch(self, url, json_data):
-        return self._request("patch", url, json_data=json_data)
+    # def _patch(self, url, json_data):
+    #     return self._request("patch", url, json_data=json_data)
 
-    def _delete(self, url, params=None):
-        return self._request("delete", url, params=params)
+    # def _delete(self, url, params=None):
+    #     return self._request("delete", url, params=params)
 
     def _get_record(self, base_id, table_name, record_id):
         """
@@ -206,8 +208,8 @@ class AirtableApi:
         Returns:
             record (``dict``): Record
         """
-        record_url = self.record_url(base_id, table_name, record_id)
-        return self._get(record_url)
+        record_url = self.get_record_url(base_id, table_name, record_id)
+        return self._request("get", record_url)
 
     def _get_iter(self, base_id, table_name, **options):
         # self, table_name, view="", page_size=None, fields=None, sort=None, formula=""
@@ -236,9 +238,12 @@ class AirtableApi:
 
         """
         offset = None
+        params = self._options_to_params(**options)
         while True:
             table_url = self.get_table_url(base_id, table_name)
-            data = self._get(table_url, offset=offset, **options)
+            if offset:
+                params.update({"offset": offset})
+            data = self._request("get", table_url, params=params)
             records = data.get("records", [])
             time.sleep(self.API_LIMIT)
             yield records
@@ -299,8 +304,10 @@ class AirtableApi:
 
         """
 
-        return self._post(
-            self.get_table_url(base_id, table_name),
+        table_url = self.get_table_url(base_id, table_name)
+        return self._request(
+            "post",
+            table_url,
             json_data={"fields": fields, "typecast": typecast},
         )
 
@@ -327,8 +334,10 @@ class AirtableApi:
         inserted_records = []
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             new_records = self._build_batch_record_objects(chunk)
-            response = self._post(
-                table_url, json_data={"records": new_records, "typecast": typecast}
+            response = self._request(
+                "post",
+                table_url,
+                json_data={"records": new_records, "typecast": typecast},
             )
             inserted_records += response["records"]
             time.sleep(self.API_LIMIT)
@@ -368,8 +377,10 @@ class AirtableApi:
         """
         record_url = self.get_record_url(base_id, table_name, record_id)
 
-        method = self._put if replace else self._patch
-        return method(record_url, json_data={"fields": fields, "typecast": typecast})
+        method = "put" if replace else "patch"
+        return self._request(
+            method, record_url, json_data={"fields": fields, "typecast": typecast}
+        )
 
     def _batch_update(
         self,
@@ -397,10 +408,11 @@ class AirtableApi:
         """
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
-        method = self._put if replace else self._patch
+        method = "put" if replace else "patch"
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
-            response = method(
+            response = self._request(
+                method,
                 table_url,
                 json_data={"records": chunk_records, "typecast": typecast},
             )
@@ -422,7 +434,7 @@ class AirtableApi:
             record (``dict``): Deleted Record
         """
         record_url = self.get_record_url(base_id, table_name, record_id)
-        return self._delete(record_url)
+        return self._request("delete", record_url)
 
     def _batch_delete(self, base_id: str, table_name: str, record_ids: List[str]):
         """
@@ -444,7 +456,9 @@ class AirtableApi:
         deleted_records = []
         table_url = self.get_table_url(base_id, table_name)
         for record_ids in self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST):
-            delete_results = self._delete(table_url, params={"records[]": record_ids})
+            delete_results = self._request(
+                "delete", table_url, params={"records[]": record_ids}
+            )
             deleted_records.extend(delete_results["records"])
             time.sleep(self.API_LIMIT)
         return deleted_records
