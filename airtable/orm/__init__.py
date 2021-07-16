@@ -1,7 +1,7 @@
 from airtable import Table
 from typing import TypeVar, Type, Generic
 
-from .fields import FieldDescriptor
+from .fields import Field
 
 T = TypeVar("T", bound="Model")
 
@@ -26,9 +26,7 @@ class Model:
 
         # Get descriptors values
         descriptor_fields = {
-            k: v
-            for k, v in self.__class__.__dict__.items()
-            if isinstance(v, FieldDescriptor)
+            k: v for k, v in self.__class__.__dict__.items() if isinstance(v, Field)
         }
 
         # Set descriptors values

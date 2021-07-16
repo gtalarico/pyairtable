@@ -1,2 +1,1 @@
-from .base import Base  # noqa
-from .table import Table  # noqa
+from .api import AirtableApi, Base, Table  # noqa

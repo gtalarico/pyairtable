@@ -99,58 +99,41 @@ import time
 from urllib.parse import quote
 
 from .auth import AirtableAuth
-from .params import get_param_dict, doc_strings
-from .formulas import field_equals_value
+from .params import get_param_dict
+
+# from .formulas import field_equals_value
 
 
-class Base(object):
-
+class AirtableApi:
     VERSION = "v0"
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
 
-    def __init__(self, base_id, api_key, timeout=None):
-        """
-        Instantiates a new Airtable Base instance
-
-        >>> table = Airtable('base_id', 'api_key')
-
-        With timeout:
-
-        >>> table = Airtable('base_id', 'tablename', timeout=(1, 1))
-
-        Args:
-            base_id(``str``): Airtable base identifier
-            api_key (``str``): API key.
-
-        Keyword Args:
-            timeout (``int``, ``Tuple[int, int]``, optional): Optional timeout
-                parameters to be used in request. `See requests timeout docs.
-                <https://requests.readthedocs.io/en/master/user/advanced/#timeouts>`_
-
-        """
+    def __init__(self, api_key, timeout=None):
         session = requests.Session()
-        session.auth = AirtableAuth(api_key=api_key)
+        session.auth = AirtableAuth(api_key)
         self.session = session
-        self.base_id = base_id
         self.timeout = timeout
 
     @lru_cache()
-    def table_url(self, table_name):
+    def get_table_url(self, base_id, table_name):
         """
-        table_name(``str``): Airtable table name. Value will be url encoded, so
-                use value as shown in Airtable.
+        Args:
+
+            base_id(``str``): Airtable base_id.
+            table_name(``str``): Airtable table name. Value will be url encoded, so
+                    use value as shown in Airtable.
         """
         url_safe_table_name = quote(table_name, safe="")
-        table_url = posixpath.join(self.API_URL, self.base_id, url_safe_table_name)
+        table_url = posixpath.join(self.API_URL, base_id, url_safe_table_name)
         return table_url
 
-    @lru_cache
-    def record_url(self, table_name, record_id):
+    @lru_cache()
+    def get_record_url(self, base_id, table_name, record_id):
         """ Builds URL with record id """
-        table_url = self.table_url(table_name)
+        table_url = self.get_table_url(base_id, table_name)
         return posixpath.join(table_url, record_id)
 
     def _process_kwargs(self, **kwargs):
@@ -211,7 +194,7 @@ class Base(object):
     def _delete(self, url, params=None):
         return self._request("delete", url, params=params)
 
-    def get(self, table_name, record_id):
+    def _get_record(self, base_id, table_name, record_id):
         """
         Retrieves a record by its id
 
@@ -223,10 +206,10 @@ class Base(object):
         Returns:
             record (``dict``): Record
         """
-        record_url = self.record_url(table_name, record_id)
+        record_url = self.record_url(base_id, table_name, record_id)
         return self._get(record_url)
 
-    def get_iter(self, table_name, **options):
+    def _get_iter(self, base_id, table_name, **options):
         # self, table_name, view="", page_size=None, fields=None, sort=None, formula=""
         """
         Record Retriever Iterator
@@ -254,7 +237,7 @@ class Base(object):
         """
         offset = None
         while True:
-            table_url = self.table_url(table_name)
+            table_url = self.get_table_url(base_id, table_name)
             data = self._get(table_url, offset=offset, **options)
             records = data.get("records", [])
             time.sleep(self.API_LIMIT)
@@ -263,7 +246,12 @@ class Base(object):
             if not offset:
                 break
 
-    def get_all(self, table_name, **options):
+    def _first(self, base_id, table_name, **options):
+        for records in self._get_iter(base_id, table_name, max_records=1, **options):
+            for record in records:
+                return record
+
+    def _get_all(self, base_id, table_name, **options):
         """
             Retrieves all records repetitively and returns a single list.
 
@@ -288,11 +276,11 @@ class Base(object):
         """
         all_records = []
 
-        for records in self.get_iter(table_name, **options):
+        for records in self._get_iter(base_id, table_name, **options):
             all_records.extend(records)
         return all_records
 
-    def create(self, table_name, fields, typecast=False):
+    def _create(self, base_id, table_name, fields, typecast=False):
         """
         Creates a new record
 
@@ -312,11 +300,11 @@ class Base(object):
         """
 
         return self._post(
-            self.table_url(table_name),
+            self.get_table_url(base_id, table_name),
             json_data={"fields": fields, "typecast": typecast},
         )
 
-    def batch_create(self, table_name, records, typecast=False):
+    def _batch_create(self, base_id, table_name, records, typecast=False):
         """
         Breaks records into chunks of 10 and inserts them in batches.
         Follows the set API rate.
@@ -335,7 +323,7 @@ class Base(object):
         Returns:
             records (``list``): list of added records
         """
-        table_url = self.table_url(table_name)
+        table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             new_records = self._build_batch_record_objects(chunk)
@@ -346,8 +334,9 @@ class Base(object):
             time.sleep(self.API_LIMIT)
         return inserted_records
 
-    def update(
+    def _update(
         self,
+        base_id: str,
         table_name: str,
         record_id: str,
         fields: dict,
@@ -377,13 +366,18 @@ class Base(object):
         Returns:
             record (``dict``): Updated record
         """
-        record_url = self.record_url(table_name, record_id)
+        record_url = self.get_record_url(base_id, table_name, record_id)
 
         method = self._put if replace else self._patch
         return method(record_url, json_data={"fields": fields, "typecast": typecast})
 
-    def batch_update(
-        self, table_name: str, records: List[dict], replace=False, typecast=False
+    def _batch_update(
+        self,
+        base_id: str,
+        table_name: str,
+        records: List[dict],
+        replace=False,
+        typecast=False,
     ):
         """
         Updates a records by their record id's in batch.
@@ -402,18 +396,19 @@ class Base(object):
             records(``list``): list of updated records
         """
         updated_records = []
+        table_url = self.get_table_url(base_id, table_name)
         method = self._put if replace else self._patch
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
             response = method(
-                self.url_table,
+                table_url,
                 json_data={"records": chunk_records, "typecast": typecast},
             )
             updated_records += response["records"]
         #
         return updated_records
 
-    def delete(self, table_name: str, record_id: str):
+    def _delete(self, base_id: str, table_name: str, record_id: str):
         """
         Deletes a record by its id
 
@@ -426,10 +421,10 @@ class Base(object):
         Returns:
             record (``dict``): Deleted Record
         """
-        record_url = self.record_url(table_name, record_id)
+        record_url = self.get_record_url(base_id, table_name, record_id)
         return self._delete(record_url)
 
-    def batch_delete(self, table_name: str, record_ids: List[str]):
+    def _batch_delete(self, base_id: str, table_name: str, record_ids: List[str]):
         """
         Breaks records into batches of 10 and deletes in batches, following set
         API Rate Limit (5/sec).
@@ -447,12 +442,12 @@ class Base(object):
 
         """
         deleted_records = []
-        url = self.table_url(table_name)
+        table_url = self.get_table_url(base_id, table_name)
         for record_ids in self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST):
-            delete_results = self._delete(url, params={"records[]": record_ids})
+            delete_results = self._delete(table_url, params={"records[]": record_ids})
             deleted_records.extend(delete_results["records"])
             time.sleep(self.API_LIMIT)
         return deleted_records
 
     def __repr__(self) -> str:
-        return "<Base id={}>".format(self.base_id)
+        return "<Airtable Api>"

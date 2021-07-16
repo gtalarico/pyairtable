@@ -5,6 +5,9 @@ base_id = "appaPqizdsNHDvlEm"
 table_name = "table"
 table = Table(base_id, table_name, os.environ["AIRTABLE_API_KEY"])
 
+print(table.first())
+exit()
+
 rec = table.create({"text": "A", "number": 1, "boolean": True})
 assert table.get(rec["id"])
 
@@ -79,7 +82,7 @@ class Contact(Model):
     first_name = f.TextField("First Name")
     last_name = f.TextField("Last Name")
     email = f.EmailField("Email")
-    is_registered = f.BooleanField("Registered")
+    is_registered = f.CheckboxField("Registered")
     link = f.LinkField("Link", Address, lazy=True)
     # link = f.MultiLinkField("Link", Address, lazy=True)
 

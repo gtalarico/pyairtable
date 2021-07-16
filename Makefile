@@ -28,7 +28,7 @@ lint:
 ## docs: Generate docs locally
 docs:
 	bash -c "cd ./docs; make html"
-	open ./docs/build/html/index.html
+	# open ./docs/build/html/index.html
 
 
 ## clean: delete python artifacts

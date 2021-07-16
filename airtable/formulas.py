@@ -17,16 +17,14 @@ def field_equals_value(field_name, field_value):
     Creates a formula to match cells from from field_name and value
     """
     if isinstance(field_value, str):
-        field_value = "'{}'".format(field_value)
+        field_value = STRING_VALUE(field_value)
 
     formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
+    formula = EQUAL(FIELD(field_name), field_value)
     return formula
 
 
 def EQUAL(left, right):
-    # if isinstance(field_value, str):
-    # field_value = "'{}'".format(field_value)
-    # formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
     return "{}={}".format(left, right)
 
 
@@ -34,7 +32,7 @@ def FIELD(name):
     return "{%s}" % name
 
 
-def VALUE(value):
+def STRING_VALUE(value):
     return "'%s'" % value
 
 
