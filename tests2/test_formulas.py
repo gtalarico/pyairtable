@@ -1,4 +1,4 @@
-from airtable.formulas import AND, EQUAL, FIELD, STRING_VALUE
+from airtable.formulas import AND, EQUAL, FIELD, STRING_VALUE, field_equals_value
 
 
 def test_equal():
@@ -24,3 +24,8 @@ def test_combination():
         EQUAL(FIELD("Age"), STRING_VALUE(15)),
     )
     assert formula == ("AND({First Name}='A',{Last Name}='B',{Age}='15')")
+
+
+def test_field_equals_value():
+    formula = field_equals_value("First Name", "John")
+    assert formula == "{First Name}='John'"

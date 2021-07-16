@@ -1,4 +1,3 @@
-from airtable.orm import Model
 from airtable.orm import fields as f
 
 

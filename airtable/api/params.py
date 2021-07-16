@@ -29,7 +29,7 @@ class InvalidParamException(ValueError):
         super().__init__(message, *args)
 
 
-def dict_list_to_request_params(param_name: str, values: List[dict]) -> str:
+def dict_list_to_request_params(param_name: str, values: List[dict]) -> dict:
     """
     Returns dict to be used by request params from dict list
 
@@ -52,6 +52,53 @@ def dict_list_to_request_params(param_name: str, values: List[dict]) -> str:
             )
             param_dict[field_name] = value
     return OrderedDict(sorted(param_dict.items()))
+
+
+def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
+
+    values = []
+
+    for field_name in field_names:
+
+        if field_name.startswith("-"):
+            direction = "desc"
+            field_name = field_name[1:]
+        else:
+            direction = "asc"
+
+        sort_param = {"field": field_name, "direction": direction}
+        values.append(sort_param)
+    return values
+
+
+def get_param_dict(param_name: str, value: Any):
+    """ Returns a dictionary for use in Request 'params' """
+    if param_name == "max_records":
+        return {"maxRecords": value}
+    elif param_name == "view":
+        return {"view": value}
+    elif param_name == "page_size":
+        return {"pageSize": value}
+    elif param_name == "offset":
+        return {"pageSize": value}
+    elif param_name == "formula":
+        return {"filterByFormula": value}
+    elif param_name == "fields":
+        return {"fields[]": value}
+    elif param_name == "sort":
+        sorting_dict_list = field_names_to_sorting_dict(value)
+        return dict_list_to_request_params("sort", sorting_dict_list)
+    # Internals
+    elif param_name == "offset":
+        # If there are more records what was in the response,
+        # the response body will contain an offset value.
+        # To fetch the next page of records,
+        # include offset in the next request's parameters.
+        # This is used internally by :any:`get_all` and :any:`get_iter`.
+        return {"offset": value}
+    else:
+        msg = "'{0}' is not a supported parameter".format(param_name)
+        raise InvalidParamException(msg)
 
 
 doc_strings = dict(
@@ -134,50 +181,3 @@ doc_strings = dict(
     # offset: str
     # records[]: str
 )
-
-
-def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
-
-    values = []
-
-    for field_name in field_names:
-
-        if field_name.startswith("-"):
-            direction = "desc"
-            field_name = field_name[1:]
-        else:
-            direction = "asc"
-
-        sort_param = {"field": field_name, "direction": direction}
-        values.append(sort_param)
-    return values
-
-
-def get_param_dict(param_name: str, value: Any):
-    """ Returns a dictionary for use in Request 'params' """
-    if param_name == "max_records":
-        return {"maxRecords": value}
-    elif param_name == "view":
-        return {"view": value}
-    elif param_name == "page_size":
-        return {"pageSize": value}
-    elif param_name == "offset":
-        return {"pageSize": value}
-    elif param_name == "formula":
-        return {"filterByFormula": value}
-    elif param_name == "fields":
-        return {"fields[]": value}
-    elif param_name == "sort":
-        sorting_dict = field_names_to_sorting_dict(value)
-        return dict_list_to_request_params(sorting_dict)
-    # Internals
-    elif param_name == "offset":
-        # If there are more records what was in the response,
-        # the response body will contain an offset value.
-        # To fetch the next page of records,
-        # include offset in the next request's parameters.
-        # This is used internally by :any:`get_all` and :any:`get_iter`.
-        return {"offset": value}
-    else:
-        msg = "'{0}' is not a supported parameter".format(param_name)
-        raise InvalidParamException(msg)

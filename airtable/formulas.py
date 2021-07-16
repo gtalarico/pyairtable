@@ -19,7 +19,6 @@ def field_equals_value(field_name, field_value):
     if isinstance(field_value, str):
         field_value = STRING_VALUE(field_value)
 
-    formula = "{{{name}}}={value}".format(name=field_name, value=field_value)
     formula = EQUAL(FIELD(field_name), field_value)
     return formula
 
