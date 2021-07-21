@@ -10,6 +10,9 @@ sphinx
 sphinx-rtd-theme
 sphinxcontrib-napoleon
 sphinx-autoapi
+sphinxext.opengraph
+revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@3f402dea649265609fe42023771c9844959f2e4d
+sphinx-autodoc-typehints
 
 wheel
 twine
