@@ -1,4 +1,3 @@
-import abc
 from typing import Any, TypeVar, Type, Generic, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:

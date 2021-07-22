@@ -1,13 +1,12 @@
-from airtable.api.api import AirtableApi
 import pytest
-from collections import OrderedDict
-from posixpath import join as urljoin
 
+from posixpath import join as urljoin
 from requests import HTTPError
 from urllib.parse import urlencode, quote
 from mock import Mock
 
 from airtable.api import AirtableApi, Table
+from collections import OrderedDict
 
 
 @pytest.fixture

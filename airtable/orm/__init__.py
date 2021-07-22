@@ -1,5 +1,5 @@
 from airtable import Table
-from typing import TypeVar, Type, Generic, Optional, Tuple
+from typing import TypeVar, Type, Optional, Tuple
 
 from .fields import Field
 

@@ -18,7 +18,7 @@ setup(
     author_email=about["__authoremail__"],
     url=about["__url__"],
     version=about["__version__"],
-    packages=["airtable"],
+    packages=["airtable", "airtable.api", "airtable.orm"],
     setup_requires=setup_requires,
     install_requires=install_requires,
     tests_require=tests_require,

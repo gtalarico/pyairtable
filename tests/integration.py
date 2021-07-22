@@ -1,5 +1,8 @@
 import os
 from airtable import Base, Table
+from airtable.orm import Model
+from airtable.orm import fields as f
+from airtable.formulas import AND, EQUAL, FIELD, STR_VALUE
 
 base_id = "appaPqizdsNHDvlEm"
 table_name = "table"
@@ -63,10 +66,6 @@ records = base.batch_delete(table_name, [r["id"] for r in records])
 assert len(records) == 15
 
 
-from airtable.orm import Model
-from airtable.orm import fields as f
-
-
 class Address(Model):
     street = f.TextField("Street")
     number = f.TextField("Number")
@@ -114,9 +113,6 @@ assert address
 print(address.to_record())
 address.reload()
 print(address.to_record())
-
-
-from airtable.formulas import AND, EQUAL, FIELD, STR_VALUE
 
 
 table = Table(base_id, "Contact", os.environ["AIRTABLE_API_KEY"])

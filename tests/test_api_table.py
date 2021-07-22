@@ -2,7 +2,6 @@ import pytest
 from posixpath import join as urljoin
 from requests import Request
 from requests_mock import Mocker
-from urllib.parse import urlencode
 
 from airtable import Table
 

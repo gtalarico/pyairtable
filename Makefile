@@ -23,7 +23,7 @@ test:
 ## lint: Lint and format
 lint:
 	flake8 .
-	black --check .
+	black --diff .
 
 ## docs: Generate docs locally
 docs:

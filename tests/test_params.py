@@ -2,7 +2,6 @@ import pytest
 import requests
 from requests_mock import Mocker
 
-from airtable.api import Table
 from airtable.api.params import (
     to_params_dict,
     dict_list_to_request_params,
