@@ -1,3 +1,59 @@
+"""
+The :any:`orm.Model` class allows you create an orm-style class for your
+Airtable tables.
+
+
+Example
+*******
+
+Model Definition
+
+>>> from airtable.orm import Model, fields
+>>> class Contact(Model):
+...     first_name = fields.TextField("First Name")
+...     last_name = fields.TextField("Last Name")
+...     email = fields.EmailField("Email")
+...     is_registered = fields.CheckboxField("Registered")
+...     partner = fields.LinkField("Partner", "Contact", lazy=False)
+...
+...     class Meta:
+...         base_id = "appaPqizdsNHDvlEm"
+...         table_name = "Contact"
+...         api_key = "keyapikey"
+
+
+Model Usage
+
+>>> contact = Contact(
+...     first_name="Mike",
+...     last_name="McDonalds",
+...     email="mike@mcd.com",
+...     is_registered=False
+... )
+>>> assert contact.id is None
+>>> assert contact.is_registered = True
+>>> assert contact.save()
+>>> assert contact.id
+rec123asa23
+
+>>> contact.delete()
+```
+
+Fields
+******
+
+Simple
+-------
+
+TODO
+
+Linked
+-------
+
+TODO
+
+"""
+
 from airtable import Table
 from typing import TypeVar, Type, Optional, Tuple
 

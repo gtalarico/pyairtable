@@ -31,7 +31,7 @@ Base
 
 _______________________________________________
 
-Api
+ORM
 *****
 
-.. automodule:: airtable.api.base
+.. automodule:: airtable.orm.model

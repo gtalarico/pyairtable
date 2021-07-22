@@ -21,8 +21,10 @@ pyairtable
    :hidden:
 
    getting-started
-   api
    params
+   formulas
+   orm
+   api
 
 
 .. toctree::

@@ -29,6 +29,8 @@ class Field:
 
 
 class TextField(Field):
+    """Text Field"""
+
     def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
 
@@ -39,21 +41,29 @@ class IntegerField(Field):
 
 
 class FloatField(Field):
+    """Float Field"""
+
     def __get__(self, *args, **kwargs) -> Optional[float]:
         return super().__get__(*args, **kwargs)
 
 
 class CheckboxField(Field):
+    """Checkbox Field"""
+
     def __get__(self, *args, **kwargs) -> Optional[bool]:
         return super().__get__(*args, **kwargs)
 
 
 class EmailField(Field):
+    """Email Field"""
+
     def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
 
 
 class LinkField(Field, Generic[T_Linked]):
+    """Linked Field"""
+
     def __init__(self, field_name, model: Type[T_Linked], lazy=True) -> None:
         self._model = model
         self._lazy = lazy

@@ -1,20 +1,13 @@
 """
-Parameter filters are instantiated internally
-by using the corresponding keywords.
+Airtable offers a variety of options to control how you fetch data.
 
-Filter names (kwargs) can be either the API camelCase name (ie ``maxRecords``)
-or the snake-case equivalent (``max_records``).
+Each option in the Airtable Api (eg. `sort`, `fields`, etc)
+has a corresponding kwargs that can be used with fetching methods like :any:`Table.iterate`.
 
-Refer to the :any:`AirtableApi` class to verify which kwargs can be
-used with each method.
-
-The purpose of these classes is to 1. improve flexibility and
-ways in which parameter filter values can be passed, and 2. properly format
-the parameter names and values on the request url.
-
-For more information see the full implementation below.
-
-"""  #
+Keywords Args:
+    view: View
+    xxx: Something
+"""
 from typing import List, Dict, Any
 from textwrap import dedent
 from collections import OrderedDict
@@ -86,6 +79,7 @@ def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
 
 def to_params_dict(param_name: str, value: Any):
     """Returns a dictionary for use in Request 'params'"""
+    # TODO: timeZone, userLocale
     if param_name == "max_records":
         return {"maxRecords": value}
     elif param_name == "view":

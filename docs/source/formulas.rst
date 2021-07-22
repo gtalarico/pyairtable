@@ -4,8 +4,14 @@ Formulas
 Overview
 ********
 
-.. include:: substitutions.rst
-
 For more information see
-    `Airtable Docs on formulas. <https://airtable.com/api>`_
+    `Airtable Formula Reference <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_
+
+.. automodule:: airtable.formulas
+
+
+.. automodule:: airtable.formulas
+    :members:
+
+
 

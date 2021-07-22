@@ -1,4 +1,4 @@
-Airtable Class
+Classes
 ==============
 
 Overview
