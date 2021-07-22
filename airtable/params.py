@@ -17,6 +17,7 @@ For more information see the full implementation below.
 """  #
 
 from collections import OrderedDict
+import re
 
 
 class _BaseParam(object):
@@ -205,6 +206,7 @@ class AirtableParams(object):
             Creates a formula to match cells from from field_name and value
             """
             if isinstance(field_value, str):
+                field_value = re.sub("(?<!\\\\)'", "\\'", field_value)
                 field_value = "'{}'".format(field_value)
 
             formula = "{{{name}}}={value}".format(name=field_name, value=field_value)

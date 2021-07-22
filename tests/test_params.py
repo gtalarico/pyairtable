@@ -94,6 +94,12 @@ def test_formula_from_name_and_value():
     formula = AirtableParams.FormulaParam.from_name_and_value("COL", "VAL")
     assert formula == r"{COL}='VAL'"
 
+    formula = AirtableParams.FormulaParam.from_name_and_value("COL", "'VAL'")
+    assert formula == r"{COL}='\'VAL\''"
+
+    formula = AirtableParams.FormulaParam.from_name_and_value("COL", "\\'VAL\\'")
+    assert formula == r"{COL}='\'VAL\''"
+
     formula = AirtableParams.FormulaParam.from_name_and_value("COL", 8)
     assert formula == r"{COL}=8"
 
