@@ -1,3 +1,4 @@
+from airtable.api.api import AirtableApi
 import pytest
 from collections import OrderedDict
 from posixpath import join as urljoin
@@ -6,7 +7,7 @@ from requests import HTTPError
 from urllib.parse import urlencode, quote
 from mock import Mock
 
-from airtable import Airtable
+from airtable.api import AirtableApi, Table
 
 
 @pytest.fixture
@@ -15,7 +16,7 @@ def url_builder():
 
     def _url_builder(base_id, table_name, params=None):
         urltable_name = quote(table_name, safe="")
-        url = urljoin(Airtable.API_URL, base_id, urltable_name)
+        url = urljoin(AirtableApi.API_URL, base_id, urltable_name)
         if params:
             params = OrderedDict(sorted(params.items()))
             url += "?" + urlencode(params)
@@ -33,9 +34,7 @@ def constants():
 
 @pytest.fixture()
 def table(constants):
-    return Airtable(
-        constants["BASE_ID"], constants["TABLE_NAME"], api_key=constants["API_KEY"]
-    )
+    return Table(constants["BASE_ID"], constants["TABLE_NAME"], constants["API_KEY"])
 
 
 @pytest.fixture

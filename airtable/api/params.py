@@ -93,7 +93,7 @@ def to_params_dict(param_name: str, value: Any):
     elif param_name == "page_size":
         return {"pageSize": value}
     elif param_name == "offset":
-        return {"pageSize": value}
+        return {"offset": value}
     elif param_name == "formula":
         return {"filterByFormula": value}
     elif param_name == "fields":

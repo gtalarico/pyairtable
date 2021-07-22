@@ -71,11 +71,22 @@ def test_model():
     assert record["fields"]["First Name"] == contact.first_name
 
 
-def test_from_record():
+def test_from_record(mock_response_single):
+    class Contact(Model):
+
+        first_name = f.TextField("First Name")
+
+        class Meta:
+            base_id = "contact_base_id"
+            table_name = "Contact"
+            api_key = "fake"
+
     with mock.patch.object(Table, "get") as m_get:
+        m_get.return_value = mock_response_single
         contact = Contact.from_id("recwnBLPIeQJoYVt4")
-    # m_delete.return_value = {"deleted": True}
-    # contact.delete()
+
+    assert m_get.called
+    assert contact.id == mock_response_single["id"]
 
 
 def test_linked_record():

@@ -1,6 +1,6 @@
 import requests
 from requests_mock import Mocker
-from airtable.auth import AirtableAuth
+from airtable.api.auth import AirtableAuth
 
 
 class TestAuth(object):

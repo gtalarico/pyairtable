@@ -8,6 +8,13 @@ class Table(AirtableApi):
         self.table_name = table_name
         super().__init__(api_key, timeout=timeout)
 
+    @property
+    def table_url(self):
+        return super().get_table_url(self.base_id, self.table_name)
+
+    def get_record_url(self, record_id):
+        return super()._get_record_url(self.base_id, self.table_name, record_id)
+
     def get(self, record_id):
         return super()._get_record(self.base_id, self.table_name, record_id)
 

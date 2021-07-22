@@ -131,7 +131,7 @@ class AirtableApi:
         return table_url
 
     @lru_cache()
-    def get_record_url(self, base_id, table_name, record_id):
+    def _get_record_url(self, base_id, table_name, record_id):
         """ Builds URL with record id """
         table_url = self.get_table_url(base_id, table_name)
         return posixpath.join(table_url, record_id)
@@ -208,7 +208,7 @@ class AirtableApi:
         Returns:
             record (``dict``): Record
         """
-        record_url = self.get_record_url(base_id, table_name, record_id)
+        record_url = self._get_record_url(base_id, table_name, record_id)
         return self._request("get", record_url)
 
     def _get_iter(self, base_id, table_name, **options):
@@ -375,7 +375,7 @@ class AirtableApi:
         Returns:
             record (``dict``): Updated record
         """
-        record_url = self.get_record_url(base_id, table_name, record_id)
+        record_url = self._get_record_url(base_id, table_name, record_id)
 
         method = "put" if replace else "patch"
         return self._request(
@@ -433,7 +433,7 @@ class AirtableApi:
         Returns:
             record (``dict``): Deleted Record
         """
-        record_url = self.get_record_url(base_id, table_name, record_id)
+        record_url = self._get_record_url(base_id, table_name, record_id)
         return self._request("delete", record_url)
 
     def _batch_delete(self, base_id: str, table_name: str, record_ids: List[str]):

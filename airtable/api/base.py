@@ -30,6 +30,9 @@ class Base(AirtableApi):
         self.base_id = base_id
         super().__init__(api_key, timeout=timeout)
 
+    def get_record_url(self, table_name, record_id):
+        return super()._get_record_url(self.base_id, table_name, record_id)
+
     def get(self, table_name, record_id):
         """
         Retrieves a record by its id

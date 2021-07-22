@@ -1,5 +1,5 @@
 from airtable import Table
-from typing import TypeVar, Type, Generic
+from typing import TypeVar, Type, Generic, Optional, Tuple
 
 from .fields import Field
 
@@ -17,8 +17,8 @@ class Model:
         base_id: str
         table_name: str
         api_key: str
-        timeout = None
-        typecast = True
+        timeout: Optional[Tuple[int, int]]
+        typecast: bool
 
     def __init__(self, **kwargs):
         # To Store Fields
@@ -44,9 +44,7 @@ class Model:
         if not getattr(self.Meta, "api_key", None):
             raise ValueError("Meta.api_key must be defined in model")
 
-        # Set default Meta values
-        self.Meta.timeout = getattr(self.Meta, "timeout", Model.Meta.timeout)
-        self.Meta.typecast = getattr(self.Meta, "typecast", Model.Meta.typecast)
+        self.typecast = getattr(self.Meta, "typecast", True)
 
     def exists(self) -> bool:
         return bool(self.id)
@@ -59,19 +57,18 @@ class Model:
                 cls.Meta.base_id,
                 cls.Meta.table_name,
                 api_key=cls.Meta.api_key,
-                timeout=cls.Meta.timeout,
+                timeout=getattr(cls.Meta, "timeout", None),
             )
         return cls._table
 
     def save(self) -> bool:
         table = self.get_table()
-        typecast = self.Meta.typecast
         if not self.id:
-            record = table.create(self._fields, typecast=typecast)
+            record = table.create(self._fields, typecast=self.typecast)
             did_create = True
         else:
             record = table.update(
-                self.id, self._fields, replace=True, typecast=typecast
+                self.id, self._fields, replace=True, typecast=self.typecast
             )
             did_create = False
         self.id = record["id"]
