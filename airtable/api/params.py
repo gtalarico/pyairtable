@@ -5,7 +5,7 @@ by using the corresponding keywords.
 Filter names (kwargs) can be either the API camelCase name (ie ``maxRecords``)
 or the snake-case equivalent (``max_records``).
 
-Refer to the :any:`Base` class to verify which kwargs can be
+Refer to the :any:`AirtableApi` class to verify which kwargs can be
 used with each method.
 
 The purpose of these classes is to 1. improve flexibility and
@@ -85,7 +85,7 @@ def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
 
 
 def to_params_dict(param_name: str, value: Any):
-    """ Returns a dictionary for use in Request 'params' """
+    """Returns a dictionary for use in Request 'params'"""
     if param_name == "max_records":
         return {"maxRecords": value}
     elif param_name == "view":

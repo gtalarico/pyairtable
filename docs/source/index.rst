@@ -1,7 +1,7 @@
 .. image:: _static/logo.svg
 
 pyairtable
-========
+==========
 
 .. container:: .large
 
@@ -12,8 +12,7 @@ pyairtable
    `Docs <getting-started.html>`_
    `GitHub <https://github.com/gtalarico/airtable-python-wrapper>`_
 
-Version: |version|
-
+   Version: |version|
 .. image:: https://img.shields.io/github/v/tag/gtalarico/airtable-python-wrapper?label=Release&style=flat-square&labelColor=292b2e&color=292b2e
 
 .. toctree::
@@ -24,15 +23,12 @@ Version: |version|
    getting-started
    api
    params
-   authentication
 
-
-* :ref:`genindex`
-* :ref:`modindex`
 
 .. toctree::
    :caption: More
    :hidden:
 
    GitHub <https://github.com/gtalarico/airtable-python-wrapper>
-   ♡ Sponsor <https://github.com/sponsors/gtalarico>
+   ❤️ Sponsor <https://github.com/sponsors/gtalarico>
+   📓 Airtable Api Docs <https://airtable.com/api">

@@ -4,30 +4,24 @@ Airtable Class
 Overview
 ********
 
-.. |max_records| replace:: :keywords int max_records: The maximum total number of records that will be returned.
-.. |view| replace:: view: some thing
-.. |page_size| replace:: page_size: xxx
-.. |fields| replace:: fields: xxx
-.. |sort| replace:: xxx
-.. |formula| replace:: xxx
-
-|max_records|
-
-.. automodule:: airtable.airtable
+.. include:: substitutions.rst
+.. automodule:: airtable.api
 
 _______________________________________________
 
 Class API
 *********
 
-.. autoclass:: airtable.Base
+* :ref:`modindex`
+
+.. autoclass:: airtable.api.AirtableApi
     :members:
+    :private-members:
 
-_______________________________________________
+.. autoclass:: airtable.api.Table
+    :members:
+    :undoc-members:
 
-Source Code
-***********
-
-.. literalinclude:: ../../airtable/airtable.py
-    :start-after: """  #
-
+.. autoclass:: airtable.api.Base
+    :members:
+    :undoc-members:

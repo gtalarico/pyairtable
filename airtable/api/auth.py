@@ -1,16 +1,3 @@
-"""
-Authentication is handled by the :any:`Base` class.
-
->>> airtable = Airtable(base_id, table_name, api_key)
-
-Note:
-    You can also use this class to handle authentication for you if you
-    are making your own wrapper:
-
-    >>> auth = AirtableAuth(api_key)
-    >>> response = requests.get('https://api.airtable.com/v0/{base_id}/{table_name}', auth=auth)
-
-"""  #
 import requests
 
 

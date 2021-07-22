@@ -10,3 +10,11 @@ pre, code {
 /* body {
     color: #f00 !important;
 } */
+
+.k, .kc, .kd, .kn, .kp, .kr, .kt {
+	color: #a75c77 !important
+}
+
+.l, .ld, .s, .sb, .sc, .sd, .s2, .se, .sh, .si, .sx, .s1 {
+	color: #a2a084 !important
+}

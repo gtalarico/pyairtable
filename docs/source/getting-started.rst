@@ -3,61 +3,35 @@ Getting Started
 ======================================
 
 
-Version: |version|
+.. include:: substitutions.rst
 
-For more information about the Airtable API see the
-`Airtable API Docs <https://airtable.com/api>`_
-
-_______________________________________________
 
 Installation
 ************
 
->>> pip install airtable-python-wrapper
+>>> pip install pyairtable
 
 _______________________________________________
 
-Index
+
+Table
 *****
 
-.. toctree::
-   :maxdepth: 2
+.. automodule:: airtable.api.table
 
-   api
-   params
-   authentication
-
-
-
-* :ref:`genindex`
-* :ref:`modindex`
-
-Version: |version|
-
-Release Notes
-*************
-
-`Release Notes <https://github.com/gtalarico/airtable-python-wrapper/blob/master/HISTORY.md>`_
-
-
-Questions
-*********
-Post them over in the project's `Github Page <http://www.github.com/gtalarico/airtable-python-wrapper>`_
 
 _______________________________________________
 
-Contribute
-**********
 
-.. code-block:: python
-  :linenos:
+Base
+*****
 
-   git clone git@github.com:gtalarico/airtable-python-wrapper.git
-   cd airtable-python-wrapper.git
-   python setup.py develop
-   python setup.py test
+.. automodule:: airtable.api.base
 
 
-License
-*******
-`MIT License <https://opensource.org/licenses/MIT>`_
+_______________________________________________
+
+Api
+*****
+
+.. automodule:: airtable.api.base
