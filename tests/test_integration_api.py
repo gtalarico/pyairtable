@@ -123,9 +123,15 @@ def test_integration_base(base, cols):
 
 
 @pytest.mark.integration
-def test_integration_quoting(table: Table, cols):
-    # UUID ensures records from previous runs do not match
+def test_integration_field_equals(table: Table, cols):
+    VALUE = "Simeple {}".format(uuid4())
+    rv_create = table.create({cols.TEXT: VALUE})
+    rv_first = table.first(formula=fo.field_equals_value(cols.TEXT, VALUE))
+    assert rv_first and rv_first["id"] == rv_create["id"]
 
+
+@pytest.mark.integration
+def test_integration_field_equals_with_quotes(table: Table, cols):
     VALUE = "Contact's Name {}".format(uuid4())
     rv_create = table.create({cols.TEXT: VALUE})
     rv_first = table.first(formula=fo.field_equals_value(cols.TEXT, VALUE))
@@ -135,3 +141,20 @@ def test_integration_quoting(table: Table, cols):
     rv_create = table.create({cols.TEXT: VALUE})
     rv_first = table.first(formula=fo.field_equals_value(cols.TEXT, VALUE))
     assert rv_first and rv_first["id"] == rv_create["id"]
+
+
+@pytest.mark.integration
+def test_integration_formula_composition(table: Table, cols):
+    text = "Mike's Thing {}".format(uuid4())
+    num = 1
+    bool_ = True
+    rv_create = table.create({cols.TEXT: text, cols.NUM: num, cols.BOOL: bool_})
+
+    formula = fo.AND(
+        fo.EQUAL(fo.FIELD(cols.TEXT), fo.STR_VALUE(text)),
+        fo.EQUAL(fo.FIELD(cols.NUM), num),
+        fo.EQUAL(fo.FIELD(cols.BOOL), int(bool_)),  # not needs to be int()
+    )
+    rv_first = table.first(formula=formula)
+
+    assert rv_first["id"] == rv_create["id"]

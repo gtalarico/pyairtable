@@ -27,6 +27,13 @@ Args:
     formula (``str``): A valid Airtable formula.
 """
 import re
+from typing import Any
+
+
+def quotes_escaped(value: str):
+    """ensures any quotes are escaped"""
+    escaped_value = re.sub("(?<!\\\\)'", "\\'", value)
+    return escaped_value
 
 
 def field_equals_value(field_name, field_value):
@@ -35,14 +42,16 @@ def field_equals_value(field_name, field_value):
     """
 
     if isinstance(field_value, str):
-        escaped_value = re.sub("(?<!\\\\)'", "\\'", field_value)
-        field_value = STR_VALUE(escaped_value)
+        field_value = STR_VALUE(field_value)
+
+    elif isinstance(field_value, bool):
+        field_value = int(field_value)
 
     formula = EQUAL(FIELD(field_name), field_value)
     return formula
 
 
-def EQUAL(left: str, right: str) -> str:
+def EQUAL(left: Any, right: Any) -> str:
     """
     Creates an equality assertion
 
@@ -63,7 +72,8 @@ def FIELD(name: str) -> str:
 
 
 def STR_VALUE(value: str) -> str:
-    return "'%s'" % value
+    escaped_value = quotes_escaped(value)
+    return "'%s'" % escaped_value
 
 
 def IF(logical, value1, value2) -> str:
