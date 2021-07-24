@@ -26,14 +26,17 @@ Usage - Text Column contains:
 Args:
     formula (``str``): A valid Airtable formula.
 """
+import re
 
 
 def field_equals_value(field_name, field_value):
     """
     Creates a formula to match cells from from field_name and value
     """
+
     if isinstance(field_value, str):
-        field_value = STR_VALUE(field_value)
+        escaped_value = re.sub("(?<!\\\\)'", "\\'", field_value)
+        field_value = STR_VALUE(escaped_value)
 
     formula = EQUAL(FIELD(field_name), field_value)
     return formula
