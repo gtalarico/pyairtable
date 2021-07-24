@@ -20,7 +20,11 @@ def cols():
 @pytest.fixture
 def base():
     base_id = "appaPqizdsNHDvlEm"
-    return Base(base_id, os.environ["AIRTABLE_API_KEY"])
+    base = Base(base_id, os.environ["AIRTABLE_API_KEY"])
+    yield base
+    table_name = "My Table"
+    records = base.get_all(table_name)
+    base.batch_delete(table_name, [r["id"] for r in records])
 
 
 @pytest.fixture
@@ -74,8 +78,53 @@ def test_integration_table(table, cols):
 
 
 @pytest.mark.integration
+def test_integration_base(base, cols):
+    table_name = "My Table"
+
+    # Create / Get
+    rec = base.create(table_name, {cols.TEXT: "A", cols.NUM: 1, cols.BOOL: True})
+    rv_get = base.get(table_name, rec["id"])
+    assert rv_get["fields"][cols.TEXT] == "A"
+
+    # Update
+    rv = base.update(table_name, rec["id"], {cols.TEXT: "B"})
+    assert rv["fields"][cols.TEXT] == "B"
+    assert rv["fields"][cols.NUM] == 1
+
+    # Replace
+    rv = base.update(table_name, rec["id"], {cols.NUM: 2}, replace=True)
+    assert rv["fields"] == {cols.NUM: 2}
+
+    # Get all
+    records = base.get_all(
+        table_name,
+    )
+    assert rec["id"] in [r["id"] for r in records]
+
+    # Delete
+    rv = base.delete(table_name, rec["id"])
+    assert rv["deleted"]
+
+    # Batch Create
+    COUNT = 15
+    records = base.batch_create(
+        table_name,
+        [{cols.TEXT: "A", cols.NUM: 1, cols.BOOL: True} for _ in range(COUNT)],
+    )
+
+    for record in records:
+        record["fields"][cols.TEXT] = "C"
+    rv_batch_update = base.batch_update(table_name, records)
+    assert all([r["fields"][cols.TEXT] == "C" for r in rv_batch_update])
+
+    # Batch Delete
+    records = base.batch_delete(table_name, [r["id"] for r in records])
+    assert len(records) == COUNT
+
+
+@pytest.mark.integration
 def test_integration_quoting(table: Table, cols):
-    # UUId helps ensure records from previous runs do not match
+    # UUID ensures records from previous runs do not match
 
     VALUE = "Contact's Name {}".format(uuid4())
     rv_create = table.create({cols.TEXT: VALUE})
