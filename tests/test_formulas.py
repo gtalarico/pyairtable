@@ -1,4 +1,3 @@
-import pytest
 from airtable.formulas import (
     AND,
     EQUAL,
@@ -6,7 +5,6 @@ from airtable.formulas import (
     STR_VALUE,
     field_equals_value,
     dict_query,
-    cast_value,
 )
 
 
@@ -16,18 +14,6 @@ def test_equal():
 
 def test_field():
     assert FIELD("Name") == "{Name}"
-
-
-# @pytest.mark.parametrize(
-#     "field_name,formula_value",
-#     [
-#         ("First Name", "{First Name}"),
-#         ("Player's Age", "{Player's Age}"),
-#         ('"Session" Winners', 'Session" Winners'),
-#     ],
-# )
-# def test_field_escape(field_name, formula_value):
-#     assert FIELD("Name") == "{Name}"
 
 
 def test_and():

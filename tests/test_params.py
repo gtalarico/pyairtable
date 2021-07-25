@@ -98,7 +98,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
     ],
 )
 def test_process_params(option, value, url_params):
-    """ Ensure kwargs received build a proper params """
+    """Ensure kwargs received build a proper params"""
     # https://codepen.io/airtable/full/rLKkYB
 
     processed_params = to_params_dict(option, value)

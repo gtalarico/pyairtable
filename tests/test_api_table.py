@@ -164,7 +164,7 @@ def _chunk(iterable, chunk_size):
 
 
 def match_request_data(post_data):
-    """ Custom Matches, check that provided Request data is correct"""
+    """Custom Matches, check that provided Request data is correct"""
 
     def _match_request_data(request):
         request_data_fields = request.json()["fields"]

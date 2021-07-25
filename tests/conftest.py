@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 @pytest.fixture
 def url_builder():
-    """ Builds Airtable Api Url Manually for mock testing """
+    """Builds Airtable Api Url Manually for mock testing"""
 
     def _url_builder(base_id, table_name, params=None):
         urltable_name = quote(table_name, safe="")
@@ -92,7 +92,7 @@ def mock_response_insert(mock_records):
 
 @pytest.fixture
 def mock_response_iterator(mock_response_list):
-    """ Each call will return the next response in mock_response_list """
+    """Each call will return the next response in mock_response_list"""
     i = iter(mock_response_list)
 
     def _response_iterator(request, context):

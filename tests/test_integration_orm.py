@@ -1,9 +1,7 @@
 import pytest
 import os
-from airtable import Base, Table
 from airtable.orm import Model
 from airtable.orm import fields as f
-from airtable.formulas import AND, EQUAL, FIELD
 
 INTEGRATION_BASE = "appaPqizdsNHDvlEm"
 API_KEY = os.environ["AIRTABLE_API_KEY"]
