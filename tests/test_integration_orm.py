@@ -3,7 +3,7 @@ import os
 from airtable import Base, Table
 from airtable.orm import Model
 from airtable.orm import fields as f
-from airtable.formulas import AND, EQUAL, FIELD, STR_VALUE
+from airtable.formulas import AND, EQUAL, FIELD
 
 INTEGRATION_BASE = "appaPqizdsNHDvlEm"
 API_KEY = os.environ["AIRTABLE_API_KEY"]
@@ -19,7 +19,11 @@ def Address():
             api_key = API_KEY
             table_name = "Address"
 
-    return _Address
+    yield _Address
+
+    table = _Address.get_table()
+    records = table.get_all()
+    table.batch_delete([r["id"] for r in records])
 
 
 @pytest.fixture
@@ -29,41 +33,44 @@ def Contact(Address):
         last_name = f.TextField("Last Name")
         email = f.EmailField("Email")
         is_registered = f.CheckboxField("Registered")
-        link = f.LinkField("Link", Address, lazy=True)
+        address = f.LinkField("Address", Address, lazy=True)
 
         class Meta:
             base_id = INTEGRATION_BASE
             api_key = API_KEY
             table_name = "Contact"
 
-    return _Contact
+    yield _Contact
+
+    table = _Contact.get_table()
+    records = table.get_all()
+    table.batch_delete([r["id"] for r in records])
 
 
 @pytest.mark.integration
 def test_integration_orm(Contact, Address):
-    breakpoint()
+    STREET = "123 Han"
+    address = Address(street=STREET)
+    address.save()
+
     contact = Contact(
-        first_name="Gui",
-        last_name="Talarico",
-        email="gui@gui.com",
+        first_name="John",
+        last_name="LastName",
+        email="email@email.com",
         is_registered=True,
+        address=[address.id],
     )
-    contact.first_name
-    assert contact.first_name == "Gui"
+
+    assert contact.first_name == "John"
     assert contact.save()
     assert contact.id
+
     contact.first_name = "Not Gui"
     assert not contact.save()
-    # assert contact.delete()
 
-    print(contact.to_record())
-    print(Address().to_record())
-    contact2 = Contact.from_id("recwnBLPIeQJoYVt4")
-    print(Address().to_record())
-    # assert contact2.id
+    rv_address = contact.address
+    assert rv_address.exists()
 
-    address = contact2.link
-    assert address
-    print(address.to_record())
-    address.reload()
-    print(address.to_record())
+    assert rv_address.id == contact.address.id == address.id
+    rv_address.reload()
+    assert rv_address.street == contact.address.street == STREET

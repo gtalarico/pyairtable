@@ -67,6 +67,7 @@ class Model:
     id: str = ""
     created_time: str = ""
     _fields: dict
+    _linked_cache: dict
     _table: Table
 
     class Meta:
@@ -79,6 +80,7 @@ class Model:
     def __init__(self, **kwargs):
         # To Store Fields
         self._fields = {}
+        self._linked_cache = {}
 
         # Get descriptors values
         descriptor_fields = {
@@ -103,11 +105,12 @@ class Model:
         self.typecast = getattr(self.Meta, "typecast", True)
 
     def exists(self) -> bool:
+        """Returns boolean indicating if instance exists (has 'id' attribute)"""
         return bool(self.id)
 
     @classmethod
     def get_table(cls) -> Table:
-        """return airtable class instance, instantiate one if needed"""
+        """Return Airtable :any:`Table` class instance"""
         if not hasattr(cls, "_table"):
             cls._table = Table(
                 cls.Meta.base_id,
@@ -118,6 +121,12 @@ class Model:
         return cls._table
 
     def save(self) -> bool:
+        """
+        Saves or updates a model.
+        If instance has no 'id', it will be created, otherwise updatedself.
+
+        Returns `True` if was created and `False` if it was updated
+        """
         table = self.get_table()
         if not self.id:
             record = table.create(self._fields, typecast=self.typecast)
@@ -132,6 +141,7 @@ class Model:
         return did_create
 
     def delete(self) -> bool:
+        """Deleted record. Must have 'id' field"""
         if not self.id:
             raise ValueError("cannot be deleted because it does not have id")
         table = self.get_table()

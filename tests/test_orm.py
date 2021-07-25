@@ -91,6 +91,7 @@ def test_from_record(mock_response_single):
 
 def test_linked_record():
     ...
+    # TODO
     # address = contact2.link
     # print(address.to_record())
     # address.reload()

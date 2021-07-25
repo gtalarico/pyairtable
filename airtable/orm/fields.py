@@ -64,7 +64,19 @@ class EmailField(Field):
 class LinkField(Field, Generic[T_Linked]):
     """Linked Field"""
 
-    def __init__(self, field_name, model: Type[T_Linked], lazy=True) -> None:
+    def __init__(self, field_name: str, model: Type[T_Linked], lazy=True) -> None:
+        """
+        Represents a Linked Column
+
+        Args:
+            field_name: Name of Airtable Column
+            model: Model of Linked Type. Must be subtype of :any:`Model`
+            lazy: Use `True` to load linked model when looking up attribute. `False`
+                will create empty object with only `id` but will not fetch fields.
+
+        Usage:
+            >>> TODO
+        """
         self._model = model
         self._lazy = lazy
         super().__init__(field_name)
@@ -79,16 +91,33 @@ class LinkField(Field, Generic[T_Linked]):
         link_ids = instance._fields.get(self.field_name, [])
 
         for link_id in link_ids:
+
+            # If cache, previous instance is used
+            # This is needed to prevent loading a new instance on each attribute lookup
+            cached_instance = instance._linked_cache.get(link_id)
+            if cached_instance:
+                return cached_instance
+
+            # If Lazy, create empty from model class and set id
             if self._lazy:
                 link_instance = self._model()
                 link_instance.id = link_id
+
+            # If not Lazy, fetch record from airtable and create new model instance
             else:
                 link_record = instance.get_table().get(link_id)
                 link_instance = self._model.from_record(link_record)
 
+            instance._linked_cache[link_id] = link_instance
             return link_instance
 
         return None
+
+
+class MultipleLinkField(Field, Generic[T_Linked]):
+    """Multiple Link Field"""
+
+    # TODO
 
 
 """

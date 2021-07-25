@@ -1,5 +1,13 @@
 import pytest
-from airtable.formulas import AND, EQUAL, FIELD, STR_VALUE, field_equals_value
+from airtable.formulas import (
+    AND,
+    EQUAL,
+    FIELD,
+    STR_VALUE,
+    field_equals_value,
+    dict_query,
+    cast_value,
+)
 
 
 def test_equal():
@@ -42,3 +50,8 @@ def test_combination():
 def test_field_equals_value():
     formula = field_equals_value("First Name", "John")
     assert formula == "{First Name}='John'"
+
+
+def test_formula_query():
+    formula = dict_query({"First Name": "A", "Last Name": "B"})
+    assert formula == "AND({First Name}='A',{Last Name}='B')"

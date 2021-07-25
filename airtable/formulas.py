@@ -4,13 +4,6 @@ Formulas xxx
 >>> table = Table(base_id, "Contact", os.environ["AIRTABLE_API_KEY"])
 >>> formula = EQUAL("{First Name}", "'A'")
 >>> table.get_all(formula=formula)
->>> formula = AND(
-...     EQUAL(FIELD("First Name"), STR_VALUE("A")),
-...     EQUAL(FIELD("Last Name"), STR_VALUE("Talarico")),
-...     EQUAL(FIELD("Age"), STR_VALUE(15)),
-... )
->>> table.get_all(formula=formula)
-
 
 Others
 ******
@@ -36,18 +29,41 @@ def quotes_escaped(value: str):
     return escaped_value
 
 
+def cast_value(value: Any):
+    if isinstance(value, bool):
+        return int(value)
+    elif isinstance(value, (int, float)):
+        return value
+    elif isinstance(value, str):
+        return STR_VALUE(quotes_escaped(value))
+    else:
+        return value
+
+
+# WIP
+def dict_query(dict_):
+    """
+    Usage:
+    >>> query(name="John", age=21)
+
+    """
+    expressions = []
+    for key, value in dict_.items():
+        expression = EQUAL(FIELD(key), cast_value(value))
+        expressions.append(expression)
+
+    formula = AND(*expressions)
+    return formula
+    # assert formula == ("AND({First Name}='A',{Last Name}='B',{Age}='15')")
+
+
 def field_equals_value(field_name, field_value):
     """
     Creates a formula to match cells from from field_name and value
     """
 
-    if isinstance(field_value, str):
-        field_value = STR_VALUE(field_value)
-
-    elif isinstance(field_value, bool):
-        field_value = int(field_value)
-
-    formula = EQUAL(FIELD(field_name), field_value)
+    cast_field_value = cast_value(field_value)
+    formula = EQUAL(FIELD(field_name), cast_field_value)
     return formula
 
 
@@ -72,8 +88,7 @@ def FIELD(name: str) -> str:
 
 
 def STR_VALUE(value: str) -> str:
-    escaped_value = quotes_escaped(value)
-    return "'%s'" % escaped_value
+    return "'{}'".format(value)
 
 
 def IF(logical, value1, value2) -> str:
