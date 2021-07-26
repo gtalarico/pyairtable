@@ -56,7 +56,7 @@ def test_integration_orm(Contact, Address):
         last_name="LastName",
         email="email@email.com",
         is_registered=True,
-        address=address,
+        address=[address],
     )
 
     assert contact.first_name == "John"
@@ -66,9 +66,9 @@ def test_integration_orm(Contact, Address):
     contact.first_name = "Not Gui"
     assert not contact.save()
 
-    rv_address = contact.address
+    rv_address = contact.address[0]
     assert rv_address.exists()
 
-    assert rv_address.id == contact.address.id == address.id
+    assert rv_address.id == contact.address[0].id == address.id
     rv_address.reload()
-    assert rv_address.street == contact.address.street == STREET
+    assert rv_address.street == contact.address[0].street == STREET

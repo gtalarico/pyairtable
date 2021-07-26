@@ -85,6 +85,12 @@ class LinkField(Field, Generic[T_Linked]):
         super().__init__(field_name)
 
     def __get__(self, instance: Any, cls=None) -> List[T_Linked]:
+        """
+        Gets value of LinkField descriptor.
+
+        Returns:
+            List of Link Instances
+        """
         if not instance:
             raise ValueError("cannot access descriptors on class")
 
@@ -113,17 +119,20 @@ class LinkField(Field, Generic[T_Linked]):
 
         return instances
 
-    def __set__(self, instance, value):
-        is_model = isinstance(value, self._model)
-        if not is_model:
-            if not value.startswith("rec"):
-                raise TypeError("LinkedField string values must be a record id")
-            # Store link record_id
-            super().__set__(instance, [value])
-        else:
+    def __set__(self, instance, value: List[T_Linked]):
+        """
+        Sets value for LinkField descriptor.
+        Value must be list of linked instances - eg:
+
+        >>> contact.address = [address]
+        """
+        assert hasattr(value, "__iter__"), "LinkField value must be iterable"
+        for model_instance in value:
+            assert isinstance(model_instance, self._model), "must be model intance"
             # Store instance in cache and store id
-            instance._linked_cache[value.id] = value
-            super().__set__(instance, [value.id])
+            instance._linked_cache[model_instance.id] = model_instance
+        ids = [i.id for i in value]
+        super().__set__(instance, ids)
 
 
 class MultipleLinkField(Field, Generic[T_Linked]):

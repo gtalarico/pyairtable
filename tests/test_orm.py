@@ -113,10 +113,10 @@ def test_linked_record():
             api_key = "fake"
 
     record = {"id": "recFake", "createdTime": "", "fields": {"Street": "A"}}
-    address = Address.from_record(record)
+    address = Address.from_id("recFake", fetch=False)
 
     # Id Reference
-    contact = Contact(address=address.id)
+    contact = Contact(address=[address])
     assert contact.address[0].id == address.id
     assert not contact.address[0].street
 
@@ -125,10 +125,4 @@ def test_linked_record():
         mock.get(url, status_code=200, json=record)
         contact.address[0].reload()
 
-    address = contact.address[0]
-    assert address.street == "A"
-
-    # Model Reference
-    contact_2 = Contact(address=address)
-    assert contact_2.address[0].id == address.id
-    assert contact_2.address[0].street == address.street
+    assert contact.address[0].street == "A"
