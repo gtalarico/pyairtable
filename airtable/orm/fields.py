@@ -1,4 +1,4 @@
-from typing import Any, TypeVar, Type, Generic, Optional, TYPE_CHECKING
+from typing import Any, TypeVar, Type, Generic, Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from airtable.orm import Model  # noqa
@@ -84,7 +84,7 @@ class LinkField(Field, Generic[T_Linked]):
         self._lazy = lazy
         super().__init__(field_name)
 
-    def __get__(self, instance: Any, cls=None) -> Optional[T_Linked]:
+    def __get__(self, instance: Any, cls=None) -> List[T_Linked]:
         if not instance:
             raise ValueError("cannot access descriptors on class")
 
@@ -92,23 +92,26 @@ class LinkField(Field, Generic[T_Linked]):
 
         link_ids = instance._fields.get(self.field_name, [])
 
+        instances = []
         for link_id in link_ids:
 
             # If cache, previous instance is used
             # This is needed to prevent loading a new instance on each attribute lookup
             cached_instance = instance._linked_cache.get(link_id)
             if cached_instance:
-                return cached_instance
+                instances.append(cached_instance)
+                continue
+            else:
+                # If Lazy, create empty from model class and set id
+                # If not Lazy, fetch record from airtable and create new model instance
+                should_fetch = not self._lazy
+                new_link_instance = self._model.from_id(link_id, fetch=should_fetch)
 
-            # If Lazy, create empty from model class and set id
-            # If not Lazy, fetch record from airtable and create new model instance
-            link_instance = self._model.from_id(link_id, fetch=self._lazy)
+                # Cache instance
+                instance._linked_cache[link_id] = new_link_instance
+                instances.append(new_link_instance)
 
-            # Cache instance
-            instance._linked_cache[link_id] = link_instance
-            return link_instance
-
-        return None
+        return instances
 
     def __set__(self, instance, value):
         is_model = isinstance(value, self._model)

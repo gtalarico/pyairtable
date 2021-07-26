@@ -95,7 +95,7 @@ def test_from_record():
     assert contact.first_name == "X"
 
 
-def test_linked_record(mock_response_single):
+def test_linked_record():
     class Address(Model):
         street = f.TextField("Street")
 
@@ -114,13 +114,21 @@ def test_linked_record(mock_response_single):
 
     record = {"id": "recFake", "createdTime": "", "fields": {"Street": "A"}}
     address = Address.from_record(record)
-    # TODO
-    # contact = Contact(address=address.id)
-    contact = Contact(address=address)
+
+    # Id Reference
+    contact = Contact(address=address.id)
+    assert contact.address[0].id == address.id
+    assert not contact.address[0].street
+
     with Mocker() as mock:
         url = address.get_table().get_record_url(address.id)
         mock.get(url, status_code=200, json=record)
-        contact.address.reload()
+        contact.address[0].reload()
 
-    address = contact.address
+    address = contact.address[0]
     assert address.street == "A"
+
+    # Model Reference
+    contact_2 = Contact(address=address)
+    assert contact_2.address[0].id == address.id
+    assert contact_2.address[0].street == address.street
