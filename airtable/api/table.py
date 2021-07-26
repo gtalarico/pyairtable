@@ -152,12 +152,6 @@ class Table(AirtableApi):
             yield i
 
     def first(self, **options):
-        """
-        Args:
-            record_id: |arg_record_id|
-
-        For options see :any:`AirtableApi._get_all`
-        """
         return super()._first(self.base_id, self.table_name, **options)
 
     def get_all(self, **options):

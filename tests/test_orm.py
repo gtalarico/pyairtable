@@ -1,4 +1,5 @@
 from unittest import mock
+from requests_mock import Mocker
 import pytest
 from airtable import Table
 from airtable.orm import Model
@@ -71,7 +72,7 @@ def test_model():
     assert record["fields"]["First Name"] == contact.first_name
 
 
-def test_from_record(mock_response_single):
+def test_from_record():
     class Contact(Model):
 
         first_name = f.TextField("First Name")
@@ -82,17 +83,44 @@ def test_from_record(mock_response_single):
             api_key = "fake"
 
     with mock.patch.object(Table, "get") as m_get:
-        m_get.return_value = mock_response_single
+        m_get.return_value = {
+            "id": "recwnBLPIeQJoYVt4",
+            "createdTime": "",
+            "fields": {"First Name": "X"},
+        }
         contact = Contact.from_id("recwnBLPIeQJoYVt4")
 
     assert m_get.called
-    assert contact.id == mock_response_single["id"]
+    assert contact.id == "recwnBLPIeQJoYVt4"
+    assert contact.first_name == "X"
 
 
-def test_linked_record():
-    ...
+def test_linked_record(mock_response_single):
+    class Address(Model):
+        street = f.TextField("Street")
+
+        class Meta:
+            base_id = "address_base_id"
+            table_name = "Address"
+            api_key = "fake"
+
+    class Contact(Model):
+        address = f.LinkField("Link", Address, lazy=True)
+
+        class Meta:
+            base_id = "contact_base_id"
+            table_name = "Contact"
+            api_key = "fake"
+
+    record = {"id": "recFake", "createdTime": "", "fields": {"Street": "A"}}
+    address = Address.from_record(record)
     # TODO
-    # address = contact2.link
-    # print(address.to_record())
-    # address.reload()
-    # print(address.to_record())
+    # contact = Contact(address=address.id)
+    contact = Contact(address=address)
+    with Mocker() as mock:
+        url = address.get_table().get_record_url(address.id)
+        mock.get(url, status_code=200, json=record)
+        contact.address.reload()
+
+    address = contact.address
+    assert address.street == "A"

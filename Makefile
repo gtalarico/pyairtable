@@ -20,6 +20,9 @@ test:
 	tox
 	make clean
 
+coverage:
+	pytest --cov=airtable --cov-report=html
+
 ## lint: Lint and format
 lint:
 	flake8 .

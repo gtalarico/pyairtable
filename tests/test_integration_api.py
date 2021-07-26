@@ -12,7 +12,6 @@ def cols():
         TEXT = "text"  # Text
         NUM = "number"  # Number, float
         BOOL = "boolean"  # Boolean
-        W_QUOTE = 'Col\' with "Quotes"'  # Text
 
     return Columns
 

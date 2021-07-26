@@ -27,6 +27,9 @@ class Field:
         # TODO cast
         instance._fields[self.field_name] = value
 
+    def __repr__(self):
+        return "<{} field_name='{}'>".format(self.__class__.__name__, self.field_name)
+
 
 class TextField(Field):
     """Text Field"""
@@ -82,7 +85,6 @@ class LinkField(Field, Generic[T_Linked]):
         super().__init__(field_name)
 
     def __get__(self, instance: Any, cls=None) -> Optional[T_Linked]:
-
         if not instance:
             raise ValueError("cannot access descriptors on class")
 
@@ -99,19 +101,26 @@ class LinkField(Field, Generic[T_Linked]):
                 return cached_instance
 
             # If Lazy, create empty from model class and set id
-            if self._lazy:
-                link_instance = self._model()
-                link_instance.id = link_id
-
             # If not Lazy, fetch record from airtable and create new model instance
-            else:
-                link_record = instance.get_table().get(link_id)
-                link_instance = self._model.from_record(link_record)
+            link_instance = self._model.from_id(link_id, fetch=self._lazy)
 
+            # Cache instance
             instance._linked_cache[link_id] = link_instance
             return link_instance
 
         return None
+
+    def __set__(self, instance, value):
+        is_model = isinstance(value, self._model)
+        if not is_model:
+            if not value.startswith("rec"):
+                raise TypeError("LinkedField string values must be a record id")
+            # Store link record_id
+            super().__set__(instance, [value])
+        else:
+            # Store instance in cache and store id
+            instance._linked_cache[value.id] = value
+            super().__set__(instance, [value.id])
 
 
 class MultipleLinkField(Field, Generic[T_Linked]):

@@ -44,6 +44,33 @@ def test_get(table, mock_response_single):
     assert dict_equals(resp, mock_response_single)
 
 
+def test_first(table, mock_response_single):
+    mock_response = {"records": [mock_response_single]}
+    with Mocker() as mock:
+        url = Request("get", table.table_url, params={"maxRecords": 1}).prepare().url
+        mock.get(
+            url,
+            status_code=200,
+            json=mock_response,
+        )
+        rv = table.first()
+        assert rv
+    assert rv["id"] == mock_response_single["id"]
+
+
+def test_first_none(table, mock_response_single):
+    mock_response = {"records": []}
+    with Mocker() as mock:
+        url = Request("get", table.table_url, params={"maxRecords": 1}).prepare().url
+        mock.get(
+            url,
+            status_code=200,
+            json=mock_response,
+        )
+        rv = table.first()
+        assert rv is None
+
+
 def test_get_all(table, mock_response_list, mock_records):
     with Mocker() as mock:
         mock.get(

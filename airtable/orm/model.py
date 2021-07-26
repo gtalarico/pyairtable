@@ -77,19 +77,40 @@ class Model:
         timeout: Optional[Tuple[int, int]]
         typecast: bool
 
-    def __init__(self, **kwargs):
+    @classmethod
+    def descriptor_fields(cls):
+        """
+        {
+            "field_name": <TextField field_name="Field Name">,
+            "another_Field": <NumberField field_name="Some Number">,
+        }
+        """
+        return {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
+
+    @classmethod
+    def descriptor_to_field_name_map(cls):
+        return {v.field_name: k for k, v in cls.descriptor_fields().items()}
+        # return {
+        #     "Field Name": "street",
+        #     "Street": ""
+        #     # Docs
+        # }
+
+    def record_fields_to_kwargs(self):
+        """{"fields": {"Street Name": "X"}} =>  { "street_name": "X" }"""
+
+    def __init__(self, **fields):
         # To Store Fields
         self._fields = {}
         self._linked_cache = {}
 
         # Get descriptors values
-        descriptor_fields = {
-            k: v for k, v in self.__class__.__dict__.items() if isinstance(v, Field)
-        }
+        # TODO check for clashes
+        # disallowed_names = ("id", "crreated_time", "_fields", "_linked_cache", "_table")
 
         # Set descriptors values
-        for key, value in kwargs.items():
-            if key not in descriptor_fields:
+        for key, value in fields.items():
+            if key not in self.descriptor_fields():
                 msg = "invalid kwarg '{}'".format(key)
                 raise ValueError(msg)
             setattr(self, key, value)
@@ -154,23 +175,49 @@ class Model:
 
     @classmethod
     def from_record(cls: Type[T], record: dict) -> T:
-        """create entity instance a record (API dict response)"""
-        instance = cls()
-        instance._fields = record["fields"]
+        """Create instance from record dictionary"""
+        map_ = cls.descriptor_to_field_name_map()
+        try:
+            # Convert Column Names into model field names
+            kwargs = {map_[k]: v for k, v in record["fields"].items()}
+        except KeyError as exc:
+            raise ValueError("Invalid Field Name: {} for model {}".format(exc, cls))
+        instance = cls(**kwargs)
         instance.created_time = record["createdTime"]
         instance.id = record["id"]
         return instance
 
     @classmethod
-    def from_id(cls: Type[T], record_id: str) -> T:
-        table = cls.get_table()
-        record = table.get(record_id)
-        return cls.from_record(record)
+    def from_id(cls: Type[T], record_id: str, fetch=True) -> T:
+        """
+        Create an instance from a `record_id`
+
+        Args:
+            record_id: |arg_record_id|
+
+        Keyward Args:
+            fetch: If `True`, record will be fetched from airtable and fields will be
+                updated. If `False`, a new instance is created with the provided `id`,
+                but field values are unset. Default is `True`.
+
+        """
+        if fetch:
+            table = cls.get_table()
+            record = table.get(record_id)
+            return cls.from_record(record)
+        else:
+            instance = cls()
+            instance.id = record_id
+            return instance
 
     def reload(self):
+        """Fetches field and resets instance field values from airtable record"""
         if not self.id:
             raise ValueError("cannot be deleted because it does not have id")
 
         record = self.get_table().get(self.id)
         self._fields = record["fields"]
         self.created_time = record["createdTime"]
+
+    def __repr__(self):
+        return "<Model={}>".format(self.__class__.__name__)

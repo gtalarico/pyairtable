@@ -56,7 +56,7 @@ def test_integration_orm(Contact, Address):
         last_name="LastName",
         email="email@email.com",
         is_registered=True,
-        address=[address.id],
+        address=address,
     )
 
     assert contact.first_name == "John"
