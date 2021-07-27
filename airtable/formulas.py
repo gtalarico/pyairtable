@@ -1,35 +1,53 @@
 """
-Formulas xxx
+This module provides functions to help you compose airtable formulas.
 
->>> table = Table(base_id, "Contact", os.environ["AIRTABLE_API_KEY"])
+
+>>> table = Table("base_id", "Contact", "apiKey")
 >>> formula = EQUAL("{First Name}", "'A'")
 >>> table.get_all(formula=formula)
 
-Others
-******
 
-Usage - Text Column is not empty:
+Text Column is not empty:
 
 >>> airtable.get_all(formula="NOT({COLUMN_A}='')")
 
-Usage - Text Column contains:
+Text Column contains:
 
 >>> airtable.get_all(formula="FIND('SomeSubText', {COLUMN_STR})=1")
 
-Args:
-    formula (``str``): A valid Airtable formula.
 """
 import re
 from typing import Any
 
 
 def quotes_escaped(value: str):
-    """ensures any quotes are escaped"""
+    """
+    Ensures any quotes are escaped. Already escaped quotes are ignored.
+
+    Args:
+        value: text to be escaped
+
+    Usage:
+        >>> quotes_escaped("Player's Name")
+        Player\'s Name
+        >>> quotes_escaped("Player\'s Name")
+        Player\'s Name
+    """
     escaped_value = re.sub("(?<!\\\\)'", "\\'", value)
     return escaped_value
 
 
-def cast_value(value: Any):
+def to_airtable_value(value: Any):
+    """
+    Cast value to appropriate airtable types and format.
+
+    Arg:
+        value: value to be cast.
+
+    * ``bool`` -> ``int``
+    * ``str`` -> Text is wrapped in `'single quotes'`. Existing quotes are escaped.
+    * ``float``, ``int`` -> no change
+    """
     if isinstance(value, bool):
         return int(value)
     elif isinstance(value, (int, float)):
@@ -40,21 +58,25 @@ def cast_value(value: Any):
         return value
 
 
-# WIP
-def dict_query(dict_):
+def fields_equals_values(dict_values):
     """
+    Creates an ``AND()`` formula with equality expressions for each provided dict value
+
+    Args:
+        dict_values: dictionary containing column names and values
+
     Usage:
-    >>> query(name="John", age=21)
+    >>> fields_equals_values({"First Name": "John", "Age": 21})
+    "AND({First Name}='John',{Age}=21)"
 
     """
     expressions = []
     for key, value in dict_.items():
-        expression = EQUAL(FIELD(key), cast_value(value))
+        expression = EQUAL(FIELD(key), to_airtable_value(value))
         expressions.append(expression)
 
     formula = AND(*expressions)
     return formula
-    # assert formula == ("AND({First Name}='A',{Last Name}='B',{Age}='15')")
 
 
 def field_equals_value(field_name, field_value):
@@ -62,7 +84,7 @@ def field_equals_value(field_name, field_value):
     Creates a formula to match cells from from field_name and value
     """
 
-    cast_field_value = cast_value(field_value)
+    cast_field_value = to_airtable_value(field_value)
     formula = EQUAL(FIELD(field_name), cast_field_value)
     return formula
 
@@ -81,8 +103,12 @@ def FIELD(name: str) -> str:
     """
     Creates a reference to a field
 
-    >>> FIELD("First Name"")
-    '{First Name}'
+    Args:
+        name: field name
+
+    Usage:
+        >>> FIELD("First Name"")
+        '{First Name}'
     """
     return "{%s}" % name
 

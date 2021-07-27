@@ -10,3 +10,6 @@ TODO:
 - [ ] query() for model? first(query={"Name": "Gui", "Age": 20})
 - [ ] query() for model? first(formula=Q({"Name": "Gui", "Age": 20}))
 
+Manage:
+- [ ] Contrib
+- [ ] Release in CI

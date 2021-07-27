@@ -9,7 +9,7 @@ Getting Started
 Installation
 ************
 
->>> pip install pyairtable
+>>> pip install airtable-python-wrapper
 
 _______________________________________________
 
@@ -29,9 +29,7 @@ Base
 .. automodule:: airtable.api.base
 
 
-_______________________________________________
+0.x Migration
+**************
 
-ORM
-*****
-
-.. automodule:: airtable.orm.model
+.. include:: migrations.rst

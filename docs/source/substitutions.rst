@@ -16,7 +16,8 @@
     Default is 100.
 
 .. |kwarg_max_records| replace:: The maximum total number of
-    records that will be returned.
+    records that will be returned. If this value is larger than `page_size` multiple requests will be needed
+    to fetch all records.
 
 .. |kwarg_fields| replace:: Name of field or fields  to
     be retrieved. Default is all fields.

@@ -1,5 +1,5 @@
 """
-The :any:`Table` class represents and Airtable Table.
+The :class:`Table` class represents and Airtable Table.
 With this class, `base_id`, `table_name`, and `api_key` are provided during initialization.
 All requests from this instance will be bound this table.
 
@@ -81,7 +81,7 @@ Others
 ******
 
 For a full list of available methods see the :any:`AirtableApi` class below.
-For more details on Options see the documentation on :doc:`params.rst` as well as the
+For more details on Options see the documentation on :ref:`Parameters` as well as the
 `Airtable API Docs <http://airtable.com/api>`_
 
 ------------------------------------------------------------------------

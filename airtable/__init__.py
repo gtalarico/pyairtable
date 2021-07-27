@@ -1,5 +1,5 @@
-__version__ = "0.0.1"
-__name__ = "pyairtable"
+__version__ = "1.0.0"
+__name__ = "airtable-python-wrapper"
 __description__ = "Python Client for the Airtable API"
 __url__ = "https://github.com/gtalarico/airtable-python-wrapper"
 __author__ = "Gui Talarico"

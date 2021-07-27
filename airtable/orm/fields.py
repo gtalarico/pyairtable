@@ -1,3 +1,34 @@
+"""
+Field classes are used to define the the data type of your Airtable columns.
+
+Internally these are implemented as descritors, so they can access and set values
+seamleslly.
+
+Descriptors are also annotated so you can use them with mypy.
+
+>>> contact.to_record()
+{
+    "id": recS6qSLw0OCA6Xul",
+    "createdTime": "2021-07-14T06:42:37.000Z",
+    "fields": {
+        "First Name": "George",
+        "Age": 20,
+    }
+}
+
+Link Fields
+-----------
+
+In addition to standard data type fields, the :class:`LinkField` class
+offers a special behaviour that can fetch related records.
+
+In other words, you can transverse related records through their ``Link Fields``:
+
+>>> contact.partner.first_name
+
+-----------
+
+"""
 from typing import Any, TypeVar, Type, Generic, Optional, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -24,7 +55,6 @@ class Field:
     def __set__(self, instance, value):
         if not hasattr(instance, "_fields"):
             instance._fields = {}
-        # TODO cast
         instance._fields[self.field_name] = value
 
     def __repr__(self):
@@ -32,48 +62,49 @@ class Field:
 
 
 class TextField(Field):
-    """Text Field"""
+    """Airtable Single Text or Multiline Text Fields. Uses ``str`` to store value"""
 
     def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
 
 
 class IntegerField(Field):
+    """Airtable Number field with Integer Precision. Uses ``int`` to store value"""
+
     def __get__(self, *args, **kwargs) -> Optional[int]:
         return super().__get__(*args, **kwargs)
 
 
 class FloatField(Field):
-    """Float Field"""
+    """Airtable Number field with Decimal precision. Uses ``float`` to store value"""
 
     def __get__(self, *args, **kwargs) -> Optional[float]:
         return super().__get__(*args, **kwargs)
 
 
 class CheckboxField(Field):
-    """Checkbox Field"""
+    """Airtable Checkbox field. Uses ``bool`` to store value"""
 
     def __get__(self, *args, **kwargs) -> Optional[bool]:
         return super().__get__(*args, **kwargs)
 
 
 class EmailField(Field):
-    """Email Field"""
+    """Airtable Email field. Uses ``str`` to store value"""
 
     def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
 
 
 class LinkField(Field, Generic[T_Linked]):
-    """Linked Field"""
+    """Airtable Link field. Uses ``List[Model]`` to store value"""
 
     def __init__(self, field_name: str, model: Type[T_Linked], lazy=True) -> None:
         """
-        Represents a Linked Column
 
         Args:
             field_name: Name of Airtable Column
-            model: Model of Linked Type. Must be subtype of :any:`Model`
+            model: Model of Linked Type. Must be subtype of :class:`Model`
             lazy: Use `True` to load linked model when looking up attribute. `False`
                 will create empty object with only `id` but will not fetch fields.
 
@@ -86,7 +117,7 @@ class LinkField(Field, Generic[T_Linked]):
 
     def __get__(self, instance: Any, cls=None) -> List[T_Linked]:
         """
-        Gets value of LinkField descriptor.
+        Gets value of :class:`LinkField` descriptor.
 
         Returns:
             List of Link Instances
@@ -133,12 +164,6 @@ class LinkField(Field, Generic[T_Linked]):
             instance._linked_cache[model_instance.id] = model_instance
         ids = [i.id for i in value]
         super().__set__(instance, ids)
-
-
-class MultipleLinkField(Field, Generic[T_Linked]):
-    """Multiple Link Field"""
-
-    # TODO
 
 
 """

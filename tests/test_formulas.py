@@ -4,7 +4,7 @@ from airtable.formulas import (
     FIELD,
     STR_VALUE,
     field_equals_value,
-    dict_query,
+    fields_equals_values,
 )
 
 
@@ -39,5 +39,5 @@ def test_field_equals_value():
 
 
 def test_formula_query():
-    formula = dict_query({"First Name": "A", "Last Name": "B"})
+    formula = fields_equals_values({"First Name": "A", "Last Name": "B"})
     assert formula == "AND({First Name}='A',{Last Name}='B')"

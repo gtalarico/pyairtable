@@ -1,5 +1,5 @@
 """
-The :any:`Base` class is similar to :any:`Table`, the main difference is that .
+The :class:`~airtable.api.Base` class is similar to :class:`~airtable.api.Table`, the main difference is that .
 `table_name` is not provided during initialization. Instead, it can be
 specified on each request.
 

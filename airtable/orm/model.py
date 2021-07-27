@@ -1,12 +1,7 @@
 """
-The :any:`orm.Model` class allows you create an orm-style class for your
+The :class:`Model` class allows you create an orm-style class for your
 Airtable tables.
 
-
-Example
-*******
-
-Model Definition
 
 >>> from airtable.orm import Model, fields
 >>> class Contact(Model):
@@ -22,7 +17,8 @@ Model Definition
 ...         api_key = "keyapikey"
 
 
-Model Usage
+Once you have a class, you can create new objects to represent your
+Airtable records. Call :meth:`~airtable.orm.model.Model.save` to create a new record.
 
 >>> contact = Contact(
 ...     first_name="Mike",
@@ -30,27 +26,40 @@ Model Usage
 ...     email="mike@mcd.com",
 ...     is_registered=False
 ... )
+...
 >>> assert contact.id is None
->>> assert contact.is_registered = True
+>>> contact.exists()
+False
 >>> assert contact.save()
->>> assert contact.id
+>>> contact.exists()
+True
+>>> contact.id
 rec123asa23
 
+
+You can read and modify attributes. If record already exists,
+:meth:`~airtable.orm.model.Model.save` will update the record:
+
+>>> assert contact.is_registered is False
+>>> contact.is_registered = True
+>>> contact.save()
+>>> assert contact.is_registered = True
+>>> contact.to_record()
+{
+    "id": recS6qSLw0OCA6Xul",
+    "createdTime": "2021-07-14T06:42:37.000Z",
+    "fields": {
+        "First Name": "Mike",
+        "Last Name": "McDonalds",
+        "Email": "mike@mcd.com",
+        "Resgistered": True
+    }
+}
+
+And you can use :meth:`~airtable.orm.model.Model.delete` to delete the record:
+
 >>> contact.delete()
-```
-
-Fields
-******
-
-Simple
--------
-
-TODO
-
-Linked
--------
-
-TODO
+True
 
 """
 
@@ -63,6 +72,7 @@ T = TypeVar("T", bound="Model")
 
 
 class Model:
+    """TODO"""
 
     id: str = ""
     created_time: str = ""
@@ -79,16 +89,15 @@ class Model:
 
     @classmethod
     def descriptor_fields(cls):
-        """
-        {
-            "field_name": <TextField field_name="Field Name">,
-            "another_Field": <NumberField field_name="Some Number">,
-        }
-        """
+        # {
+        #     "field_name": <TextField field_name="Field Name">,
+        #     "another_Field": <NumberField field_name="Some Number">,
+        # }
         return {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
 
     @classmethod
     def descriptor_to_field_name_map(cls):
+        """TODO"""
         return {v.field_name: k for k, v in cls.descriptor_fields().items()}
         # return {
         #     "Field Name": "street",
@@ -98,6 +107,7 @@ class Model:
 
     def record_fields_to_kwargs(self):
         """{"fields": {"Street Name": "X"}} =>  { "street_name": "X" }"""
+        ...  # TODO
 
     def __init__(self, **fields):
         # To Store Fields
@@ -131,7 +141,7 @@ class Model:
 
     @classmethod
     def get_table(cls) -> Table:
-        """Return Airtable :any:`Table` class instance"""
+        """Return Airtable :class:`~airtable.api.Table` class instance"""
         if not hasattr(cls, "_table"):
             cls._table = Table(
                 cls.Meta.base_id,
@@ -200,6 +210,8 @@ class Model:
                 updated. If `False`, a new instance is created with the provided `id`,
                 but field values are unset. Default is `True`.
 
+        Returns:
+            (``Model``): Instance of model
         """
         if fetch:
             table = cls.get_table()

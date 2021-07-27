@@ -18,3 +18,8 @@ pre, code {
 .l, .ld, .s, .sb, .sc, .sd, .s2, .se, .sh, .si, .sx, .s1 {
 	color: #a2a084 !important
 }
+
+.wy-side-nav-search .brand>a img.logo {
+	height: 5rem !important;
+	max-height: 5rem !important;
+}

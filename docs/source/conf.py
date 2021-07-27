@@ -14,6 +14,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.napoleon",
     "sphinxext.opengraph",
+    "sphinx.ext.autosectionlabel",
     # "autoapi.extension",
     "sphinx_autodoc_typehints",
 ]
@@ -55,6 +56,7 @@ sys.path.append(root_dir)
 # Document Python Code
 autoapi_type = "python"
 autoapi_dirs = [os.path.join(root_dir, "airtable")]
+# add_module_names = False
 
 napoleon_google_docstring = True
 napoleon_include_init_with_doc = True
@@ -144,9 +146,8 @@ html_logo = "_static/logo-text.svg"
 html_context = {
     "landing_page": {
         "menu": [
-            # {"title": "Revitron UI", "url": "https://revitron-ui.readthedocs.io/"},
-            {"title": "Airtable Api Docs", "url": "https://airtable.com/api"},
-            {"title": "♡ Sponsor", "url": "https://github.com/sponsors/gtalarico"},
+            # {"title": "Airtable Api Docs", "url": "https://airtable.com/api"},
+            # {"title": "♡ Sponsor", "url": "https://github.com/sponsors/gtalarico"},
         ]
     },
 }

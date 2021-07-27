@@ -1,36 +1,40 @@
 .. image:: _static/logo.svg
+.. include:: substitutions.rst
 
-pyairtable
-==========
+Airtable Python Wrapper
+=======================
 
 .. container:: .large
 
-   Python Client for `Airtable <https://www.airtable.com/>`_
+   Python Client for the `Airtable Api <https://airtable.com/api>`_
 
 .. container:: .buttons
 
    `Docs <getting-started.html>`_
    `GitHub <https://github.com/gtalarico/airtable-python-wrapper>`_
 
-   Version: |version|
-.. image:: https://img.shields.io/github/v/tag/gtalarico/airtable-python-wrapper?label=Release&style=flat-square&labelColor=292b2e&color=292b2e
+
+   Latest Release: |version|
+
 
 .. toctree::
-   :caption: pyAirtable
+   :caption: Docs
    :maxdepth: 3
    :hidden:
 
    getting-started
-   params
-   formulas
-   orm
    api
+   orm
 
 
 .. toctree::
    :caption: More
    :hidden:
 
-   GitHub <https://github.com/gtalarico/airtable-python-wrapper>
-   ❤️ Sponsor <https://github.com/sponsors/gtalarico>
-   📓 Airtable Api Docs <https://airtable.com/api">
+   about
+   🔗 Airtable Api Docs <https://airtable.com/api>
+   🔗 GitHub <https://github.com/gtalarico/airtable-python-wrapper>
+   🔗 Sponsor <https://github.com/sponsors/gtalarico>
+
+
+
