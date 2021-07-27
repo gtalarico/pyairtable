@@ -1,3 +1,5 @@
+# 0.15.3
+* Adds escaping formula field references #120
 # 0.15.2
 * Added Batch update method
 
