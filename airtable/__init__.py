@@ -8,4 +8,4 @@ __license__ = "The MIT License (MIT)"
 __copyright__ = "Copyright 2021 Gui Talarico"
 
 
-from .api import AirtableApi, Base, Table  # noqa
+from .api import Api, Base, Table  # noqa

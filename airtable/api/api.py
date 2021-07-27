@@ -9,7 +9,7 @@ from .auth import AirtableAuth
 from .params import to_params_dict
 
 
-class AirtableApi:
+class ApiBase:
     VERSION = "v0"
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
@@ -24,13 +24,6 @@ class AirtableApi:
 
     @lru_cache()
     def get_table_url(self, base_id: str, table_name: str):
-        """
-        Args:
-
-            base_id: Airtable base_id.
-            table_name: Airtable table name. Value will be url encoded, so
-                use value as shown in Airtable.
-        """
         url_safe_table_name = quote(table_name, safe="")
         table_url = posixpath.join(self.API_URL, base_id, url_safe_table_name)
         return table_url
@@ -86,82 +79,10 @@ class AirtableApi:
         return self._process_response(response)
 
     def _get_record(self, base_id: str, table_name: str, record_id: str) -> dict:
-        """
-        Retrieves a record by its id
-
-        >>> record = airtable.get('recwPQIfs4wKPyc9D')
-
-        Args:
-            base_id: Airtable base id.
-            table_name: Airtable table name. Table name should be unencoded,
-                as shown on browser.
-            record_id: Airtable record id
-
-        Returns:
-            record: Record
-        """
         record_url = self._get_record_url(base_id, table_name, record_id)
         return self._request("get", record_url)
 
     def _iterate(self, base_id: str, table_name: str, **options):
-        # self, table_name, view="", page_size=None, fields=None, sort=None, formula=""
-        """
-        Record Retriever Iterator
-
-
-        Returns iterator with lists in batches according to pageSize.
-        To get all records at once use :any:`_get_all`
-
-        >>> for page in airtable.get_iter():
-        ...     for record in page:
-        ...         print(record)
-        [{'fields': ... }, ...]
-
-
-        Args:
-            base_id: Airtable base id.
-            table_name: Airtable table name. Table name should be unencoded,
-                as shown on browser.
-
-        Keyword Args:
-            view (``str``, optional): The name or ID of a view.
-                If set, only the records in that view will be returned.
-                The records will be sorted according to the order of the view.
-            page_size (``int``, optional ): The number of records returned
-                in each request. Must be less than or equal to 100.
-                Default is 100.
-            max_records (``int``, optional): The maximum total number of
-                records that will be returned.
-            fields (``str``, ``list``, optional): Name of field or fields  to
-                be retrieved. Default is all fields.
-                Only data for fields whose names are in this list will be included in
-                the records. If you don't need every field, you can use this parameter
-                to reduce the amount of data transferred.
-            sort (``list``, optional): List of fields to sort by.
-                Default order is ascending.
-                This parameter specifies how the records will be ordered. If you set the view
-                parameter, the returned records in that view will be sorted by these
-                fields.
-
-                If sorting by multiple columns, column names can be passed as a list.
-                Sorting Direction is ascending by default, but can be reversed by
-                prefixing the column name with a minus sign ``-``.
-            formula (``str``, optional): An Airtable formula.
-                The formula will be evaluated for each record, and if the result
-                is not 0, false, "", NaN, [], or #Error! the record will be included
-                in the response.
-
-                If combined with view, only records in that view which satisfy the
-                formula will be returned. For example, to only include records where
-                ``COLUMN_A`` isn't empty, pass in: ``"NOT({COLUMN_A}='')"``
-
-                For more information see
-                    `Airtable Docs on formulas. <https://airtable.com/api>`_
-
-        Returns:
-            iterator (``list``): List of Records, grouped by pageSize
-
-        """
         offset = None
         params = self._options_to_params(**options)
         while True:
@@ -177,66 +98,14 @@ class AirtableApi:
                 break
 
     def _first(self, base_id: str, table_name: str, **options) -> Optional[dict]:
-        for records in self._iterate(base_id, table_name, max_records=1, **options):
+        for records in self._iterate(
+            base_id, table_name, page_size=1, max_records=1, **options
+        ):
             for record in records:
                 return record
         return None
 
     def _get_all(self, base_id: str, table_name: str, **options) -> List[dict]:
-        """
-        Retrieves all records repetitively and returns a single list.
-
-        >>> airtable.get_all()
-        >>> airtable.get_all(view='MyView', fields=['ColA', '-ColB'])
-        >>> airtable.get_all(maxRecords=50)
-        [{'fields': ... }, ...]
-
-        Args:
-            base_id: Airtable base id.
-            table_name(``str``): Airtable table name. Table name should be unencoded,
-                as shown on browser.
-
-        Keyword Args:
-            view (``str``, optional): The name or ID of a view.
-                If set, only the records in that view will be returned.
-                The records will be sorted according to the order of the view.
-            page_size (``int``, optional ): The number of records returned
-                in each request. Must be less than or equal to 100.
-                Default is 100.
-            max_records (``int``, optional): The maximum total number of
-                records that will be returned.
-            fields (``str``, ``list``, optional): Name of field or fields  to
-                be retrieved. Default is all fields.
-                Only data for fields whose names are in this list will be included in
-                the records. If you don't need every field, you can use this parameter
-                to reduce the amount of data transferred.
-            sort (``list``, optional): List of fields to sort by.
-                Default order is ascending.
-                This parameter specifies how the records will be ordered. If you set the view
-                parameter, the returned records in that view will be sorted by these
-                fields.
-
-                If sorting by multiple columns, column names can be passed as a list.
-                Sorting Direction is ascending by default, but can be reversed by
-                prefixing the column name with a minus sign ``-``.
-            formula (``str``, optional): An Airtable formula.
-                The formula will be evaluated for each record, and if the result
-                is not 0, false, "", NaN, [], or #Error! the record will be included
-                in the response.
-
-                If combined with view, only records in that view which satisfy the
-                formula will be returned. For example, to only include records where
-                ``COLUMN_A`` isn't empty, pass in: ``"NOT({COLUMN_A}='')"``
-
-                For more information see
-                    `Airtable Docs on formulas. <https://airtable.com/api>`_
-
-        Returns:
-            records (``list``): List of Records
-
-        >>> records = get_all(maxRecords=3, view='All')
-
-        """
         all_records = []
 
         for records in self._iterate(base_id, table_name, **options):
@@ -244,26 +113,6 @@ class AirtableApi:
         return all_records
 
     def _create(self, base_id: str, table_name: str, fields: dict, typecast=False):
-        """
-        Creates a new record
-
-        >>> record = {'Name': 'John'}
-        >>> airtable.create(record)
-
-        Args:
-            base_id: Airtable base id.
-            table_name(``str``): Airtable table name. Table name should be unencoded,
-                as shown on browser.
-            fields(``dict``): Fields to insert.
-                Must be dictionary with Column names as Key.
-
-        Keyword Args:
-            typecast(``boolean``): Automatic data conversion from string values.
-
-        Returns:
-            record (``dict``): Inserted record
-
-        """
 
         table_url = self.get_table_url(base_id, table_name)
         return self._request(
@@ -275,27 +124,7 @@ class AirtableApi:
     def _batch_create(
         self, base_id: str, table_name: str, records: List[dict], typecast=False
     ) -> List[dict]:
-        """
-        Breaks records into chunks of 10 and inserts them in batches.
-        Follows the set API rate.
-        To change the rate limit use ``airtable.API_LIMIT = 0.2``
-        (5 per second)
 
-        >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
-        >>> airtable.batch_insert(records)
-
-        Args:
-            base_id: Airtable base id.
-            table_name: Airtable table name. Table name should be unencoded,
-                as shown on browser.
-            records: List of records to be created
-
-        Keyword Args:
-            typecast(): Automatic data conversion from string values.
-
-        Returns:
-            records (``list``): list of added records
-        """
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
@@ -318,32 +147,6 @@ class AirtableApi:
         replace=False,
         typecast=False,
     ) -> List[dict]:
-        """
-        Updates a record by its record id.
-        Only Fields passed are updated, the rest are left as is.
-
-        >>> record = airtable.match('Employee Id', 'DD13332454')
-        >>> fields = {'Status': 'Fired'}
-        >>> airtable.update(record['id'], fields)
-
-        Args:
-            base_id: Airtable base id.
-            table_name(``str``): Airtable table name. Table name should be unencoded,
-                as shown on browser.
-            record_id(``str``): Id of Record to update
-            fields(``dict``): Fields to update.
-                Must be dictionary with Column names as Key
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - eg. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
-            typecast(``boolean``): Automatic data conversion from string values.
-
-        Returns:
-            record (``dict``): Updated record
-        """
         record_url = self._get_record_url(base_id, table_name, record_id)
 
         method = "put" if replace else "patch"
@@ -359,25 +162,6 @@ class AirtableApi:
         replace=False,
         typecast=False,
     ):
-        """
-        Updates a records by their record id's in batch.
-
-        Args:
-            base_id: Airtable base id.
-            table_name(``str``): Airtable table name. Table name should be unencoded,
-                as shown on browser.
-            records(``list``): List of dict: [{"id": record_id, "field": fields_to_update_dict}]
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - eg. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
-            typecast(``boolean``): Automatic data conversion from string values.
-
-        Returns:
-            records(``list``): list of updated records
-        """
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
@@ -393,6 +177,244 @@ class AirtableApi:
         return updated_records
 
     def _delete(self, base_id: str, table_name: str, record_id: str):
+        record_url = self._get_record_url(base_id, table_name, record_id)
+        return self._request("delete", record_url)
+
+    def _batch_delete(
+        self, base_id: str, table_name: str, record_ids: List[str]
+    ) -> List[dict]:
+        deleted_records = []
+        table_url = self.get_table_url(base_id, table_name)
+        for record_ids in self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST):
+            delete_results = self._request(
+                "delete", table_url, params={"records[]": record_ids}
+            )
+            deleted_records.extend(delete_results["records"])
+            time.sleep(self.API_LIMIT)
+        return deleted_records
+
+
+class Api(ApiBase):
+    def __init__(self, api_key: str, timeout=None):
+        super().__init__(api_key, timeout=timeout)
+
+    def get_record_url(self, base_id: str, table_name: str, record_id: str):
+        """
+        Args:
+
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+        """
+        return super()._get_record_url(base_id, table_name, record_id)
+
+    def get(self, base_id: str, table_name: str, record_id: str):
+        """
+        Retrieves a record by its id
+
+        >>> record = airtable.get('recwPQIfs4wKPyc9D')
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+            record_id: |arg_record_id|
+
+        Returns:
+            record: Record
+        """
+        return super()._get_record(base_id, table_name, record_id)
+
+    def iterate(self, base_id: str, table_name: str, **options):
+        """
+        Record Retriever Iterator
+
+        Returns iterator with lists in batches according to pageSize.
+        To get all records at once use :meth:`get_all`
+
+        >>> for page in airtable.iterate():
+        ...     for record in page:
+        ...         print(record)
+        [{'fields': ... }, ...]
+
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+
+        Keyword Args:
+            view: |kwarg_view|
+            page_size: |kwarg_page_size|
+            max_records: |kwarg_max_records|
+            fields: |kwarg_fields|
+            sort: |kwarg_sort|
+            formula: |kwarg_formula|
+
+        Returns:
+            iterator (``list``): List of Records, grouped by pageSize
+
+        """
+        gen = super()._iterate(base_id, table_name, **options)
+        for i in gen:
+            yield i
+
+    def first(self, base_id: str, table_name: str, **options):
+        """
+        Retrieves the first found record or ``None`` if no records are returned.
+
+        This is similar to :meth:`~airtable.api.api.Api.get_all`, except it
+        it sets ``page_size`` and ``max_records`` to ``1`` to optimize query.
+
+        """
+        return super()._first(base_id, table_name, **options)
+
+    def get_all(self, base_id: str, table_name: str, **options):
+        """
+        Retrieves all records repetitively and returns a single list.
+
+        >>> airtable.get_all()
+        >>> airtable.get_all(view='MyView', fields=['ColA', '-ColB'])
+        >>> airtable.get_all(maxRecords=50)
+        [{'fields': ... }, ...]
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+
+        Keyword Args:
+            view: |kwarg_view|
+            page_size: |kwarg_page_size|
+            max_records: |kwarg_max_records|
+            fields: |kwarg_fields|
+            sort: |kwarg_sort|
+            formula: |kwarg_formula|
+
+        Returns:
+            records (``list``): List of Records
+
+        >>> records = get_all(maxRecords=3, view='All')
+
+        """
+        return super()._get_all(base_id, table_name, **options)
+
+    def create(self, base_id: str, table_name: str, fields: dict, typecast=False):
+        """
+        Creates a new record
+
+        >>> record = {'Name': 'John'}
+        >>> airtable.create(record)
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+            fields(``dict``): Fields to insert.
+                Must be dictionary with Column names as Key.
+
+        Keyword Args:
+            typecast(``boolean``): Automatic data conversion from string values.
+
+        Returns:
+            record (``dict``): Inserted record
+
+        """
+        return super()._create(base_id, table_name, fields, typecast=typecast)
+
+    def batch_create(self, base_id: str, table_name: str, records, typecast=False):
+        """
+        Breaks records into chunks of 10 and inserts them in batches.
+        Follows the set API rate.
+        To change the rate limit use ``airtable.API_LIMIT = 0.2``
+        (5 per second)
+
+        >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
+        >>> airtable.batch_insert(records)
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+            records: List of records to be created
+
+        Keyword Args:
+            typecast(): Automatic data conversion from string values.
+
+        Returns:
+            records (``list``): list of added records
+        """
+        return super()._batch_create(base_id, table_name, records, typecast=typecast)
+
+    def update(
+        self,
+        base_id: str,
+        table_name: str,
+        record_id: str,
+        fields: dict,
+        replace=False,
+        typecast=False,
+    ):
+        """
+        Updates a record by its record id.
+        Only Fields passed are updated, the rest are left as is.
+
+        >>> record = airtable.match('Employee Id', 'DD13332454')
+        >>> fields = {'Status': 'Fired'}
+        >>> airtable.update(record['id'], fields)
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+            record_id: |arg_record_id|
+            fields(``dict``): Fields to update.
+                Must be dictionary with Column names as Key
+
+        Keyword Args:
+            replace (``bool``, optional): If ``True``, record is replaced in its entirety
+                by provided fields - eg. if a field is not included its value will
+                bet set to null. If False, only provided fields are updated.
+                Default is ``False``.
+            typecast(``boolean``): Automatic data conversion from string values.
+
+        Returns:
+            record (``dict``): Updated record
+        """
+
+        return super()._update(
+            base_id,
+            table_name,
+            record_id,
+            fields,
+            replace=replace,
+            typecast=typecast,
+        )
+
+    def batch_update(
+        self,
+        base_id: str,
+        table_name: str,
+        records: List[dict],
+        replace=False,
+        typecast=False,
+    ):
+        """
+        Updates a records by their record id's in batch.
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+            records(``list``): List of dict: [{"id": record_id, "field": fields_to_update_dict}]
+
+        Keyword Args:
+            replace (``bool``, optional): If ``True``, record is replaced in its entirety
+                by provided fields - eg. if a field is not included its value will
+                bet set to null. If False, only provided fields are updated.
+                Default is ``False``.
+            typecast(``boolean``): Automatic data conversion from string values.
+
+        Returns:
+            records(``list``): list of updated records
+        """
+        return super()._batch_update(
+            base_id, table_name, records, replace=replace, typecast=typecast
+        )
+
+    def delete(self, base_id: str, table_name: str, record_id: str):
         """
         Deletes a record by its id
 
@@ -400,20 +422,16 @@ class AirtableApi:
         >>> airtable.delete(record['id'])
 
         Args:
-            base_id: Airtable base id.
-            table_name(``str``): Airtable table name. Table name should be unencoded,
-                as shown on browser.
-            record_id(``str``): Airtable record id
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+            record_id: |arg_record_id|
 
         Returns:
             record (``dict``): Deleted Record
         """
-        record_url = self._get_record_url(base_id, table_name, record_id)
-        return self._request("delete", record_url)
+        return super()._delete(base_id, table_name, record_id)
 
-    def _batch_delete(
-        self, base_id: str, table_name: str, record_ids: List[str]
-    ) -> List[dict]:
+    def batch_delete(self, base_id: str, table_name: str, record_ids: List[str]):
         """
         Breaks records into batches of 10 and deletes in batches, following set
         API Rate Limit (5/sec).
@@ -424,24 +442,15 @@ class AirtableApi:
         >>> airtable.batch_delete(records_ids)
 
         Args:
-            base_id: Airtable base id.
-            table_name(``str``): Airtable table name. Table name should be unencoded,
-                as shown on browser.
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
             record_ids(``list``): Record Ids to delete
 
         Returns:
             records(``list``): list of records deleted
 
         """
-        deleted_records = []
-        table_url = self.get_table_url(base_id, table_name)
-        for record_ids in self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST):
-            delete_results = self._request(
-                "delete", table_url, params={"records[]": record_ids}
-            )
-            deleted_records.extend(delete_results["records"])
-            time.sleep(self.API_LIMIT)
-        return deleted_records
+        return super()._batch_delete(base_id, table_name, record_ids)
 
     def __repr__(self) -> str:
         return "<Airtable Api>"

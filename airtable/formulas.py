@@ -71,7 +71,7 @@ def fields_equals_values(dict_values):
 
     """
     expressions = []
-    for key, value in dict_.items():
+    for key, value in dict_values.items():
         expression = EQUAL(FIELD(key), to_airtable_value(value))
         expressions.append(expression)
 

@@ -5,7 +5,7 @@ from requests import HTTPError
 from urllib.parse import urlencode, quote
 from mock import Mock
 
-from airtable.api import AirtableApi, Table
+from airtable.api import Api, Table
 from collections import OrderedDict
 
 
@@ -15,7 +15,7 @@ def url_builder():
 
     def _url_builder(base_id, table_name, params=None):
         urltable_name = quote(table_name, safe="")
-        url = urljoin(AirtableApi.API_URL, base_id, urltable_name)
+        url = urljoin(Api.API_URL, base_id, urltable_name)
         if params:
             params = OrderedDict(sorted(params.items()))
             url += "?" + urlencode(params)

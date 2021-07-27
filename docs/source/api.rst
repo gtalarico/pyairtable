@@ -7,17 +7,21 @@ Api
 Classes
 ==============
 
-.. autoclass:: airtable.api.AirtableApi
+Api
+-----
+.. autoclass:: airtable.api.Api
     :members:
-    :private-members:
 
-.. autoclass:: airtable.api.Table
-    :members:
-    :undoc-members:
-
+Base
+-----
 .. autoclass:: airtable.api.Base
     :members:
-    :undoc-members:
+
+Table
+-----
+.. autoclass:: airtable.api.Table
+    :members:
+
 
 
 Parameters

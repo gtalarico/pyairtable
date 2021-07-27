@@ -150,9 +150,11 @@ def test_integration_formula_composition(table: Table, cols):
     rv_create = table.create({cols.TEXT: text, cols.NUM: num, cols.BOOL: bool_})
 
     formula = fo.AND(
-        fo.EQUAL(fo.FIELD(cols.TEXT), fo.cast_value(text)),
-        fo.EQUAL(fo.FIELD(cols.NUM), fo.cast_value(num)),
-        fo.EQUAL(fo.FIELD(cols.BOOL), fo.cast_value(bool_)),  # not needs to be int()
+        fo.EQUAL(fo.FIELD(cols.TEXT), fo.to_airtable_value(text)),
+        fo.EQUAL(fo.FIELD(cols.NUM), fo.to_airtable_value(num)),
+        fo.EQUAL(
+            fo.FIELD(cols.BOOL), fo.to_airtable_value(bool_)
+        ),  # not needs to be int()
     )
     rv_first = table.first(formula=formula)
 
