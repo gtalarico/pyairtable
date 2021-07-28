@@ -3,7 +3,6 @@ language: python
 git:
   depth: 2
 python:
-  - "3.5"
   - "3.6"
   - "3.7"
   - "3.8"

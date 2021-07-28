@@ -136,3 +136,7 @@ def FIND(find, where, start_from=None) -> str:
     # FIND(stringToFind, whereToSearch,[startFromPosition])
     # airtable.get_all(formula="FIND('SomeSubText', {COLUMN_STR})=1")
     # return "FIND('SomeSubText', {COLUMN_STR})=1"
+
+
+# TODO rename
+match = fields_equals_values

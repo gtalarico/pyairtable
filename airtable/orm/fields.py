@@ -29,7 +29,18 @@ In other words, you can transverse related records through their ``Link Fields``
 -----------
 
 """
-from typing import Any, TypeVar, Type, Generic, Optional, List, TYPE_CHECKING
+from pydoc import locate
+from typing import (
+    Any,
+    TypeVar,
+    Type,
+    Generic,
+    Optional,
+    List,
+    TYPE_CHECKING,
+    Union,
+    cast,
+)
 
 if TYPE_CHECKING:
     from airtable.orm import Model  # noqa
@@ -99,7 +110,9 @@ class EmailField(Field):
 class LinkField(Field, Generic[T_Linked]):
     """Airtable Link field. Uses ``List[Model]`` to store value"""
 
-    def __init__(self, field_name: str, model: Type[T_Linked], lazy=True) -> None:
+    def __init__(
+        self, field_name: str, model: Union[str, Type[T_Linked]], lazy=True
+    ) -> None:
         """
 
         Args:
@@ -111,6 +124,11 @@ class LinkField(Field, Generic[T_Linked]):
         Usage:
             >>> TODO
         """
+
+        if isinstance(model, str):
+            raise NotImplementedError("path import not implemented")
+            # https://github.com/FactoryBoy/factory_boy/blob/37f962720814dff42d7a6a848ccfd200fc7f5ae2/factory/declarations.py#L339
+            # model = cast(Type[T_Linked], locate(model))
         self._model = model
         self._lazy = lazy
         super().__init__(field_name)

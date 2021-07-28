@@ -2,7 +2,6 @@
 The :class:`Model` class allows you create an orm-style class for your
 Airtable tables.
 
-
 >>> from airtable.orm import Model, fields
 >>> class Contact(Model):
 ...     first_name = fields.TextField("First Name")
@@ -62,7 +61,7 @@ And you can use :meth:`~airtable.orm.model.Model.delete` to delete the record:
 True
 
 """
-
+import abc
 from airtable import Table
 from typing import TypeVar, Type, Optional, Tuple
 
@@ -71,8 +70,25 @@ from .fields import Field
 T = TypeVar("T", bound="Model")
 
 
-class Model:
-    """TODO"""
+class Model(metaclass=abc.ABCMeta):
+    """
+    This class allows you create an orm-style class for your Airtable tables.
+
+    This is a meta class and can only be used to inherit from.
+
+    The ``Meta`` is reuired and must specify all three attributes: ``base_id``,
+    ``table_id``, and ``api_key``.
+
+    >>> from airtable.orm import Model, fields
+    >>> class Contact(Model):
+    ...     first_name = fields.TextField("First Name")
+    ...     age = fields.IntegerField("Age")
+    ...
+    ...     class Meta:
+    ...         base_id = "appaPqizdsNHDvlEm"
+    ...         table_name = "Contact"
+    ...         api_key = "keyapikey"
+    """
 
     id: str = ""
     created_time: str = ""

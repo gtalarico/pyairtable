@@ -36,7 +36,7 @@ class Base(ApiBase):
         Same as :meth:`Api.first <airtable.api.Api.first>`
         but without ``base_id`` arg.
         """
-        return super()._first(self.base_id, table_name ** options)
+        return super()._first(self.base_id, table_name, **options)
 
     def get_all(self, table_name: str, **options):
         """

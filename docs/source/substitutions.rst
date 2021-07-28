@@ -38,3 +38,6 @@
     in the response. If combined with view, only records in that view which satisfy the
     formula will be returned. For example, to only include records where
     ``COLUMN_A`` isn't empty, pass in: ``"NOT({COLUMN_A}='')"``.
+
+.. |kwarg_typecast| replace:: The Airtable API will perform best-effort
+    automatic data conversion from string values. Default is False.

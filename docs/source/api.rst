@@ -3,6 +3,9 @@
 Api
 ===
 
+Overview
+********
+
 This client offers three classes you can use to access the Airtable Api:
 
 * :class:`~airtable.api.Table` - represents a specific Airtable Table
@@ -23,14 +26,8 @@ is if ``base_id`` and ``table_id`` is provided on initialization or on method ca
   >>> table.get_all()
 
 
-Table
-*****
-
 .. automodule:: airtable.api.table
 
-
-Base
-*****
 
 The :class:`~airtable.api.Base` class is similar to :class:`~airtable.api.Table`, the main difference is that .
 `table_name` is not provided during initialization. Instead, it can be
@@ -104,5 +101,18 @@ For more information see `Airtable Formula Reference <https://support.airtable.c
 
 
 .. automodule:: airtable.formulas
-    :members:
+.. autofunction:: airtable.formulas.match
+
+
+Raw Formulas
+------------
+
+This module also includes many lower level functions you
+can use if you want to compose formulas:
+
+
+.. autofunction:: airtable.formulas.EQUAL
+.. autofunction:: airtable.formulas.FIELD
+.. autofunction:: airtable.formulas.AND
+
 

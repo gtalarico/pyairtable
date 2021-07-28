@@ -309,7 +309,7 @@ class Api(ApiBase):
                 Must be dictionary with Column names as Key.
 
         Keyword Args:
-            typecast(``boolean``): Automatic data conversion from string values.
+            typecast: |kwarg_typecast|
 
         Returns:
             record (``dict``): Inserted record
@@ -330,10 +330,11 @@ class Api(ApiBase):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            records: List of records to be created
+            records(``List[dict]``): List of dictionaries representing
+                records to be created.
 
         Keyword Args:
-            typecast(): Automatic data conversion from string values.
+            typecast: |kwarg_typecast|
 
         Returns:
             records (``list``): list of added records
@@ -370,7 +371,7 @@ class Api(ApiBase):
                 by provided fields - eg. if a field is not included its value will
                 bet set to null. If False, only provided fields are updated.
                 Default is ``False``.
-            typecast(``boolean``): Automatic data conversion from string values.
+            typecast: |kwarg_typecast|
 
         Returns:
             record (``dict``): Updated record
@@ -406,7 +407,7 @@ class Api(ApiBase):
                 by provided fields - eg. if a field is not included its value will
                 bet set to null. If False, only provided fields are updated.
                 Default is ``False``.
-            typecast(``boolean``): Automatic data conversion from string values.
+            typecast: |kwarg_typecast|
 
         Returns:
             records(``list``): list of updated records
