@@ -1,8 +1,8 @@
 .. image:: _static/logo.svg
 .. include:: substitutions.rst
 
-Airtable Python Wrapper
-=======================
+pyAirtable
+==========
 
 .. container:: .large
 
