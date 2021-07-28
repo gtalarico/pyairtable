@@ -3,12 +3,9 @@
 **************
 
 In addition to new modules like :doc:`orm` and :ref:`Formulas` , 1.0 also
-made a few breaking changes to the previous api.
+includes a few breaking changes to the previous api.
 
-The objectives were:
-* Simplify API
-* Align terminology with Airtable API where possible
-
+The objective here was to introduce a simpler api that's more closely aligned with Airtable Api's patterns.
 
 .. list-table:: Title
    :widths: 25 25 50
@@ -30,9 +27,9 @@ The objectives were:
      - ``update(replace=True)``
      - Replace record with provided, simplify API.
    * - ``match()``
-     - removed - use ``get_all(formula='')`` or ``first()``
-     - ...
+     - removed - use ``get_all(formula='')`` or ``first(formula=)``
+     - ... TODO
    * - ``search()``
-     - removed - use ``get_all(formula='')`` or ``first()``
-     - ...
+     - removed - use ``get_all(formula='')`` or ``first(formula)``
+     - ... TODO
 
