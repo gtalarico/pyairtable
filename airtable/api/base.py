@@ -1,14 +1,3 @@
-"""
-The :class:`~airtable.api.Base` class is similar to :class:`~airtable.api.Table`, the main difference is that .
-`table_name` is not provided during initialization. Instead, it can be
-specified on each request.
-
->>> base = Base('appEioitPbxI72w06', 'apikey')
->>> base.get_all('Contacts)
-[{id:'rec123asa23', fields': {'Last Name': 'Alfred', "Age": 84}, ... ]
-
-"""
-
 from typing import List
 
 from .api import ApiBase

@@ -1,19 +1,13 @@
 """
-This module provides functions to help you compose airtable formulas.
+The formula module provides funcionality to help you compose airtable formulas.
 
 
 >>> table = Table("base_id", "Contact", "apiKey")
->>> formula = EQUAL("{First Name}", "'A'")
->>> table.get_all(formula=formula)
-
-
-Text Column is not empty:
-
->>> airtable.get_all(formula="NOT({COLUMN_A}='')")
-
-Text Column contains:
-
->>> airtable.get_all(formula="FIND('SomeSubText', {COLUMN_STR})=1")
+>>> formula = match({"First Name": "John", "Age": 21})
+>>> table.first(formula=formula)
+{"id": "recUwKa6lbNSMsetH", "fields": {"First Name": "John", "Age": 21}}
+>>> formula
+"AND({First Name}='John',{Age}=21)"
 
 """
 import re
@@ -21,7 +15,7 @@ from typing import Any
 
 
 def quotes_escaped(value: str):
-    """
+    r"""
     Ensures any quotes are escaped. Already escaped quotes are ignored.
 
     Args:

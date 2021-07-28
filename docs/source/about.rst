@@ -20,9 +20,8 @@ Contribute
   :linenos:
 
    git clone git@github.com:gtalarico/airtable-python-wrapper.git
-   cd airtable-python-wrapper.git
-   python setup.py develop
-   python setup.py test
+   cd airtable-python-wrapper
+   pip install -e .
 
 
 License

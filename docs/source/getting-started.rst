@@ -14,22 +14,40 @@ Installation
 _______________________________________________
 
 
-Table
-*****
+Api Key
+*******
 
-.. automodule:: airtable.api.table
+Your Api Key should be kept secure and should likely not be saved in your code.
+A common way to store and used it in your code is to save the key in your environment
+and load it
 
-
-_______________________________________________
-
-
-Base
-*****
-
-.. automodule:: airtable.api.base
+..code::
+ import os
+ api_key = os.environ['AIRTABLE_API_KEY']
 
 
-0.x Migration
-**************
 
-.. include:: migrations.rst
+Quickstart
+**********
+
+The easiest way to use this client is to the :class:`~airtable.api.Table` class to fetch
+or update your records:
+
+    >>> import os
+    >>> from airtable import Table
+
+    >>> api_key = os.environ['AIRTABLE_API_KEY']
+    >>> table = Table('base_id', 'base_id', api_key)
+    >>> table.get_all()
+    [ {"id": "rec5eR7IzKSAOBHCz", "fields": { ... }}]
+    >>>
+    >>> table.create({"Foo": "Bar"})
+    {"id": "recwAcQdqwe21as", "fields": { "Foo": "Bar" }}]
+    >>>
+    >>> table.update("recwAcQdqwe21as", {"Foo": "Foo"})
+    {"id": "recwAcQdqwe21as", "fields": { "Foo": "Foo" }}]
+    >>>
+    >>> table.delete("recwAcQdqwe21as")
+    True
+
+For more details on all the available classes and methods checkout the :doc:`api` section.

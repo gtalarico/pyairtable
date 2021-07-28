@@ -25,6 +25,7 @@ Airtable Python Wrapper
    getting-started
    api
    orm
+   migrations
 
 
 .. toctree::
@@ -32,9 +33,9 @@ Airtable Python Wrapper
    :hidden:
 
    about
-   🔗 Airtable Api Docs <https://airtable.com/api>
-   🔗 GitHub <https://github.com/gtalarico/airtable-python-wrapper>
-   🔗 Sponsor <https://github.com/sponsors/gtalarico>
+   Airtable Api Docs <https://airtable.com/api>
+   GitHub <https://github.com/gtalarico/airtable-python-wrapper>
+   Sponsor <https://github.com/sponsors/gtalarico>
 
 
 

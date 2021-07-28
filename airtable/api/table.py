@@ -77,21 +77,14 @@ Deleting Records
 >>> airtable.batch_delete(['recwPQIfs4wKPyc9D', 'recwAcQdqwe21as'])
 [ { "deleted": True, ... }, ... ]
 
-Others
-******
-
-For a full list of available methods see the :class:`Api` class below.
-For more details on Options see the documentation on :ref:`Parameters` as well as the
-`Airtable API Docs <http://airtable.com/api>`_
-
 ------------------------------------------------------------------------
 
 Return Values
 **************
 
 Return Values: when records are returned,
-they will most often be a list of Airtable records (dictionary) in a format
-similar to this:
+ will most often be alist of Airtable records (dictionary) in a format
+as shown below.
 
 >>> [{
 ...     "records": [

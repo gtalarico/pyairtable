@@ -1,11 +1,48 @@
 .. include:: substitutions.rst
 
 Api
-************
+===
+
+This client offers three classes you can use to access the Airtable Api:
+
+* :class:`~airtable.api.Table` - represents a specific Airtable Table
+* :class:`~airtable.api.Base` - represents a specific Airtable Base
+* :class:`~airtable.api.Api` - represents a generic Airtable Api session
+
+The interfaces of these are nearly identical, the main difference
+is if ``base_id`` and ``table_id`` is provided on initialization or on method calls.
+
+  >>> from airtable import Api, Base, Table
+  >>> api = Api('apikey')
+  >>> api.get_all('base_id', 'table_name')
+  [ ... ]
+  >>> base = Base('base_id', 'apikey')
+  >>> base.get_all('table_name')
+  [ ... ]
+  >>> table = Table('table_name, 'base_id', 'apikey')
+  >>> table.get_all()
+
+
+Table
+*****
+
+.. automodule:: airtable.api.table
+
+
+Base
+*****
+
+The :class:`~airtable.api.Base` class is similar to :class:`~airtable.api.Table`, the main difference is that .
+`table_name` is not provided during initialization. Instead, it can be
+specified on each request.
+
+  >>> base = Base('appEioitPbxI72w06', 'apikey')
+  >>> base.get_all('Contacts)
+  [{id:'rec123asa23', fields': {'Last Name': 'Alfred', "Age": 84}, ... ]
 
 
 Classes
-==============
+*******
 
 Api
 -----
@@ -25,12 +62,12 @@ Table
 
 
 Parameters
-==================
+**********
 
 Airtable offers a variety of options to control how you fetch data.
 
-Each option in the Airtable Api (eg. `sort`, `fields`, etc)
-has a corresponding kwargs that can be used with fetching methods like :any:`Table.iterate`.
+Most options in the Airtable Api (eg. `sort`, `fields`, etc)
+have a corresponding ``kwargs`` that can be used with fetching methods like :any:`Table.iterate`.
 
 
 .. list-table:: Title
@@ -61,7 +98,7 @@ has a corresponding kwargs that can be used with fetching methods like :any:`Tab
 
 
 Formulas
-==============
+********
 
 For more information see `Airtable Formula Reference <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_
 

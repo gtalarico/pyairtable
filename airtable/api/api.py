@@ -353,9 +353,10 @@ class Api(ApiBase):
         Updates a record by its record id.
         Only Fields passed are updated, the rest are left as is.
 
-        >>> record = airtable.match('Employee Id', 'DD13332454')
-        >>> fields = {'Status': 'Fired'}
-        >>> airtable.update(record['id'], fields)
+        >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21})
+        {id:'recwPQIfs4wKPyc9D', fields': {"First Name": "John", "Age": 21}}
+        >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21}, replace=True)
+        {id:'recwPQIfs4wKPyc9D', fields': {"Age": 21}}
 
         Args:
             base_id: |arg_base_id|
