@@ -104,26 +104,38 @@ class Model(metaclass=abc.ABCMeta):
         typecast: bool
 
     @classmethod
-    def descriptor_fields(cls):
-        # {
-        #     "field_name": <TextField field_name="Field Name">,
-        #     "another_Field": <NumberField field_name="Some Number">,
-        # }
+    def descriptor_attribute_map(cls):
+        """
+        Returns a dictionary mapping the model's attribute names to the field's
+
+        >>> class Test(Model):
+        ...     first_name = TextField("First Name")
+        ...     age = NumberField("Age")
+        ...
+        >>> Test.descriptor_attribute_map()
+        >>> {
+        ...     "field_name": <TextField field_name="First Name">,
+        ...     "another_Field": <NumberField field_name="Age">,
+        ... }
+        """
         return {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
 
     @classmethod
-    def descriptor_to_field_name_map(cls):
-        """TODO"""
-        return {v.field_name: k for k, v in cls.descriptor_fields().items()}
-        # return {
-        #     "Field Name": "street",
-        #     "Street": ""
-        #     # Docs
-        # }
+    def field_attribute_map(cls):
+        """
+        Returns a dictionary that maps Fields 'Names' to the model attribute name:
 
-    def record_fields_to_kwargs(self):
-        """{"fields": {"Street Name": "X"}} =>  { "street_name": "X" }"""
-        ...  # TODO
+        >>> class Test(Model):
+        ...     first_name = TextField("First Name")
+        ...     age = NumberField("Age")
+        ...
+        >>> Test.field_attribute_map()
+        >>> {
+        ...     "First Name": "first_name"
+        ...     "Age": "age"
+        ... }
+        """
+        return {v.field_name: k for k, v in cls.descriptor_attribute_map().items()}
 
     def __init__(self, **fields):
         # To Store Fields
@@ -131,12 +143,12 @@ class Model(metaclass=abc.ABCMeta):
         self._linked_cache = {}
 
         # Get descriptors values
-        # TODO check for clashes
+        # TODO check for clashes and raise
         # disallowed_names = ("id", "crreated_time", "_fields", "_linked_cache", "_table")
 
         # Set descriptors values
         for key, value in fields.items():
-            if key not in self.descriptor_fields():
+            if key not in self.descriptor_attribute_map():
                 msg = "invalid kwarg '{}'".format(key)
                 raise ValueError(msg)
             setattr(self, key, value)
@@ -202,10 +214,10 @@ class Model(metaclass=abc.ABCMeta):
     @classmethod
     def from_record(cls: Type[T], record: dict) -> T:
         """Create instance from record dictionary"""
-        map_ = cls.descriptor_to_field_name_map()
+        field_map = cls.field_attribute_map()
         try:
             # Convert Column Names into model field names
-            kwargs = {map_[k]: v for k, v in record["fields"].items()}
+            kwargs = {field_map[k]: v for k, v in record["fields"].items()}
         except KeyError as exc:
             raise ValueError("Invalid Field Name: {} for model {}".format(exc, cls))
         instance = cls(**kwargs)
@@ -238,10 +250,10 @@ class Model(metaclass=abc.ABCMeta):
             instance.id = record_id
             return instance
 
-    def reload(self):
+    def fetch(self):
         """Fetches field and resets instance field values from airtable record"""
         if not self.id:
-            raise ValueError("cannot be deleted because it does not have id")
+            raise ValueError("cannot be fetched because instance does not have an id")
 
         record = self.get_table().get(self.id)
         self._fields = record["fields"]

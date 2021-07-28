@@ -123,6 +123,6 @@ def test_linked_record():
     with Mocker() as mock:
         url = address.get_table().get_record_url(address.id)
         mock.get(url, status_code=200, json=record)
-        contact.address[0].reload()
+        contact.address[0].fetch()
 
     assert contact.address[0].street == "A"

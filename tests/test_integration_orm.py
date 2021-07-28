@@ -70,5 +70,5 @@ def test_integration_orm(Contact, Address):
     assert rv_address.exists()
 
     assert rv_address.id == contact.address[0].id == address.id
-    rv_address.reload()
+    rv_address.fetch()
     assert rv_address.street == contact.address[0].street == STREET
