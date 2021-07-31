@@ -1,11 +1,5 @@
 import pytest
-from airtable.formulas import (
-    AND,
-    EQUAL,
-    FIELD,
-    STR_VALUE,
-    match,
-)
+from airtable.formulas import AND, EQUAL, FIELD, STR_VALUE, match, quotes_escaped
 
 
 def test_equal():
@@ -44,3 +38,16 @@ def test_combination():
 def test_match(dict, exprected_formula):
     rv = match(dict)
     assert rv == exprected_formula
+
+
+@pytest.mark.parametrize(
+    "text,escaped",
+    [
+        ("hello", "hello"),
+        ("player's name", r"player\'s name"),
+        (r"player\'s name", r"player\'s name"),
+    ],
+)
+def test_quotes_escaped(text, escaped):
+    rv = quotes_escaped(text)
+    assert rv == escaped

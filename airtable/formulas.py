@@ -39,16 +39,6 @@ def match(dict_values):
         return AND(*expressions)
 
 
-def field_equals_value(field_name, field_value):
-    """
-    Creates a formula to match cells from from field_name and value
-    """
-
-    cast_field_value = to_airtable_value(field_value)
-    formula = EQUAL(FIELD(field_name), cast_field_value)
-    return formula
-
-
 def quotes_escaped(value: str):
     r"""
     Ensures any quotes are escaped. Already escaped quotes are ignored.
