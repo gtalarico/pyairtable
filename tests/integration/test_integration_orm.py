@@ -20,7 +20,7 @@ def Address():
     yield _Address
 
     table = _Address.get_table()
-    records = table.get_all()
+    records = table.all()
     table.batch_delete([r["id"] for r in records])
 
 
@@ -41,7 +41,7 @@ def Contact(Address):
     yield _Contact
 
     table = _Contact.get_table()
-    records = table.get_all()
+    records = table.all()
     table.batch_delete([r["id"] for r in records])
 
 

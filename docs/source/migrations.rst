@@ -18,11 +18,11 @@ The objective here was to introduce a simpler api that's more closely aligned wi
    * - ``get_iter()``
      - ``iterate()``
    * - ``get_all()``
-     - TBD: ``list()`` or ``all()``
-   * - ``search()``
-     - ``m = match({"Name" : "X"}`` ``get_all(formula=m)``
+     - ``all()``
    * - ``match(**kwargs)``
-     - ``m = match({"Name" : "X"}`` ``get_all(formula=m)``
+     - ``first(formula=match({"Name" : "X"})``
+   * - ``search()``
+     - ``all(formula=match({"Name" : "X"})``
    * - ``insert()``
      - ``create()``
    * - ``update()``

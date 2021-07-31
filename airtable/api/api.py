@@ -105,7 +105,7 @@ class ApiBase:
                 return record
         return None
 
-    def _get_all(self, base_id: str, table_name: str, **options) -> List[dict]:
+    def _all(self, base_id: str, table_name: str, **options) -> List[dict]:
         all_records = []
 
         for records in self._iterate(base_id, table_name, **options):
@@ -266,13 +266,13 @@ class Api(ApiBase):
         """
         return super()._first(base_id, table_name, **options)
 
-    def get_all(self, base_id: str, table_name: str, **options):
+    def all(self, base_id: str, table_name: str, **options):
         """
         Retrieves all records repetitively and returns a single list.
 
-        >>> airtable.get_all()
-        >>> airtable.get_all(view='MyView', fields=['ColA', '-ColB'])
-        >>> airtable.get_all(maxRecords=50)
+        >>> airtable.all()
+        >>> airtable.all(view='MyView', fields=['ColA', '-ColB'])
+        >>> airtable.all(maxRecords=50)
         [{'fields': ... }, ...]
 
         Args:
@@ -290,10 +290,10 @@ class Api(ApiBase):
         Returns:
             records (``list``): List of Records
 
-        >>> records = get_all(maxRecords=3, view='All')
+        >>> records = all(maxRecords=3, view='All')
 
         """
-        return super()._get_all(base_id, table_name, **options)
+        return super()._all(base_id, table_name, **options)
 
     def create(self, base_id: str, table_name: str, fields: dict, typecast=False):
         """

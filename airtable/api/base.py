@@ -40,12 +40,12 @@ class Base(ApiBase):
         """
         return super()._first(self.base_id, table_name, **options)
 
-    def get_all(self, table_name: str, **options):
+    def all(self, table_name: str, **options):
         """
         Same as :meth:`Api.get_all <airtable.api.Api.get_all>`
         but without ``base_id`` arg.
         """
-        return super()._get_all(self.base_id, table_name, **options)
+        return super()._all(self.base_id, table_name, **options)
 
     def create(self, table_name: str, fields: dict, typecast=False):
         """

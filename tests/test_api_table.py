@@ -71,7 +71,7 @@ def test_first_none(table, mock_response_single):
         assert rv is None
 
 
-def test_get_all(table, mock_response_list, mock_records):
+def test_all(table, mock_response_list, mock_records):
     with Mocker() as mock:
         mock.get(
             table.table_url,
@@ -90,7 +90,7 @@ def test_get_all(table, mock_response_list, mock_records):
                 json=mock_response_list[1],
                 complete_qs=True,
             )
-        response = table.get_all()
+        response = table.all()
 
     for n, resp in enumerate(response):
         assert dict_equals(resp, mock_records[n])

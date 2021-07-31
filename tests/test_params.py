@@ -29,7 +29,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         )
         mock_url = "{0}?{1}".format(table.table_url, url_params)
         m.get(mock_url, status_code=200, json=mock_response_iterator)
-        response = table.get_all(**params)
+        response = table.all(**params)
     for n, resp in enumerate(response):
         resp["id"] == mock_records[n]["id"]
 

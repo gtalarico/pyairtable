@@ -1,12 +1,12 @@
 TODO:
 
-- [ ] Docs
-- [ ] More Formulas
-- [ ] Finish Linked Fields
+- [X] Docs
+- [X] Finish Linked Fields
 - [ ] Finish Fields
 - [ ] Rename airtable-python-wrapper -> airtable
-- [ ] get_iter -> iterate
+- [x] get_iter -> iterate
 - [ ] get_all -> list, all, filter, fetch?
+- [ ] More Formulas
 - [ ] query() for model? first(query={"Name": "Gui", "Age": 20})
 - [ ] query() for model? first(formula=Q({"Name": "Gui", "Age": 20}))
 

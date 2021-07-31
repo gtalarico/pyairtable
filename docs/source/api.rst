@@ -17,13 +17,13 @@ is if ``base_id`` and ``table_id`` is provided on initialization or on method ca
 
   >>> from airtable import Api, Base, Table
   >>> api = Api('apikey')
-  >>> api.get_all('base_id', 'table_name')
+  >>> api.all('base_id', 'table_name')
   [ ... ]
   >>> base = Base('base_id', 'apikey')
-  >>> base.get_all('table_name')
+  >>> base.all('table_name')
   [ ... ]
   >>> table = Table('table_name, 'base_id', 'apikey')
-  >>> table.get_all()
+  >>> table.all()
 
 We tried to keep the library's api close to the actual Api, but made
 selective changes:
@@ -45,7 +45,7 @@ selective changes:
      - TBD: ``list()`` or ``all()``
      - ``GET base/``
    * - Get all matches
-     - ``get_all(formula=match({"Name" : "X"})``
+     - ``all(formula=match({"Name" : "X"})``
      - ``GET base/?filterByFormula={Name}='X'``
    * - Get first match
      - ``first(formula=match({"Name" : "X"})``
@@ -71,7 +71,7 @@ The :class:`~airtable.api.Base` class is similar to :class:`~airtable.api.Table`
 specified on each request.
 
   >>> base = Base('appEioitPbxI72w06', 'apikey')
-  >>> base.get_all('Contacts)
+  >>> base.all('Contacts)
   [{id:'rec123asa23', fields': {'Last Name': 'Alfred', "Age": 84}, ... ]
 
 

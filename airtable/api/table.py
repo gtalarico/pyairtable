@@ -21,13 +21,13 @@ table, whichever is shorted.
 [{id:'rec123asa23', fields': {'Last Name': 'Alfred', "Age": 84}, ...}, ... ]
 [{id:'rec123asa23', fields': {'Last Name': 'Jameson', "Age": 42}, ...}, ... ]
 
-:any:`Table.get_all`
+:any:`Table.all`
 --------------------
 
 This method returns a single list with all records in a table. Note that under the
 hood it uses :any:`Table.iterate` to fetch records so multiple requests might be made.
 
->>> table.get_all(sort=["First Name", "-Age"]):
+>>> table.all(sort=["First Name", "-Age"]):
 [{id:'rec123asa23', fields': {'Last Name': 'Alfred', "Age": 84}, ...}, ... ]
 
 
@@ -171,12 +171,12 @@ class Table(ApiBase):
         """
         return super()._first(self.base_id, self.table_name, **options)
 
-    def get_all(self, **options):
+    def all(self, **options):
         """
         Same as :meth:`Api.get_all <airtable.api.Api.get_all>`
         but without ``base_id`` and ``table_name`` arg.
         """
-        return super()._get_all(self.base_id, self.table_name, **options)
+        return super()._all(self.base_id, self.table_name, **options)
 
     def create(self, fields: dict, typecast=False):
         """

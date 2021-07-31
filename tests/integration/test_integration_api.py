@@ -23,7 +23,7 @@ def base():
     base = Base(base_id, os.environ["AIRTABLE_API_KEY"])
     yield base
     table_name = "My Table"
-    records = base.get_all(table_name)
+    records = base.all(table_name)
     base.batch_delete(table_name, [r["id"] for r in records])
 
 
@@ -34,7 +34,7 @@ def table():
     table_name = "My Table"
     table = Table(base_id, table_name, os.environ["AIRTABLE_API_KEY"])
     yield table
-    records = table.get_all()
+    records = table.all()
     table.batch_delete([r["id"] for r in records])
 
 
@@ -55,7 +55,7 @@ def test_integration_table(table, cols):
     assert rv["fields"] == {cols.NUM: 2}
 
     # Get all
-    records = table.get_all()
+    records = table.all()
     assert rec["id"] in [r["id"] for r in records]
 
     # Delete
@@ -97,7 +97,7 @@ def test_integration_base(base, cols):
     assert rv["fields"] == {cols.NUM: 2}
 
     # Get all
-    records = base.get_all(
+    records = base.all(
         table_name,
     )
     assert rec["id"] in [r["id"] for r in records]

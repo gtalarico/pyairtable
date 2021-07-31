@@ -32,7 +32,7 @@ You can see the wrapper in action in this [Jupyter Notebook](https://github.com/
 ```
 airtable = Airtable('base_id', 'table_name')
 
-airtable.get_all(view='MyView', maxRecords=20)
+airtable.all(view='MyView', maxRecords=20)
 
 airtable.insert({'Name': 'Brian'})
 
