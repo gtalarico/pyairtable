@@ -261,3 +261,31 @@ class Model(metaclass=abc.ABCMeta):
 
     def __repr__(self):
         return "<Model={}>".format(self.__class__.__name__)
+
+    # TODO
+    # def verify_schema(cls) -> Tuple[bool, dict]:
+    #     """verify local airtable models"""
+
+    #     base_list = cls.get_base_list()
+    #     base_id_exists = cls.base_id in [b["id"] for b in base_list["bases"]]
+
+    #     if base_id_exists:
+    #         base_schema = cls.get_base_schema()
+    #         table_schema: dict = next(
+    #             (t for t in base_schema["tables"] if t["name"] == cls.table_name), {}
+    #         )
+    #         table_exists = bool(table_schema)
+    #     else:
+    #         table_exists = False
+
+    #     if table_exists:
+    #         airtable_field_names = [f["name"] for f in table_schema["fields"]]
+    #         # Fields.NAME = "|NAME|", Fields.ID = "|ID|") -> ["|NAME|", "|ID|"]
+    #         local_field_names = [v for k, v in vars(cls.Fields).items() if k.isupper()]
+    #         fields = {n: n in airtable_field_names for n in local_field_names}
+    #     else:
+    #         fields = {}
+
+    #     in_sync = base_id_exists and table_exists and all(fields.values())
+    #     details = {"base": base_id_exists, "table": table_exists, "fields": fields}
+    #     return (in_sync, details)

@@ -16,6 +16,7 @@ def cols():
     return Columns
 
 
+# TODO - re-use integration fixtures
 @pytest.fixture
 def base():
     base_id = "appaPqizdsNHDvlEm"
@@ -26,6 +27,7 @@ def base():
     base.batch_delete(table_name, [r["id"] for r in records])
 
 
+# TODO - re-use integration fixtures
 @pytest.fixture
 def table():
     base_id = "appaPqizdsNHDvlEm"

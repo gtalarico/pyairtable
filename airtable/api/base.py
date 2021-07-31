@@ -4,6 +4,8 @@ from .api import ApiBase
 
 
 class Base(ApiBase):
+    base_id: str
+
     def __init__(self, base_id: str, api_key: str, timeout=None):
         self.base_id = base_id
         super().__init__(api_key, timeout=timeout)

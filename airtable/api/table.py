@@ -124,6 +124,9 @@ class Table(ApiBase):
     ``base_id`` and ``table_name`` are provided on init and not needed on method calls.
     """
 
+    base_id: str
+    table_name: str
+
     def __init__(self, base_id: str, table_name: str, api_key: str, *, timeout=None):
         """
         Args:

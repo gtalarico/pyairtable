@@ -25,6 +25,43 @@ is if ``base_id`` and ``table_id`` is provided on initialization or on method ca
   >>> table = Table('table_name, 'base_id', 'apikey')
   >>> table.get_all()
 
+We tried to keep the library's api close to the actual Api, but made
+selective changes:
+
+.. list-table:: pyAirtable Api
+   :widths: 30 30 40
+   :header-rows: 1
+
+   * - Description
+     - pyAirtable
+     - Airtable Api
+   * - Retrieve a single Record
+     - ``get()``
+     - ``GET base/recordId``
+   * - Iterate over record pages
+     - ``iterate()``
+     - ``GET base/``
+   * - Get all records
+     - TBD: ``list()`` or ``all()``
+     - ``GET base/``
+   * - Get all matches
+     - ``get_all(formula=match({"Name" : "X"})``
+     - ``GET base/?filterByFormula={Name}='X'``
+   * - Get first match
+     - ``first(formula=match({"Name" : "X"})``
+     - ``GET base/?filterByFormula={Name}='X'&maxRecords=1``
+   * - Create record
+     - ``create()``
+     - ``POST base/``
+   * - Update a record
+     - ``update()``
+     - ``PUT base/``
+   * - Replace a record
+     - use ``update(replace=True)``
+     - ``PATCH base/``
+   * - Delete a record
+     - ``delete()``
+     - ``DELETE base/``
 
 .. automodule:: airtable.api.table
 

@@ -2,34 +2,32 @@
 0.x Migration
 **************
 
-In addition to new modules like :doc:`orm` and :ref:`Formulas` , 1.0 also
-includes a few breaking changes to the previous api.
+When writing pyAirtable, we made some significant changes to the api.
 
 The objective here was to introduce a simpler api that's more closely aligned with Airtable Api's patterns.
 
-.. list-table:: Title
-   :widths: 25 25 50
+
+.. list-table:: Changes
+   :widths: 40 60
    :header-rows: 1
 
-   * - 1.x
-     - 0.x
-     - Description
-   * - ``Airtable()``
-     - ``Table()``, ``Base()``, ``Api()``
-     - Airtable Api Class
-   * - ``iterate()``
-     - ``get_iter()``
-     - Iterate over record pages
-   * - ``create``
-     - ``insert``
-     - Creates new record, aligns with Airtable Api naming
-   * - ``replace``
-     - ``update(replace=True)``
-     - Replace record with provided, simplify API.
-   * - ``match()``
-     - removed - use ``get_all(formula='')`` or ``first(formula=)``
-     - ... TODO
+   * - 0.x (airtable-python-wrapper)
+     - 1.0 (pyAirtable)
+   * - ``get()``
+     - ``get()``
+   * - ``get_iter()``
+     - ``iterate()``
+   * - ``get_all()``
+     - TBD: ``list()`` or ``all()``
    * - ``search()``
-     - removed - use ``get_all(formula='')`` or ``first(formula)``
-     - ... TODO
-
+     - ``m = match({"Name" : "X"}`` ``get_all(formula=m)``
+   * - ``match(**kwargs)``
+     - ``m = match({"Name" : "X"}`` ``get_all(formula=m)``
+   * - ``insert()``
+     - ``create()``
+   * - ``update()``
+     - ``update()``
+   * - ``replace()``
+     - use ``update(replace=True)``
+   * - ``delete()``
+     - ``delete()``
