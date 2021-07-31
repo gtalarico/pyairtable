@@ -74,7 +74,7 @@ class Model(metaclass=abc.ABCMeta):
     """
     This class allows you create an orm-style class for your Airtable tables.
 
-    This is a meta class and can only be used to inherit from.
+    This is a meta class and can only be used to define sub-classes.
 
     The ``Meta`` is reuired and must specify all three attributes: ``base_id``,
     ``table_id``, and ``api_key``.
@@ -172,9 +172,9 @@ class Model(metaclass=abc.ABCMeta):
         """Return Airtable :class:`~airtable.api.Table` class instance"""
         if not hasattr(cls, "_table"):
             cls._table = Table(
+                cls.Meta.api_key,
                 cls.Meta.base_id,
                 cls.Meta.table_name,
-                api_key=cls.Meta.api_key,
                 timeout=getattr(cls.Meta, "timeout", None),
             )
         return cls._table

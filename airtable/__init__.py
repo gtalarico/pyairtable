@@ -1,4 +1,4 @@
-__version__ = "0.0.1.dev1"
+__version__ = "0.0.1.dev2"
 __name__ = "pyairtable"
 __description__ = "Python Client for the Airtable API"
 __url__ = "https://github.com/gtalarico/pyairtable"

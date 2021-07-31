@@ -20,7 +20,7 @@ def cols():
 @pytest.fixture
 def base():
     base_id = "appaPqizdsNHDvlEm"
-    base = Base(base_id, os.environ["AIRTABLE_API_KEY"])
+    base = Base(os.environ["AIRTABLE_API_KEY"], base_id)
     yield base
     table_name = "My Table"
     records = base.all(table_name)
@@ -32,7 +32,7 @@ def base():
 def table():
     base_id = "appaPqizdsNHDvlEm"
     table_name = "My Table"
-    table = Table(base_id, table_name, os.environ["AIRTABLE_API_KEY"])
+    table = Table(os.environ["AIRTABLE_API_KEY"], base_id, table_name)
     yield table
     records = table.all()
     table.batch_delete([r["id"] for r in records])

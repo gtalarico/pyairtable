@@ -10,7 +10,7 @@ Sphinx==4.1.2
 # sphinx-rtd-theme
 sphinx-autoapi==1.7.0
 sphinxext-opengraph==0.4.2
-revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@3f402dea649265609fe42023771c9844959f2e4d
+revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@0eb0042ad33c7dccc5e4951d9c7d337c692e10e8
 sphinx-autodoc-typehints==1.12.0
 
 wheel==0.36.2

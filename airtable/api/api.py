@@ -1,15 +1,17 @@
-from typing import List, Optional
-import requests
+import abc
 from functools import lru_cache
 import posixpath
+from typing import List, Optional
 import time
 from urllib.parse import quote
+
+import requests
 
 from .auth import AirtableAuth
 from .params import to_params_dict
 
 
-class ApiBase:
+class ApiBase(metaclass=abc.ABCMeta):
     VERSION = "v0"
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second

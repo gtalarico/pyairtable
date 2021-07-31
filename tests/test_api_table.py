@@ -19,7 +19,7 @@ def test_repr(table):
     ],
 )
 def test_url(base_id, table_name, table_url_suffix):
-    table = Table(base_id, table_name, api_key="x")
+    table = Table("apikey", base_id, table_name)
     assert table.table_url == "{0}/{1}".format(table.API_URL, table_url_suffix)
 
 

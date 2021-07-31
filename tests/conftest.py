@@ -33,7 +33,7 @@ def constants():
 
 @pytest.fixture()
 def table(constants):
-    return Table(constants["BASE_ID"], constants["TABLE_NAME"], constants["API_KEY"])
+    return Table(constants["API_KEY"], constants["BASE_ID"], constants["TABLE_NAME"])
 
 
 @pytest.fixture
