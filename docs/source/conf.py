@@ -88,8 +88,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "Airtable Python Wrapper"
-copyright = "2017, Gui Talarico"
+project = "pyAirtable"
+copyright = "2021, Gui Talarico"
 author = "Gui Talarico"
 
 

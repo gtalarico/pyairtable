@@ -23,3 +23,10 @@ pre, code {
 	/* height: 5rem !important; */
 	/* max-height: 5rem !important; */
 }
+
+.rst-content table.docutils caption, .rst-content table.field-list caption, .wy-table caption {
+    color: #000;
+    font: italic 85%/1 arial,sans-serif;
+    padding: 1em 0;
+    text-align: left !important;
+}

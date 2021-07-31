@@ -38,8 +38,6 @@ class ApiBase:
         """
         Process params names or values as needed using filters
         """
-        # Does it need to be ordered + sorted ?
-        # return {to_params_dict(name, value) for name, value in options.items()}
         params = {}
         for name, value in options.items():
             params.update(to_params_dict(name, value))
@@ -195,15 +193,40 @@ class ApiBase:
 
 
 class Api(ApiBase):
+    """
+    Represents an Airtable Api.
+
+    The Api Key is provided on init and ``base_id`` and ``table_id``
+    can be provided on each method call.
+
+    If you are only operating on one Table, or one Base, consider using
+    :class:`Base` or :class:`Table`.
+
+    Usage:
+        >>> api = Api('apikey')
+        >>> api.all('base_id', 'table_name')
+    """
+
     def __init__(self, api_key: str, timeout=None):
+        """
+
+        Args:
+            api_key: |arg_api_key|
+
+        Keyword Args:
+            timeout(``Tuple``): |arg_timeout|
+
+        """
         super().__init__(api_key, timeout=timeout)
 
     def get_record_url(self, base_id: str, table_name: str, record_id: str):
         """
-        Args:
+        Returns a url for the provided record
 
+        Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
+
         """
         return super()._get_record_url(base_id, table_name, record_id)
 
@@ -228,13 +251,13 @@ class Api(ApiBase):
         Record Retriever Iterator
 
         Returns iterator with lists in batches according to pageSize.
-        To get all records at once use :meth:`get_all`
+        To get all records at once use :meth:`all`
 
         >>> for page in airtable.iterate():
         ...     for record in page:
         ...         print(record)
-        [{'fields': ... }, ...]
-
+        {"id": ... }
+        ...
 
         Args:
             base_id: |arg_base_id|
@@ -249,7 +272,7 @@ class Api(ApiBase):
             formula: |kwarg_formula|
 
         Returns:
-            iterator (``list``): List of Records, grouped by pageSize
+            iterator: Record Iterator, grouped by page size
 
         """
         gen = super()._iterate(base_id, table_name, **options)
@@ -260,9 +283,12 @@ class Api(ApiBase):
         """
         Retrieves the first found record or ``None`` if no records are returned.
 
-        This is similar to :meth:`~airtable.api.api.Api.get_all`, except it
+        This is similar to :meth:`~airtable.api.api.Api.all`, except it
         it sets ``page_size`` and ``max_records`` to ``1`` to optimize query.
 
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
         """
         return super()._first(base_id, table_name, **options)
 

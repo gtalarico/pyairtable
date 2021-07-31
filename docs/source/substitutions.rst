@@ -1,11 +1,18 @@
 
 
-.. |arg_base_id| replace:: Airtable base id.
+.. |arg_api_key| replace:: An Airtable API Key.
+
+.. |arg_base_id| replace:: An Airtable base id.
 
 .. |arg_record_id| replace:: An Airtable record id.
 
-.. |arg_table_name| replace:: Airtable table name. Table name should be unencoded,
-                as shown on browser.
+.. |arg_table_name| replace:: An Airtable table name. Table name should be unencoded,
+    as shown on browser.
+
+.. |arg_timeout| replace:: A tuple indicating a connect and read timeout.
+    eg. ``timeout=(2,5)`` would configure a 2 second timeout for
+    the connection to be established  and 5 seconds for a
+    server read timeout. Default is ``None`` (no timeout).
 
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.

@@ -4,9 +4,26 @@ from .api import ApiBase
 
 
 class Base(ApiBase):
+    """
+    Represents an Airtable Base. This calss is similar to :class:`~airtable.api.Api`,
+    except ``base_id`` is provided on init instead of provided on each method call.
+
+    Usage:
+        >>> base = Base('apikey', 'base_id')
+        >>> base.all()
+    """
+
     base_id: str
 
-    def __init__(self, base_id: str, api_key: str, timeout=None):
+    def __init__(self, api_key: str, base_id: str, timeout=None):
+        """
+        Args:
+            api_key: |arg_api_key|
+            base_id: |arg_base_id|
+
+        Keyword Args:
+            timeout(``Tuple``): |arg_timeout|
+        """
         self.base_id = base_id
         super().__init__(api_key, timeout=timeout)
 
@@ -42,7 +59,7 @@ class Base(ApiBase):
 
     def all(self, table_name: str, **options):
         """
-        Same as :meth:`Api.get_all <airtable.api.Api.get_all>`
+        Same as :meth:`Api.all <airtable.api.Api.all>`
         but without ``base_id`` arg.
         """
         return super()._all(self.base_id, table_name, **options)

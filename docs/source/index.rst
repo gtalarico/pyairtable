@@ -36,7 +36,6 @@ pyAirtable
    about
    Airtable Api Docs <https://airtable.com/api>
    GitHub <https://github.com/gtalarico/airtable-python-wrapper>
-   Sponsor <https://github.com/sponsors/gtalarico>
 
 
 

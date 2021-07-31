@@ -1,29 +1,22 @@
-"""
-The formula module provides funcionality to help you compose airtable formulas.
-
-
->>> table = Table("base_id", "Contact", "apiKey")
->>> formula = match({"First Name": "John", "Age": 21})
->>> table.first(formula=formula)
-{"id": "recUwKa6lbNSMsetH", "fields": {"First Name": "John", "Age": 21}}
->>> formula
-"AND({First Name}='John',{Age}=21)"
-
-"""
 import re
 from typing import Any
 
 
 def match(dict_values):
     """
-    Creates an ``AND()`` formula with equality expressions for each provided dict value
+    Creates one or more ``EQUAL()`` expressions for each provided dict value.
+    If more than one assetions is included, the expressions are
+    groupped together into using ``AND()``.
+
+    This function also handles escaping field names and casting python values
+    to the appropriate airtable types.
 
     Args:
         dict_values: dictionary containing column names and values
 
     Usage:
-    >>> fields_equals_values({"First Name": "John", "Age": 21})
-    "AND({First Name}='John',{Age}=21)"
+        >>> match({"First Name": "John", "Age": 21})
+        "AND({First Name}='John',{Age}=21)"
 
     """
     expressions = []

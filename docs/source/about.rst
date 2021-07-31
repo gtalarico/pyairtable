@@ -17,7 +17,6 @@ Contribute
 **********
 
 .. code-block:: python
-  :linenos:
 
    git clone git@github.com:gtalarico/airtable-python-wrapper.git
    cd airtable-python-wrapper
