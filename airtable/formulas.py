@@ -14,6 +14,41 @@ import re
 from typing import Any
 
 
+def match(dict_values):
+    """
+    Creates an ``AND()`` formula with equality expressions for each provided dict value
+
+    Args:
+        dict_values: dictionary containing column names and values
+
+    Usage:
+    >>> fields_equals_values({"First Name": "John", "Age": 21})
+    "AND({First Name}='John',{Age}=21)"
+
+    """
+    expressions = []
+    for key, value in dict_values.items():
+        expression = EQUAL(FIELD(key), to_airtable_value(value))
+        expressions.append(expression)
+
+    if len(expressions) == 0:
+        return ""
+    elif len(expressions) == 1:
+        return expressions[0]
+    else:
+        return AND(*expressions)
+
+
+def field_equals_value(field_name, field_value):
+    """
+    Creates a formula to match cells from from field_name and value
+    """
+
+    cast_field_value = to_airtable_value(field_value)
+    formula = EQUAL(FIELD(field_name), cast_field_value)
+    return formula
+
+
 def quotes_escaped(value: str):
     r"""
     Ensures any quotes are escaped. Already escaped quotes are ignored.
@@ -50,37 +85,6 @@ def to_airtable_value(value: Any):
         return STR_VALUE(quotes_escaped(value))
     else:
         return value
-
-
-def fields_equals_values(dict_values):
-    """
-    Creates an ``AND()`` formula with equality expressions for each provided dict value
-
-    Args:
-        dict_values: dictionary containing column names and values
-
-    Usage:
-    >>> fields_equals_values({"First Name": "John", "Age": 21})
-    "AND({First Name}='John',{Age}=21)"
-
-    """
-    expressions = []
-    for key, value in dict_values.items():
-        expression = EQUAL(FIELD(key), to_airtable_value(value))
-        expressions.append(expression)
-
-    formula = AND(*expressions)
-    return formula
-
-
-def field_equals_value(field_name, field_value):
-    """
-    Creates a formula to match cells from from field_name and value
-    """
-
-    cast_field_value = to_airtable_value(field_value)
-    formula = EQUAL(FIELD(field_name), cast_field_value)
-    return formula
 
 
 def EQUAL(left: Any, right: Any) -> str:
@@ -129,14 +133,3 @@ def AND(*args) -> str:
     'AND(1, 2, 3)'
     """
     return "AND({})".format(",".join(args))
-
-
-def FIND(find, where, start_from=None) -> str:
-    ...
-    # FIND(stringToFind, whereToSearch,[startFromPosition])
-    # airtable.get_all(formula="FIND('SomeSubText', {COLUMN_STR})=1")
-    # return "FIND('SomeSubText', {COLUMN_STR})=1"
-
-
-# TODO rename
-match = fields_equals_values

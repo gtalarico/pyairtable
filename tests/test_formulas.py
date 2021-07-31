@@ -1,10 +1,10 @@
+import pytest
 from airtable.formulas import (
     AND,
     EQUAL,
     FIELD,
     STR_VALUE,
-    field_equals_value,
-    fields_equals_values,
+    match,
 )
 
 
@@ -33,11 +33,14 @@ def test_combination():
     assert formula == ("AND({First Name}='A',{Last Name}='B',{Age}='15')")
 
 
-def test_field_equals_value():
-    formula = field_equals_value("First Name", "John")
-    assert formula == "{First Name}='John'"
-
-
-def test_formula_query():
-    formula = fields_equals_values({"First Name": "A", "Last Name": "B"})
-    assert formula == "AND({First Name}='A',{Last Name}='B')"
+@pytest.mark.parametrize(
+    "dict,exprected_formula",
+    [
+        ({"First Name": "John"}, "{First Name}='John'"),
+        ({"A": "1", "B": "2"}, "AND({A}='1',{B}='2')"),
+        ({}, ""),
+    ],
+)
+def test_match(dict, exprected_formula):
+    rv = match(dict)
+    assert rv == exprected_formula

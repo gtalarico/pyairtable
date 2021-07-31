@@ -125,7 +125,7 @@ def test_integration_base(base, cols):
 def test_integration_field_equals(table: Table, cols):
     VALUE = "Simeple {}".format(uuid4())
     rv_create = table.create({cols.TEXT: VALUE})
-    rv_first = table.first(formula=fo.field_equals_value(cols.TEXT, VALUE))
+    rv_first = table.first(formula=fo.match({cols.TEXT: VALUE}))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 
@@ -133,12 +133,12 @@ def test_integration_field_equals(table: Table, cols):
 def test_integration_field_equals_with_quotes(table: Table, cols):
     VALUE = "Contact's Name {}".format(uuid4())
     rv_create = table.create({cols.TEXT: VALUE})
-    rv_first = table.first(formula=fo.field_equals_value(cols.TEXT, VALUE))
+    rv_first = table.first(formula=fo.match({cols.TEXT: VALUE}))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
     VALUE = 'Some "Quote"  {}'.format(uuid4())
     rv_create = table.create({cols.TEXT: VALUE})
-    rv_first = table.first(formula=fo.field_equals_value(cols.TEXT, VALUE))
+    rv_first = table.first(formula=fo.match({cols.TEXT: VALUE}))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 
