@@ -11,6 +11,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
@@ -35,6 +36,6 @@ jobs:
 
       - name: Coverage
         run: |
-          pip install coveralls pytest pytest-cov requests requests-mock
+          pip install coveralls pytest pytest-cov requests requests-mock mock
           pytest --cov
           coveralls
