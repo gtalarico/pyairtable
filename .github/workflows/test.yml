@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup Python
+      - name: Setup Python ${{ matrix.python }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
@@ -20,22 +20,18 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ hashFiles('setup.py') }}-${{ hashFiles('requirements-dev.txt') }}
+          key: ${{ hashFiles('setup.cfg') }}-${{ hashFiles('requirements-test.txt') }}
 
-      - name: Install Tox and any other packages
+      - name: Install Depedencies
         run: |
-          pip install tox
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+          pip install -r requirements-test.txt
 
       - name: Run Tox Tests
-        env:
-          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
-        run: tox -e py
-
-      - name: Lint
-        run: tox -e lint
-
-      - name: Coverage
-        run: |
-          pip install coveralls pytest pytest-cov requests requests-mock mock
-          pytest --cov
-          coveralls
+        run: tox
+      # - name: Coverage
+      #   run: |
+      #     pip install coveralls pytest pytest-cov requests requests-mock mock
+      #     pytest --cov
+      #     coveralls
