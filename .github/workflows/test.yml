@@ -30,3 +30,5 @@ jobs:
 
       - name: Run Tox Tests
         run: tox
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
