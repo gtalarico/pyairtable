@@ -29,6 +29,7 @@ def base():
     base.batch_delete(table_name, [r["id"] for r in records])
 
 
+@pytest.mark.integration
 def test_get_api_bases(base: Base):
     rv = get_api_bases(base)
     assert INTEGRATION_BASE_NAME in [b["name"] for b in rv["bases"]]
