@@ -29,8 +29,9 @@ jobs:
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
         run: tox -e py
-      - name: Coverage
+
+      - name: Check Coverage
         run: |
           pip install coveralls
-        # - coverage run --source=airtable setup.py test
-        # - coveralls
+          pytest --cove
+          coveralls

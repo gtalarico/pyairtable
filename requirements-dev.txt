@@ -1,25 +1,26 @@
+# Test
 pytest==6.2.2
 pytest-cov==2.11.1
 coveralls==3.0.1
 requests-mock==1.8.0
-flake8==3.8.4
 mock==4.0.3
-tox-travis==0.12
 
+# Docs
 Sphinx==4.1.2
-# sphinx-rtd-theme
 sphinx-autoapi==1.7.0
 sphinxext-opengraph==0.4.2
 revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@0eb0042ad33c7dccc5e4951d9c7d337c692e10e8
 sphinx-autodoc-typehints==1.12.0
 
+# Packaging
 wheel==0.36.2
 twine==3.3.0
 
+# Formatting, Linting
+flake8==3.8.4
 # Only installed in environments that can handle it; don't try running the `lint`
 # tox environment on Python < 3.6.
 black  ; python_version >="3.6"
-
 # mypy
 types-requests==2.25.0
 mypy==0.910

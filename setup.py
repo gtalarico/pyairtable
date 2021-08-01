@@ -13,7 +13,7 @@ with open(init_path, mode="r") as f:
 
 setup_requires = ["pytest-runner"]
 install_requires = ["requests>=2"]
-tests_require = ["requests-mock", "requests", "mock", "pytest"]
+tests_require = ["requests-mock", "requests", "mock", "pytest", "pytest-cov"]
 
 setup(
     name=about["__name__"],
