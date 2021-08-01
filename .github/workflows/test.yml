@@ -25,13 +25,16 @@ jobs:
         run: |
           pip install tox
 
-      - name: Run Tox
+      - name: Run Tox Tests
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
         run: tox -e py
 
-      - name: Check Coverage
+      - name: Lint
+        run: tox -e lint
+
+      - name: Coverage
         run: |
-          pip install coveralls
-          pytest --cove
+          pip install coveralls pytest pytest-cov requests requests-mock
+          pytest --cov
           coveralls

@@ -29,7 +29,6 @@ In other words, you can transverse related records through their ``Link Fields``
 -----------
 
 """
-from pydoc import locate
 from typing import (
     Any,
     TypeVar,
@@ -39,7 +38,6 @@ from typing import (
     List,
     TYPE_CHECKING,
     Union,
-    cast,
 )
 
 if TYPE_CHECKING:
