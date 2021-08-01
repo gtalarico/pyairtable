@@ -16,6 +16,7 @@ tox:
 
 coverage:
 	pytest --cov=airtable --cov-report=html
+	open htmlcov/index.html
 
 lint:
 	flake8 .
