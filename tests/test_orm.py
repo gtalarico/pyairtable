@@ -1,9 +1,9 @@
 from unittest import mock
 from requests_mock import Mocker
 import pytest
-from airtable import Table
-from airtable.orm import Model
-from airtable.orm import fields as f
+from pyairtable import Table
+from pyairtable.orm import Model
+from pyairtable.orm import fields as f
 
 
 def test_model_missing_meta():

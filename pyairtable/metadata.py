@@ -1,6 +1,6 @@
 import posixpath
 from typing import Union, Optional
-from airtable.api import Api, Base, Table
+from pyairtable.api import Api, Base, Table
 
 
 def get_api_bases(api: Union[Api, Base]) -> dict:

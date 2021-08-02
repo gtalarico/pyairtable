@@ -1,27 +1,20 @@
 import pytest
 import os
-from airtable.orm import Model
-from airtable.orm import fields as f
+from pyairtable.orm import Model
+from pyairtable.orm import fields as f
+
+
+BASE_ID = "appaPqizdsNHDvlEm"
 
 
 @pytest.fixture
-def api_key():
-    return os.environ["AIRTABLE_API_KEY"]
-
-
-@pytest.fixture
-def base_id():
-    return "appaPqizdsNHDvlEm"
-
-
-@pytest.fixture
-def Address(api_key, base_id):
+def Address():
     class _Address(Model):
         street = f.TextField("Street")
 
         class Meta:
-            base_id = base_id
-            api_key = api_key
+            base_id = BASE_ID
+            api_key = os.environ["AIRTABLE_API_KEY"]
             table_name = "Address"
 
     yield _Address
@@ -32,7 +25,7 @@ def Address(api_key, base_id):
 
 
 @pytest.fixture
-def Contact(Address, api_key, base_id):
+def Contact(Address):
     class _Contact(Model):
         first_name = f.TextField("First Name")
         last_name = f.TextField("Last Name")
@@ -41,8 +34,8 @@ def Contact(Address, api_key, base_id):
         address = f.LinkField("Address", Address, lazy=True)
 
         class Meta:
-            base_id = base_id
-            api_key = api_key
+            base_id = BASE_ID
+            api_key = os.environ["AIRTABLE_API_KEY"]
             table_name = "Contact"
 
     yield _Contact

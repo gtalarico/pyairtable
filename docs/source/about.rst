@@ -4,12 +4,12 @@ About
 Release Notes
 *************
 
-`Release Notes <https://github.com/gtalarico/airtable-python-wrapper/blob/master/HISTORY.md>`_
+`Release Notes <https://github.com/gtalarico/pyairtable/blob/master/HISTORY.md>`_
 
 
 Questions
 *********
-Post them over in the project's `Github Page <http://www.github.com/gtalarico/airtable-python-wrapper>`_
+Post them over in the project's `Github Page <http://www.github.com/gtalarico/pyairtable>`_
 
 _______________________________________________
 
@@ -18,8 +18,8 @@ Contribute
 
 .. code-block:: python
 
-   git clone git@github.com:gtalarico/airtable-python-wrapper.git
-   cd airtable-python-wrapper
+   git clone git@github.com:gtalarico/pyairtable.git
+   cd pyairtable
    pip install -e .
 
 

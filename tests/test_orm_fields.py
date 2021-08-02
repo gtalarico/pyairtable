@@ -1,4 +1,4 @@
-from airtable.orm import fields as f
+from pyairtable.orm import fields as f
 
 
 def test_field():

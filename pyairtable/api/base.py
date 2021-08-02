@@ -5,7 +5,7 @@ from .api import ApiBase
 
 class Base(ApiBase):
     """
-    Represents an Airtable Base. This calss is similar to :class:`~airtable.api.Api`,
+    Represents an Airtable Base. This calss is similar to :class:`~pyairtable.api.Api`,
     except ``base_id`` is provided on init instead of provided on each method call.
 
     Usage:
@@ -29,21 +29,21 @@ class Base(ApiBase):
 
     def get_record_url(self, table_name: str, record_id: str):
         """
-        Same as :meth:`Api.get_record_url <airtable.api.Api.get_record_url>`
+        Same as :meth:`Api.get_record_url <pyairtable.api.Api.get_record_url>`
         but without ``base_id`` arg.
         """
         return super()._get_record_url(self.base_id, table_name, record_id)
 
     def get(self, table_name: str, record_id: str):
         """
-        Same as :meth:`Api.get <airtable.api.Api.get>`
+        Same as :meth:`Api.get <pyairtable.api.Api.get>`
         but without ``base_id`` arg.
         """
         return super()._get_record(self.base_id, table_name, record_id)
 
     def iterate(self, table_name: str, **options):
         """
-        Same as :meth:`Api.iterate <airtable.api.Api.iterate>`
+        Same as :meth:`Api.iterate <pyairtable.api.Api.iterate>`
         but without ``base_id`` arg.
         """
         gen = super()._iterate(self.base_id, table_name, **options)
@@ -52,28 +52,28 @@ class Base(ApiBase):
 
     def first(self, table_name: str, **options):
         """
-        Same as :meth:`Api.first <airtable.api.Api.first>`
+        Same as :meth:`Api.first <pyairtable.api.Api.first>`
         but without ``base_id`` arg.
         """
         return super()._first(self.base_id, table_name, **options)
 
     def all(self, table_name: str, **options):
         """
-        Same as :meth:`Api.all <airtable.api.Api.all>`
+        Same as :meth:`Api.all <pyairtable.api.Api.all>`
         but without ``base_id`` arg.
         """
         return super()._all(self.base_id, table_name, **options)
 
     def create(self, table_name: str, fields: dict, typecast=False):
         """
-        Same as :meth:`Api.create <airtable.api.Api.create>`
+        Same as :meth:`Api.create <pyairtable.api.Api.create>`
         but without ``base_id`` arg.
         """
         return super()._create(self.base_id, table_name, fields, typecast=typecast)
 
     def batch_create(self, table_name: str, records, typecast=False):
         """
-        Same as :meth:`Api.batch_create <airtable.api.Api.batch_create>`
+        Same as :meth:`Api.batch_create <pyairtable.api.Api.batch_create>`
         but without ``base_id`` arg.
         """
         return super()._batch_create(
@@ -89,7 +89,7 @@ class Base(ApiBase):
         typecast=False,
     ):
         """
-        Same as :meth:`Api.update <airtable.api.Api.update>`
+        Same as :meth:`Api.update <pyairtable.api.Api.update>`
         but without ``base_id`` arg.
         """
         return super()._update(
@@ -105,7 +105,7 @@ class Base(ApiBase):
         self, table_name: str, records: List[dict], replace=False, typecast=False
     ):
         """
-        Same as :meth:`Api.batch_update <airtable.api.Api.batch_update>`
+        Same as :meth:`Api.batch_update <pyairtable.api.Api.batch_update>`
         but without ``base_id`` arg.
         """
         return super()._batch_update(
@@ -114,14 +114,14 @@ class Base(ApiBase):
 
     def delete(self, table_name: str, record_id: str):
         """
-        Same as :meth:`Api.delete <airtable.api.Api.delete>`
+        Same as :meth:`Api.delete <pyairtable.api.Api.delete>`
         but without ``base_id`` arg.
         """
         return super()._delete(self.base_id, table_name, record_id)
 
     def batch_delete(self, table_name: str, record_ids: List[str]):
         """
-        Same as :meth:`Api.batch_delete <airtable.api.Api.batch_delete>`
+        Same as :meth:`Api.batch_delete <pyairtable.api.Api.batch_delete>`
         but without ``base_id`` arg.
         """
         return super()._batch_delete(self.base_id, table_name, record_ids)

@@ -1,7 +1,7 @@
 import pytest
 import os
-from airtable import Base, Table
-from airtable import formulas as fo
+from pyairtable import Base, Table
+from pyairtable import formulas as fo
 from uuid import uuid4
 
 

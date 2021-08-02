@@ -236,7 +236,7 @@ class Api(ApiBase):
         """
         Retrieves a record by its id
 
-        >>> record = airtable.get('recwPQIfs4wKPyc9D')
+        >>> record = api.get('base_id', 'table_name', 'recwPQIfs4wKPyc9D')
 
         Args:
             base_id: |arg_base_id|
@@ -255,7 +255,7 @@ class Api(ApiBase):
         Returns iterator with lists in batches according to pageSize.
         To get all records at once use :meth:`all`
 
-        >>> for page in airtable.iterate():
+        >>> for page in api.iterate('base_id', 'table_name'):
         ...     for record in page:
         ...         print(record)
         {"id": ... }
@@ -285,7 +285,7 @@ class Api(ApiBase):
         """
         Retrieves the first found record or ``None`` if no records are returned.
 
-        This is similar to :meth:`~airtable.api.api.Api.all`, except it
+        This is similar to :meth:`~pyairtable.api.api.Api.all`, except it
         it sets ``page_size`` and ``max_records`` to ``1`` to optimize query.
 
         Args:
@@ -298,9 +298,9 @@ class Api(ApiBase):
         """
         Retrieves all records repetitively and returns a single list.
 
-        >>> airtable.all()
-        >>> airtable.all(view='MyView', fields=['ColA', '-ColB'])
-        >>> airtable.all(maxRecords=50)
+        >>> api.all('base_id', 'table_name', view='MyView', fields=['ColA', '-ColB'])
+        [{'fields': ... }, ...]
+        >>> api.all('base_id', 'table_name', maxRecords=50)
         [{'fields': ... }, ...]
 
         Args:
@@ -328,7 +328,7 @@ class Api(ApiBase):
         Creates a new record
 
         >>> record = {'Name': 'John'}
-        >>> airtable.create(record)
+        >>> api.create('base_id', 'table_name', record)
 
         Args:
             base_id: |arg_base_id|
@@ -349,11 +349,11 @@ class Api(ApiBase):
         """
         Breaks records into chunks of 10 and inserts them in batches.
         Follows the set API rate.
-        To change the rate limit use ``airtable.API_LIMIT = 0.2``
+        To change the rate limit you can change ``API_LIMIT = 0.2``
         (5 per second)
 
         >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
-        >>> airtable.batch_insert(records)
+        >>> api.batch_insert('base_id', 'table_name', records)
 
         Args:
             base_id: |arg_base_id|
@@ -448,8 +448,8 @@ class Api(ApiBase):
         """
         Deletes a record by its id
 
-        >>> record = airtable.match('Employee Id', 'DD13332454')
-        >>> airtable.delete(record['id'])
+        >>> record = api.match('base_id', 'table_name', 'Employee Id', 'DD13332454')
+        >>> api.delete('base_id', 'table_name', record['id'])
 
         Args:
             base_id: |arg_base_id|
@@ -465,11 +465,11 @@ class Api(ApiBase):
         """
         Breaks records into batches of 10 and deletes in batches, following set
         API Rate Limit (5/sec).
-        To change the rate limit set value of ``airtable.API_LIMIT`` to
+        To change the rate limit set value of ``API_LIMIT`` to
         the time in seconds it should sleep before calling the function again.
 
         >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
-        >>> airtable.batch_delete(records_ids)
+        >>> api.batch_delete('base_id', 'table_name', records_ids)
 
         Args:
             base_id: |arg_base_id|

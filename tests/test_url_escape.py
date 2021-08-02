@@ -1,6 +1,6 @@
 import pytest
 
-from airtable.api import Table
+from pyairtable.api import Table
 
 
 @pytest.fixture
@@ -22,6 +22,6 @@ def test_url_escape(table_names):
     names (which airtable allows).
     """
     for table_name, escaped in table_names:
-        airtable = Table("apikey", "base_id", table_name)
+        table = Table("apikey", "base_id", table_name)
         # Class-generated url should be properly escaped
-        assert escaped in airtable.table_url
+        assert escaped in table.table_url

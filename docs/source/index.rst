@@ -11,7 +11,7 @@ pyAirtable
 .. container:: .buttons
 
    `Docs <getting-started.html>`_
-   `GitHub <https://github.com/gtalarico/airtable-python-wrapper>`_
+   `GitHub <https://github.com/gtalarico/pyairtable>`_
 
 
    Latest Release: |version|
@@ -35,7 +35,7 @@ pyAirtable
 
    about
    Airtable Api Docs <https://airtable.com/api>
-   GitHub <https://github.com/gtalarico/airtable-python-wrapper>
+   GitHub <https://github.com/gtalarico/pyairtable>
 
 
 

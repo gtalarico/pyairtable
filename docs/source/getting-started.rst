@@ -33,13 +33,13 @@ and load it
 Quickstart
 **********
 
-The easiest way to use this client is to the :class:`~airtable.api.Table` class to fetch
+The easiest way to use this client is to the :class:`~pyairtable.api.Table` class to fetch
 or update your records:
 
 .. code-block:: python
 
     >>> import os
-    >>> from airtable import Table
+    >>> from pyairtable import Table
     >>> api_key = os.environ['AIRTABLE_API_KEY']
     >>> table = Table('base_id', 'base_id', api_key)
     >>> table.all()

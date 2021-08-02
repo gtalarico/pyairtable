@@ -3,7 +3,7 @@
 #
 import sys
 import os
-from airtable import __version__ as version
+from pyairtable import __version__ as version
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -22,7 +22,7 @@ extensions = [
 templates_path = ["_templates"]
 
 # Auto Create Api Reference
-autoapi_dirs = ["../airtable"]
+autoapi_dirs = ["../pyairtable"]
 autoapi_add_toctree_entry = True
 autoapi_options = [
     "members",
@@ -35,8 +35,8 @@ autoapi_options = [
 ]
 
 # Open Graph extension config. https://pypi.org/project/sphinxext-opengraph/
-ogp_site_url = "https://airtable-python-wrapper.readthedocs.io/"
-ogp_image = "https://airtable-python-wrapper.readthedocs.io/en/master/_images/logo.png"
+ogp_site_url = "https://pyairtable.readthedocs.io/"
+ogp_image = "https://pyairtable.readthedocs.io/en/master/_images/logo.png"
 ogp_description_length = 300
 
 ogp_custom_meta_tags = [
@@ -54,7 +54,7 @@ sys.path.append(root_dir)
 
 # Document Python Code
 autoapi_type = "python"
-autoapi_dirs = [os.path.join(root_dir, "airtable")]
+autoapi_dirs = [os.path.join(root_dir, "pyairtable")]
 # add_module_names = False
 
 napoleon_google_docstring = True
@@ -134,7 +134,7 @@ html_theme_options = {
     # "navigation_depth": 4,
     # "includehidden": True,
     # "titles_only": False,
-    "github_url": "https://github.com/gtalarico/airtable-python-wrapper",
+    "github_url": "https://github.com/gtalarico/pyairtable",
     # 'logo_mobile': 'demo/static/logo-mobile.svg'
     # "logo_mobile": "_static/logo.png",
 }

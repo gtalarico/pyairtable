@@ -15,7 +15,7 @@ tox:
 	tox -e py
 
 coverage:
-	pytest --cov=airtable --cov-report=html
+	pytest --cov=pyairtable --cov-report=html
 	open htmlcov/index.html
 
 lint:
@@ -32,5 +32,5 @@ clean:
 	rm -rdf ./docs/build
 	rm -rdf ./dist
 	rm -rdf ./build
-	rm -rdf  airtable_python_wrapper.egg-info
+	rm -rdf  pyairtable.egg-info
 

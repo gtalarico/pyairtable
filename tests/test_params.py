@@ -2,7 +2,7 @@ import pytest
 import requests
 from requests_mock import Mocker
 
-from airtable.api.params import (
+from pyairtable.api.params import (
     to_params_dict,
     dict_list_to_request_params,
     field_names_to_sorting_dict,

@@ -14,7 +14,7 @@ The metadata api gives you the ability to list all of your bases, tables, fields
     separate Metadata API client secret.
 
 
-.. automodule:: airtable.metadata
+.. automodule:: pyairtable.metadata
     :members:
 
 

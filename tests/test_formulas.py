@@ -1,5 +1,5 @@
 import pytest
-from airtable.formulas import AND, EQUAL, FIELD, STR_VALUE, match, quotes_escaped
+from pyairtable.formulas import AND, EQUAL, FIELD, STR_VALUE, match, quotes_escaped
 
 
 def test_equal():

@@ -41,7 +41,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from airtable.orm import Model  # noqa
+    from pyairtable.orm import Model  # noqa
 
 T_Linked = TypeVar("T_Linked", bound="Model")
 
@@ -156,7 +156,7 @@ class LinkField(Field, Generic[T_Linked]):
                 continue
             else:
                 # If Lazy, create empty from model class and set id
-                # If not Lazy, fetch record from airtable and create new model instance
+                # If not Lazy, fetch record from pyairtable and create new model instance
                 should_fetch = not self._lazy
                 new_link_instance = self._model.from_id(link_id, fetch=should_fetch)
 

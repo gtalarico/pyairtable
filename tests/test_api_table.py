@@ -3,7 +3,7 @@ from posixpath import join as urljoin
 from requests import Request
 from requests_mock import Mocker
 
-from airtable import Table
+from pyairtable import Table
 
 
 def test_repr(table):

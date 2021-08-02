@@ -7,16 +7,16 @@ ORM
 Model
 ******
 
-.. automodule:: airtable.orm.model
+.. automodule:: pyairtable.orm.model
 
-.. autoclass:: airtable.orm.model.Model
+.. autoclass:: pyairtable.orm.model.Model
     :members:
     :undoc-members:
 
 Fields
 ******
 
-.. automodule:: airtable.orm.fields
+.. automodule:: pyairtable.orm.fields
     :members:
 
 

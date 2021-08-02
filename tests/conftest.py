@@ -5,7 +5,7 @@ from requests import HTTPError
 from urllib.parse import urlencode, quote
 from mock import Mock
 
-from airtable.api import Api, Table
+from pyairtable.api import Api, Table
 from collections import OrderedDict
 
 

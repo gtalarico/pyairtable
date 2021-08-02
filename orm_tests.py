@@ -1,5 +1,5 @@
-from airtable.orm import Model
-from airtable.orm import fields as f
+from pyairtable.orm import Model
+from pyairtable.orm import fields as f
 
 
 class Address(Model):

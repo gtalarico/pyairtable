@@ -8,9 +8,9 @@ Overview
 
 This client offers three classes you can use to access the Airtable Api:
 
-* :class:`~airtable.api.Table` - represents an Airtable **Table**
-* :class:`~airtable.api.Base` - represents an Airtable **Base**
-* :class:`~airtable.api.Api` - represents an Airtable **Api**
+* :class:`~pyairtable.api.Table` - represents an Airtable **Table**
+* :class:`~pyairtable.api.Base` - represents an Airtable **Base**
+* :class:`~pyairtable.api.Api` - represents an Airtable **Api**
 
 The interfaces of these are nearly identical, the main difference
 is if ``base_id`` and ``table_id`` are provided on initialization or on calls.
@@ -19,7 +19,7 @@ For example, the three ``all()`` calls below would return the same result:
 
 .. code-block:: python
 
-  from airtable import Api, Base, Table
+  from pyairtable import Api, Base, Table
 
   api = Api('apikey')
   api.all('base_id', 'table_name')
@@ -71,11 +71,16 @@ with the official API equivalent.
      - ``delete()``
      - ``DELETE baseId/``
 
+Examples
+***********
+
+Examples below use the :class:`~pyairtable.api.Table` Api for conciseness -
+all methods are available for all three interfaces (``Api``, ``Base``, and ``Table``).
 
 Fetching Records
 -----------------
 
-:meth:`~airtable.api.Table.iterate`
+:meth:`~pyairtable.api.Table.iterate`
 
 Iterate over a set of records of size ``page_size``, up until ``max_records`` or end of
 table, whichever is shorter.
@@ -87,10 +92,10 @@ table, whichever is shorter.
   [{id:'rec123asa23', fields': {'Last Name': 'Alfred', "Age": 84}, ...}, ... ]
   [{id:'rec123asa23', fields': {'Last Name': 'Jameson', "Age": 42}, ...}, ... ]
 
-:meth:`~airtable.api.Table.all`
+:meth:`~pyairtable.api.Table.all`
 
 This method returns a single list with all records in a table. Note that under the
-hood it uses :meth:`~airtable.api.Table.iterate` to fetch records so multiple requests might be made.
+hood it uses :meth:`~pyairtable.api.Table.iterate` to fetch records so multiple requests might be made.
 
 .. code-block:: python
 
@@ -101,7 +106,7 @@ hood it uses :meth:`~airtable.api.Table.iterate` to fetch records so multiple re
 Creating Records
 -----------------
 
-:meth:`~airtable.api.Table.create`
+:meth:`~pyairtable.api.Table.create`
 
 Creates a single record from a dictionary representing the table's fields.
 
@@ -111,7 +116,7 @@ Creates a single record from a dictionary representing the table's fields.
   {id:'rec123asa23', fields': {'First Name': 'John', ...}}
 
 
-:meth:`~airtable.api.Table.batch_create`
+:meth:`~pyairtable.api.Table.batch_create`
 
 Batch create records from a list of dictionaries representing the table's fields.
 
@@ -124,7 +129,7 @@ Batch create records from a list of dictionaries representing the table's fields
 Updating Records
 -----------------
 
-:meth:`~airtable.api.Table.update`
+:meth:`~pyairtable.api.Table.update`
 
 Updates a single record for the provided ``record_id`` using a
 dictionary representing the table's fields.
@@ -135,7 +140,7 @@ dictionary representing the table's fields.
   [{id:'recwPQIfs4wKPyc9D', fields': {"First Name": "John", "Age": 21, ...}}, ...]
 
 
-:meth:`~airtable.api.Table.batch_update`
+:meth:`~pyairtable.api.Table.batch_update`
 
 Batch update records from a list of records.
 
@@ -148,22 +153,22 @@ Batch update records from a list of records.
 Deleting Records
 -----------------
 
-:meth:`~airtable.api.Table.delete`
+:meth:`~pyairtable.api.Table.delete`
 
 Deletes a single record using the provided ``record_id``.
 
 .. code-block:: python
 
-  >>> airtable.delete('recwPQIfs4wKPyc9D')
+  >>> table.delete('recwPQIfs4wKPyc9D')
   { "deleted": True, ... }
 
-:meth:`~airtable.api.Table.batch_delete`
+:meth:`~pyairtable.api.Table.batch_delete`
 
 Batch delete records using a list of record ids.
 
 .. code-block:: python
 
-  >>> airtable.batch_delete(['recwPQIfs4wKPyc9D', 'recwAcQdqwe21as'])
+  >>> table.batch_delete(['recwPQIfs4wKPyc9D', 'recwAcQdqwe21as'])
   [  { "deleted": True, ... }, ... ]
 
 
@@ -204,7 +209,7 @@ will most often be alist of Airtable records (dictionary) in a format as shown b
   ... }, ... ]
 
 
-The :class:`~airtable.api.Base` class is similar to :class:`~airtable.api.Table`, the main difference is that .
+The :class:`~pyairtable.api.Base` class is similar to :class:`~pyairtable.api.Table`, the main difference is that .
 `table_name` is not provided during initialization. Instead, it can be
 specified on each request.
 
@@ -222,17 +227,17 @@ Classes
 
 Api
 -----
-.. autoclass:: airtable.api.Api
+.. autoclass:: pyairtable.api.Api
     :members:
 
 Base
 -----
-.. autoclass:: airtable.api.Base
+.. autoclass:: pyairtable.api.Base
     :members:
 
 Table
 -----
-.. autoclass:: airtable.api.Table
+.. autoclass:: pyairtable.api.Table
     :members:
 
 
@@ -243,7 +248,7 @@ Parameters
 Airtable offers a variety of options to control how you fetch data.
 
 Most options in the Airtable Api (eg. ``sort``, ``fields``, etc)
-have a corresponding ``kwargs`` that can be used with fetching methods like :meth:`~airtable.api.Table.iterate`.
+have a corresponding ``kwargs`` that can be used with fetching methods like :meth:`~pyairtable.api.Table.iterate`.
 
 
 .. list-table:: Title
@@ -289,7 +294,7 @@ For more information see `Airtable Formula Reference <https://support.airtable.c
   >>> formula
   "AND({First Name}='John',{Age}=21)"
 
-.. autofunction:: airtable.formulas.match
+.. autofunction:: pyairtable.formulas.match
 
 
 Raw Formulas
@@ -299,8 +304,8 @@ This module also includes many lower level functions you
 can use if you want to compose formulas:
 
 
-.. autofunction:: airtable.formulas.EQUAL
-.. autofunction:: airtable.formulas.FIELD
-.. autofunction:: airtable.formulas.AND
+.. autofunction:: pyairtable.formulas.EQUAL
+.. autofunction:: pyairtable.formulas.FIELD
+.. autofunction:: pyairtable.formulas.AND
 
 

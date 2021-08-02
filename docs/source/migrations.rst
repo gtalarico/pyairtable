@@ -14,7 +14,7 @@ The objective here was to introduce a simpler api that's more closely aligned wi
    * - 0.x (airtable-python-wrapper)
      - 1.0 (pyAirtable)
    * - ``Airtable()``
-     - :class:`~airtable.api.Api`, :class:`~airtable.api.Base`, :class:`~airtable.api.Table`
+     - :class:`~pyairtable.api.Api`, :class:`~pyairtable.api.Base`, :class:`~pyairtable.api.Table`
    * - ``get()``
      - ``get()``
    * - ``get_iter()``

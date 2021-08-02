@@ -2,7 +2,7 @@
 The :class:`Model` class allows you create an orm-style class for your
 Airtable tables.
 
->>> from airtable.orm import Model, fields
+>>> from pyairtable.orm import Model, fields
 >>> class Contact(Model):
 ...     first_name = fields.TextField("First Name")
 ...     last_name = fields.TextField("Last Name")
@@ -17,7 +17,7 @@ Airtable tables.
 
 
 Once you have a class, you can create new objects to represent your
-Airtable records. Call :meth:`~airtable.orm.model.Model.save` to create a new record.
+Airtable records. Call :meth:`~pyairtable.orm.model.Model.save` to create a new record.
 
 >>> contact = Contact(
 ...     first_name="Mike",
@@ -37,7 +37,7 @@ rec123asa23
 
 
 You can read and modify attributes. If record already exists,
-:meth:`~airtable.orm.model.Model.save` will update the record:
+:meth:`~pyairtable.orm.model.Model.save` will update the record:
 
 >>> assert contact.is_registered is False
 >>> contact.is_registered = True
@@ -55,14 +55,14 @@ You can read and modify attributes. If record already exists,
     }
 }
 
-And you can use :meth:`~airtable.orm.model.Model.delete` to delete the record:
+And you can use :meth:`~pyairtable.orm.model.Model.delete` to delete the record:
 
 >>> contact.delete()
 True
 
 """
 import abc
-from airtable import Table
+from pyairtable import Table
 from typing import TypeVar, Type, Optional, Tuple
 
 from .fields import Field
@@ -79,7 +79,7 @@ class Model(metaclass=abc.ABCMeta):
     The ``Meta`` is reuired and must specify all three attributes: ``base_id``,
     ``table_id``, and ``api_key``.
 
-    >>> from airtable.orm import Model, fields
+    >>> from pyairtable.orm import Model, fields
     >>> class Contact(Model):
     ...     first_name = fields.TextField("First Name")
     ...     age = fields.IntegerField("Age")
@@ -169,7 +169,7 @@ class Model(metaclass=abc.ABCMeta):
 
     @classmethod
     def get_table(cls) -> Table:
-        """Return Airtable :class:`~airtable.api.Table` class instance"""
+        """Return Airtable :class:`~pyairtable.api.Table` class instance"""
         if not hasattr(cls, "_table"):
             cls._table = Table(
                 cls.Meta.api_key,
@@ -234,7 +234,7 @@ class Model(metaclass=abc.ABCMeta):
             record_id: |arg_record_id|
 
         Keyward Args:
-            fetch: If `True`, record will be fetched from airtable and fields will be
+            fetch: If `True`, record will be fetched from pyairtable and fields will be
                 updated. If `False`, a new instance is created with the provided `id`,
                 but field values are unset. Default is `True`.
 
@@ -251,7 +251,7 @@ class Model(metaclass=abc.ABCMeta):
             return instance
 
     def fetch(self):
-        """Fetches field and resets instance field values from airtable record"""
+        """Fetches field and resets instance field values from pyairtable record"""
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
 
