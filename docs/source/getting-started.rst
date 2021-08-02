@@ -11,7 +11,7 @@ Installation
 
 .. code-block:: shell
 
-    $ pip install airtable-python-wrapper
+    $ pip install pyairtable
 
 _______________________________________________
 

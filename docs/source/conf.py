@@ -3,7 +3,6 @@
 #
 import sys
 import os
-import airtable
 from airtable import __version__ as version
 
 extensions = [
