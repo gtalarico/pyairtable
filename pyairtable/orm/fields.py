@@ -29,6 +29,7 @@ In other words, you can transverse related records through their ``Link Fields``
 -----------
 
 """
+from datetime import date, datetime
 from typing import (
     Any,
     TypeVar,
@@ -64,7 +65,17 @@ class Field:
     def __set__(self, instance, value):
         if not hasattr(instance, "_fields"):
             instance._fields = {}
-        instance._fields[self.field_name] = value
+
+        converted_value = self.to_internal_value(value)
+        instance._fields[self.field_name] = converted_value
+
+    @staticmethod
+    def to_record_value(value: Any) -> Any:
+        return value
+
+    @staticmethod
+    def to_internal_value(value: Any) -> Any:
+        return value
 
     def __repr__(self):
         return "<{} field_name='{}'>".format(self.__class__.__name__, self.field_name)
@@ -73,12 +84,20 @@ class Field:
 class TextField(Field):
     """Airtable Single Text or Multiline Text Fields. Uses ``str`` to store value"""
 
+    @staticmethod
+    def to_internal_value(value: Any) -> str:
+        return str(value)
+
     def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
 
 
 class IntegerField(Field):
     """Airtable Number field with Integer Precision. Uses ``int`` to store value"""
+
+    @staticmethod
+    def to_internal_value(value: Any) -> int:
+        return int(value)
 
     def __get__(self, *args, **kwargs) -> Optional[int]:
         return super().__get__(*args, **kwargs)
@@ -87,6 +106,10 @@ class IntegerField(Field):
 class FloatField(Field):
     """Airtable Number field with Decimal precision. Uses ``float`` to store value"""
 
+    @staticmethod
+    def to_internal_value(value: Any) -> float:
+        return float(value)
+
     def __get__(self, *args, **kwargs) -> Optional[float]:
         return super().__get__(*args, **kwargs)
 
@@ -94,7 +117,46 @@ class FloatField(Field):
 class CheckboxField(Field):
     """Airtable Checkbox field. Uses ``bool`` to store value"""
 
+    @staticmethod
+    def to_internal_value(value: Any) -> bool:
+        return bool(value)
+
     def __get__(self, *args, **kwargs) -> Optional[bool]:
+        return super().__get__(*args, **kwargs)
+
+
+class DatetimeField(Field):
+    """Airtable Datetime field. Uses ``datetime`` to store value"""
+
+    @staticmethod
+    def to_record_value(value: datetime) -> str:
+        """Airtable expects ISO 8601 string datetime eg. "2014-09-05T07:00:00.000Z" """
+        return value.isoformat() + ".000Z"
+
+    @staticmethod
+    def to_internal_value(value: str) -> datetime:
+        """Airtable returns ISO 8601 string datetime eg. "2014-09-05T07:00:00.000Z" """
+        value = value[:-1]
+        return datetime.fromisoformat(value)
+
+    def __get__(self, *args, **kwargs) -> Optional[datetime]:
+        return super().__get__(*args, **kwargs)
+
+
+class DateField(Field):
+    """Airtable Date field. Uses ``Date`` to store value"""
+
+    @staticmethod
+    def to_record_value(value: date) -> str:
+        """Airtable expects ISO 8601 date string eg. "2014-09-05"""
+        return value.strftime("%Y-%m-%d")
+
+    @staticmethod
+    def to_internal_value(value: str) -> date:
+        """Airtable returns ISO 8601 date string eg. "2014-09-05"""
+        return date.fromisoformat(value)
+
+    def __get__(self, *args, **kwargs) -> Optional[datetime]:
         return super().__get__(*args, **kwargs)
 
 
@@ -181,6 +243,14 @@ class LinkField(Field, Generic[T_Linked]):
         ids = [i.id for i in value]
         super().__set__(instance, ids)
 
+    @staticmethod
+    def to_record_value(value: Any) -> Any:
+        return value.id
+
+    @staticmethod
+    def to_internal_value(value: Any) -> Any:
+        raise NotImplementedError()
+
 
 """
 - [ ] autoNumber
@@ -191,8 +261,8 @@ class LinkField(Field, Generic[T_Linked]):
 - [ ] createdBy
 - [ ] createdTime
 - [ ] currency
-- [ ] date
-- [ ] dateTime
+- [x] date
+- [x] dateTime
 - [ ] duration
 - [x] email
 - [ ] externalSyncSource

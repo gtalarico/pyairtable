@@ -32,6 +32,7 @@ def Contact(Address):
         email = f.EmailField("Email")
         is_registered = f.CheckboxField("Registered")
         address = f.LinkField("Address", Address, lazy=True)
+        birthday = f.DatetimeField("Birthday")
 
         class Meta:
             base_id = BASE_ID

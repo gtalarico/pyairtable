@@ -104,7 +104,7 @@ class Model(metaclass=abc.ABCMeta):
         typecast: bool
 
     @classmethod
-    def descriptor_attribute_map(cls):
+    def _attribute_descriptor_map(cls):
         """
         Returns a dictionary mapping the model's attribute names to the field's
 
@@ -112,7 +112,7 @@ class Model(metaclass=abc.ABCMeta):
         ...     first_name = TextField("First Name")
         ...     age = NumberField("Age")
         ...
-        >>> Test.descriptor_attribute_map()
+        >>> Test._attribute_descriptor_map()
         >>> {
         ...     "field_name": <TextField field_name="First Name">,
         ...     "another_Field": <NumberField field_name="Age">,
@@ -121,7 +121,24 @@ class Model(metaclass=abc.ABCMeta):
         return {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
 
     @classmethod
-    def field_attribute_map(cls):
+    def _field_name_descriptor_map(cls):
+        """
+        Returns a dictionary that maps Fields 'Names' to descriptor fields
+
+        >>> class Test(Model):
+        ...     first_name = TextField("First Name")
+        ...     age = NumberField("Age")
+        ...
+        >>> Test._field_name_descriptor_map()
+        >>> {
+        ...     "First Name": <TextField field_name="First Name">,
+        ...     "Age": <NumberField field_name="Age">,
+        ... }
+        """
+        return {f.field_name: f for f in cls._attribute_descriptor_map().values()}
+
+    @classmethod
+    def _field_name_attribute_map(cls):
         """
         Returns a dictionary that maps Fields 'Names' to the model attribute name:
 
@@ -129,13 +146,13 @@ class Model(metaclass=abc.ABCMeta):
         ...     first_name = TextField("First Name")
         ...     age = NumberField("Age")
         ...
-        >>> Test.field_attribute_map()
+        >>> Test._field_name_attribute_map()
         >>> {
         ...     "First Name": "first_name"
         ...     "Age": "age"
         ... }
         """
-        return {v.field_name: k for k, v in cls.descriptor_attribute_map().items()}
+        return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
 
     def __init__(self, **fields):
         # To Store Fields
@@ -148,7 +165,7 @@ class Model(metaclass=abc.ABCMeta):
 
         # Set descriptors values
         for key, value in fields.items():
-            if key not in self.descriptor_attribute_map():
+            if key not in self._attribute_descriptor_map():
                 msg = "invalid kwarg '{}'".format(key)
                 raise ValueError(msg)
             setattr(self, key, value)
@@ -209,12 +226,14 @@ class Model(metaclass=abc.ABCMeta):
         return result["deleted"]
 
     def to_record(self) -> dict:
-        return {"id": self.id, "createdTime": self.created_time, "fields": self._fields}
+        map_ = self._field_name_descriptor_map()
+        fields = {k: map_[k].to_record_value(v) for k, v in self._fields.items()}
+        return {"id": self.id, "createdTime": self.created_time, "fields": fields}
 
     @classmethod
     def from_record(cls: Type[T], record: dict) -> T:
         """Create instance from record dictionary"""
-        field_map = cls.field_attribute_map()
+        field_map = cls._field_name_attribute_map()
         try:
             # Convert Column Names into model field names
             kwargs = {field_map[k]: v for k, v in record["fields"].items()}

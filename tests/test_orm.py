@@ -36,6 +36,7 @@ def test_model():
         email = f.EmailField("Email")
         is_registered = f.CheckboxField("Registered")
         link = f.LinkField("Link", Address, lazy=True)
+        birthday = f.DateField("Birthday")
 
         class Meta:
             base_id = "contact_base_id"
@@ -43,7 +44,11 @@ def test_model():
             api_key = "fake"
 
     contact = Contact(
-        first_name="Gui", last_name="Talarico", email="gui@gui.com", is_registered=True
+        first_name="Gui",
+        last_name="Talarico",
+        email="gui@gui.com",
+        is_registered=True,
+        birthday="2020-01-01",
     )
 
     # attribute look up

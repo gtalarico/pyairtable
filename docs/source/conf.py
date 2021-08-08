@@ -16,6 +16,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     # "autoapi.extension",
     "sphinx_autodoc_typehints",
+    "releases",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -42,6 +43,10 @@ ogp_description_length = 300
 ogp_custom_meta_tags = [
     '<meta name="twitter:card" content="summary_large_image">',
 ]
+
+# 'releases' (changelog) settings
+releases_issue_uri = "https://github.com/gtalarico/pyairtable/issues/%s"
+releases_release_uri = "https://github.com/gtalarico/pyairtable/tree/%s"
 
 ################################
 # CUSTOM

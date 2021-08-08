@@ -4,9 +4,9 @@ usage:
 	cat Makefile
 
 release:
-	python setup.py sdist bdist_wheel --universal
-	twine upload ./dist/*
 	make clean
+	python -m build --sdist --wheel --outdir ./dist
+	twine upload ./dist/*
 
 test:
 	pytest -v
