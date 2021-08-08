@@ -37,5 +37,7 @@ clean:
 	rm -rdf ./docs/build
 	rm -rdf ./dist
 	rm -rdf ./build
+	rm -rdf ./htmlcov
 	rm -rdf  pyairtable.egg-info
+	rm -rdf  .pytest_cache
 

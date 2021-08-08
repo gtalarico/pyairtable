@@ -70,7 +70,6 @@ def test_model():
 
     assert m_delete.called
 
-    # to_record (split)
     record = contact.to_record()
     assert record["id"] == contact.id
     assert record["createdTime"] == contact.created_time

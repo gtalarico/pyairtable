@@ -96,6 +96,36 @@ def test_all(table, mock_response_list, mock_records):
         assert dict_equals(resp, mock_records[n])
 
 
+def test_iterate(table, mock_response_list, mock_records):
+    with Mocker() as mock:
+
+        mock.get(
+            table.table_url,
+            status_code=200,
+            json=mock_response_list[0],
+            complete_qs=True,
+        )
+        for n, resp in enumerate(mock_response_list, 1):
+            offset = resp.get("offset", None)
+            if not offset:
+                continue
+            params = {"offset": offset}
+            offset_url = Request("get", table.table_url, params=params).prepare().url
+            mock.get(
+                offset_url,
+                status_code=200,
+                json=mock_response_list[1],
+                complete_qs=True,
+            )
+
+        pages = []
+        for page in table.iterate():
+            pages.append(page)
+
+    for n, response in enumerate(mock_response_list):
+        assert seq_equals(pages[n], response["records"])
+
+
 def test_create(table, mock_response_single):
     with Mocker() as mock:
         post_data = mock_response_single["fields"]
