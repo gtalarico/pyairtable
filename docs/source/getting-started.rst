@@ -14,7 +14,7 @@ Installation
     $ pip install pyairtable
 
 .. warning::
-    Looking for ``airtable-python-wrapper``?
+    Looking for ``airtable-python-wrapper``? Checkout :doc:`migrations`.
 
 _______________________________________________
 
