@@ -4,8 +4,8 @@
 
 
 **Airtable Python Wrapper** was renamed to **pyAirtable** starting on its first major release, ``1.0.0``.
-The docs for the older release will remain `on Read the Docs <https://github.com/gtalarico/airtable-python-wrapper>`_,
-the source code on `this branch <https://airtable-python-wrapper.readthedocs.io/en/airtable-python-wrapper>`_.
+The docs for the older release will remain `on Read the Docs <https://airtable-python-wrapper.readthedocs.io/>`_,
+the source code on `this branch <https://github.com/gtalarico/airtable-python-wrapper>`_.
 The last ``0.x`` release will remain available on `PYPI <https://pypi.org/project/airtable-python-wrapper/>`_.
 
 You can read about the reasons behind the renaming `here <https://github.com/gtalarico/airtable-python-wrapper/issues/125#issuecomment-891439661>`_.
