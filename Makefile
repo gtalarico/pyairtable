@@ -3,6 +3,11 @@
 usage:
 	cat Makefile
 
+release-test:
+	make clean
+	python -m build --sdist --wheel --outdir ./dist
+	twine upload --repository testpypi ./dist/*
+
 release:
 	make clean
 	python -m build --sdist --wheel --outdir ./dist
