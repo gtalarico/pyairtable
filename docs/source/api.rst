@@ -227,16 +227,22 @@ Classes
 
 Api
 -----
+
+.. versionadded:: 1.0.0
 .. autoclass:: pyairtable.api.Api
-    :members:
+  :members:
+
 
 Base
 -----
+
+.. versionadded:: 1.0.0
 .. autoclass:: pyairtable.api.Base
     :members:
 
 Table
 -----
+.. versionadded:: 1.0.0
 .. autoclass:: pyairtable.api.Table
     :members:
 
@@ -299,6 +305,8 @@ For more information see `Airtable Formula Reference <https://support.airtable.c
 
 Raw Formulas
 ------------
+
+.. versionadded:: 1.0.0
 
 This module also includes many lower level functions you
 can use if you want to compose formulas:

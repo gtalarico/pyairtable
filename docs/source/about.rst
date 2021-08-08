@@ -1,11 +1,6 @@
 About
 =====
 
-Release Notes
-*************
-
-`Release Notes <https://github.com/gtalarico/pyairtable/blob/master/HISTORY.md>`_
-
 
 Questions
 *********

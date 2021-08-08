@@ -4,6 +4,8 @@
 ORM
 ==============
 
+.. versionadded:: 1.0.0
+
 .. warning:: This feature is experimental.
 
 Model

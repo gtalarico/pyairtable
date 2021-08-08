@@ -21,20 +21,3 @@ pip install pyairtable
 ## Documentation
 
 Checkout the docs on [pyairtable.readthedocs.io](http://pyairtable.readthedocs.io/)
-
-
-TODO:
-
-- [X] Docs
-- [X] Finish Linked Fields
-- [ ] Finish Fields
-- [x] Rename airtable-python-wrapper -> airtable
-- [x] get_iter -> iterate
-- [x] get_all -> list, all, filter, fetch?
-- [ ] More Formulas
-- [ ] query() for model? first(query={"Name": "Gui", "Age": 20})
-- [ ] query() for model? first(formula=Q({"Name": "Gui", "Age": 20}))
-
-Manage:
-- [ ] Contrib
-- [ ] Release in CI
