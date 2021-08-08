@@ -136,7 +136,7 @@ class DatetimeField(Field):
     @staticmethod
     def to_internal_value(value: str) -> datetime:
         """Airtable returns ISO 8601 string datetime eg. "2014-09-05T07:00:00.000Z" """
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S%Z")
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
 
     def __get__(self, *args, **kwargs) -> Optional[datetime]:
         return super().__get__(*args, **kwargs)
