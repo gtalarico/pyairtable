@@ -8,11 +8,11 @@
 
 Python Client for the Airtable Api
 
-![project-logo](/docs/source/_static/logo-text.png)
-
-> **airtable-python-wrapper** is now **pyAirtable**.
+> Looking for **airtable-python-wrapper**?
 >
+> airtable-python-wrapper is now **pyAirtable**.
 > For the previous version checkout https://github.com/gtalarico/airtable-python-wrapper/tree/airtable-python-wrapper
+
 ## Installing
 
 ```
