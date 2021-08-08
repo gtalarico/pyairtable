@@ -247,10 +247,6 @@ class LinkField(Field, Generic[T_Linked]):
     def to_record_value(value: Any) -> Any:
         return value.id
 
-    @staticmethod
-    def to_internal_value(value: Any) -> Any:
-        raise NotImplementedError()
-
 
 """
 - [ ] autoNumber

@@ -35,13 +35,13 @@ def test_get_api_bases(base: Base):
     assert INTEGRATION_BASE_NAME in [b["name"] for b in rv["bases"]]
 
 
-# @pytest.mark.skip("metadata api returning 404 for base schema")
+@pytest.mark.skip("metadata api returning 404 for base schema")
 def test_get_base_schema(base: Base):
     rv = get_base_schema(base)
     assert len(rv["tables"]) == 3
 
 
-# @pytest.mark.skip("metadata api returning 404 for base schema")
+@pytest.mark.skip("metadata api returning 404 for base schema")
 def test_get_table_schema(table: Table):
     rv = get_table_schema(table)
     assert rv and rv["name"] == table.table_name
