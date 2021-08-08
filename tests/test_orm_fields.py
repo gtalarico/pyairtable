@@ -1,5 +1,4 @@
 from pyairtable.orm import fields as f
-from datetime import datetime
 
 
 def test_field():
