@@ -1,30 +1,51 @@
 """
-Field classes are used to define the the data type of your Airtable columns.
+Field are used to define the Airtable column type for your pyAirtable models.
 
-Internally these are implemented as descritors, so they can access and set values
-seamleslly.
+Internally these are implemented as descriptors, this allows us to proxy getting and settings values, 
+while also providing a type-annotated interface.
 
-Descriptors are also annotated so you can use them with mypy.
-
+>>> from pyairtable.orm import Model, fields
+>>> class Contact(Model):
+...     name = fields.TextField("Name")
+...     is_registered = fields.CheckboxField("Registered")
+...
+...     class Meta:
+...         ...
+>>> contact = Contact(name="George", is_registered=True)
+>>> assert contact.name == "George"
+>>> reveal_type(contact.name)  # -> str
 >>> contact.to_record()
 {
     "id": recS6qSLw0OCA6Xul",
     "createdTime": "2021-07-14T06:42:37.000Z",
     "fields": {
-        "First Name": "George",
-        "Age": 20,
+        "Name": "George",
+        "Registered": True,
     }
 }
+
 
 Link Fields
 -----------
 
 In addition to standard data type fields, the :class:`LinkField` class
-offers a special behaviour that can fetch related records.
+offers a special behaviour that can fetch linked records.
 
 In other words, you can transverse related records through their ``Link Fields``:
 
->>> contact.partner.first_name
+>>> from pyairtable.orm import Model, fields
+>>> class Company(Model):
+...     name = fields.TextField("Name")
+...     class Meta:
+...         ...
+...
+>>> class Person(Model):
+...     company = fields.LinkField("Company", Company, lazy=False)
+...     class Meta:
+...         ...
+...
+>>> contact.from_id("recS6qSLw0OCA6Xul")
+>>> contact.company.name # outputs value of Company.name attribute
 
 -----------
 
