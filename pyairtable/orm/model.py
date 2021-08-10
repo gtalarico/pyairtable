@@ -55,7 +55,7 @@ You can read and modify attributes. If record already exists,
     }
 }
 
-And you can use :meth:`~pyairtable.orm.model.Model.delete` to delete the record:
+Finally, you can use :meth:`~pyairtable.orm.model.Model.delete` to delete the record:
 
 >>> contact.delete()
 True
