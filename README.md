@@ -7,7 +7,7 @@
 
 Airtable API Client Wrapper for Python
 
-![project-logo](https://github.com/gtalarico/airtable-python-wrapper/blob/master/docs/source/_static/logo.png)
+Note: `airtable-python-wrapper` is now `pyairtable`. You can checkout the new release [here](https://pyairtable.readthedocs.io/en/latest/)
 
 ## Installing
 
