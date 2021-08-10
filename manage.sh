@@ -9,3 +9,7 @@
 # make clean
 # python -m build --sdist --wheel --outdir ./dist
 # twine upload ./dist/*
+
+# TODO:
+# * Release SH
+# * Test Model

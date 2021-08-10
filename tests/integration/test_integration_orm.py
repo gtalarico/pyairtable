@@ -1,5 +1,6 @@
 import pytest
 import os
+from datetime import datetime
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
 
@@ -32,7 +33,8 @@ def Contact(Address):
         email = f.EmailField("Email")
         is_registered = f.CheckboxField("Registered")
         address = f.LinkField("Address", Address, lazy=True)
-        birthday = f.DatetimeField("Birthday")
+        birthday = f.DateField("Birthday")
+        last_access = f.DatetimeField("Last Access")
 
         class Meta:
             base_id = BASE_ID
@@ -58,6 +60,8 @@ def test_integration_orm(Contact, Address):
         email="email@email.com",
         is_registered=True,
         address=[address],
+        birthday=datetime.utcnow().date(),
+        last_access=datetime.utcnow(),
     )
 
     assert contact.first_name == "John"

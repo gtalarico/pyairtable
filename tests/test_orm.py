@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest import mock
 from requests_mock import Mocker
 import pytest
@@ -48,7 +49,7 @@ def test_model():
         last_name="Talarico",
         email="gui@gui.com",
         is_registered=True,
-        birthday="2020-01-01",
+        birthday=datetime(2020, 12, 12).date(),
     )
 
     # attribute look up

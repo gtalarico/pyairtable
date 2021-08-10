@@ -66,8 +66,11 @@ class Field:
         if not hasattr(instance, "_fields"):
             instance._fields = {}
 
-        converted_value = self.to_internal_value(value)
-        instance._fields[self.field_name] = converted_value
+        # TODO
+        # converted_value = self.to_internal_value(value)
+        # instance._fields[self.field_name] = converted_value
+
+        instance._fields[self.field_name] = value
 
     @staticmethod
     def to_record_value(value: Any) -> Any:
@@ -130,8 +133,8 @@ class DatetimeField(Field):
 
     @staticmethod
     def to_record_value(value: datetime) -> str:
-        """Airtable expects ISO 8601 string datetime eg. "2014-09-05T07:00:00.000Z" """
-        return value.isoformat() + ".000Z"
+        """Airtable expects ISO 8601 string datetime eg. "2014-09-05T12:34:56.000Z" """
+        return value.isoformat(timespec="milliseconds") + "Z"
 
     @staticmethod
     def to_internal_value(value: str) -> datetime:
@@ -244,7 +247,9 @@ class LinkField(Field, Generic[T_Linked]):
 
     @staticmethod
     def to_record_value(value: Any) -> Any:
-        return value.id
+        # breakpoint()
+        # return [v.id for v in value]
+        return value
 
 
 """

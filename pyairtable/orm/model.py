@@ -204,14 +204,16 @@ class Model(metaclass=abc.ABCMeta):
         Returns `True` if was created and `False` if it was updated
         """
         table = self.get_table()
+        record = self.to_record()
+        fields = record["fields"]
+
         if not self.id:
-            record = table.create(self._fields, typecast=self.typecast)
+            record = table.create(fields, typecast=self.typecast)
             did_create = True
         else:
-            record = table.update(
-                self.id, self._fields, replace=True, typecast=self.typecast
-            )
+            record = table.update(self.id, fields, replace=True, typecast=self.typecast)
             did_create = False
+
         self.id = record["id"]
         self.created_time = record["createdTime"]
         return did_create
