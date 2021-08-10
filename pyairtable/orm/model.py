@@ -305,9 +305,9 @@ class Model(metaclass=abc.ABCMeta):
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
 
-        record = self.get_table().get(self.id)
-        self._fields = record["fields"]
-        self.created_time = record["createdTime"]
+        updated = self.from_id(self.id, fetch=True)
+        self._fields = updated._fields
+        self.created_time = updated.created_time
 
     def __repr__(self):
         return "<Model={}>".format(self.__class__.__name__)

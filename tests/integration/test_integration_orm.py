@@ -41,6 +41,9 @@ def Contact(Address):
             api_key = os.environ["AIRTABLE_API_KEY"]
             table_name = "Contact"
 
+    # HACK - back-ref test
+    Address.contact = f.LinkField("Contact", _Contact, lazy=True)
+
     yield _Contact
 
     table = _Contact.get_table()
@@ -79,8 +82,9 @@ def test_integration_orm(Contact, Address):
     # Fetching
     contact = Contact.from_id(contact.id, fetch=False)
     assert not contact.address
-    assert not rv_address_2.fetch()
+    assert not contact.fetch()
     rv_address_2 = contact.address[0]
     assert not rv_address_2.street
-    assert not rv_address_2.fetch()
+    breakpoint()
+    rv_address_2.fetch()
     assert rv_address_2.street == rv_address.street == STREET
