@@ -94,23 +94,33 @@ def test_from_record():
     class Contact(Model):
 
         first_name = f.TextField("First Name")
+        timestamp = f.DatetimeField("Timestamp")
 
         class Meta:
             base_id = "contact_base_id"
             table_name = "Contact"
             api_key = "fake"
 
+    # Fetch = True
     with mock.patch.object(Table, "get") as m_get:
         m_get.return_value = {
             "id": "recwnBLPIeQJoYVt4",
             "createdTime": "",
-            "fields": {"First Name": "X"},
+            "fields": {"First Name": "X", "Timestamp": "2014-09-05T12:34:56.000Z"},
         }
         contact = Contact.from_id("recwnBLPIeQJoYVt4")
+        assert m_get.called
 
     assert m_get.called
     assert contact.id == "recwnBLPIeQJoYVt4"
     assert contact.first_name == "X"
+    assert contact.timestamp.year == 2014
+
+    # Fetch = False
+    with mock.patch.object(Table, "get") as m_get_no_fetch:
+        contact = Contact.from_id("recwnBLPIeQJoYVt4", fetch=False)
+        assert not m_get_no_fetch.called
+        assert not contact.first_name == "X"
 
 
 def test_linked_record():

@@ -10,6 +10,14 @@ The last ``0.x`` release will remain available on `PYPI <https://pypi.org/projec
 
 You can read about the reasons behind the renaming `here <https://github.com/gtalarico/airtable-python-wrapper/issues/125#issuecomment-891439661>`_.
 
+New Fetures
+------------
+
+* Type Annotations
+* Simpler Api
+* Formulas
+* ORM Models
+
 API Changes
 ------------
 

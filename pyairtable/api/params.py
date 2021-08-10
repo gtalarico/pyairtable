@@ -1,6 +1,8 @@
 from typing import List, Dict, Any
 from collections import OrderedDict
 
+from pyairtable.formulas import match
+
 
 class InvalidParamException(ValueError):
     """Raise when invalid parameters are used"""

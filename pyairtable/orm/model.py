@@ -63,7 +63,7 @@ True
 """
 import abc
 from pyairtable import Table
-from typing import TypeVar, Type
+from typing import TypeVar, Type, List
 
 from .fields import Field
 
@@ -158,7 +158,7 @@ class Model(metaclass=abc.ABCMeta):
         self._fields = {}
         self._linked_cache = {}
 
-        # Set descriptors values
+        # Set descriptors
         for key, value in fields.items():
             if key not in self._attribute_descriptor_map():
                 msg = "invalid kwarg '{}'".format(key)
@@ -166,10 +166,6 @@ class Model(metaclass=abc.ABCMeta):
             setattr(self, key, value)
 
         self.typecast = getattr(self.Meta, "typecast", True)
-
-    def exists(self) -> bool:
-        """Returns boolean indicating if instance exists (has 'id' attribute)"""
-        return bool(self.id)
 
     @classmethod
     def _validate_class(cls):
@@ -195,12 +191,16 @@ class Model(metaclass=abc.ABCMeta):
         """Return Airtable :class:`~pyairtable.api.Table` class instance"""
         if not hasattr(cls, "_table"):
             cls._table = Table(
-                cls.Meta.api_key,
-                cls.Meta.base_id,
-                cls.Meta.table_name,
-                timeout=getattr(cls.Meta, "timeout", None),
+                cls.Meta.api_key,  # type: ignore
+                cls.Meta.base_id,  # type: ignore
+                cls.Meta.table_name,  # type: ignore
+                timeout=getattr(cls.Meta, "timeout", None),  # type: ignore
             )
         return cls._table
+
+    def exists(self) -> bool:
+        """Returns boolean indicating if instance exists (has 'id' attribute)"""
+        return bool(self.id)
 
     def save(self) -> bool:
         """
@@ -233,7 +233,25 @@ class Model(metaclass=abc.ABCMeta):
         # Is it even possible go get "deleted" False?
         return result["deleted"]
 
+    @classmethod
+    def all(cls, **kwargs) -> List[T]:
+        """Returns all records for this model. See :meth:`~pyairtable.api.Api.all`"""
+        table = cls.get_table()
+        return table.all(**kwargs)
+
+    @classmethod
+    def first(cls, **kwargs) -> List[T]:
+        """Returns first record for this model. See :meth:`~pyairtable.api.Api.first`"""
+        table = cls.get_table()
+        return table.first(**kwargs)
+
     def to_record(self) -> dict:
+        """
+        Returns a dictionary object as an Airtable record.
+        This method converts internal field values into values expected by Airtable.
+        e.g. a ``datetime`` value from :class:``DateTimeField`` is converted into an
+        ISO 8601 string
+        """
         map_ = self._field_name_descriptor_map()
         fields = {k: map_[k].to_record_value(v) for k, v in self._fields.items()}
         return {"id": self.id, "createdTime": self.created_time, "fields": fields}
@@ -241,10 +259,15 @@ class Model(metaclass=abc.ABCMeta):
     @classmethod
     def from_record(cls: Type[T], record: dict) -> T:
         """Create instance from record dictionary"""
-        field_map = cls._field_name_attribute_map()
+        name_attr_map = cls._field_name_attribute_map()
+        name_field_map = cls._field_name_descriptor_map()
         try:
             # Convert Column Names into model field names
-            kwargs = {field_map[k]: v for k, v in record["fields"].items()}
+            # Use field's to_internal to cast into model fields
+            kwargs = {
+                name_attr_map[k]: name_field_map[k].to_internal_value(v)
+                for k, v in record["fields"].items()
+            }
         except KeyError as exc:
             raise ValueError("Invalid Field Name: {} for model {}".format(exc, cls))
         instance = cls(**kwargs)
@@ -261,7 +284,7 @@ class Model(metaclass=abc.ABCMeta):
             record_id: |arg_record_id|
 
         Keyward Args:
-            fetch: If `True`, record will be fetched from pyairtable and fields will be
+            fetch: If `True`, record will be fetched and fields will be
                 updated. If `False`, a new instance is created with the provided `id`,
                 but field values are unset. Default is `True`.
 
@@ -278,7 +301,7 @@ class Model(metaclass=abc.ABCMeta):
             return instance
 
     def fetch(self):
-        """Fetches field and resets instance field values from pyairtable record"""
+        """Fetches field and resets instance field values from the Airtable record"""
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
 
@@ -289,7 +312,7 @@ class Model(metaclass=abc.ABCMeta):
     def __repr__(self):
         return "<Model={}>".format(self.__class__.__name__)
 
-    # TODO
+    # TODO - see metadata.py
     # def verify_schema(cls) -> Tuple[bool, dict]:
     #     """verify local airtable models"""
 

@@ -29,6 +29,7 @@ In other words, you can transverse related records through their ``Link Fields``
 -----------
 
 """
+import abc
 from datetime import date, datetime
 from typing import (
     Any,
@@ -47,17 +48,19 @@ if TYPE_CHECKING:
 T_Linked = TypeVar("T_Linked", bound="Model")
 
 
-class Field:
-    def __init__(self, field_name) -> None:
+class Field(metaclass=abc.ABCMeta):
+    def __init__(self, field_name, validate_type=True) -> None:
         self.field_name = field_name
+        self.validate_type = True
 
     def __get__(self, instance, cls=None):
         # Raise if descriptor is called on class, where instance is None
         if not instance:
-            raise ValueError("cannot access descriptors on class")
+            raise RuntimeError("cannot access descriptors on class")
 
         field_name = self.field_name
         try:
+            # Field Field is not yet in dict, return None
             return instance._fields[field_name]
         except (KeyError, AttributeError):
             return None
@@ -65,20 +68,21 @@ class Field:
     def __set__(self, instance, value):
         if not hasattr(instance, "_fields"):
             instance._fields = {}
-
-        # TODO
-        # converted_value = self.to_internal_value(value)
-        # instance._fields[self.field_name] = converted_value
-
+        if self.validate_type:
+            self.valid_or_raise(value)
         instance._fields[self.field_name] = value
 
-    @staticmethod
-    def to_record_value(value: Any) -> Any:
+    # @abc.abstractmethod
+    def to_record_value(self, value: Any) -> Any:
         return value
 
-    @staticmethod
-    def to_internal_value(value: Any) -> Any:
+    # @abc.abstractmethod
+    def to_internal_value(self, value: Any) -> Any:
         return value
+
+    # @abc.abstractmethod
+    def valid_or_raise(self, value) -> None:
+        ...
 
     def __repr__(self):
         return "<{} field_name='{}'>".format(self.__class__.__name__, self.field_name)
@@ -87,20 +91,34 @@ class Field:
 class TextField(Field):
     """Airtable Single Text or Multiline Text Fields. Uses ``str`` to store value"""
 
-    @staticmethod
-    def to_internal_value(value: Any) -> str:
+    def to_internal_value(self, value: Any) -> str:
         return str(value)
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, str):
+            raise ValueError("TextField value must be 'str'")
 
     def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
 
 
+class EmailField(TextField):
+    """Airtable Email field. Uses ``str`` to store value"""
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, str):
+            raise ValueError("EmailField value must be 'str'")
+
+
 class IntegerField(Field):
     """Airtable Number field with Integer Precision. Uses ``int`` to store value"""
 
-    @staticmethod
-    def to_internal_value(value: Any) -> int:
+    def to_internal_value(self, value: Any) -> int:
         return int(value)
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, int):
+            raise ValueError("IntegerField value must be 'int'")
 
     def __get__(self, *args, **kwargs) -> Optional[int]:
         return super().__get__(*args, **kwargs)
@@ -109,9 +127,12 @@ class IntegerField(Field):
 class FloatField(Field):
     """Airtable Number field with Decimal precision. Uses ``float`` to store value"""
 
-    @staticmethod
-    def to_internal_value(value: Any) -> float:
+    def to_internal_value(self, value: Any) -> float:
         return float(value)
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, float):
+            raise ValueError("FloatField value must be 'float'")
 
     def __get__(self, *args, **kwargs) -> Optional[float]:
         return super().__get__(*args, **kwargs)
@@ -120,9 +141,12 @@ class FloatField(Field):
 class CheckboxField(Field):
     """Airtable Checkbox field. Uses ``bool`` to store value"""
 
-    @staticmethod
-    def to_internal_value(value: Any) -> bool:
+    def to_internal_value(self, value: Any) -> bool:
         return bool(value)
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, bool):
+            raise ValueError("CheckboxField value must be 'bool'")
 
     def __get__(self, *args, **kwargs) -> Optional[bool]:
         return super().__get__(*args, **kwargs)
@@ -131,15 +155,17 @@ class CheckboxField(Field):
 class DatetimeField(Field):
     """Airtable Datetime field. Uses ``datetime`` to store value"""
 
-    @staticmethod
-    def to_record_value(value: datetime) -> str:
+    def to_record_value(self, value: datetime) -> str:
         """Airtable expects ISO 8601 string datetime eg. "2014-09-05T12:34:56.000Z" """
         return value.isoformat(timespec="milliseconds") + "Z"
 
-    @staticmethod
-    def to_internal_value(value: str) -> datetime:
+    def to_internal_value(self, value: str) -> datetime:
         """Airtable returns ISO 8601 string datetime eg. "2014-09-05T07:00:00.000Z" """
         return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, datetime):
+            raise ValueError("DatetimeField value must be 'datetime'")
 
     def __get__(self, *args, **kwargs) -> Optional[datetime]:
         return super().__get__(*args, **kwargs)
@@ -148,24 +174,19 @@ class DatetimeField(Field):
 class DateField(Field):
     """Airtable Date field. Uses ``Date`` to store value"""
 
-    @staticmethod
-    def to_record_value(value: date) -> str:
+    def to_record_value(self, value: date) -> str:
         """Airtable expects ISO 8601 date string eg. "2014-09-05"""
         return value.strftime("%Y-%m-%d")
 
-    @staticmethod
-    def to_internal_value(value: str) -> date:
+    def to_internal_value(self, value: str) -> date:
         """Airtable returns ISO 8601 date string eg. "2014-09-05"""
         return datetime.strptime(value, "%Y-%m-%d").date()
 
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, date):
+            raise ValueError("DateField value must be 'date'")
+
     def __get__(self, *args, **kwargs) -> Optional[datetime]:
-        return super().__get__(*args, **kwargs)
-
-
-class EmailField(Field):
-    """Airtable Email field. Uses ``str`` to store value"""
-
-    def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
 
 
@@ -191,65 +212,30 @@ class LinkField(Field, Generic[T_Linked]):
             raise NotImplementedError("path import not implemented")
             # https://github.com/FactoryBoy/factory_boy/blob/37f962720814dff42d7a6a848ccfd200fc7f5ae2/factory/declarations.py#L339
             # model = cast(Type[T_Linked], locate(model))
+
+        assert hasattr(model, "get_table"), "model be subclassed from Model"
         self._model = model
         self._lazy = lazy
         super().__init__(field_name)
 
-    def __get__(self, instance: Any, cls=None) -> List[T_Linked]:
-        """
-        Gets value of :class:`LinkField` descriptor.
+    def __get__(self, *args, **kwargs) -> List[T_Linked]:
+        return super().__get__(*args, **kwargs)
 
-        Returns:
-            List of Link Instances
-        """
-        if not instance:
-            raise ValueError("cannot access descriptors on class")
-
-        assert hasattr(instance, "get_table"), "instance be subclassed from Model"
-
-        link_ids = instance._fields.get(self.field_name, [])
-
-        instances = []
-        for link_id in link_ids:
-
-            # If cache, previous instance is used
-            # This is needed to prevent loading a new instance on each attribute lookup
-            cached_instance = instance._linked_cache.get(link_id)
-            if cached_instance:
-                instances.append(cached_instance)
-                continue
-            else:
-                # If Lazy, create empty from model class and set id
-                # If not Lazy, fetch record from pyairtable and create new model instance
-                should_fetch = not self._lazy
-                new_link_instance = self._model.from_id(link_id, fetch=should_fetch)
-
-                # Cache instance
-                instance._linked_cache[link_id] = new_link_instance
-                instances.append(new_link_instance)
-
-        return instances
-
-    def __set__(self, instance, value: List[T_Linked]):
-        """
-        Sets value for LinkField descriptor.
-        Value must be list of linked instances - eg:
-
-        >>> contact.address = [address]
-        """
-        assert hasattr(value, "__iter__"), "LinkField value must be iterable"
+    def valid_or_raise(self, value) -> None:
+        if not hasattr(value, "__iter__"):
+            raise TypeError("LinkField value must be iterable")
         for model_instance in value:
-            assert isinstance(model_instance, self._model), "must be model intance"
-            # Store instance in cache and store id
-            instance._linked_cache[model_instance.id] = model_instance
-        ids = [i.id for i in value]
-        super().__set__(instance, ids)
+            if not isinstance(model_instance, self._model):
+                raise ValueError("must be model intance")
 
-    @staticmethod
-    def to_record_value(value: Any) -> Any:
-        # breakpoint()
-        # return [v.id for v in value]
-        return value
+    def to_internal_value(self, value: Any) -> List[T_Linked]:
+        # If Lazy, create empty from model class and set id
+        # If not Lazy, fetch record from pyairtable and create new model instance
+        should_fetch = not self._lazy
+        return [self._model.from_id(id_, fetch=should_fetch) for id_ in value]
+
+    def to_record_value(self, value: Any) -> List[str]:
+        return [v.id for v in value]
 
 
 """

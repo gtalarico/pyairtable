@@ -286,11 +286,17 @@ class Api(ApiBase):
         Retrieves the first found record or ``None`` if no records are returned.
 
         This is similar to :meth:`~pyairtable.api.api.Api.all`, except it
-        it sets ``page_size`` and ``max_records`` to ``1`` to optimize query.
+        it sets ``page_size`` and ``max_records`` to ``1``.
 
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
+
+        Keywords Args:
+            view: |kwarg_view|
+            fields: |kwarg_fields|
+            sort: |kwarg_sort|
+            formula: |kwarg_formula|
         """
         return super()._first(base_id, table_name, **options)
 
