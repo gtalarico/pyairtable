@@ -20,7 +20,8 @@ Contribute
    make test
 
 .. warning::
-
+   ``make test`` includes some real unmocked integration tests that require access to a particular Airtable.
+   You can skip those test using `pytest -m 'not integration'`
 
 
 License

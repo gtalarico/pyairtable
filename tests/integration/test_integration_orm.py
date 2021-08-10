@@ -85,6 +85,5 @@ def test_integration_orm(Contact, Address):
     assert not contact.fetch()
     rv_address_2 = contact.address[0]
     assert not rv_address_2.street
-    breakpoint()
     rv_address_2.fetch()
     assert rv_address_2.street == rv_address.street == STREET
