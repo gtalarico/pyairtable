@@ -292,7 +292,7 @@ class Api(ApiBase):
             base_id: |arg_base_id|
             table_name: |arg_table_name|
 
-        Keywords Args:
+        Keyword Args:
             view: |kwarg_view|
             fields: |kwarg_fields|
             sort: |kwarg_sort|
