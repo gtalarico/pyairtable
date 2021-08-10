@@ -16,6 +16,8 @@ Contribute
    git clone git@github.com:gtalarico/pyairtable.git
    cd pyairtable
    pip install -e .
+   make lint
+   make test
 
 
 License

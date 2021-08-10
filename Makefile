@@ -13,6 +13,9 @@ release:
 	python -m build --sdist --wheel --outdir ./dist
 	twine upload ./dist/*
 
+bump:
+	@bash -c "./bump.sh"
+
 test:
 	pytest -v
 

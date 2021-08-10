@@ -63,7 +63,7 @@ True
 """
 import abc
 from pyairtable import Table
-from typing import TypeVar, Type, Optional, Tuple
+from typing import TypeVar, Type
 
 from .fields import Field
 
@@ -88,6 +88,8 @@ class Model(metaclass=abc.ABCMeta):
     ...         base_id = "appaPqizdsNHDvlEm"
     ...         table_name = "Contact"
     ...         api_key = "keyapikey"
+    ...         timeout: Optional[Tuple[int, int]] = (5, 5)
+    ...         typecast: bool = True
     """
 
     id: str = ""
@@ -96,12 +98,9 @@ class Model(metaclass=abc.ABCMeta):
     _linked_cache: dict
     _table: Table
 
-    class Meta:
-        base_id: str
-        table_name: str
-        api_key: str
-        timeout: Optional[Tuple[int, int]]
-        typecast: bool
+    def __init_subclass__(cls, **kwargs):
+        cls._validate_class()
+        super().__init_subclass__(**kwargs)
 
     @classmethod
     def _attribute_descriptor_map(cls):
@@ -159,10 +158,6 @@ class Model(metaclass=abc.ABCMeta):
         self._fields = {}
         self._linked_cache = {}
 
-        # Get descriptors values
-        # TODO check for clashes and raise
-        # disallowed_names = ("id", "crreated_time", "_fields", "_linked_cache", "_table")
-
         # Set descriptors values
         for key, value in fields.items():
             if key not in self._attribute_descriptor_map():
@@ -170,19 +165,30 @@ class Model(metaclass=abc.ABCMeta):
                 raise ValueError(msg)
             setattr(self, key, value)
 
-        # Verify required Meta attributes were set
-        if not getattr(self.Meta, "base_id", None):
-            raise ValueError("Meta.base_id must be defined in model")
-        if not getattr(self.Meta, "table_name", None):
-            raise ValueError("Meta.table_name must be defined in model")
-        if not getattr(self.Meta, "api_key", None):
-            raise ValueError("Meta.api_key must be defined in model")
-
         self.typecast = getattr(self.Meta, "typecast", True)
 
     def exists(self) -> bool:
         """Returns boolean indicating if instance exists (has 'id' attribute)"""
         return bool(self.id)
+
+    @classmethod
+    def _validate_class(cls):
+        # Verify required Meta attributes were set
+        if not getattr(cls.Meta, "base_id", None):
+            raise ValueError("Meta.base_id must be defined in model")
+        if not getattr(cls.Meta, "table_name", None):
+            raise ValueError("Meta.table_name must be defined in model")
+        if not getattr(cls.Meta, "api_key", None):
+            raise ValueError("Meta.api_key must be defined in model")
+
+        model_attributes = [a for a in cls.__dict__.keys() if not a.startswith("__")]
+        overridden = set(model_attributes).intersection(Model.__dict__.keys())
+        if overridden:
+            raise ValueError(
+                "Class {cls} fields clash with existing method: {name}".format(
+                    cls=cls.__name__, name=overridden
+                )
+            )
 
     @classmethod
     def get_table(cls) -> Table:

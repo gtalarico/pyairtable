@@ -8,16 +8,29 @@ from pyairtable.orm import fields as f
 
 
 def test_model_missing_meta():
-    class Address(Model):
-        street = f.TextField("Street")
-
-        class Meta:
-            base_id = "required"
-            table_name = "required"
-            # api_key = "required"
 
     with pytest.raises(ValueError):
-        Address()
+
+        class Address(Model):
+            street = f.TextField("Street")
+
+            class Meta:
+                base_id = "required"
+                table_name = "required"
+                # api_key = "required"
+
+
+def test_model_overlapping():
+
+    with pytest.raises(ValueError):
+
+        class Address(Model):
+            exists = f.TextField("Exists")
+
+            class Meta:
+                base_id = "required"
+                table_name = "required"
+                api_key = "required"
 
 
 def test_model():
