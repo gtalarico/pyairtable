@@ -14,7 +14,7 @@ Installation
     $ pip install pyairtable
 
 .. warning::
-    Looking for ``airtable-python-wrapper``? Checkout :doc:`migrations`.
+    Looking for **airtable-python-wrapper**? Check out :doc:`migrations`.
 
 _______________________________________________
 
@@ -22,9 +22,8 @@ _______________________________________________
 Api Key
 *******
 
-Your Api Key should be kept secure and should likely not be saved in your code.
-A common way to store and used it in your code is to save the key in your environment
-and load it
+Your Airtable API key should be securely stored. 
+A common way to store it as an environment variable and load it using ``os.environ``:
 
 .. code-block:: python
 
@@ -36,7 +35,7 @@ and load it
 Quickstart
 **********
 
-The easiest way to use this client is to the :class:`~pyairtable.api.Table` class to fetch
+The easiest way to use this client is to use the :class:`~pyairtable.api.Table` class to fetch
 or update your records:
 
 .. code-block:: python
@@ -54,4 +53,4 @@ or update your records:
     >>> table.delete("recwAcQdqwe21as")
     True
 
-For more details on all the available classes and methods checkout the :doc:`api` section.
+For more details on the available classes and methods check out the :doc:`api` section.
