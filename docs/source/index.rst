@@ -26,6 +26,7 @@ pyAirtable
    api
    orm
    metadata
+   utils
    migrations
 
 

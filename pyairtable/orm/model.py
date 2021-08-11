@@ -94,9 +94,9 @@ class Model(metaclass=abc.ABCMeta):
 
     id: str = ""
     created_time: str = ""
-    _fields: dict
-    _linked_cache: dict
     _table: Table
+    _fields: dict = {}
+    _linked_cache: dict = {}
 
     def __init_subclass__(cls, **kwargs):
         cls._validate_class()
@@ -156,7 +156,6 @@ class Model(metaclass=abc.ABCMeta):
     def __init__(self, **fields):
         # To Store Fields
         self._fields = {}
-        self._linked_cache = {}
 
         # Set descriptors
         for key, value in fields.items():
@@ -310,7 +309,7 @@ class Model(metaclass=abc.ABCMeta):
         self.created_time = updated.created_time
 
     def __repr__(self):
-        return "<Model={}>".format(self.__class__.__name__)
+        return "<Model={} {}>".format(self.__class__.__name__, hex(id(self)))
 
     # TODO - see metadata.py
     # def verify_schema(cls) -> Tuple[bool, dict]:

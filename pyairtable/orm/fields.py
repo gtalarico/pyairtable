@@ -63,6 +63,8 @@ from typing import (
     Union,
 )
 
+from pyairtable import utils
+
 if TYPE_CHECKING:
     from pyairtable.orm import Model  # noqa
 
@@ -73,6 +75,9 @@ class Field(metaclass=abc.ABCMeta):
     def __init__(self, field_name, validate_type=True) -> None:
         self.field_name = field_name
         self.validate_type = True
+
+    def __set_name__(self, owner, name):
+        self.attribute_name = name
 
     def __get__(self, instance, cls=None):
         # Raise if descriptor is called on class, where instance is None
@@ -93,15 +98,12 @@ class Field(metaclass=abc.ABCMeta):
             self.valid_or_raise(value)
         instance._fields[self.field_name] = value
 
-    # @abc.abstractmethod
     def to_record_value(self, value: Any) -> Any:
         return value
 
-    # @abc.abstractmethod
     def to_internal_value(self, value: Any) -> Any:
         return value
 
-    # @abc.abstractmethod
     def valid_or_raise(self, value) -> None:
         ...
 
@@ -178,11 +180,11 @@ class DatetimeField(Field):
 
     def to_record_value(self, value: datetime) -> str:
         """Airtable expects ISO 8601 string datetime eg. "2014-09-05T12:34:56.000Z" """
-        return value.isoformat(timespec="milliseconds") + "Z"
+        return utils.datetime_to_iso_str(value)
 
     def to_internal_value(self, value: str) -> datetime:
         """Airtable returns ISO 8601 string datetime eg. "2014-09-05T07:00:00.000Z" """
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+        return utils.datetime_from_iso_str(value)
 
     def valid_or_raise(self, value) -> None:
         if not isinstance(value, datetime):
@@ -197,11 +199,11 @@ class DateField(Field):
 
     def to_record_value(self, value: date) -> str:
         """Airtable expects ISO 8601 date string eg. "2014-09-05"""
-        return value.strftime("%Y-%m-%d")
+        return utils.date_to_iso_str(value)
 
     def to_internal_value(self, value: str) -> date:
         """Airtable returns ISO 8601 date string eg. "2014-09-05"""
-        return datetime.strptime(value, "%Y-%m-%d").date()
+        return utils.date_from_iso_str(value)
 
     def valid_or_raise(self, value) -> None:
         if not isinstance(value, date):
@@ -253,7 +255,13 @@ class LinkField(Field, Generic[T_Linked]):
         # If Lazy, create empty from model class and set id
         # If not Lazy, fetch record from pyairtable and create new model instance
         should_fetch = not self._lazy
-        return [self._model.from_id(id_, fetch=should_fetch) for id_ in value]
+        linked_models = [
+            self._model._linked_cache.get(id_)
+            or self._model.from_id(id_, fetch=should_fetch)
+            for id_ in value
+        ]
+        self._model._linked_cache.update({m.id: m for m in linked_models})
+        return linked_models
 
     def to_record_value(self, value: Any) -> List[str]:
         return [v.id for v in value]

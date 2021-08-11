@@ -2,5 +2,8 @@
 
 set -e
 
+echo "> Linting"
 make lint
+
+echo "> Testing"
 make test

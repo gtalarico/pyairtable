@@ -16,11 +16,12 @@ Contribute
    git clone git@github.com:gtalarico/pyairtable.git
    cd pyairtable
    pip install -e .
-   make lint
-   make test
+   make docs # builds docs locally - see `docs/build/index.html`
+   make lint # lints
+   make test # run test complete suite
 
 .. warning::
-   ``make test`` includes some real unmocked integration tests that require access to a particular Airtable.
+   ``make test`` includes some unmocked integration tests that require access to a particular Airtable.
    You can skip those test using `pytest -m 'not integration'`
 
 

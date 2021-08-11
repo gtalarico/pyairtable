@@ -1,5 +1,5 @@
 import pytest
-from pyairtable.formulas import AND, EQUAL, FIELD, STR_VALUE, match, quotes_escaped
+from pyairtable.formulas import AND, EQUAL, FIELD, STR_VALUE, match, escape_quotes
 
 
 def test_equal():
@@ -48,6 +48,6 @@ def test_match(dict, exprected_formula):
         (r"player\'s name", r"player\'s name"),
     ],
 )
-def test_quotes_escaped(text, escaped):
-    rv = quotes_escaped(text)
+def test_escape_quotes(text, escaped):
+    rv = escape_quotes(text)
     assert rv == escaped

@@ -290,6 +290,11 @@ Formulas
 The formula module provides funcionality to help you compose airtable formulas.
 For more information see `Airtable Formula Reference <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_
 
+Match
+---------------
+
+:func:`~pyairtable.formulas.match` helps you build a formula to check for equality
+against a python dictionary:
 
 .. code-block:: python
 
@@ -301,6 +306,13 @@ For more information see `Airtable Formula Reference <https://support.airtable.c
   "AND({First Name}='John',{Age}=21)"
 
 .. autofunction:: pyairtable.formulas.match
+
+
+Formula Helpers
+---------------
+
+.. autofunction:: pyairtable.formulas.to_airtable_value
+.. autofunction:: pyairtable.formulas.escape_quotes
 
 
 Raw Formulas

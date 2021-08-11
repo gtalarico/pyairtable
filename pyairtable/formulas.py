@@ -9,7 +9,8 @@ def match(dict_values):
     groupped together into using ``AND()``.
 
     This function also handles escaping field names and casting python values
-    to the appropriate airtable types.
+    to the appropriate airtable types using :func:`to_airtable_value` on all
+    provided values to help generate the expected formula syntax.
 
     Args:
         dict_values: dictionary containing column names and values
@@ -17,6 +18,12 @@ def match(dict_values):
     Usage:
         >>> match({"First Name": "John", "Age": 21})
         "AND({First Name}='John',{Age}=21)"
+        >>> match({"First Name": "John"})
+        "{First Name}='John'"
+        >>> match({"Registered": True})
+        "{Registered}=1"
+        >>> match({"Owner's Name": "Mike"})
+        "{Owner\'s Name}='Mike'"
 
     """
     expressions = []
@@ -32,7 +39,7 @@ def match(dict_values):
         return AND(*expressions)
 
 
-def quotes_escaped(value: str):
+def escape_quotes(value: str):
     r"""
     Ensures any quotes are escaped. Already escaped quotes are ignored.
 
@@ -40,9 +47,9 @@ def quotes_escaped(value: str):
         value: text to be escaped
 
     Usage:
-        >>> quotes_escaped("Player's Name")
+        >>> escape_quotes("Player's Name")
         Player\'s Name
-        >>> quotes_escaped("Player\'s Name")
+        >>> escape_quotes("Player\'s Name")
         Player\'s Name
     """
     escaped_value = re.sub("(?<!\\\\)'", "\\'", value)
@@ -52,6 +59,8 @@ def quotes_escaped(value: str):
 def to_airtable_value(value: Any):
     """
     Cast value to appropriate airtable types and format.
+    For example, to check ``bool`` values in formulas, you actually to compare
+    to 0 and 1.
 
     Arg:
         value: value to be cast.
@@ -65,7 +74,7 @@ def to_airtable_value(value: Any):
     elif isinstance(value, (int, float)):
         return value
     elif isinstance(value, str):
-        return STR_VALUE(quotes_escaped(value))
+        return STR_VALUE(escape_quotes(value))
     else:
         return value
 
@@ -88,7 +97,7 @@ def FIELD(name: str) -> str:
         name: field name
 
     Usage:
-        >>> FIELD("First Name"")
+        >>> FIELD("First Name")
         '{First Name}'
     """
     return "{%s}" % name
