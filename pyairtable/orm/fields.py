@@ -1,7 +1,7 @@
 """
 Field are used to define the Airtable column type for your pyAirtable models.
 
-Internally these are implemented as descriptors, this allows us to proxy getting and settings values, 
+Internally these are implemented as descriptors, this allows us to proxy getting and settings values,
 while also providing a type-annotated interface.
 
 >>> from pyairtable.orm import Model, fields
