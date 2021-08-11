@@ -150,6 +150,7 @@ html_context = {
             # {"title": "♡ Sponsor", "url": "https://github.com/sponsors/gtalarico"},
         ]
     },
+    "docs_source_path": "main/docs/source",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
