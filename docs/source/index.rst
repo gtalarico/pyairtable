@@ -24,9 +24,8 @@ pyAirtable
 
    getting-started
    api
-   orm
-   metadata
    utils
+   experimental
    migrations
 
 

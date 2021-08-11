@@ -8,9 +8,9 @@ Changelog
 1.0.0
 ------
 
-Release Date: 2021-08-07
+Release Date: 2021-08-11
 
-* pyAirtable rewrite for 1.0. See :doc:`migrations`.
+* pyAirtable rewrite for 1.x - see :doc:`migrations`.
 
 0.15.3
 ------

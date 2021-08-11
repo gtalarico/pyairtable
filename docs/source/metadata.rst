@@ -1,4 +1,3 @@
-
 .. include:: substitutions.rst
 
 Metadata Api
