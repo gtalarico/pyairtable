@@ -3,6 +3,9 @@
 usage:
 	cat Makefile
 
+init:
+	git config core.hooksPath scripts/githooks
+
 release-test:
 	make clean
 	python -m build --sdist --wheel --outdir ./dist
@@ -14,7 +17,7 @@ release:
 	twine upload ./dist/*
 
 bump:
-	@bash -c "./bump.sh"
+	@bash -c "./scripts/bump.sh"
 
 test:
 	pytest -v

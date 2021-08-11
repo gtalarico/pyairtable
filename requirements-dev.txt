@@ -2,7 +2,7 @@
 Sphinx==4.1.2
 sphinx-autoapi==1.7.0
 sphinxext-opengraph==0.4.2
-revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@aa192f3fe5b58c6087a88c064728ea91c2b39695
+revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@40f4b09fa5c199e3844153ef973a1155a56981dd
 sphinx-autodoc-typehints==1.12.0
 
 # Packaging

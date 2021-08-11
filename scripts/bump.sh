@@ -3,7 +3,6 @@
 function bump {
     previousVersion=$( grep '^__version__' pyairtable/__init__.py | sed 's/__version__ = \"\(.*\)\"/\1/' )
     previousVersion=$(echo -n "${previousVersion}")
-
     echo "Enter Version [current is ${previousVersion}]:"
     read version
     if [ -z "$version" ]; then
@@ -11,7 +10,7 @@ function bump {
         version="$previousVersion"
         return
     fi
-    sed -i -b "s/__version__ = .*/__version__ = \"$version\"/" pyairtable/__init__.py
+    sed -i "" "s/^__version__ = .*$/__version__ = \"xxx\"/" pyairtable/__init__.py
     echo "Bumped __version__ to $version"
 }
 
