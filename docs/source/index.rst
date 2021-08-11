@@ -9,11 +9,12 @@ Airtable Python Wrapper Documentation
 .. image:: _static/logo.png
   :scale: 75%
 
-
-Version: |version|
-
 For more information about the Airtable API see the
 `Airtable API Docs <https://airtable.com/api>`_
+
+.. note:: 
+   The 1.x+ releases of airtable-python-wrapper are now called pyAirtable.
+   For the new version check out `pyAirtable docs <https://pyairtable.readthedocs.io/>`_
 
 _______________________________________________
 
