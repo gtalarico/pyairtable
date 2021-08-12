@@ -23,7 +23,7 @@ Api Key
 *******
 
 Your Airtable API key should be securely stored. 
-A common way to store it as an environment variable and load it using ``os.environ``:
+A common way to do this, is to store it as an environment variable, and load it using ``os.environ``:
 
 .. code-block:: python
 
