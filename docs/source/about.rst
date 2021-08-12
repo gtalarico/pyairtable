@@ -15,14 +15,14 @@ Contribute
 
    git clone git@github.com:gtalarico/pyairtable.git
    cd pyairtable
-   pip install -e .
-   make docs # builds docs locally - see `docs/build/index.html`
-   make lint # lints
+   # Create Virtual Environment
+   python3 -m venv .venv
+   source .venv/bin/activate
+   make setup # Sets up githooks and install package and depedencies
    make test # run test complete suite
-
-.. warning::
-   ``make test`` includes some unmocked integration tests that require access to a particular Airtable.
-   You can skip those test using `pytest -m 'not integration'`
+   # Optional, use as needed
+   make lint # lints locally - also done in pre-merge CI
+   make docs # builds docs locally - see `docs/build/index.html`
 
 
 License
