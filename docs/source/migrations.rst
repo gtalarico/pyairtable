@@ -10,7 +10,7 @@ The last ``0.x`` release will remain available on `PYPI <https://pypi.org/projec
 
 You can read about the reasons behind the renaming `here <https://github.com/gtalarico/airtable-python-wrapper/issues/125#issuecomment-891439661>`_.
 
-New Fetures
+New Features
 ------------
 
 * Type Annotations
@@ -21,7 +21,7 @@ New Fetures
 API Changes
 ------------
 
-When writing pyAirtable, we a few changes to the api:
+We used this new major release to make a few breaking changes:
 
 * Introduced a simpler api that's more closely aligned with Airtable Api's patterns.
 * Created more a flexible API (:class:`~pyairtable.api.Api`, :class:`~pyairtable.api.Base`, :class:`~pyairtable.api.Table`)
