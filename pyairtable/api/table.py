@@ -35,6 +35,13 @@ class Table(ApiBase):
         """Returns the table URL"""
         return super().get_table_url(self.base_id, self.table_name)
 
+    def get_base(self) -> "Base":
+        """
+        Returns a new :class:`Base` instance using all shared
+        attributes from :class:`Table`
+        """
+        return Base(self.api_key, self.base_id, timeout=self.timeout)
+
     def get_record_url(self, record_id: str):
         """
         Same as :meth:`Api.get_record_url <pyairtable.api.Api.get_record_url>`
@@ -133,3 +140,6 @@ class Table(ApiBase):
 
     def __repr__(self) -> str:
         return "<Table base_id={} table_name={}>".format(self.base_id, self.table_name)
+
+
+from pyairtable.api.base import Base  # noqa

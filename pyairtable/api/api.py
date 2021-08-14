@@ -1,13 +1,12 @@
 import abc
 from functools import lru_cache
 import posixpath
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import time
 from urllib.parse import quote
 
 import requests
 
-from .auth import AirtableAuth
 from .params import to_params_dict
 
 
@@ -18,11 +17,42 @@ class ApiBase(metaclass=abc.ABCMeta):
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
 
+    session: requests.Session
+    tiemout: Optional[Tuple[int, int]]
+
     def __init__(self, api_key: str, timeout=None):
         session = requests.Session()
-        session.auth = AirtableAuth(api_key)
         self.session = session
         self.timeout = timeout
+        self.api_key = api_key
+
+    @property
+    def api_key(self) -> str:
+        """Returns the Airtable API Key"""
+        return self._api_key
+
+    @api_key.setter
+    def api_key(self, value):
+        """Returns the Airtable API Key"""
+        self._update_api_key(value)
+        self._api_key = value
+
+    def _update_api_key(self, api_key: str) -> None:
+        self.session.headers.update({"Authorization": "Bearer {}".format(api_key)})
+
+    def get_table(self, base_id: str, table_name: str) -> "Table":
+        """
+        Returns a new :class:`Table` instance using all shared
+        attributes from :class:`Api`
+        """
+        return Table(self.api_key, base_id, table_name, timeout=self.timeout)
+
+    def get_base(self, base_id: str) -> "Base":
+        """
+        Returns a new :class:`Base` instance using all shared
+        attributes from :class:`Api`
+        """
+        return Base(self.api_key, base_id, timeout=self.timeout)
 
     @lru_cache()
     def get_table_url(self, base_id: str, table_name: str):
@@ -220,6 +250,13 @@ class Api(ApiBase):
 
         """
         super().__init__(api_key, timeout=timeout)
+
+    def get_table(self, table_name: str) -> "Table":
+        """
+        Returns a new :class:`Table` instance using all shared
+        attributes from :class:`Base`
+        """
+        return Table(self.api_key, self.base_id, table_name, timeout=self.timeout)
 
     def get_record_url(self, base_id: str, table_name: str, record_id: str):
         """
@@ -490,3 +527,7 @@ class Api(ApiBase):
 
     def __repr__(self) -> str:
         return "<Airtable Api>"
+
+
+from pyairtable.api.table import Table  # noqa
+from pyairtable.api.base import Base  # noqa
