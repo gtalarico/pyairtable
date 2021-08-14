@@ -60,6 +60,11 @@ def test_update_api_key(table):
     assert "123" in table.session.headers["Authorization"]
 
 
+def test_get_base(table):
+    base = table.get_base()
+    assert base.base_id == table.base_id and base.api_key == table.api_key
+
+
 def test_get(table, mock_response_single):
     _id = mock_response_single["id"]
     with Mocker() as mock:
