@@ -40,20 +40,6 @@ class ApiBase(metaclass=abc.ABCMeta):
     def _update_api_key(self, api_key: str) -> None:
         self.session.headers.update({"Authorization": "Bearer {}".format(api_key)})
 
-    def get_table(self, base_id: str, table_name: str) -> "Table":
-        """
-        Returns a new :class:`Table` instance using all shared
-        attributes from :class:`Api`
-        """
-        return Table(self.api_key, base_id, table_name, timeout=self.timeout)
-
-    def get_base(self, base_id: str) -> "Base":
-        """
-        Returns a new :class:`Base` instance using all shared
-        attributes from :class:`Api`
-        """
-        return Base(self.api_key, base_id, timeout=self.timeout)
-
     @lru_cache()
     def get_table_url(self, base_id: str, table_name: str):
         url_safe_table_name = quote(table_name, safe="")
@@ -251,12 +237,19 @@ class Api(ApiBase):
         """
         super().__init__(api_key, timeout=timeout)
 
-    def get_table(self, table_name: str) -> "Table":
+    def get_table(self, base_id: str, table_name: str) -> "Table":
         """
         Returns a new :class:`Table` instance using all shared
-        attributes from :class:`Base`
+        attributes from :class:`Api`
         """
-        return Table(self.api_key, self.base_id, table_name, timeout=self.timeout)
+        return Table(self.api_key, base_id, table_name, timeout=self.timeout)
+
+    def get_base(self, base_id: str) -> "Base":
+        """
+        Returns a new :class:`Base` instance using all shared
+        attributes from :class:`Api`
+        """
+        return Base(self.api_key, base_id, timeout=self.timeout)
 
     def get_record_url(self, base_id: str, table_name: str, record_id: str):
         """
