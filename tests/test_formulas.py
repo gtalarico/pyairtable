@@ -1,5 +1,5 @@
 import pytest
-from pyairtable.formulas import AND, EQUAL, FIELD, STR_VALUE, match, escape_quotes
+from pyairtable.formulas import AND, EQUAL, FIELD, STR_VALUE, IF, match, escape_quotes
 
 
 def test_equal():
@@ -12,6 +12,10 @@ def test_field():
 
 def test_and():
     assert AND("A", "B", "C") == "AND(A,B,C)"
+
+
+def test_if():
+    assert IF(1, 0, 1) == "IF(1, 0, 1)"
 
 
 def test_string_value():

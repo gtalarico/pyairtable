@@ -1,8 +1,8 @@
 from typing import List
-from .api import ApiBase
+from .abstract import ApiAbstract
 
 
-class Table(ApiBase):
+class Table(ApiAbstract):
     """
     Represents an Airtable Table. This calss is similar to :class:`~pyairtable.api.Api`,
     except ``base_id`` and ``table_id`` are provided on init instead of provided
