@@ -111,8 +111,8 @@ def IF(logical, value1, value2) -> str:
     """
     Creates an IF statement
 
-    >>> IF("1=1"", 0, 1)
-    'IF("1=1"", 0, 1)'
+    >>> IF(1=1, 0, 1)
+    'IF(1=1, 0, 1)'
     """
     return "IF({}, {}, {})".format(logical, value1, value2)
 
