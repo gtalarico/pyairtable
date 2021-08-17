@@ -43,7 +43,7 @@ or update your records:
     >>> import os
     >>> from pyairtable import Table
     >>> api_key = os.environ['AIRTABLE_API_KEY']
-    >>> table = Table('base_id', 'base_id', api_key)
+    >>> table = Table('apikey', 'base_id', 'table_name')
     >>> table.all()
     [ {"id": "rec5eR7IzKSAOBHCz", "fields": { ... }}]
     >>> table.create({"Foo": "Bar"})
