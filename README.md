@@ -1,9 +1,10 @@
 # pyAirtable (formerly airtable-python-wrapper)
 
-![Build](https://github.com/gtalarico/airtable-python-wrapper/actions/workflows/test.yml/badge.svg)
+![Tests](https://github.com/gtalarico/airtable-python-wrapper/actions/workflows/test_and_lint.yml/badge.svg)
+![Deploy](https://github.com/gtalarico/airtable-python-wrapper/actions/workflows/deploy_to_pypi.yml/badge.svg)
+[![codecov](https://codecov.io/gh/gtalarico/pyairtable/branch/main/graph/badge.svg?token=askmZgmMoV)](https://codecov.io/gh/gtalarico/pyairtable)
 [![PyPI - 0.x](https://img.shields.io/pypi/dm/airtable-python-wrapper.svg?label=pypi%20downloads)](https://pypi.org/project/airtable-python-wrapper/)
 [![PyPI - 1.x](https://img.shields.io/pypi/dm/pyairtable.svg?label=pypi%20downloads)](https://pypi.org/project/pyairtable/)
-[![codecov](https://codecov.io/gh/gtalarico/pyairtable/branch/main/graph/badge.svg?token=askmZgmMoV)](https://codecov.io/gh/gtalarico/pyairtable)
 [![Documentation Status](https://readthedocs.org/projects/pyairtable/badge/?version=latest)](http://pyairtable.readthedocs.io/en/latest/?badge=latest)
 
 Python Client for the Airtable Api
