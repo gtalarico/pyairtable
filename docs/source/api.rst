@@ -298,6 +298,9 @@ against a python dictionary:
 
 .. code-block:: python
 
+  >>> from pyairtable import Table
+  >>> from pyairtable.formulas import match
+  >>>
   >>> table = Table("apikey", "base_id", "Contact")
   >>> formula = match({"First Name": "John", "Age": 21})
   >>> table.first(formula=formula)
