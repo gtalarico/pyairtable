@@ -1,25 +1,30 @@
-.PHONY: test docs
+.PHONY: test docs setup
 
 usage:
 	cat Makefile
 
-init:
+setup:
 	git config core.hooksPath scripts/githooks
-
-release-test:
-	make clean
-	python -m build --sdist --wheel --outdir ./dist
-	twine upload --repository testpypi ./dist/*
+	pip install -e .
+	pip install -r requirements-test.txt -r requirements-dev.txt
 
 release:
 	make clean
 	python -m build --sdist --wheel --outdir ./dist
 	twine upload ./dist/*
 
+release-test:
+	make clean
+	python -m build --sdist --wheel --outdir ./dist
+	twine upload --repository testpypi ./dist/*
+
 bump:
 	@bash -c "./scripts/bump.sh"
 
 test:
+	pytest -v -m 'not integration'
+
+test-e2e:
 	pytest -v
 
 tox:
@@ -35,7 +40,7 @@ lint:
 
 docs:
 	bash -c "cd ./docs; make html"
-	# open ./docs/build/html/index.html
+	open ./docs/build/html/index.html
 
 clean:
 	python3 -c "import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]"

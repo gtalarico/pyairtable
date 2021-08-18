@@ -1,9 +1,9 @@
 from typing import List
 
-from .api import ApiBase
+from .abstract import ApiAbstract
 
 
-class Base(ApiBase):
+class Base(ApiAbstract):
     """
     Represents an Airtable Base. This calss is similar to :class:`~pyairtable.api.Api`,
     except ``base_id`` is provided on init instead of provided on each method call.
@@ -24,8 +24,16 @@ class Base(ApiBase):
         Keyword Args:
             timeout(``Tuple``): |arg_timeout|
         """
+
         self.base_id = base_id
         super().__init__(api_key, timeout=timeout)
+
+    def get_table(self, table_name: str) -> "Table":
+        """
+        Returns a new :class:`Table` instance using all shared
+        attributes from :class:`Base`
+        """
+        return Table(self.api_key, self.base_id, table_name, timeout=self.timeout)
 
     def get_record_url(self, table_name: str, record_id: str):
         """
@@ -128,3 +136,6 @@ class Base(ApiBase):
 
     def __repr__(self) -> str:
         return "<Airtable Base id={}>".format(self.base_id)
+
+
+from .table import Table  # noqa

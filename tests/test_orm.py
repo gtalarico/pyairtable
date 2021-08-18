@@ -22,10 +22,11 @@ def test_model_missing_meta():
 
 def test_model_overlapping():
 
+    # Should raise error because conflicts with .exists()
     with pytest.raises(ValueError):
 
         class Address(Model):
-            exists = f.TextField("Exists")
+            exists = f.TextField("Exists")  # clases with Model.exists()
 
             class Meta:
                 base_id = "required"

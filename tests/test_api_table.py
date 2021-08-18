@@ -36,6 +36,35 @@ def test_record_url(table):
     assert rv == urljoin(table.table_url, "xxx")
 
 
+def test_api_key(table, mock_response_single):
+    def match_auth_header(request):
+        expected_auth_header = "Bearer {}".format(table.api_key)
+        return (
+            "Authorization" in request.headers
+            and request.headers["Authorization"] == expected_auth_header
+        )
+
+    with Mocker() as m:
+        m.get(
+            table.get_record_url("rec"),
+            status_code=200,
+            json=mock_response_single,
+            additional_matcher=match_auth_header,
+        )
+
+        table.get("rec")
+
+
+def test_update_api_key(table):
+    table.api_key = "123"
+    assert "123" in table.session.headers["Authorization"]
+
+
+def test_get_base(table):
+    base = table.get_base()
+    assert base.base_id == table.base_id and base.api_key == table.api_key
+
+
 def test_get(table, mock_response_single):
     _id = mock_response_single["id"]
     with Mocker() as mock:

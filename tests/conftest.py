@@ -1,11 +1,11 @@
 import pytest
+from mock import Mock
 
 from posixpath import join as urljoin
 from requests import HTTPError
 from urllib.parse import urlencode, quote
-from mock import Mock
 
-from pyairtable.api import Api, Table
+from pyairtable.api import Api, Table, Base
 from collections import OrderedDict
 
 
@@ -29,6 +29,16 @@ def constants():
     return dict(
         API_KEY="FakeApiKey", BASE_ID="appJMY16gZDQrMWpA", TABLE_NAME="Table Name"
     )
+
+
+@pytest.fixture()
+def api(constants):
+    return Api(constants["API_KEY"])
+
+
+@pytest.fixture()
+def base(constants):
+    return Base(constants["API_KEY"], constants["BASE_ID"])
 
 
 @pytest.fixture()
