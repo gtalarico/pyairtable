@@ -1,5 +1,14 @@
 import pytest
-from pyairtable.formulas import AND, EQUAL, FIELD, STR_VALUE, IF, match, escape_quotes
+from pyairtable.formulas import (
+    AND,
+    EQUAL,
+    FIELD,
+    STR_VALUE,
+    IF,
+    match,
+    escape_quotes,
+    FIND,
+)
 
 
 def test_equal():
@@ -8,6 +17,7 @@ def test_equal():
 
 def test_field():
     assert FIELD("Name") == "{Name}"
+    assert FIELD("Guest's Name") == r"{Guest\'s Name}"
 
 
 def test_and():
@@ -16,6 +26,13 @@ def test_and():
 
 def test_if():
     assert IF(1, 0, 1) == "IF(1, 0, 1)"
+
+
+def test_find():
+    rv = FIND(STR_VALUE(2021), FIELD("DatetimeCol"))
+    assert rv == "FIND('2021', {DatetimeCol})"
+    rv = FIND(STR_VALUE(2021), FIELD("DatetimeCol"), 2)
+    assert rv == "FIND('2021', {DatetimeCol}, 2)"
 
 
 def test_string_value():

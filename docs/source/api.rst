@@ -40,7 +40,7 @@ with the official API equivalent.
    :widths: 30 30 40
    :header-rows: 1
 
-   * - Description
+   * - Type
      - pyAirtable
      - Airtable Api
    * - Retrieve a single Record
@@ -330,5 +330,8 @@ can use if you want to compose formulas:
 .. autofunction:: pyairtable.formulas.EQUAL
 .. autofunction:: pyairtable.formulas.FIELD
 .. autofunction:: pyairtable.formulas.AND
+.. autofunction:: pyairtable.formulas.FIND
+.. autofunction:: pyairtable.formulas.IF
+.. autofunction:: pyairtable.formulas.STR_VALUE
 
 
