@@ -44,3 +44,38 @@ def date_from_iso_str(value: str) -> date:
         value: date string e.g. "2014-09-05"
     """
     return datetime.strptime(value, "%Y-%m-%d").date()
+
+
+def attachment(url: str, filename="") -> dict:
+    """
+    Returns a dictionary using the expected dicitonary format for attachments.
+
+    ..note ::
+
+    Note that attachment fields **must be an array of objects**.
+
+    When creating an attachment, ``url`` is required, and ``filename`` is optional.
+    Airtable will download the file at the given url and keep its own copy of it.
+    All other attachment object properties will be generated server-side soon afterward.
+
+    Usage:
+        >>> table = Table(...)
+        >>> profile_url = "https://myprofile.com/id/profile.jpg
+        >>> rec = table.create({"Profile Photo": [attachment(profile_url)]})
+        {
+            'id': 'recZXOZ5gT9vVGHfL',
+            'fields': {
+                'attachment': [
+                    {
+                        'id': 'attu6kbaST3wUuNTA',
+                        'url': 'https://aws1.discourse-cdn.com/airtable/original/2X/4/411e4fac00df06a5e316a0585a831549e11d0705.png',
+                        'filename': '411e4fac00df06a5e316a0585a831549e11d0705.png'
+                    }
+                ]
+            },
+            'createdTime': '2021-08-21T22:28:36.000Z'
+        }
+
+
+    """
+    return {"url": url} if not filename else {"url": url, "filename": filename}

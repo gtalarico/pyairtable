@@ -3,6 +3,7 @@ from datetime import datetime
 import pytest
 from pyairtable import Table
 from pyairtable import formulas as fo
+from pyairtable.utils import attachment
 from uuid import uuid4
 
 
@@ -110,3 +111,25 @@ def test_integration_formula_composition(table: Table, cols):
     rv_first = table.first(formula=formula)
 
     assert rv_first["id"] == rv_create["id"]
+
+
+@pytest.mark.integration
+def test_integration_attachment(table, cols, valid_img_url):
+    rec = table.create({cols.ATTACHMENT: [attachment(valid_img_url)]})
+    rv_get = table.get(rec["id"])
+    assert rv_get["fields"]["attachment"][0]["filename"] == "logo.png"
+
+
+@pytest.mark.integration
+def test_integration_attachment_multiple(table, cols, valid_img_url):
+    rec = table.create(
+        {
+            cols.ATTACHMENT: [
+                attachment(valid_img_url, filename="a.jpg"),
+                attachment(valid_img_url, filename="b.jpg"),
+            ]
+        }
+    )
+    rv_get = table.get(rec["id"])
+    assert rv_get["fields"]["attachment"][0]["filename"] == "a.jpg"
+    assert rv_get["fields"]["attachment"][1]["filename"] == "b.jpg"
