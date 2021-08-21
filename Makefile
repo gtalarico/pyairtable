@@ -38,6 +38,9 @@ lint:
 	flake8 .
 	black --diff .
 
+format:
+	black .
+
 docs:
 	bash -c "cd ./docs; make html"
 	open ./docs/build/html/index.html
