@@ -10,6 +10,11 @@ def base_name():
 
 
 @pytest.fixture
+def valid_img_url():
+    return "https://github.com/gtalarico/pyairtable/raw/9f243cb0935ad7112859f990434612efdaf49c67/docs/source/_static/logo.png"
+
+
+@pytest.fixture
 def cols():
     class Columns:
         # Table should have these Columns
@@ -17,6 +22,7 @@ def cols():
         NUM = "number"  # Number, float
         BOOL = "boolean"  # Boolean
         DATETIME = "datetime"  # Datetime
+        ATTACHMENT = "attachment"  # attachment
 
     return Columns
 

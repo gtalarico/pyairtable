@@ -27,6 +27,7 @@ pyAirtable
    utils
    experimental
    migrations
+   faq
 
 
 .. toctree::
