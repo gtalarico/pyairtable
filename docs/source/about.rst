@@ -25,6 +25,14 @@ Contribute
    make docs # builds docs locally - see `docs/build/index.html`
 
 
+Release
+-------
+
+.. code-block:: bash
+
+   make bump
+
+
 License
 *******
 `MIT License <https://opensource.org/licenses/MIT>`_

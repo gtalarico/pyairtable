@@ -22,7 +22,7 @@ function confirmEval {
 }
 
 function push {
-    cmd="git commit -am \"Publish version $version\""
+    cmd="git commit -am \"Publish Version: $version\""
     confirmEval "$cmd"
 
     cmd="git tag -m \"Version $version\" $version"
