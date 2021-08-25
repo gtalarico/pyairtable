@@ -287,6 +287,8 @@ have a corresponding ``kwargs`` that can be used with fetching methods like :met
 Formulas
 ********
 
+.. versionadded:: 1.0.0
+
 The formula module provides funcionality to help you compose airtable formulas.
 For more information see `Airtable Formula Reference <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_
 

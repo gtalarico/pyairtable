@@ -50,13 +50,14 @@ def attachment(url: str, filename="") -> dict:
     """
     Returns a dictionary using the expected dicitonary format for attachments.
 
-    ..note ::
-
-    Note that attachment fields **must be an array of objects**.
-
     When creating an attachment, ``url`` is required, and ``filename`` is optional.
     Airtable will download the file at the given url and keep its own copy of it.
     All other attachment object properties will be generated server-side soon afterward.
+
+    ..note ::
+        test
+    Note:
+        Attachment field values muest be **an array of objects**.
 
     Usage:
         >>> table = Table(...)

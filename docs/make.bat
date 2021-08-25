@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=source
 set BUILDDIR=build
-set SPHINXPROJ=AirtablePythonWrapper
+set SPHINXPROJ=pyAirtable
 
 if "%1" == "" goto help
 
