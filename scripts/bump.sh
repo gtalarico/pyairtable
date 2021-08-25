@@ -1,12 +1,15 @@
 #!/bin/bash
 
+source ./scripts/console.sh
+
+
 function bump {
     previousVersion=$( grep '^__version__' pyairtable/__init__.py | sed 's/__version__ = \"\(.*\)\"/\1/' )
     previousVersion=$(echo -n "${previousVersion}")
-    echo "Enter Version [current is ${previousVersion}]:"
+    info "Enter Version [current is ${previousVersion}]:"
     read version
     if [ -z "$version" ]; then
-        echo "Empty version string - using existing"
+        info "Empty version string - using existing"
         version="$previousVersion"
         return
     fi
@@ -15,8 +18,8 @@ function bump {
 }
 
 function confirmEval {
-    echo "CMD > $1"
-    echo "ENTER to confirm"
+    info "CMD > $1"
+    info "ENTER to confirm"
     read foo
     eval $1
 }

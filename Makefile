@@ -42,16 +42,8 @@ format:
 	black .
 
 docs:
-	bash -c "cd ./docs; make html"
-	open ./docs/build/html/index.html
+	@bash -c "./scripts/build_docs.sh"
 
 clean:
-	python3 -c "import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]"
-	python3 -c "import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('pytest_cache')]"
-	rm -rdf ./docs/build
-	rm -rdf ./dist
-	rm -rdf ./build
-	rm -rdf ./htmlcov
-	rm -rdf  pyairtable.egg-info
-	rm -rdf  .pytest_cache
+	@bash -c "./scripts/clean.sh"
 

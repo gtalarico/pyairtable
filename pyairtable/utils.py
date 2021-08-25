@@ -54,8 +54,6 @@ def attachment(url: str, filename="") -> dict:
     Airtable will download the file at the given url and keep its own copy of it.
     All other attachment object properties will be generated server-side soon afterward.
 
-    ..note ::
-        test
     Note:
         Attachment field values muest be **an array of objects**.
 

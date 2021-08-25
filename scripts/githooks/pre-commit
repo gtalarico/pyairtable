@@ -1,16 +1,20 @@
 #!/bin/bash
 
-echo "> Checking for breakpoints"
+source ./scripts/console.sh
+
+info 'Pre-Commit Hook'
+
+info "Checking for breakpoints"
 
 breakpoint=$(git grep breakpoint -- '*.py')
 if [ -n "$breakpoint" ]
 then
-    echo "COMMIT REJECTED: Please remove breakpoint before commiting."
-    echo $breakpoint
+    error "COMMIT REJECTED: Please remove breakpoint before commiting."
+    error $breakpoint
     exit 1
 fi
 
 set -e
 
-echo "> Linting"
 make lint
+make docs
