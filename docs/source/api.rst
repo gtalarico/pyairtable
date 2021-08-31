@@ -27,7 +27,7 @@ For example, the three ``all()`` calls below would return the same result:
   base = Base('apikey', 'base_id')
   base.all('table_name')
 
-  table = Table('apikey', 'table_name', 'base_id')
+  table = Table('apikey', 'base_id', 'table_name')
   table.all()
 
 Interface
