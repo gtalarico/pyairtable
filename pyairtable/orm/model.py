@@ -40,9 +40,8 @@ You can read and modify attributes. If record already exists,
 :meth:`~pyairtable.orm.model.Model.save` will update the record:
 
 >>> assert contact.is_registered is False
->>> contact.is_registered = True
 >>> contact.save()
->>> assert contact.is_registered = True
+>>> assert contact.is_registered is True
 >>> contact.to_record()
 {
     "id": recS6qSLw0OCA6Xul",
