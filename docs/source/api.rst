@@ -63,10 +63,10 @@ with the official API equivalent.
      - ``POST baseId/``
    * - Update a record
      - ``update()``
-     - ``PUT baseId/``
+     - ``PATCH baseId/``
    * - Replace a record
      - ``update(replace=True)``
-     - ``PATCH base/``
+     - ``PUT base/``
    * - Delete a record
      - ``delete()``
      - ``DELETE baseId/``
