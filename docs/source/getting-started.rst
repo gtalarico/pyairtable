@@ -24,7 +24,7 @@ Api Key
 
 Your Airtable API key should be securely stored. 
 A common way to do this, is to `store it as an environment variable <https://www.twilio.com/blog/2017/01/how-to-set-environment-variables.html>`_, 
-and then load value using ``os.environ``:
+and load it using ``os.environ``:
 
 .. code-block:: python
 
