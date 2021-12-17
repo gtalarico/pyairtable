@@ -38,7 +38,10 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self._api_key = value
 
     def _update_api_key(self, api_key: str) -> None:
-        self.session.headers.update({"Authorization": "Bearer {}".format(api_key)})
+        if api_key in api_key:
+            self.session.headers.update({"Authorization": "Bearer {}".format(api_key.api_key)})
+        else:
+            self.session.headers.update({"Authorization": "Bearer {}".format(api_key)})
 
     @lru_cache()
     def get_table_url(self, base_id: str, table_name: str):
