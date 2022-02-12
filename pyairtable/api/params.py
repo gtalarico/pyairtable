@@ -67,7 +67,6 @@ def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
 
 def to_params_dict(param_name: str, value: Any):
     """Returns a dictionary for use in Request 'params'"""
-    # TODO: timeZone, userLocale
     if param_name == "max_records":
         return {"maxRecords": value}
     elif param_name == "view":
@@ -80,6 +79,12 @@ def to_params_dict(param_name: str, value: Any):
         return {"filterByFormula": value}
     elif param_name == "fields":
         return {"fields[]": value}
+    elif param_name == "cell_format":
+        return {"cellFormat": value}
+    elif param_name == "time_zone":
+        return {"timeZone": value}
+    elif param_name == "user_locale":
+        return {"userLocale": value}
     elif param_name == "sort":
         sorting_dict_list = field_names_to_sorting_dict(value)
         return dict_list_to_request_params("sort", sorting_dict_list)

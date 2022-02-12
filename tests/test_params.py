@@ -89,6 +89,14 @@ def test_params_integration(table, mock_records, mock_response_iterator):
             "?sort%5B0%5D%5Bdirection%5D=asc&sort%5B0%5D%5Bfield%5D=Name&sort%5B1%5D%5Bdirection%5D=desc&sort%5B1%5D%5Bfield%5D=Phone",
             # '?sort[0][direction]=desc&sort[0][field]=Name&sort[1][direction]=desc&sort[1][field]=Phone'
         ],
+        ["cell_format", "string", "?cellFormat=string"],
+        ["user_locale", "en-US", "?userLocale=en-US"],
+        [
+            "time_zone",
+            "America/Chicago",
+            "?timeZone=America%2FChicago"
+            # '?timeZone=America/Chicago'
+        ],
         # TODO
         # [
         #     {"sort": [("Name", "desc"), ("Phone", "asc")]},

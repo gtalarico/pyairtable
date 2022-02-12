@@ -48,3 +48,19 @@
 
 .. |kwarg_typecast| replace:: The Airtable API will perform best-effort
     automatic data conversion from string values. Default is False.
+
+.. |kwarg_cell_format| replace:: The cell format to request from the Airtable
+    API. Supported options are `json` (the default) and `string`. 
+    `json` will return cells as a JSON object. `string` will return
+    the cell as a string. `user_locale` and `time_zone` must be set when using
+    `string`.
+
+.. |kwarg_user_locale| replace:: The user locale that should be used to format
+    dates when using `string` as the `cell_format`. See
+    https://support.airtable.com/hc/en-us/articles/220340268-Supported-locale-modifiers-for-SET-LOCALE
+    for valid values.
+
+.. |kwarg_time_zone| replace:: The time zone that should be used to format dates
+    when using `string` as the `cell_format`. See
+    https://support.airtable.com/hc/en-us/articles/216141558-Supported-timezones-for-SET-TIMEZONE
+    for valid values.
