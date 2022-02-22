@@ -282,6 +282,15 @@ have a corresponding ``kwargs`` that can be used with fetching methods like :met
    * - ``fields``
      - ``fields``
      - |kwarg_fields|
+   * - ``cell_format``
+     - ``cellFormat``
+     - |kwarg_cell_format|
+   * - ``user_locale``
+     - ``userLocale``
+     - |kwarg_user_locale|
+   * - ``time_zone``
+     - ``timeZone``
+     - |kwarg_time_zone|
 
 
 Formulas

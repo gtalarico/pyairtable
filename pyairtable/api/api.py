@@ -94,6 +94,9 @@ class Api(ApiAbstract):
             fields: |kwarg_fields|
             sort: |kwarg_sort|
             formula: |kwarg_formula|
+            cell_format: |kwarg_cell_format|
+            user_locale: |kwarg_user_locale|
+            time_zone: |kwarg_time_zone|
 
         Returns:
             iterator: Record Iterator, grouped by page size
@@ -142,6 +145,9 @@ class Api(ApiAbstract):
             fields: |kwarg_fields|
             sort: |kwarg_sort|
             formula: |kwarg_formula|
+            cell_format: |kwarg_cell_format|
+            user_locale: |kwarg_user_locale|
+            time_zone: |kwarg_time_zone|
 
         Returns:
             records (``list``): List of Records
