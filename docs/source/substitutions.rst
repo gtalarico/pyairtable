@@ -14,6 +14,20 @@
     the connection to be established  and 5 seconds for a
     server read timeout. Default is ``None`` (no timeout).
 
+.. |arg_request_strategy| replace:: A ``RequestStrategy`` to control how requests to
+    the Airtable API are made. You may pass either an instance or a subclass of 
+    ``RequestStrategy`` to be instantiated. Default is a ``SimpleRequestStrategy``, 
+    which just proxies request() method calls to its contained Session.
+
+.. |arg_session| replace:: A ``requests.Session`` instance to override what is
+    created by default. Useful if you want to provide additional behaviors or
+    headers.
+
+.. |arg_retrying| replace:: A ``tenacity.Retrying`` instance to control the
+    retry strategy for requests. See
+    https://tenacity.readthedocs.io/en/latest/api.html#tenacity.Retrying for
+    usage details.
+
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.
     The records will be sorted according to the order of the view.
@@ -64,3 +78,7 @@
     when using `string` as the `cell_format`. See
     https://support.airtable.com/hc/en-us/articles/216141558-Supported-timezones-for-SET-TIMEZONE
     for valid values.
+
+.. |kwargs_retrying| replace:: Keyword arguments for tenacity.Retrying(). See
+    https://tenacity.readthedocs.io/en/latest/api.html#tenacity.Retrying for
+    accepted keyword arguments and other documentation.

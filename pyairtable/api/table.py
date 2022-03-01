@@ -16,7 +16,15 @@ class Table(ApiAbstract):
     base_id: str
     table_name: str
 
-    def __init__(self, api_key: str, base_id: str, table_name: str, *, timeout=None):
+    def __init__(
+        self,
+        api_key: str,
+        base_id: str,
+        table_name: str,
+        *,
+        timeout=None,
+        request_strategy=None,
+    ):
         """
         Args:
             api_key: |arg_api_key|
@@ -25,10 +33,11 @@ class Table(ApiAbstract):
 
         Keyword Args:
             timeout(``Tuple``): |arg_timeout|
+            request_strategy(``RequestStrategy``, optional): |arg_request_strategy|
         """
         self.base_id = base_id
         self.table_name = table_name
-        super().__init__(api_key, timeout=timeout)
+        super().__init__(api_key, timeout=timeout, request_strategy=request_strategy)
 
     @property
     def table_url(self):

@@ -1,13 +1,12 @@
 import abc
 from functools import lru_cache
 import posixpath
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Type, Union
 import time
 from urllib.parse import quote
 
-import requests
-
 from .params import to_params_dict
+from ..request_strategies import RequestStrategy, SimpleRequestStrategy, Headers
 
 
 class ApiAbstract(metaclass=abc.ABCMeta):
@@ -17,28 +16,36 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
 
-    session: requests.Session
-    tiemout: Optional[Tuple[int, int]]
+    _request_strategy: Optional[RequestStrategy] = None
 
-    def __init__(self, api_key: str, timeout=None):
-        session = requests.Session()
-        self.session = session
+    def __init__(
+        self,
+        api_key: str,
+        timeout: Optional[Tuple[int, int]] = None,
+        request_strategy: Optional[
+            Union[Type[RequestStrategy], RequestStrategy]
+        ] = None,
+    ):
+        if request_strategy is not None:
+            self.request_strategy = request_strategy
         self.timeout = timeout
         self.api_key = api_key
 
     @property
-    def api_key(self) -> str:
-        """Returns the Airtable API Key"""
-        return self._api_key
+    def request_strategy(self) -> RequestStrategy:
+        if self._request_strategy is None:
+            self._request_strategy = SimpleRequestStrategy()
+        return self._request_strategy
 
-    @api_key.setter
-    def api_key(self, value):
-        """Returns the Airtable API Key"""
-        self._update_api_key(value)
-        self._api_key = value
+    @request_strategy.setter
+    def request_strategy(
+        self, _request_strategy: Union[Type[RequestStrategy], RequestStrategy]
+    ) -> None:
+        self._request_strategy = RequestStrategy.initialize(_request_strategy)
 
-    def _update_api_key(self, api_key: str) -> None:
-        self.session.headers.update({"Authorization": "Bearer {}".format(api_key)})
+    @property
+    def auth_headers(self) -> Headers:
+        return {"Authorization": "Bearer {}".format(self.api_key)}
 
     @lru_cache()
     def get_table_url(self, base_id: str, table_name: str):
@@ -69,30 +76,16 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     def _build_batch_record_objects(self, records):
         return [{"fields": record} for record in records]
 
-    def _process_response(self, response):
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as exc:
-            err_msg = str(exc)
-
-            # Attempt to get Error message from response, Issue #16
-            try:
-                error_dict = response.json()
-            except ValueError:
-                pass
-            else:
-                if "error" in error_dict:
-                    err_msg += " [Error: {}]".format(error_dict["error"])
-            exc.args = (*exc.args, err_msg)
-            raise exc
-        else:
-            return response.json()
-
     def _request(self, method: str, url: str, params=None, json_data=None):
-        response = self.session.request(
-            method, url, params=params, json=json_data, timeout=self.timeout
+
+        return self.request_strategy.request(
+            method,
+            url,
+            params=params,
+            json=json_data,
+            timeout=self.timeout,
+            headers=self.auth_headers,
         )
-        return self._process_response(response)
 
     def _get_record(self, base_id: str, table_name: str, record_id: str) -> dict:
         record_url = self._get_record_url(base_id, table_name, record_id)

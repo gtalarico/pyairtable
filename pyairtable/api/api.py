@@ -17,7 +17,7 @@ class Api(ApiAbstract):
         >>> api.all('base_id', 'table_name')
     """
 
-    def __init__(self, api_key: str, timeout=None):
+    def __init__(self, api_key: str, timeout=None, request_strategy=None):
         """
 
         Args:
@@ -25,9 +25,10 @@ class Api(ApiAbstract):
 
         Keyword Args:
             timeout(``Tuple``): |arg_timeout|
+            request_strategy(``RequestStrategy``, optional): |arg_request_strategy|
 
         """
-        super().__init__(api_key, timeout=timeout)
+        super().__init__(api_key, timeout=timeout, request_strategy=request_strategy)
 
     def get_table(self, base_id: str, table_name: str) -> "Table":
         """
