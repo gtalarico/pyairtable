@@ -9,22 +9,24 @@ import requests
 
 from .params import to_params_dict
 
+MAX_RECORDS_PER_REQUEST = 10
+
 
 class ApiAbstract(metaclass=abc.ABCMeta):
     VERSION = "v0"
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
-    MAX_RECORDS_PER_REQUEST = 10
 
     session: requests.Session
     tiemout: Optional[Tuple[int, int]]
 
-    def __init__(self, api_key: str, timeout=None):
+    def __init__(self, api_key: str, max_records_per_request, timeout=None):
         session = requests.Session()
         self.session = session
         self.timeout = timeout
         self.api_key = api_key
+        self.max_records_per_request = max_records_per_request
 
     @property
     def api_key(self) -> str:
@@ -64,7 +66,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     def _chunk(self, iterable, chunk_size):
         """Break iterable into chunks"""
         for i in range(0, len(iterable), chunk_size):
-            yield iterable[i : i + chunk_size]
+            yield iterable[i: i + chunk_size]
 
     def _build_batch_record_objects(self, records):
         return [{"fields": record} for record in records]
@@ -143,7 +145,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
 
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
-        for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+        for chunk in self._chunk(records, self.max_records_per_request):
             new_records = self._build_batch_record_objects(chunk)
             response = self._request(
                 "post",
@@ -181,7 +183,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
-        for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+        for records in self._chunk(records, self.max_records_per_request):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
             response = self._request(
                 method,
@@ -201,7 +203,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     ) -> List[dict]:
         deleted_records = []
         table_url = self.get_table_url(base_id, table_name)
-        for record_ids in self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST):
+        for record_ids in self._chunk(record_ids, self.max_records_per_request):
             delete_results = self._request(
                 "delete", table_url, params={"records[]": record_ids}
             )

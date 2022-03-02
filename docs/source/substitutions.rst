@@ -14,6 +14,8 @@
     the connection to be established  and 5 seconds for a
     server read timeout. Default is ``None`` (no timeout).
 
+.. |arg_max_records_per_request| replace:: Maximum records per request, to be used when doing batch creations/updates
+
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.
     The records will be sorted according to the order of the view.

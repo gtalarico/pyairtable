@@ -1,5 +1,6 @@
 from typing import List
-from .abstract import ApiAbstract
+
+from .abstract import ApiAbstract, MAX_RECORDS_PER_REQUEST
 
 
 class Api(ApiAbstract):
@@ -17,7 +18,7 @@ class Api(ApiAbstract):
         >>> api.all('base_id', 'table_name')
     """
 
-    def __init__(self, api_key: str, timeout=None):
+    def __init__(self, api_key: str, max_records_per_request=MAX_RECORDS_PER_REQUEST, timeout=None):
         """
 
         Args:
@@ -25,9 +26,9 @@ class Api(ApiAbstract):
 
         Keyword Args:
             timeout(``Tuple``): |arg_timeout|
-
+            max_records_per_request: |arg_max_records_per_request|
         """
-        super().__init__(api_key, timeout=timeout)
+        super().__init__(api_key, max_records_per_request=max_records_per_request, timeout=timeout)
 
     def get_table(self, base_id: str, table_name: str) -> "Table":
         """
