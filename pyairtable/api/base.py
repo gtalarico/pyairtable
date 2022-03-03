@@ -20,10 +20,10 @@ class Base(ApiAbstract):
         Args:
             api_key: |arg_api_key|
             base_id: |arg_base_id|
+            max_records_per_request: |arg_max_records_per_request|
 
         Keyword Args:
             timeout(``Tuple``): |arg_timeout|
-            max_records_per_request: |arg_max_records_per_request|
         """
 
         self.base_id = base_id

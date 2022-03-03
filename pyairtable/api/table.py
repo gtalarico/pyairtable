@@ -16,13 +16,14 @@ class Table(ApiAbstract):
     base_id: str
     table_name: str
 
-    def __init__(self, api_key: str, base_id: str, table_name: str, *, max_records_per_request=MAX_RECORDS_PER_REQUEST,
+    def __init__(self, api_key: str, base_id: str, table_name: str, max_records_per_request=MAX_RECORDS_PER_REQUEST, *,
                  timeout=None):
         """
         Args:
             api_key: |arg_api_key|
             base_id: |arg_base_id|
             table_name: |arg_table_name|
+            max_records_per_request: |arg_max_records_per_request|
 
         Keyword Args:
             timeout(``Tuple``): |arg_timeout|

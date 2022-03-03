@@ -23,10 +23,10 @@ class Api(ApiAbstract):
 
         Args:
             api_key: |arg_api_key|
+            max_records_per_request: |arg_max_records_per_request|
 
         Keyword Args:
             timeout(``Tuple``): |arg_timeout|
-            max_records_per_request: |arg_max_records_per_request|
         """
         super().__init__(api_key, max_records_per_request=max_records_per_request, timeout=timeout)
 
