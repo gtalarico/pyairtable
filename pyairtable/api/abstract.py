@@ -21,7 +21,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     session: requests.Session
     tiemout: Optional[Tuple[int, int]]
 
-    def __init__(self, api_key: str, max_records_per_request, timeout=None):
+    def __init__(self, api_key: str, max_records_per_request: int, timeout=None):
         session = requests.Session()
         self.session = session
         self.timeout = timeout
