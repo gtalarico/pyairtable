@@ -15,7 +15,13 @@ class Base(ApiAbstract):
 
     base_id: str
 
-    def __init__(self, api_key: str, base_id: str, timeout=None, max_records_per_request=MAX_RECORDS_PER_REQUEST):
+    def __init__(
+        self,
+        api_key: str,
+        base_id: str,
+        timeout=None,
+        max_records_per_request=MAX_RECORDS_PER_REQUEST,
+    ):
         """
         Args:
             api_key: |arg_api_key|
@@ -27,7 +33,9 @@ class Base(ApiAbstract):
         """
 
         self.base_id = base_id
-        super().__init__(api_key,  max_records_per_request=max_records_per_request, timeout=timeout)
+        super().__init__(
+            api_key, max_records_per_request=max_records_per_request, timeout=timeout
+        )
 
     def get_table(self, table_name: str) -> "Table":
         """

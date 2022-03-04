@@ -16,8 +16,15 @@ class Table(ApiAbstract):
     base_id: str
     table_name: str
 
-    def __init__(self, api_key: str, base_id: str, table_name: str, *,timeout=None,
-                 max_records_per_request=MAX_RECORDS_PER_REQUEST):
+    def __init__(
+        self,
+        api_key: str,
+        base_id: str,
+        table_name: str,
+        *,
+        timeout=None,
+        max_records_per_request=MAX_RECORDS_PER_REQUEST,
+    ):
         """
         Args:
             api_key: |arg_api_key|
@@ -30,7 +37,9 @@ class Table(ApiAbstract):
         """
         self.base_id = base_id
         self.table_name = table_name
-        super().__init__(api_key,  max_records_per_request=max_records_per_request, timeout=timeout)
+        super().__init__(
+            api_key, max_records_per_request=max_records_per_request, timeout=timeout
+        )
 
     @property
     def table_url(self):

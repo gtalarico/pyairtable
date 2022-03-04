@@ -18,7 +18,12 @@ class Api(ApiAbstract):
         >>> api.all('base_id', 'table_name')
     """
 
-    def __init__(self, api_key: str, timeout=None, max_records_per_request=MAX_RECORDS_PER_REQUEST):
+    def __init__(
+        self,
+        api_key: str,
+        timeout=None,
+        max_records_per_request=MAX_RECORDS_PER_REQUEST,
+    ):
         """
 
         Args:
@@ -28,7 +33,9 @@ class Api(ApiAbstract):
             timeout(``Tuple``): |arg_timeout|
             max_records_per_request: |arg_max_records_per_request|
         """
-        super().__init__(api_key, max_records_per_request=max_records_per_request, timeout=timeout)
+        super().__init__(
+            api_key, max_records_per_request=max_records_per_request, timeout=timeout
+        )
 
     def get_table(self, base_id: str, table_name: str) -> "Table":
         """
