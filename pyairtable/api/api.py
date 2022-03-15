@@ -1,6 +1,6 @@
 from typing import List
 
-from .abstract import ApiAbstract, MAX_RECORDS_PER_REQUEST
+from .abstract import ApiAbstract, DEFAULT_MAX_RECORDS_PER_REQUEST
 
 
 class Api(ApiAbstract):
@@ -22,7 +22,7 @@ class Api(ApiAbstract):
         self,
         api_key: str,
         timeout=None,
-        max_records_per_request=MAX_RECORDS_PER_REQUEST,
+        max_records_per_request=DEFAULT_MAX_RECORDS_PER_REQUEST,
     ):
         """
 

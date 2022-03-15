@@ -9,7 +9,7 @@ import requests
 
 from .params import to_params_dict
 
-MAX_RECORDS_PER_REQUEST = 10
+DEFAULT_MAX_RECORDS_PER_REQUEST = 10
 
 
 class ApiAbstract(metaclass=abc.ABCMeta):
@@ -21,7 +21,8 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     session: requests.Session
     timeout: Optional[Tuple[int, int]]
 
-    def __init__(self, api_key: str, max_records_per_request: int, timeout=None):
+    def __init__(self, api_key: str, timeout: Optional[int]=None,
+                 max_records_per_request: Optional[int]=DEFAULT_MAX_RECORDS_PER_REQUEST):
         session = requests.Session()
         self.session = session
         self.timeout = timeout
