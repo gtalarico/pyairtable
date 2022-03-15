@@ -19,7 +19,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     API_URL = posixpath.join(API_BASE_URL, VERSION)
 
     session: requests.Session
-    tiemout: Optional[Tuple[int, int]]
+    timeout: Optional[Tuple[int, int]]
 
     def __init__(self, api_key: str, max_records_per_request: int, timeout=None):
         session = requests.Session()
