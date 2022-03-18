@@ -174,3 +174,13 @@ def AND(*args) -> str:
     'AND(1, 2, 3)'
     """
     return "AND({})".format(",".join(args))
+
+
+def OR(*args) -> str:
+    """
+    Creates an OR Statement
+
+    >>> OR(1, 2, 3)
+    'OR(1, 2, 3)'
+    """
+    return "OR({})".format(",".join(args))
