@@ -3,7 +3,7 @@
 Airtable Api
 ============
 
-Overview
+Overview                                                                                                                                                                                                                                                                                                  
 ********
 
 This client offers three classes you can use to access the Airtable Api:
@@ -341,6 +341,7 @@ can use if you want to compose formulas:
 .. autofunction:: pyairtable.formulas.EQUAL
 .. autofunction:: pyairtable.formulas.FIELD
 .. autofunction:: pyairtable.formulas.AND
+.. autofunction:: pyairtable.formulas.OR
 .. autofunction:: pyairtable.formulas.FIND
 .. autofunction:: pyairtable.formulas.IF
 .. autofunction:: pyairtable.formulas.STR_VALUE
