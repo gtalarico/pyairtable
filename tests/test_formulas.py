@@ -24,8 +24,10 @@ def test_field():
 def test_and():
     assert AND("A", "B", "C") == "AND(A,B,C)"
 
+
 def test_or():
     assert OR("A", "B", "C") == "OR(A,B,C)"
+
 
 def test_if():
     assert IF(1, 0, 1) == "IF(1, 0, 1)"
