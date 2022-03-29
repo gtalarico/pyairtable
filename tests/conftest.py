@@ -4,9 +4,10 @@ from mock import Mock
 from posixpath import join as urljoin
 from requests import HTTPError
 from urllib.parse import urlencode, quote
+from collections import OrderedDict
 
 from pyairtable.api import Api, Table, Base
-from collections import OrderedDict
+from pyairtable.request_strategies import SimpleRequestStrategy
 
 
 @pytest.fixture
@@ -121,3 +122,13 @@ def response():
     response.raise_for_status.side_effect = http_error
     response.url = "page%20url"
     return response
+
+
+@pytest.fixture()
+def request_strategy():
+    return SimpleRequestStrategy()
+
+
+@pytest.fixture()
+def invalid_request_strategy():
+    return object()
