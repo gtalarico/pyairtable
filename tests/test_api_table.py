@@ -57,7 +57,7 @@ def test_api_key(table, mock_response_single):
 
 def test_update_api_key(table):
     table.api_key = "123"
-    assert "123" in table.session.headers["Authorization"]
+    assert "123" in table.auth_headers["Authorization"]
 
 
 def test_get_base(table):
