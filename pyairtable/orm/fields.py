@@ -161,6 +161,18 @@ class FloatField(Field):
         return super().__get__(*args, **kwargs)
 
 
+class PercentField(FloatField):
+    """Airtable Percent field with Float Precision. Uses ``float`` to store value"""
+    def to_internal_value(self, value: Any) -> float:
+        return float(value)*100
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, float):
+            raise ValueError("PercentField value must be 'float'")
+        if value < 0 or value > 100:
+            raise ValueError("PercentField value must be between 0 to 100")
+
+
 class CheckboxField(Field):
     """Airtable Checkbox field. Uses ``bool`` to store value"""
 
