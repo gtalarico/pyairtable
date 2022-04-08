@@ -167,8 +167,8 @@ class PercentField(FloatField):
         return float(value)*100
 
     def valid_or_raise(self, value) -> None:
-        if not isinstance(value, (float, int)):
-            raise ValueError("PercentField value must be 'float' or 'int'")
+        if not isinstance(value, float):
+            raise ValueError("PercentField value must be 'float'")
         if value < 0 or value > 100:
             raise ValueError("PercentField value must be between 0 to 100")
 
