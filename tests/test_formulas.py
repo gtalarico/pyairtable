@@ -1,6 +1,7 @@
 import pytest
 from pyairtable.formulas import (
     AND,
+    OR,
     EQUAL,
     FIELD,
     STR_VALUE,
@@ -22,6 +23,10 @@ def test_field():
 
 def test_and():
     assert AND("A", "B", "C") == "AND(A,B,C)"
+
+
+def test_or():
+    assert OR("A", "B", "C") == "OR(A,B,C)"
 
 
 def test_if():
