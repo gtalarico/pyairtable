@@ -1,9 +1,8 @@
 from typing import List
-
 from .abstract import ApiAbstract
 
 
-class Base(ApiAbstract):
+class Base(ApiAbstract  ):
     """
     Represents an Airtable Base. This calss is similar to :class:`~pyairtable.api.Api`,
     except ``base_id`` is provided on init instead of provided on each method call.
