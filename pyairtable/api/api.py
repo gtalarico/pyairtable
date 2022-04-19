@@ -131,7 +131,7 @@ class Api(ApiAbstract):
 
         >>> api.all('base_id', 'table_name', view='MyView', fields=['ColA', '-ColB'])
         [{'fields': ... }, ...]
-        >>> api.all('base_id', 'table_name', maxRecords=50)
+        >>> api.all('base_id', 'table_name', max_records=50)
         [{'fields': ... }, ...]
 
         Args:
@@ -152,7 +152,7 @@ class Api(ApiAbstract):
         Returns:
             records (``list``): List of Records
 
-        >>> records = all(maxRecords=3, view='All')
+        >>> records = all(max_records=3, view='All')
 
         """
         return super()._all(base_id, table_name, **options)
