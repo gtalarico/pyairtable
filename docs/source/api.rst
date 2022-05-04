@@ -215,7 +215,7 @@ specified on each request.
 
 .. code-block:: python
 
-  >>> base = Base('appEioitPbxI72w06', 'apikey')
+  >>> base = Base('apikey', 'base_id')
   >>> base.all('Contacts)
   [{id:'rec123asa23', fields': {'Last Name': 'Alfred', "Age": 84}, ... ]
 
