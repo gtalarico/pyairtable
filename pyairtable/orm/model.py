@@ -62,11 +62,42 @@ True
 """
 import abc
 from pyairtable import Table
-from typing import TypeVar, Type, List
+from typing import Any, Dict, TypeVar, Type, List
 
 from .fields import Field
 
 T = TypeVar("T", bound="Model")
+
+
+class ChangeObserver(dict):
+    """
+    Dictionary of changes that have happened to fields since they were fetched
+    or persisted via the Airtable API. Keyed by developer-facing attribute names,
+    not user-facing field names.
+
+    >>> observer = ChangeObserver()
+    >>> assert observer == {}
+    >>> observer.observe("first_name", None, "Mike")
+    >>> observer["first_name"]
+    (None, "Mike")
+    >>> observer.observe("first_name", "Mike", "Michael")
+    >>> observer["first_name"]
+    (None, "Michael")
+    >>> observer.clear()
+    >>> assert observer == {}
+    """
+
+    def observe(self, attribute_name, old_value, new_value):
+        """
+        Observe and record a change to a field's value.
+        """
+        # preserve the *first* value through multiple changes between persists
+        try:
+            old_value, _ = self[attribute_name]
+        except KeyError:
+            pass
+
+        self[attribute_name] = (old_value, new_value)
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -93,6 +124,7 @@ class Model(metaclass=abc.ABCMeta):
 
     id: str = ""
     created_time: str = ""
+    _changes: ChangeObserver = ChangeObserver()
     _table: Table
     _fields: dict = {}
     _linked_cache: dict = {}
@@ -196,6 +228,14 @@ class Model(metaclass=abc.ABCMeta):
             )
         return cls._table
 
+    @property
+    def changes(self) -> Dict[str, Any]:
+        """
+        Returns a dictionary of changes made to the record,
+        keyed by developer-facing attribute name.
+        """
+        return dict(self._changes)
+
     def exists(self) -> bool:
         """Returns boolean indicating if instance exists (has 'id' attribute)"""
         return bool(self.id)
@@ -203,7 +243,7 @@ class Model(metaclass=abc.ABCMeta):
     def save(self) -> bool:
         """
         Saves or updates a model.
-        If instance has no 'id', it will be created, otherwise updatedself.
+        If instance has no 'id', it will be created, otherwise updated.
 
         Returns `True` if was created and `False` if it was updated
         """
@@ -220,6 +260,7 @@ class Model(metaclass=abc.ABCMeta):
 
         self.id = record["id"]
         self.created_time = record["createdTime"]
+        self._changes.clear()
         return did_create
 
     def delete(self) -> bool:
@@ -271,6 +312,7 @@ class Model(metaclass=abc.ABCMeta):
         instance = cls(**kwargs)
         instance.created_time = record["createdTime"]
         instance.id = record["id"]
+        instance._changes.clear()
         return instance
 
     @classmethod
@@ -306,6 +348,7 @@ class Model(metaclass=abc.ABCMeta):
         updated = self.from_id(self.id, fetch=True)
         self._fields = updated._fields
         self.created_time = updated.created_time
+        self._changes.clear()
 
     def __repr__(self):
         return "<Model={} {}>".format(self.__class__.__name__, hex(id(self)))

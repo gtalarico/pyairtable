@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from unittest import mock
 from requests_mock import Mocker
 import pytest
@@ -63,7 +63,7 @@ def test_model():
         last_name="Talarico",
         email="gui@gui.com",
         is_registered=True,
-        birthday=datetime(2020, 12, 12).date(),
+        birthday=date(2020, 12, 12),
     )
 
     # attribute look up
@@ -155,3 +155,69 @@ def test_linked_record():
         contact.address[0].fetch()
 
     assert contact.address[0].street == "A"
+
+
+def test_dirty_fields():
+    """
+    Test behavior for tracking which fields have changed on a model since it
+    was last fetched or persisted.
+    """
+
+    class Contact(Model):
+        first_name = f.TextField("First Name")
+        last_name = f.TextField("Last Name")
+        email = f.EmailField("Email")
+        is_registered = f.CheckboxField("Registered")
+        birthday = f.DateField("Birthday")
+        notes = f.TextField("Notes")
+
+        class Meta:
+            base_id = "contact_base_id"
+            table_name = "Contact"
+            api_key = "fake"
+
+    record = {
+        "id": "recFake",
+        "createdTime": "",
+        "fields": {
+            "First Name": "Alice",
+            "Last Name": "Doe",
+            "Email": "alice@example.com",
+            "Registered": True,
+            "Birthday": "1980-01-01",
+        },
+    }
+    record_url = Contact.get_table().get_record_url(record["id"])
+
+    with Mocker() as request_mock:
+        request_mock.get(record_url, status_code=200, json=record)
+        contact = Contact.from_id("recFake", fetch=True)
+
+    assert contact.changes == {}
+
+    # test that we notice changes to fields automatically
+    contact.is_registered = False
+    assert contact.changes == {
+        "is_registered": (True, False),
+    }
+
+    contact.birthday = date(1947, 7, 10)
+    contact.notes = "Don't forget to send a cake!"
+    assert contact.changes == {
+        "birthday": (date(1980, 1, 1), date(1947, 7, 10)),
+        "is_registered": (True, False),
+        "notes": (None, "Don't forget to send a cake!"),
+    }
+
+    # test that we remember the original value, not the penultimate one
+    contact.notes = "Don't forget the cake! Also, a birthday card."
+    assert contact.changes["notes"] == (
+        None,
+        "Don't forget the cake! Also, a birthday card.",
+    )
+
+    # test that changes get cleared when we save a record
+    with mock.patch.object(Table, "update") as mock_update:
+        contact.save()
+        mock_update.assert_called_once()
+        assert contact.changes == {}

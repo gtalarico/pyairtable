@@ -96,7 +96,10 @@ class Field(metaclass=abc.ABCMeta):
             instance._fields = {}
         if self.validate_type:
             self.valid_or_raise(value)
+        previous = instance._fields.get(self.field_name, None)
         instance._fields[self.field_name] = value
+        if hasattr(instance, "_changes"):
+            instance._changes.observe(self.attribute_name, previous, value)
 
     def to_record_value(self, value: Any) -> Any:
         return value
