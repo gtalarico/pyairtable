@@ -64,3 +64,6 @@
     when using `string` as the `cell_format`. See
     https://support.airtable.com/hc/en-us/articles/216141558-Supported-timezones-for-SET-TIMEZONE
     for valid values.
+
+.. |kwarg_return_fields_by_field_id| replace:: An optional boolean value that lets you return field objects where the
+    key is the field id. This defaults to `false`, which returns field objects where the key is the field name.

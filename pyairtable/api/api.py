@@ -97,6 +97,7 @@ class Api(ApiAbstract):
             cell_format: |kwarg_cell_format|
             user_locale: |kwarg_user_locale|
             time_zone: |kwarg_time_zone|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
             iterator: Record Iterator, grouped by page size
@@ -148,6 +149,7 @@ class Api(ApiAbstract):
             cell_format: |kwarg_cell_format|
             user_locale: |kwarg_user_locale|
             time_zone: |kwarg_time_zone|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
             records (``list``): List of Records
