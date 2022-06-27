@@ -85,6 +85,8 @@ def to_params_dict(param_name: str, value: Any):
         return {"timeZone": value}
     elif param_name == "user_locale":
         return {"userLocale": value}
+    elif param_name == "return_fields_by_field_id":
+        return {"returnFieldsByFieldId": int(value)}
     elif param_name == "sort":
         sorting_dict_list = field_names_to_sorting_dict(value)
         return dict_list_to_request_params("sort", sorting_dict_list)

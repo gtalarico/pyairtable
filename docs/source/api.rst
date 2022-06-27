@@ -291,6 +291,9 @@ have a corresponding ``kwargs`` that can be used with fetching methods like :met
    * - ``time_zone``
      - ``timeZone``
      - |kwarg_time_zone|
+   * - ``return_fields_by_field_id``
+     - ``returnFieldsByFieldId``
+     - |kwarg_return_fields_by_field_id|
 
 
 Formulas

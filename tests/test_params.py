@@ -16,6 +16,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         "view": "View",
         "sort": ["Name"],
         "fields": ["Name", "Age"],
+        "return_fields_by_field_id": 1,
     }
     with Mocker() as m:
         url_params = (
@@ -25,6 +26,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
             "&view=View"
             "&fields%5B%5D=Name"
             "&fields%5B%5D=Age"
+            "&returnFieldsByFieldId=1"
             ""
         )
         mock_url = "{0}?{1}".format(table.table_url, url_params)
@@ -97,6 +99,9 @@ def test_params_integration(table, mock_records, mock_response_iterator):
             "?timeZone=America%2FChicago"
             # '?timeZone=America/Chicago'
         ],
+        ["return_fields_by_field_id", True, "?returnFieldsByFieldId=1"],
+        ["return_fields_by_field_id", 1, "?returnFieldsByFieldId=1"],
+        ["return_fields_by_field_id", False, "?returnFieldsByFieldId=0"],
         # TODO
         # [
         #     {"sort": [("Name", "desc"), ("Phone", "asc")]},
