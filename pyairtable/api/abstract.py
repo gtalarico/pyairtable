@@ -189,6 +189,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 json_data={"records": chunk_records, "typecast": typecast},
             )
             updated_records += response["records"]
+            time.sleep(self.API_LIMIT)
 
         return updated_records
 
