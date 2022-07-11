@@ -18,3 +18,5 @@ coverage.xml
 .coverage
 test.py
 pip-wheel-metadata
+.python-version
+.idea*
