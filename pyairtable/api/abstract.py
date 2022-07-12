@@ -1,12 +1,13 @@
 import abc
 import posixpath
-import requests
 import time
 from functools import lru_cache
 from typing import List, Optional, Tuple
 from urllib.parse import quote
 
-from pyairtable.utils import AutoRetrySession
+import requests
+
+from pyairtable.utils import AutoRetrySession, API_CLIENT_ENABLE_RETRIES, API_CLIENT_MAX_RETRIES
 from .params import to_params_dict
 
 
@@ -16,13 +17,14 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
-
-    session: AutoRetrySession
-    tiemout: Optional[Tuple[int, int]]
+    session = requests.Session
+    timeout: Optional[Tuple[int, int]]
 
     def __init__(self, api_key: str, timeout=None):
-        session = requests.Session()
-        self.session = session
+        if API_CLIENT_ENABLE_RETRIES and API_CLIENT_MAX_RETRIES > 0:
+            self.session = AutoRetrySession()
+        else:
+            self.session = requests.Session()
         self.timeout = timeout
         self.api_key = api_key
 
