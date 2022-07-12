@@ -1,4 +1,5 @@
 import abc
+import os
 import posixpath
 import time
 from functools import lru_cache
@@ -7,7 +8,7 @@ from urllib.parse import quote
 
 import requests
 
-from pyairtable.utils import AutoRetrySession, API_CLIENT_ENABLE_RETRIES, API_CLIENT_MAX_RETRIES
+from pyairtable.utils import AutoRetrySession
 from .params import to_params_dict
 
 
@@ -16,13 +17,20 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
     API_URL = posixpath.join(API_BASE_URL, VERSION)
+    API_CLIENT_MAX_RETRIES = os.getenv('API_CLIENT_MAX_RETRIES', 0)
+    API_CLIENT_POOL_CONNECTIONS = os.getenv('API_CLIENT_POOL_CONNECTIONS', 30)
+    API_CLIENT_MAX_POOL_SIZE = os.getenv('API_CLIENT_MAX_POOL_SIZE', 30)
+    API_CLIENT_ENABLE_RETRIES = str(os.getenv('API_CLIENT_ENABLE_RETRIES', False)).lower() in ['1', 'yes', 'true', 'on']
     MAX_RECORDS_PER_REQUEST = 10
     session = requests.Session
     timeout: Optional[Tuple[int, int]]
 
     def __init__(self, api_key: str, timeout=None):
-        if API_CLIENT_ENABLE_RETRIES and API_CLIENT_MAX_RETRIES > 0:
-            self.session = AutoRetrySession()
+        if self.API_CLIENT_ENABLE_RETRIES and self.API_CLIENT_MAX_RETRIES > 0:
+            self.session = AutoRetrySession(max_retries=self.API_CLIENT_MAX_RETRIES,
+                                            pool_connections=self.API_CLIENT_POOL_CONNECTIONS,
+                                            pool_maxsize=self.API_CLIENT_MAX_POOL_SIZE,
+                                            prefixes=(self.API_URL,))
         else:
             self.session = requests.Session()
         self.timeout = timeout

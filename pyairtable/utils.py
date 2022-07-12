@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, date
 from typing import Union
 
@@ -87,24 +86,20 @@ def attachment(url: str, filename="") -> dict:
     return {"url": url} if not filename else {"url": url, "filename": filename}
 
 
-API_CLIENT_MAX_RETRIES = os.getenv('API_CLIENT_MAX_RETRIES', 3)
-API_CLIENT_POOL_CONNECTIONS = os.getenv('API_CLIENT_POOL_CONNECTIONS', 30)
-API_CLIENT_MAX_POOL_SIZE = os.getenv('API_CLIENT_MAX_POOL_SIZE', 30)
-API_CLIENT_ENABLE_RETRIES = str(os.getenv('API_CLIENT_ENABLE_RETRIES', False)).lower() in ['1', 'yes', 'true', 'on']
-
-
 class AutoRetrySession(Session):
     """ This Session object will retry requests that return temporary errors. """
 
     DEFAULT_RETRY_CODES = (429, 500, 502, 503, 504)
     DEFAULT_RETRY_METHODS = ("HEAD", "GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE")
     DEFAULT_BACKOFF_FACTOR = 0.3
-
-    # TODO: add ENV variables for controlling retry behaviour
+    API_CLIENT_MAX_RETRIES = 5
+    API_CLIENT_POOL_CONNECTIONS = 30
+    API_CLIENT_MAX_POOL_SIZE = 30
 
     def __init__(self, status_force: tuple = DEFAULT_RETRY_CODES, method_whitelist: tuple = DEFAULT_RETRY_METHODS,
                  max_retries: int = API_CLIENT_MAX_RETRIES, backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
-                 pool_connections: int = API_CLIENT_POOL_CONNECTIONS, pool_maxsize: int = API_CLIENT_MAX_POOL_SIZE):
+                 pool_connections: int = API_CLIENT_POOL_CONNECTIONS, pool_maxsize: int = API_CLIENT_MAX_POOL_SIZE,
+                 prefixes: tuple = ('http://', 'https://')):
         super().__init__()
 
         # Indicate our preference for JSON
@@ -124,6 +119,5 @@ class AutoRetrySession(Session):
             pool_maxsize=pool_maxsize,
             max_retries=retry_strategy
         )
-
-        super(AutoRetrySession, self).mount('https://', adapter)
-        super(AutoRetrySession, self).mount('http://', adapter)
+        for url in prefixes:
+            super(AutoRetrySession, self).mount(url, adapter)
