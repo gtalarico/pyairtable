@@ -4,10 +4,16 @@ import requests
 import time
 from functools import lru_cache
 from typing import List, Optional, Tuple
-from urllib.parse import quote
 
-from pyairtable.utils import AutoRetrySession
+from urllib.parse import quote
+from requests.sessions import Session
+
 from .params import to_params_dict
+from .retrying import _RetryingSession
+from .. import compat
+
+
+TimeoutTuple = Tuple[int, int]
 
 
 class ApiAbstract(metaclass=abc.ABCMeta):
@@ -17,12 +23,21 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
 
-    session: AutoRetrySession
-    tiemout: Optional[Tuple[int, int]]
+    session: Session
+    tiemout: TimeoutTuple
 
-    def __init__(self, api_key: str, timeout=None):
-        session = requests.Session()
-        self.session = session
+    def __init__(
+        self,
+        api_key: str,
+        timeout: Optional[TimeoutTuple] = None,
+        retry_strategy: Optional["compat.Retry"] = None,
+    ):
+
+        if not retry_strategy:
+            self.session = Session()
+        else:
+            self.session = _RetryingSession(retry_strategy)
+
         self.timeout = timeout
         self.api_key = api_key
 
@@ -64,7 +79,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     def _chunk(self, iterable, chunk_size):
         """Break iterable into chunks"""
         for i in range(0, len(iterable), chunk_size):
-            yield iterable[i: i + chunk_size]
+            yield iterable[i : i + chunk_size]
 
     def _build_batch_record_objects(self, records):
         return [{"fields": record} for record in records]

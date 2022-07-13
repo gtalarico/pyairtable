@@ -1,5 +1,7 @@
-from typing import List
-from .abstract import ApiAbstract
+from typing import List, Optional
+from .abstract import ApiAbstract, TimeoutTuple
+
+from .. import compat
 
 
 class Api(ApiAbstract):
@@ -17,17 +19,24 @@ class Api(ApiAbstract):
         >>> api.all('base_id', 'table_name')
     """
 
-    def __init__(self, api_key: str, timeout=None):
+    def __init__(
+        self,
+        api_key: str,
+        *,
+        timeout: Optional[TimeoutTuple] = None,
+        retry_strategy: Optional["compat.Retry"] = None,
+    ):
         """
 
         Args:
             api_key: |arg_api_key|
 
         Keyword Args:
-            timeout(``Tuple``): |arg_timeout|
+            timeout (``Tuple``): |arg_timeout|
+            retry_strategy (``Retry``): |arg_retry_strategy|
 
         """
-        super().__init__(api_key, timeout=timeout)
+        super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy)
 
     def get_table(self, base_id: str, table_name: str) -> "Table":
         """

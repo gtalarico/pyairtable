@@ -3,7 +3,7 @@
 Airtable Api
 ============
 
-Overview                                                                                                                                                                                                                                                                                                  
+Overview
 ********
 
 This client offers three classes you can use to access the Airtable Api:
@@ -232,7 +232,6 @@ Api
 .. autoclass:: pyairtable.api.Api
   :members:
 
-
 Base
 -----
 
@@ -247,6 +246,49 @@ Table
     :members:
 
 
+Retrying
+********
+
+.. versionadded:: 1.3.0
+
+You may provide an instance of ``urllib3.util.Retry`` to configure
+retrying behaviour.
+
+The library also provides :func:`~pyairtable.api.retrying.retry_strategy` to quickly generate a
+``Retry`` instance with reasonable defaults that you can use as-is or with tweaks.
+
+.. note:: for backwards-compatibility, the default behavior is no retry (`retry_strategy=None`).
+  This may change in future releases.
+
+Default Retry Strategy
+
+.. code-block:: python
+
+  from pyairtable import Api, retry_strategy
+  api = Api('apikey', retry_strategy=retry_strategy())
+
+
+Adjusted Default Strategy
+
+.. code-block:: python
+
+  from pyairtable import Api, retry_strategy
+  api = Api('apikey', retry_strategy=retry_strategy(total=3))
+
+Custom Retry
+
+.. code-block:: python
+
+  from pyairtable import Api, retry_strategy
+  from urllib3.util import Retry
+
+  myRetry = Retry(**kwargs)
+  api = Api('apikey', retry_strategy=myRetry)
+
+
+.. autofunction:: pyairtable.api.retrying.retry_strategy
+
+
 
 Parameters
 **********
@@ -257,7 +299,7 @@ Most options in the Airtable Api (eg. ``sort``, ``fields``, etc)
 have a corresponding ``kwargs`` that can be used with fetching methods like :meth:`~pyairtable.api.Table.iterate`.
 
 
-.. list-table:: Title
+.. list-table::
    :widths: 25 25 50
    :header-rows: 1
 
@@ -292,6 +334,7 @@ have a corresponding ``kwargs`` that can be used with fetching methods like :met
      - ``timeZone``
      - |kwarg_time_zone|
    * - ``return_fields_by_field_id``
+        .. versionadded:: 1.3.0
      - ``returnFieldsByFieldId``
      - |kwarg_return_fields_by_field_id|
 

@@ -61,10 +61,10 @@ autoapi_dirs = [os.path.join(root_dir, "pyairtable")]
 napoleon_google_docstring = True
 napoleon_include_init_with_doc = True
 napoleon_attr_annotations = True
-# napoleon_preprocess_types = False # True to convert the type definitions in the docstrings as references. Defaults to False.
+# napoleon_preprocess_types = True  # True to convert the type definitions in the docstrings as references. Defaults to False.
 # napoleon_type_aliases = None
 # napoleon_attr_annotations = True
-
+# napoleon_use_param = True
 
 __version__ = version.split("-", 0)
 __release__ = version
