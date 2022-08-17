@@ -184,3 +184,10 @@ def OR(*args) -> str:
     'OR(1, 2, 3)'
     """
     return "OR({})".format(",".join(args))
+
+def LOWER(value) -> str:
+    """
+    Creates the LOWER function, making a string lowercase.
+    Can you be used on a string or a full airtable column and will lower all the strings in that column.
+    """
+    return "LOWER({})".format(value)
