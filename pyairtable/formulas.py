@@ -188,7 +188,7 @@ def OR(*args) -> str:
 def LOWER(value) -> str:
     """
     Creates the LOWER function, making a string lowercase.
-    Can you be used on a string or a full airtable column and will lower all the strings in that column.
+    Can be used on a string or a field name and will lower all the strings in the field.
     
     >>> LOWER("TestValue")
     "LOWER(TestValue)"
