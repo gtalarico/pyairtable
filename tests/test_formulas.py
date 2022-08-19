@@ -80,4 +80,4 @@ def test_escape_quotes(text, escaped):
     assert rv == escaped
 
 def test_lower():
-    assert LOWER('TestValue') == "LOWER(TestValue)"
+    assert LOWER("TestValue") == "LOWER(TestValue)"
