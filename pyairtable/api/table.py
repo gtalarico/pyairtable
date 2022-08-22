@@ -49,12 +49,12 @@ class Table(ApiAbstract):
         """
         return super()._get_record_url(self.base_id, self.table_name, record_id)
 
-    def get(self, record_id: str):
+    def get(self, record_id: str, **options):
         """
         Same as :meth:`Api.get <pyairtable.api.Api.get>`
         but without ``base_id`` and ``table_name`` arg.
         """
-        return super()._get_record(self.base_id, self.table_name, record_id)
+        return super()._get_record(self.base_id, self.table_name, record_id, **options)
 
     def iterate(self, **options):
         """
