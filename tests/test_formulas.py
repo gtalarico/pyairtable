@@ -9,7 +9,7 @@ from pyairtable.formulas import (
     match,
     escape_quotes,
     FIND,
-    LOWER
+    LOWER,
 )
 
 
@@ -55,16 +55,19 @@ def test_combination():
 
 
 @pytest.mark.parametrize(
-    "dict,exprected_formula",
+    "dict,kwargs,expected_formula",
     [
-        ({"First Name": "John"}, "{First Name}='John'"),
-        ({"A": "1", "B": "2"}, "AND({A}='1',{B}='2')"),
-        ({}, ""),
+        ({"First Name": "John"}, {"any": False}, "{First Name}='John'"),
+        ({"First Name": "John"}, {"any": True}, "{First Name}='John'"),
+        ({"A": "1", "B": "2"}, {"any": False}, "AND({A}='1',{B}='2')"),
+        ({"A": "1", "B": "2"}, {"any": True}, "OR({A}='1',{B}='2')"),
+        ({}, {"any": False}, ""),
+        ({}, {"any": True}, ""),
     ],
 )
-def test_match(dict, exprected_formula):
-    rv = match(dict)
-    assert rv == exprected_formula
+def test_match(dict, kwargs, expected_formula):
+    rv = match(dict, **kwargs)
+    assert rv == expected_formula
 
 
 @pytest.mark.parametrize(
@@ -78,6 +81,7 @@ def test_match(dict, exprected_formula):
 def test_escape_quotes(text, escaped):
     rv = escape_quotes(text)
     assert rv == escaped
+
 
 def test_lower():
     assert LOWER("TestValue") == "LOWER(TestValue)"

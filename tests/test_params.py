@@ -16,7 +16,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         "view": "View",
         "sort": ["Name"],
         "fields": ["Name", "Age"],
-        "return_fields_by_field_id": 1,
+        "return_fields_by_field_id": True,
     }
     with Mocker() as m:
         url_params = (

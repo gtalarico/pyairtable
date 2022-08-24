@@ -94,7 +94,9 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         )
         return self._process_response(response)
 
-    def _get_record(self, base_id: str, table_name: str, record_id: str, **options) -> dict:
+    def _get_record(
+        self, base_id: str, table_name: str, record_id: str, **options
+    ) -> dict:
         record_url = self._get_record_url(base_id, table_name, record_id)
         params = self._options_to_params(**options)
         return self._request("get", record_url, params=params)

@@ -26,6 +26,16 @@ def test_integration_table(table, cols):
     # Get all
     records = table.all()
     assert rec["id"] in [r["id"] for r in records]
+    assert cols.NUM in records[0]["fields"]  # col name in "fields"
+
+    # All `return_by_field_ids`
+    records = table.all(return_fields_by_field_id=True)
+    assert cols.NUM not in records[0]["fields"]  # fields returns fieldId
+
+    # Get `return_by_field_ids`
+    record = table.get(records[0]["id"], return_fields_by_field_id=True)
+    assert records[0]["id"] == record["id"]
+    assert cols.NUM not in record["fields"]
 
     # Delete
     rv = table.delete(rec["id"])
@@ -49,9 +59,23 @@ def test_integration_table(table, cols):
 
 @pytest.mark.integration
 def test_integration_field_equals(table: Table, cols):
-    VALUE = "Test {}".format(uuid4())
-    rv_create = table.create({cols.TEXT: VALUE})
-    rv_first = table.first(formula=fo.match({cols.TEXT: VALUE}))
+    TEXT_VALUE = "Test {}".format(uuid4())
+    NUM_VALUE = 12345
+    values = {cols.TEXT: TEXT_VALUE, cols.NUM: NUM_VALUE}
+    rv_create = table.create(values)
+
+    # match all - finds
+    rv_first = table.first(formula=fo.match(values))
+    assert rv_first and rv_first["id"] == rv_create["id"]
+
+    # match all - does not find
+    values = {cols.TEXT: TEXT_VALUE, cols.NUM: 0}
+    rv_first = table.first(formula=fo.match(values))
+    assert rv_first is None
+
+    # match all w/ any=True - does not find
+    values = {cols.TEXT: TEXT_VALUE, cols.NUM: 0}
+    rv_first = table.first(formula=fo.match(values, any=True))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 

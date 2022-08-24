@@ -5,21 +5,34 @@ from typing import Any
 from .utils import date_to_iso_str, datetime_to_iso_str
 
 
-def match(dict_values):
+def match(dict_values, *, any=False):
     """
     Creates one or more ``EQUAL()`` expressions for each provided dict value.
     If more than one assetions is included, the expressions are
-    groupped together into using ``AND()``.
+    groupped together into using ``AND()`` (all values must match).
+
+    If ``any=True``, expressions are grouped with ``OR()``, so record is return
+    if any of the values match.
 
     This function also handles escaping field names and casting python values
     to the appropriate airtable types using :func:`to_airtable_value` on all
     provided values to help generate the expected formula syntax.
 
+    If you need more advanced matching you can build similar expressions using lower
+    level forumula primitives.
+
+
     Args:
         dict_values: dictionary containing column names and values
 
+    Keyword Args:
+        any: matches if **any** of the provided values match. Default is ``False``
+            (all values must match)
+
     Usage:
         >>> match({"First Name": "John", "Age": 21})
+        "AND({First Name}='John',{Age}=21)"
+        >>> match({"First Name": "John", "Age": 21}, any=True)
         "AND({First Name}='John',{Age}=21)"
         >>> match({"First Name": "John"})
         "{First Name}='John'"
@@ -39,7 +52,10 @@ def match(dict_values):
     elif len(expressions) == 1:
         return expressions[0]
     else:
-        return AND(*expressions)
+        if not any:
+            return AND(*expressions)
+        else:
+            return OR(*expressions)
 
 
 def escape_quotes(value: str):
@@ -178,6 +194,8 @@ def AND(*args) -> str:
 
 def OR(*args) -> str:
     """
+    .. versionadded:: 1.2.0
+
     Creates an OR Statement
 
     >>> OR(1, 2, 3)
@@ -185,11 +203,14 @@ def OR(*args) -> str:
     """
     return "OR({})".format(",".join(args))
 
+
 def LOWER(value) -> str:
     """
+    .. versionadded:: 1.3.0
+
     Creates the LOWER function, making a string lowercase.
     Can be used on a string or a field name and will lower all the strings in the field.
-    
+
     >>> LOWER("TestValue")
     "LOWER(TestValue)"
     """

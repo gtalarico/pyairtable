@@ -54,7 +54,7 @@ class Api(ApiAbstract):
         """
         return super()._get_record_url(base_id, table_name, record_id)
 
-    def get(self, base_id: str, table_name: str, record_id: str):
+    def get(self, base_id: str, table_name: str, record_id: str, **options):
         """
         Retrieves a record by its id
 
@@ -65,10 +65,13 @@ class Api(ApiAbstract):
             table_name: |arg_table_name|
             record_id: |arg_record_id|
 
+        Keyword Args:
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+
         Returns:
             record: Record
         """
-        return super()._get_record(base_id, table_name, record_id)
+        return super()._get_record(base_id, table_name, record_id, **options)
 
     def iterate(self, base_id: str, table_name: str, **options):
         """
