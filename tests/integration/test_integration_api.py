@@ -73,9 +73,9 @@ def test_integration_field_equals(table: Table, cols):
     rv_first = table.first(formula=fo.match(values))
     assert rv_first is None
 
-    # match all w/ any=True - does not find
+    # match all w/ match_any=True - does not find
     values = {cols.TEXT: TEXT_VALUE, cols.NUM: 0}
-    rv_first = table.first(formula=fo.match(values, any=True))
+    rv_first = table.first(formula=fo.match(values, match_any=True))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 

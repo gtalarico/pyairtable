@@ -57,12 +57,12 @@ def test_combination():
 @pytest.mark.parametrize(
     "dict,kwargs,expected_formula",
     [
-        ({"First Name": "John"}, {"any": False}, "{First Name}='John'"),
-        ({"First Name": "John"}, {"any": True}, "{First Name}='John'"),
-        ({"A": "1", "B": "2"}, {"any": False}, "AND({A}='1',{B}='2')"),
-        ({"A": "1", "B": "2"}, {"any": True}, "OR({A}='1',{B}='2')"),
-        ({}, {"any": False}, ""),
-        ({}, {"any": True}, ""),
+        ({"First Name": "John"}, {"match_any": False}, "{First Name}='John'"),
+        ({"First Name": "John"}, {"match_any": True}, "{First Name}='John'"),
+        ({"A": "1", "B": "2"}, {"match_any": False}, "AND({A}='1',{B}='2')"),
+        ({"A": "1", "B": "2"}, {"match_any": True}, "OR({A}='1',{B}='2')"),
+        ({}, {"match_any": False}, ""),
+        ({}, {"match_any": True}, ""),
     ],
 )
 def test_match(dict, kwargs, expected_formula):

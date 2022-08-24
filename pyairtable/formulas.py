@@ -5,13 +5,13 @@ from typing import Any
 from .utils import date_to_iso_str, datetime_to_iso_str
 
 
-def match(dict_values, *, any=False):
+def match(dict_values, *, match_any=False):
     """
     Creates one or more ``EQUAL()`` expressions for each provided dict value.
     If more than one assetions is included, the expressions are
     groupped together into using ``AND()`` (all values must match).
 
-    If ``any=True``, expressions are grouped with ``OR()``, so record is return
+    If ``match_any=True``, expressions are grouped with ``OR()``, record is return
     if any of the values match.
 
     This function also handles escaping field names and casting python values
@@ -26,13 +26,13 @@ def match(dict_values, *, any=False):
         dict_values: dictionary containing column names and values
 
     Keyword Args:
-        any: matches if **any** of the provided values match. Default is ``False``
+        match_any: matches if **any** of the provided values match. Default is ``False``
             (all values must match)
 
     Usage:
         >>> match({"First Name": "John", "Age": 21})
         "AND({First Name}='John',{Age}=21)"
-        >>> match({"First Name": "John", "Age": 21}, any=True)
+        >>> match({"First Name": "John", "Age": 21}, match_any=True)
         "AND({First Name}='John',{Age}=21)"
         >>> match({"First Name": "John"})
         "{First Name}='John'"
@@ -52,7 +52,7 @@ def match(dict_values, *, any=False):
     elif len(expressions) == 1:
         return expressions[0]
     else:
-        if not any:
+        if not match_any:
             return AND(*expressions)
         else:
             return OR(*expressions)

@@ -8,7 +8,7 @@ Changelog
 1.3.0
 ------
 * Added new ``LOWER`` formula - `PR #171 <https://github.com/gtalarico/pyairtable/pull/171>`_. See updated :ref:`Formulas`.
-* Added ``match(..., any=True)`` to :meth:`~pyairtable.formulas.match`
+* Added ``match(..., match_any=True)`` to :meth:`~pyairtable.formulas.match`
 * Added ``return_fields_by_field_id`` in :meth:`~pyairtable.api.Api.get`
 
 1.2.0
