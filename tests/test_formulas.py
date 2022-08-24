@@ -9,6 +9,7 @@ from pyairtable.formulas import (
     match,
     escape_quotes,
     FIND,
+    LOWER
 )
 
 
@@ -77,3 +78,6 @@ def test_match(dict, exprected_formula):
 def test_escape_quotes(text, escaped):
     rv = escape_quotes(text)
     assert rv == escaped
+
+def test_lower():
+    assert LOWER("TestValue") == "LOWER(TestValue)"

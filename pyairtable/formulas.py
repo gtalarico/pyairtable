@@ -184,3 +184,13 @@ def OR(*args) -> str:
     'OR(1, 2, 3)'
     """
     return "OR({})".format(",".join(args))
+
+def LOWER(value) -> str:
+    """
+    Creates the LOWER function, making a string lowercase.
+    Can be used on a string or a field name and will lower all the strings in the field.
+    
+    >>> LOWER("TestValue")
+    "LOWER(TestValue)"
+    """
+    return "LOWER({})".format(value)
