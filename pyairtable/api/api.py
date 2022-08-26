@@ -267,7 +267,7 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            records(``list``): List of dict: [{"id": record_id, "field": fields_to_update_dict}]
+            records(``list``): List of dict: [{"id": record_id, "fields": fields_to_update_dict}]
 
         Keyword Args:
             replace (``bool``, optional): If ``True``, record is replaced in its entirety
