@@ -210,7 +210,7 @@ class Model(metaclass=abc.ABCMeta):
         table = self.get_table()
         record = self.to_record()
         _fndm = self._field_name_descriptor_map()
-        fields = {f: v for f, v in record["fields"].items() if not _fndm[f]._computed}
+        fields = {f: v for f, v in record["fields"].items() if not _fndm[f].read_only}
 
         if not self.id:
             record = table.create(fields, typecast=self.typecast)
