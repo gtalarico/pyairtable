@@ -107,11 +107,11 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 params.update({"offset": offset})
             data = self._request("get", table_url, params=params)
             records = data.get("records", [])
-            time.sleep(self.API_LIMIT)
             yield records
             offset = data.get("offset")
             if not offset:
                 break
+            time.sleep(self.API_LIMIT)
 
     def _first(self, base_id: str, table_name: str, **options) -> Optional[dict]:
         for records in self._iterate(
