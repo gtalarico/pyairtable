@@ -219,6 +219,27 @@ class DateField(Field):
         return super().__get__(*args, **kwargs)
 
 
+class PhoneField(TextField):
+    """Airtable Email field. Uses ``str`` to store value"""
+    """Attempts to return a phone number in standard format. Assumes a +1 country code if no country code is provided"""
+    """Stores number in Airtable in format +C XXX-XXX-XXXX"""
+        
+    def to_record_value(self, value: Any) -> str:
+        """Attempts to put the phone number in simple U.S. format to store in Airtable"""
+        return utils.phone_to_e164(value, country_code=1)
+    
+    def to_internal_value(self, value: Any) -> str:
+        """Returns the phone number in standard E.164 format"""
+        return utils.phone_from_e164(value, country_code=1)
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, str):
+            raise ValueError("PhoneField value must be 'str'")
+            
+    def __get__(self, *args, **kwargs) -> Optional[str]:
+        return super().__get__(*args, **kwargs)
+    
+
 class LinkField(Field, Generic[T_Linked]):
     """Airtable Link field. Uses ``List[Model]`` to store value"""
 

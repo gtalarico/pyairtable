@@ -36,3 +36,17 @@ def test_attachment():
         "url": "https://url.com",
         "filename": "test.jpg",
     }
+
+    
+@pytest.mark.parametrize(
+    "phone_e164,phone_str,phone_input",
+    [
+        ("+19876543210", "+1 987-654-3210", "(987) 654 3210"),
+        ("+12345678901", "+1 234-567-8901", "+1 234.567.8901"),
+    ],
+)
+def test_phone_utils(phone_str, phone_e164, phone_input):
+    assert utils.phone_to_e164(phone_str) == phone_e164
+    assert utils.phone_to_e164(phone_input) == phone_e164
+    assert utils.phone_from_e164(phone_e164) == phone_str
+    
