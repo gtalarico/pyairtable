@@ -4,12 +4,10 @@
 .vscode
 .venv
 
-env/
 htmlcov/
 dist/
 build/
 docs/build
-.pytest_cache/
 .ipynb_checkpoints
 .eggs
 .tox
