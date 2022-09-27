@@ -226,7 +226,7 @@ class PhoneField(TextField):
         
     def to_record_value(self, value: Any) -> str:
         """Attempts to put the phone number in simple U.S. format to store in Airtable"""
-        return utils.phone_from_e164(value, country_code=1)
+        return utils.phone_to_basic(value, country_code=1)
     
     def to_internal_value(self, value: Any) -> str:
         """Returns the phone number in standard E.164 format"""
@@ -237,7 +237,7 @@ class PhoneField(TextField):
             raise ValueError("PhoneField value must be 'str'")
             
     def __get__(self, *args, **kwargs) -> Optional[str]:
-        return super().__get__(*args, **kwargs)
+        return self.to_record_value( super().__get__(*args, **kwargs) )
     
 
 class LinkField(Field, Generic[T_Linked]):

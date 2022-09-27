@@ -91,6 +91,8 @@ def test_phone_field():
         rv_e164 = field.to_internal_value(value)
         rv_str = field.to_record_value(value)
         
+        print(value)
+        
         assert rv_e164 == '+19876543210'
         assert rv_str == '+1 987-654-3210'
         assert t.phone == '+1 987-654-3210'

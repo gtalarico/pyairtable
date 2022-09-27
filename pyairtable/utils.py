@@ -88,28 +88,25 @@ def phone_to_e164(value: str, country_code=1) -> str:
     Assumes a +1 country code by default
     
     """
-    result = re.search('^(?P<country_code>\+\d{1,3})?(?:\s+)?\(?(\d+)\)?(?:[\s.-]+)?(\d+)(?:[\s.-])?(\d+)(?:[\s.-])?(\d+)$', value)
+    result = re.search('(?P<country_code>\+\d{1,3})?(?:\s+)?\(?(\d+)\)?(?:[\s.-]+)?(\d+)(?:[\s.-])?(\d+)(?:[\s.-])?(\d+)', value)
 
     if result:
         parts = result.groups()
-        print(parts)
         if not result.group('country_code'):
             parts = (f'+{country_code}',) + parts
 
         return ''.join([i for i in parts if i is not None])
-    
-    return ''
 
 
-def phone_from_e164(value: str, country_code=1) -> str:
+def phone_to_basic(value: str, country_code=1) -> str:
     """
     Returns a string containing the phone number in basic U.S. format, if the number has a +1 country code
         
     """
-    result = re.search('^(\+%s)?(\d{3})(\d{3})(\d{4})$' % country_code, value)    
+    result = re.search('(\+%s)?(\d{3})[- ()\.]*(\d{3})[- ()\.]*(\d{4})' % country_code, value)    
     
     if result:
-        print(result)
-        print(result.groups())
-        return f'+{country_code} ' + '-'.join([i for i in result.groups()[1:] if i is not None])
-    return value
+        basic_format = '-'.join([i for i in result.groups()[1:] if i is not None])
+        if result.group(1) is not None:
+            return f'{result.group(1)} {basic_format}'
+        return f'+{country_code} {basic_format}' 
