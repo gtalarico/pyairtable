@@ -319,7 +319,7 @@ class LinkField(Field, Generic[T_Linked]):
 - [ ] multipleSelects
 - [x] number
 - [ ] percent
-- [ ] phoneNumber
+- [x] phoneNumber
 - [ ] rating
 - [ ] richText
 - [ ] rollup
