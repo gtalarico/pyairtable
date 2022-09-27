@@ -65,11 +65,13 @@ def test_model():
         email="gui@gui.com",
         is_registered=True,
         birthday=datetime(2020, 12, 12).date(),
+        photo="{json: photo}"
     )
 
     # attribute look up
     assert contact.first_name == "Gui"
     assert not contact.id
+    assert not contact.photo
 
     # create
     with mock.patch.object(Table, "create") as m_save:
@@ -78,6 +80,8 @@ def test_model():
 
     assert m_save.called
     assert contact.id == "id"
+
+    # update TODO
 
     # delete
     with mock.patch.object(Table, "delete") as m_delete:
@@ -90,19 +94,6 @@ def test_model():
     assert record["id"] == contact.id
     assert record["createdTime"] == contact.created_time
     assert record["fields"]["First Name"] == contact.first_name
-    
-    # update TODO
-    update_contact = Contact(
-        id="id",
-        first_name="Gui",
-        last_name="Talarico",
-        email="gui@gui.com",
-        is_registered=True,
-        birthday=datetime(2020, 12, 12).date(),
-        photo="{json}"
-    )
-    
-    ##### TODO
 
 
 def test_from_record():
