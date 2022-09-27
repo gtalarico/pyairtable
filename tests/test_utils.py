@@ -2,6 +2,7 @@ import pytest
 from pyairtable import utils
 
 from datetime import datetime, date
+from pytz import timezone
 
 
 @pytest.mark.parametrize(
@@ -11,6 +12,10 @@ from datetime import datetime, date
         (datetime(2025, 12, 31, 23, 59, 59, 0), "2025-12-31T23:59:59.000Z"),
         (datetime(2025, 12, 31, 23, 59, 59, 5_000), "2025-12-31T23:59:59.005Z"),
         (datetime(2025, 12, 31, 23, 59, 59, 555_000), "2025-12-31T23:59:59.555Z"),
+        (timezone('America/Los_Angeles').localize(datetime(2000, 1, 2, 3, 4, 5, 0)), "2000-01-02T03:04:05.000-08:00"),
+        (timezone('America/Los_Angeles').localize(datetime(2025, 12, 31, 23, 59, 59, 0)), "2025-12-31T23:59:59.000-08:00"),
+        (timezone('America/Los_Angeles').localize(datetime(2025, 12, 31, 23, 59, 59, 5_000)), "2025-12-31T23:59:59.005-08:00"),
+        (timezone('America/Los_Angeles').localize(datetime(2025, 12, 31, 23, 59, 59, 555_000)), "2025-12-31T23:59:59.555-08:00"),
     ],
 )
 def test_datetime_utils(datetime_obj, datetime_str):

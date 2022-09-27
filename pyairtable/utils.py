@@ -10,6 +10,8 @@ def datetime_to_iso_str(value: datetime) -> str:
     Args:
         value: datetime object
     """
+    if value.utcoffset() is None:
+        return value.isoformat(timespec="milliseconds") + "Z"
     return value.isoformat(timespec="milliseconds")
 
 
@@ -21,7 +23,9 @@ def datetime_from_iso_str(value: str) -> datetime:
     Args:
         value: datetime string e.g. "2014-09-05T07:00:00.000Z"
     """
-    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+    if "Z" in value:
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f%z")
 
 
 def date_to_iso_str(value: Union[date, datetime]) -> str:
