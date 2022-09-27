@@ -4,6 +4,7 @@
 .vscode
 .venv
 
+env/
 htmlcov/
 dist/
 build/
