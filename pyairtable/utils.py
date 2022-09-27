@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from typing import Union
+import re
 
 
 def datetime_to_iso_str(value: datetime) -> str:
@@ -91,6 +92,7 @@ def phone_to_e164(value: str, country_code=1) -> str:
 
     if result:
         parts = result.groups()
+        print(parts)
         if not result.group('country_code'):
             parts = (f'+{country_code}',) + parts
 
@@ -104,8 +106,10 @@ def phone_from_e164(value: str, country_code=1) -> str:
     Returns a string containing the phone number in basic U.S. format, if the number has a +1 country code
         
     """
-    result = re.search('^(\+%s)(\d{3})(\d{3})(\d{4})$' % country_code, value)    
+    result = re.search('^(\+%s)?(\d{3})(\d{3})(\d{4})$' % country_code, value)    
     
     if result:
-        return '+1 ' + '-'.join([i for i in result.groups()[1:] if i is not None])
+        print(result)
+        print(result.groups())
+        return f'+{country_code} ' + '-'.join([i for i in result.groups()[1:] if i is not None])
     return value

@@ -73,7 +73,7 @@ def test_phone_field():
         
     field = T.__dict__["phone"]
     
-    received_values [
+    received_values = [
         '9876543210',
         '987-654-3210',
         '(987) 654-3210',
@@ -85,11 +85,11 @@ def test_phone_field():
     ]
     
     for value in received_values:
-        rv_e164 = field.to_internal_value(value)
-        rv_str = field.to_record_value(value)
-        
         t = T()
         t.phone = value
+        
+        rv_e164 = field.to_internal_value(value)
+        rv_str = field.to_record_value(value)
         
         assert rv_e164 == '+19876543210'
         assert rv_str == '+1 987-654-3210'

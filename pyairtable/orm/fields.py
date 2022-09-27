@@ -226,11 +226,11 @@ class PhoneField(TextField):
         
     def to_record_value(self, value: Any) -> str:
         """Attempts to put the phone number in simple U.S. format to store in Airtable"""
-        return utils.phone_to_e164(value, country_code=1)
+        return utils.phone_from_e164(value, country_code=1)
     
     def to_internal_value(self, value: Any) -> str:
         """Returns the phone number in standard E.164 format"""
-        return utils.phone_from_e164(value, country_code=1)
+        return utils.phone_to_e164(value, country_code=1)
 
     def valid_or_raise(self, value) -> None:
         if not isinstance(value, str):
