@@ -10,7 +10,7 @@ def datetime_to_iso_str(value: datetime) -> str:
     Args:
         value: datetime object
     """
-    return value.isoformat(timespec="milliseconds") + "Z"
+    return value.isoformat(timespec="milliseconds")
 
 
 def datetime_from_iso_str(value: str) -> datetime:
