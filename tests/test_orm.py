@@ -94,6 +94,19 @@ def test_model():
     assert record["id"] == contact.id
     assert record["createdTime"] == contact.created_time
     assert record["fields"]["First Name"] == contact.first_name
+    
+    # update TODO
+    update_contact = Contact(
+        id="id",
+        first_name="Gui",
+        last_name="Talarico",
+        email="gui@gui.com",
+        is_registered=True,
+        birthday=datetime(2020, 12, 12).date(),
+        photo="{json}"
+    )
+    
+    ##### TODO
 
 
 def test_from_record():
