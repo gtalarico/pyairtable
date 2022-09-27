@@ -65,3 +65,34 @@ def test_date_field():
     assert rv_str == date_str_from_airtable
 
     assert rv_date.year == 2000 and rv_date.month == 1 and rv_date.day == 2
+    
+    
+def test_phone_field():
+    class T:
+        phone = f.PhoneField("Phone")
+        
+    field = T.__dict__["phone"]
+    
+    received_values [
+        '9876543210',
+        '987-654-3210',
+        '(987) 654-3210',
+        '987 654 3210',
+        '987.654.3210',
+        '+1 987.654.3210',
+        '+1 (987) 654.3210',
+        '+19876543210',
+    ]
+    
+    for value in received_values:
+        rv_e164 = field.to_internal_value(value)
+        rv_str = field.to_record_value(value)
+        
+        t = T()
+        t.phone = value
+        
+        assert rv_e164 == '+19876543210'
+        assert rv_str == '+1 987-654-3210'
+        assert t.phone == '+1 987-654-3210'
+        
+    
