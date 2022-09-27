@@ -3,7 +3,7 @@
 .vscode
 .venv
 
-env/
+.env/
 htmlcov/
 dist/
 build/
