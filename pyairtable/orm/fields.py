@@ -72,8 +72,9 @@ T_Linked = TypeVar("T_Linked", bound="Model")
 
 
 class Field(metaclass=abc.ABCMeta):
-    """Generic Airtable Field and base class for specific field-format classes. Accepts `bool` `read_only` kwarg to omit the field from updates to Airtable (e.g., in the case of computed Airtable fields or the notoriously quirky Airtable Attachments field)."""
-    
+    """
+    Generic Airtable Field and base class for specific field-format classes. Accepts `bool` `read_only` kwarg to omit the field from updates to Airtable (e.g., in the case of computed Airtable fields or the notoriously quirky Airtable Attachments field).
+    """
     def __init__(self, field_name, validate_type=True, read_only=False) -> None:
         self.field_name = field_name
         self.validate_type = True
