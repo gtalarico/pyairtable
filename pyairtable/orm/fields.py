@@ -51,7 +51,6 @@ In other words, you can transverse related records through their ``Link Fields``
 
 """
 import abc
-import json
 from warnings import warn
 from datetime import date, datetime
 from typing import (
@@ -233,11 +232,11 @@ class LookupField(Field):
         self._model = model
         
         
-    def to_record_value(self, value: Any) -> str:
-        return json.dumps(value)
+    def to_record_value(self, value: Any) -> list:
+        return list(value)
 
     def to_internal_value(self, value: list) -> list:
-        return json.loads(value)
+        return list(value)
 
     def valid_or_raise(self, value) -> None:
         if not isinstance(value, list):
