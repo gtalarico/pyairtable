@@ -5,6 +5,11 @@ Changelog
 .. warning::
     Looking for airtable-python-wrapper changelog? See :doc:`migrations`.
 
+1.4.0
+------
+* Added :ref:`Retrying` ()
+* Misc fix in sleep for batch requests `PR #180 <https://github.com/gtalarico/pyairtable/pull/180>`
+
 1.3.0
 ------
 * Added new ``LOWER`` formula - `PR #171 <https://github.com/gtalarico/pyairtable/pull/171>`_. See updated :ref:`Formulas`.
