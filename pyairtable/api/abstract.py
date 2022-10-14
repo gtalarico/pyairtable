@@ -1,13 +1,19 @@
 import abc
-from functools import lru_cache
 import posixpath
-from typing import List, Optional, Tuple
-import time
-from urllib.parse import quote
-
 import requests
+import time
+from functools import lru_cache
+from typing import List, Optional, Tuple
+
+from urllib.parse import quote
+from requests.sessions import Session
 
 from .params import to_params_dict
+from .retrying import _RetryingSession
+from .. import compat
+
+
+TimeoutTuple = Tuple[int, int]
 
 
 class ApiAbstract(metaclass=abc.ABCMeta):
@@ -17,12 +23,21 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
 
-    session: requests.Session
-    tiemout: Optional[Tuple[int, int]]
+    session: Session
+    tiemout: TimeoutTuple
 
-    def __init__(self, api_key: str, timeout=None):
-        session = requests.Session()
-        self.session = session
+    def __init__(
+        self,
+        api_key: str,
+        timeout: Optional[TimeoutTuple] = None,
+        retry_strategy: Optional["compat.Retry"] = None,
+    ):
+
+        if not retry_strategy:
+            self.session = Session()
+        else:
+            self.session = _RetryingSession(retry_strategy)
+
         self.timeout = timeout
         self.api_key = api_key
 
