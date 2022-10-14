@@ -72,10 +72,9 @@ T_Linked = TypeVar("T_Linked", bound="Model")
 
 
 class Field(metaclass=abc.ABCMeta):
-    def __init__(self, field_name, validate_type=True, computed=False) -> None:
+    def __init__(self, field_name, validate_type=True) -> None:
         self.field_name = field_name
         self.validate_type = True
-        self._computed = computed
 
     def __set_name__(self, owner, name):
         self.attribute_name = name
