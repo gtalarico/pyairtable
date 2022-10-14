@@ -72,12 +72,10 @@ T_Linked = TypeVar("T_Linked", bound="Model")
 
 
 class Field(metaclass=abc.ABCMeta):
-    """Generic Airtable Field and base class for specific field-format classes. Accepts `bool` `read_only` kwarg to omit the field from updates to Airtable (e.g., in the case of computed Airtable fields or the notoriously quirky Airtable Attachments field)."""
-    
-    def __init__(self, field_name, validate_type=True, read_only=False) -> None:
+    def __init__(self, field_name, validate_type=True, computed=False) -> None:
         self.field_name = field_name
         self.validate_type = True
-        self.read_only: bool = read_only
+        self._computed = computed
 
     def __set_name__(self, owner, name):
         self.attribute_name = name
@@ -99,9 +97,6 @@ class Field(metaclass=abc.ABCMeta):
             instance._fields = {}
         if self.validate_type:
             self.valid_or_raise(value)
-        if self.read_only:
-            raise UserWarning(f"Field value for {self.__class__.__name__} was not set. Field is read-only.")
-            return None
         instance._fields[self.field_name] = value
 
     def to_record_value(self, value: Any) -> Any:
