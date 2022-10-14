@@ -36,15 +36,6 @@ def test_field_read_only():
     assert t.name is None
 
 
-def test_field_read_only():
-    class T:
-        name = f.Field("Name", read_only=True)
-
-    t = T()
-    t.name = "y"
-    assert t.name is None
-
-
 @pytest.mark.skip("TODO")
 def test_linked_field():
     ...
