@@ -52,7 +52,6 @@ def test_model():
         is_registered = f.CheckboxField("Registered")
         link = f.LinkField("Link", Address, lazy=True)
         birthday = f.DateField("Birthday")
-        photo = f.Field("Photo", read_only=True)
 
         class Meta:
             base_id = "contact_base_id"
@@ -71,7 +70,7 @@ def test_model():
     assert contact.first_name == "Gui"
     assert not contact.id
 
-    # create
+    # delete
     with mock.patch.object(Table, "create") as m_save:
         m_save.return_value = {"id": "id", "createdTime": "time"}
         contact.save()
@@ -90,19 +89,6 @@ def test_model():
     assert record["id"] == contact.id
     assert record["createdTime"] == contact.created_time
     assert record["fields"]["First Name"] == contact.first_name
-    
-    # update TODO
-    update_contact = Contact(
-        id="id",
-        first_name="Gui",
-        last_name="Talarico",
-        email="gui@gui.com",
-        is_registered=True,
-        birthday=datetime(2020, 12, 12).date(),
-        photo="{json}"
-    )
-    
-    ##### TODO
 
 
 def test_from_record():
