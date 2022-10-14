@@ -35,7 +35,6 @@ def Contact(Address):
         address = f.LinkField("Address", Address, lazy=True)
         birthday = f.DateField("Birthday")
         last_access = f.DatetimeField("Last Access")
-        photo = f.Field("Photo", read_only=True)
 
         class Meta:
             base_id = BASE_ID

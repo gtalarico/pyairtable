@@ -51,7 +51,6 @@ In other words, you can transverse related records through their ``Link Fields``
 
 """
 import abc
-from warnings import warn
 from datetime import date, datetime
 from typing import (
     Any,
@@ -102,7 +101,7 @@ class Field(metaclass=abc.ABCMeta):
         if self.validate_type:
             self.valid_or_raise(value)
         if self.read_only:
-            warn(f"Field value for {self.field_name} was not set. Field is read-only.")
+            raise UserWarning(f"Field value for {self.__class__.__name__} was not set. Field is read-only.")
             return None
         instance._fields[self.field_name] = value
 
