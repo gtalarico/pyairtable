@@ -65,7 +65,7 @@ def test_model():
         email="gui@gui.com",
         is_registered=True,
         birthday=datetime(2020, 12, 12).date(),
-        photo="{json: photo}"
+        photo="field data"
     )
 
     # attribute look up
