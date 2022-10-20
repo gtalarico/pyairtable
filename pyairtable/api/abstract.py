@@ -146,27 +146,31 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             all_records.extend(records)
         return all_records
 
-    def _create(self, base_id: str, table_name: str, fields: dict, typecast=False):
+    def _create(self, base_id: str, table_name: str, fields: dict, typecast=False, **options):
 
         table_url = self.get_table_url(base_id, table_name)
+        params = self._options_to_params(**options)
         return self._request(
             "post",
             table_url,
             json_data={"fields": fields, "typecast": typecast},
+            params=params
         )
 
     def _batch_create(
-        self, base_id: str, table_name: str, records: List[dict], typecast=False
+        self, base_id: str, table_name: str, records: List[dict], typecast=False, **options
     ) -> List[dict]:
 
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
+        params = self._options_to_params(**options)
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             new_records = self._build_batch_record_objects(chunk)
             response = self._request(
                 "post",
                 table_url,
                 json_data={"records": new_records, "typecast": typecast},
+                params=params
             )
             inserted_records += response["records"]
             time.sleep(self.API_LIMIT)
@@ -180,12 +184,15 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         fields: dict,
         replace=False,
         typecast=False,
+        **options
     ) -> List[dict]:
         record_url = self._get_record_url(base_id, table_name, record_id)
 
         method = "put" if replace else "patch"
+        params = self._options_to_params(**options)
         return self._request(
-            method, record_url, json_data={"fields": fields, "typecast": typecast}
+            method, record_url, json_data={"fields": fields, "typecast": typecast},
+            params=params
         )
 
     def _batch_update(
@@ -195,16 +202,19 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         records: List[dict],
         replace=False,
         typecast=False,
+        **options
     ):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
+        params = self._options_to_params(**options)
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
             response = self._request(
                 method,
                 table_url,
                 json_data={"records": chunk_records, "typecast": typecast},
+                params=params
             )
             updated_records += response["records"]
             time.sleep(self.API_LIMIT)
