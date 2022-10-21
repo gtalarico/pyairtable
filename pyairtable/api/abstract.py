@@ -76,10 +76,13 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             params.update(to_params_dict(name, value))
         return params
 
-    def _chunk(self, iterable, chunk_size):
+    def _chunk(self, iterable: list|dict, chunk_size):
         """Break iterable into chunks"""
         for i in range(0, len(iterable), chunk_size):
-            yield iterable[i : i + chunk_size]
+            if isinstance(iterable, dict):
+                yield dict(list(iterable.items())[i : i + chunk_size])
+            else:
+                yield iterable[i : i + chunk_size]
 
     def _build_batch_record_objects(self, records):
         return [{"fields": record} for record in records]
@@ -192,7 +195,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self,
         base_id: str,
         table_name: str,
-        records: List[dict],
+        records: dict[str, dict],
         replace=False,
         typecast=False,
     ):
@@ -200,7 +203,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
-            chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
+            chunk_records = [{"id": id, "fields": fields} for id, fields in records.items()]
             response = self._request(
                 method,
                 table_url,

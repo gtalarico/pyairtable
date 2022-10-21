@@ -126,10 +126,11 @@ class Table(ApiAbstract):
             typecast=typecast,
         )
 
-    def batch_update(self, records: List[dict], replace=False, typecast=False):
+    def batch_update(self, records: dict[str, dict], replace=False, typecast=False):
         """
         Same as :meth:`Api.batch_update <pyairtable.api.Api.batch_update>`
         but without ``base_id`` and ``table_name`` arg.
+        Record must be passed in as dict with syntax: {id: {field: value}
         """
         return super()._batch_update(
             self.base_id, self.table_name, records, replace=replace, typecast=typecast
