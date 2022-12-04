@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from .abstract import ApiAbstract, TimeoutTuple
+from .abstract import ApiAbstract, TimeoutTuple, UpsertOptions
 from .. import compat
 
 
@@ -95,7 +95,9 @@ class Table(ApiAbstract):
         Same as :meth:`Api.create <pyairtable.api.Api.create>`
         but without ``base_id`` and ``table_name`` arg.
         """
-        return super()._create(self.base_id, self.table_name, fields, typecast=typecast, **options)
+        return super()._create(
+            self.base_id, self.table_name, fields, typecast=typecast, **options
+        )
 
     def batch_create(self, records, typecast=False, **options):
         """
@@ -107,12 +109,7 @@ class Table(ApiAbstract):
         )
 
     def update(
-        self,
-        record_id: str,
-        fields: dict,
-        replace=False,
-        typecast=False,
-        **options
+        self, record_id: str, fields: dict, replace=False, typecast=False, **options
     ):
         """
         Same as :meth:`Api.update <pyairtable.api.Api.update>`
@@ -125,16 +122,29 @@ class Table(ApiAbstract):
             fields,
             replace=replace,
             typecast=typecast,
-            **options
+            **options,
         )
 
-    def batch_update(self, records: List[dict], replace=False, typecast=False, **options):
+    def batch_update(
+        self,
+        records: List[dict],
+        replace=False,
+        typecast=False,
+        perform_upsert: Optional[UpsertOptions] = None,
+        **options,
+    ):
         """
         Same as :meth:`Api.batch_update <pyairtable.api.Api.batch_update>`
         but without ``base_id`` and ``table_name`` arg.
         """
         return super()._batch_update(
-            self.base_id, self.table_name, records, replace=replace, typecast=typecast, **options
+            self.base_id,
+            self.table_name,
+            records,
+            replace=replace,
+            typecast=typecast,
+            perform_upsert=perform_upsert,
+            **options,
         )
 
     def delete(self, record_id: str):

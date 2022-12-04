@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from .abstract import ApiAbstract, TimeoutTuple
+from .abstract import ApiAbstract, TimeoutTuple, UpsertOptions
 from .. import compat
 
 
@@ -119,14 +119,24 @@ class Base(ApiAbstract):
         )
 
     def batch_update(
-        self, table_name: str, records: List[dict], replace=False, typecast=False
+        self,
+        table_name: str,
+        records: List[dict],
+        replace=False,
+        typecast=False,
+        perform_upsert: Optional[UpsertOptions] = None,
     ):
         """
         Same as :meth:`Api.batch_update <pyairtable.api.Api.batch_update>`
         but without ``base_id`` arg.
         """
         return super()._batch_update(
-            self.base_id, table_name, records, replace=replace, typecast=typecast
+            self.base_id,
+            table_name,
+            records,
+            replace=replace,
+            typecast=typecast,
+            perform_upsert=perform_upsert,
         )
 
     def delete(self, table_name: str, record_id: str):

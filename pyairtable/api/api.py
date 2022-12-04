@@ -1,5 +1,5 @@
 from typing import List, Optional
-from .abstract import ApiAbstract, TimeoutTuple
+from .abstract import ApiAbstract, TimeoutTuple, UpsertOptions
 
 from .. import compat
 
@@ -269,6 +269,7 @@ class Api(ApiAbstract):
         records: List[dict],
         replace=False,
         typecast=False,
+        perform_upsert: Optional[UpsertOptions] = None,
     ):
         """
         Updates a records by their record id's in batch.
@@ -284,12 +285,21 @@ class Api(ApiAbstract):
                 bet set to null. If False, only provided fields are updated.
                 Default is ``False``.
             typecast: |kwarg_typecast|
+            perform_upsert: (``dict``, optional): Dictionary with key ``performUpsertOn`` with value
+                equal to a list of field IDs or names
 
         Returns:
             records(``list``): list of updated records
+
+        # TODO document different return type when perform_upsert is at play
         """
         return super()._batch_update(
-            base_id, table_name, records, replace=replace, typecast=typecast
+            base_id,
+            table_name,
+            records,
+            replace=replace,
+            typecast=typecast,
+            perform_upsert=perform_upsert,
         )
 
     def delete(self, base_id: str, table_name: str, record_id: str):

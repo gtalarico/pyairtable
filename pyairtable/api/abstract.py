@@ -3,7 +3,7 @@ import posixpath
 import requests
 import time
 from functools import lru_cache
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, TypedDict
 
 from urllib.parse import quote
 from requests.sessions import Session
@@ -14,6 +14,10 @@ from .. import compat
 
 
 TimeoutTuple = Tuple[int, int]
+
+
+class UpsertOptions(TypedDict):
+    fieldsToMergeOn: List[str]
 
 
 class ApiAbstract(metaclass=abc.ABCMeta):
@@ -83,6 +87,16 @@ class ApiAbstract(metaclass=abc.ABCMeta):
 
     def _build_batch_record_objects(self, records):
         return [{"fields": record} for record in records]
+
+    def _build_upsert_batch_record_list(self, records):
+        chunk_records = []
+        for x in records:
+            new_dict = dict(fields=x["fields"])
+            id = x.get("id", None)
+            if id:
+                new_dict["id"] = id
+            chunk_records.append(new_dict)
+        return chunk_records
 
     def _process_response(self, response):
         try:
@@ -202,24 +216,44 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         records: List[dict],
         replace=False,
         typecast=False,
+        perform_upsert: Optional[UpsertOptions] = None,
         **options
     ):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
         params = self._options_to_params(**options)
-        for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
-            chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
-            response = self._request(
-                method,
-                table_url,
-                json_data={"records": chunk_records, "typecast": typecast},
-                params=params
-            )
-            updated_records += response["records"]
-            time.sleep(self.API_LIMIT)
 
-        return updated_records
+        if perform_upsert:
+            updated_record_ids = []
+            created_record_ids = []
+            for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+                chunk_records = self._build_upsert_batch_record_list(records)
+                response = self._request(
+                    method,
+                    table_url,
+                    json_data={"records": chunk_records, "typecast": typecast, "performUpsert": perform_upsert},
+                    params=params
+                )
+                updated_records += response["records"]
+                updated_record_ids += response["updatedRecords"]
+                created_record_ids += response["createdRecords"]
+                time.sleep(self.API_LIMIT)
+
+            return dict(records=updated_records, updated_record_ids=updated_record_ids, created_record_ids=created_record_ids)
+        else:
+            for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+                chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
+                response = self._request(
+                    method,
+                    table_url,
+                    json_data={"records": chunk_records, "typecast": typecast},
+                    params=params
+                )
+                updated_records += response["records"]
+                time.sleep(self.API_LIMIT)
+
+            return updated_records
 
     def _delete(self, base_id: str, table_name: str, record_id: str):
         record_url = self._get_record_url(base_id, table_name, record_id)
@@ -237,7 +271,6 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             deleted_records.extend(delete_results["records"])
             time.sleep(self.API_LIMIT)
         return deleted_records
-
 
 from pyairtable.api.table import Table  # noqa
 from pyairtable.api.base import Base  # noqa
