@@ -6,7 +6,7 @@ from pyairtable.api.params import (
     to_params_dict,
     dict_list_to_request_params,
     field_names_to_sorting_dict,
-    InvalidParamException,
+    InvalidParamException, to_json_dict,
 )
 
 
@@ -117,6 +117,63 @@ def test_process_params(option, value, url_params):
     processed_params = to_params_dict(option, value)
     request = requests.Request("get", "https://fake.com", params=processed_params)
     assert request.prepare().url.endswith(url_params)
+
+
+@pytest.mark.parametrize(
+    "option,value,expected_json_dict",
+    [
+        ["view", "SomeView", {"view": "SomeView"}],
+        ["max_records", 5, {"maxRecords": 5}],
+        ["page_size", 5, {"pageSize": 5}],
+        ["formula", "NOT(1)", {"filterByFormula": "NOT(1)"}],
+        [
+            "formula",
+            r"AND({COLUMN_ID}<=6, {COLUMN_ID}>3)",
+            {"filterByFormula": "AND({COLUMN_ID}<=6, {COLUMN_ID}>3)"}
+        ],
+        [
+            "fields",
+            ["Name"],
+            {"fields": ["Name"]},
+        ],
+        [
+            "fields",
+            ["Name", "Phone"],
+            {"fields": ["Name", "Phone"]}
+        ],
+        [
+            "sort",
+            ["Name"],
+            {"sort": [{"field": "Name", "direction": "asc"}]}
+        ],
+        [
+            "sort",
+            ["Name", "Phone"],
+            {"sort": [{"field": "Name", "direction": "asc"}, {"field": "Phone", "direction": "asc"}]}
+        ],
+        [
+            "sort",
+            ["Name", "-Phone"],
+            {"sort": [{"field": "Name", "direction": "asc"}, {"field": "Phone", "direction": "desc"}]}
+        ],
+        ["cell_format", "string", {"cellFormat": "string"}],
+        ["user_locale", "en-US", {"userLocale": "en-US"}],
+        [
+            "time_zone",
+            "America/Chicago",
+            {"timeZone": "America/Chicago"}
+        ],
+        ["return_fields_by_field_id", True, {"returnFieldsByFieldId": True}],
+        ["return_fields_by_field_id", 1, {"returnFieldsByFieldId": True}],
+        ["return_fields_by_field_id", False, {"returnFieldsByFieldId": False}],
+    ],
+)
+def test_to_json_dict(option, value, expected_json_dict):
+    """Ensure kwargs received build a proper params"""
+    # https://codepen.io/airtable/full/rLKkYB
+
+    json_dict = to_json_dict(option, value)
+    assert json_dict == expected_json_dict
 
 
 def test_process_params_invalid():

@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 from urllib.parse import quote
 from requests.sessions import Session
 
-from .params import to_params_dict
+from .params import to_params_dict, to_json_dict
 from .retrying import _RetryingSession
 from .. import compat
 
@@ -76,6 +76,15 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             params.update(to_params_dict(name, value))
         return params
 
+    def _options_to_post_data(self, **options):
+        """
+        Process options parameters to be used as post data filters
+        """
+        data = {}
+        for name, value in options.items():
+            data.update(to_json_dict(name, value))
+        return data
+
     def _chunk(self, iterable, chunk_size):
         """Break iterable into chunks"""
         for i in range(0, len(iterable), chunk_size):
@@ -118,12 +127,16 @@ class ApiAbstract(metaclass=abc.ABCMeta):
 
     def _iterate(self, base_id: str, table_name: str, **options):
         offset = None
-        params = self._options_to_params(**options)
+        post_data = self._options_to_post_data(**options)
+        # params = self._options_to_params(**options)
         while True:
             table_url = self.get_table_url(base_id, table_name)
+            # USE post method to avoid "Request-URI Too Large" (414)
+            # see: https://airtable.com/developers/web/api/list-records
+            post_lists_record_url = f"{table_url.strip('/')}/listRecords"
             if offset:
-                params.update({"offset": offset})
-            data = self._request("get", table_url, params=params)
+                post_data["offset"] = offset
+            data = self._request("post", post_lists_record_url, json_data=post_data)
             records = data.get("records", [])
             yield records
             offset = data.get("offset")

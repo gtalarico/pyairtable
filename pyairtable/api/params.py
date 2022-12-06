@@ -93,3 +93,34 @@ def to_params_dict(param_name: str, value: Any):
     else:
         msg = "'{0}' is not a supported parameter".format(param_name)
         raise InvalidParamException(msg)
+
+
+def to_json_dict(param_name: str, value: Any):
+    """Returns a dictionary for use in Request POST 'json_dict'"""
+    if param_name == "max_records":
+        return {"maxRecords": value}
+    elif param_name == "view":
+        return {"view": value}
+    elif param_name == "page_size":
+        return {"pageSize": value}
+    elif param_name == "offset":
+        return {"offset": value}
+    elif param_name == "formula":
+        return {"filterByFormula": value}
+    elif param_name == "fields":
+        if isinstance(value, str):
+            value = [value]
+        return {"fields": value}
+    elif param_name == "cell_format":
+        return {"cellFormat": value}
+    elif param_name == "time_zone":
+        return {"timeZone": value}
+    elif param_name == "user_locale":
+        return {"userLocale": value}
+    elif param_name == "return_fields_by_field_id":
+        return {"returnFieldsByFieldId": bool(value)}
+    elif param_name == "sort":
+        return {"sort": field_names_to_sorting_dict(value)}
+    else:
+        msg = "'{0}' is not a supported parameter".format(param_name)
+        raise InvalidParamException(msg)
