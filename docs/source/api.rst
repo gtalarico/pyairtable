@@ -249,7 +249,7 @@ Table
 Retrying
 ********
 
-.. versionadded:: 1.3.0
+.. versionadded:: 1.4.0
 
 You may provide an instance of ``urllib3.util.Retry`` to configure
 retrying behaviour.
