@@ -13,8 +13,8 @@ build==0.6.0.post1
 # Formatting, Linting
 flake8==3.8.4
 # Only installed in environments that can handle it; don't try running the `lint`
-# tox environment on Python < 3.6.
-black  ; python_version >="3.6"
+# tox environment on Python < 3.7.
+black  ; python_version >="3.7"
 # mypy
 types-requests==2.25.0
 mypy==0.910
