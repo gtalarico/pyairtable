@@ -1,6 +1,6 @@
 
 
-.. |arg_api_key| replace:: An Airtable API Key.
+.. |arg_api_key| replace:: An Airtable API Key or Access Token.
 
 .. |arg_base_id| replace:: An Airtable base id.
 

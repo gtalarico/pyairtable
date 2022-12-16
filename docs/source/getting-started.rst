@@ -19,10 +19,10 @@ Installation
 _______________________________________________
 
 
-Api Key
+Api Key / Access Token
 *******
 
-Your Airtable API key should be securely stored. 
+Your Airtable API key or access token should be securely stored. 
 A common way to do this, is to `store it as an environment variable <https://www.twilio.com/blog/2017/01/how-to-set-environment-variables.html>`_, 
 and load it using ``os.environ``:
 
