@@ -8,14 +8,14 @@ class Api(ApiAbstract):
     """
     Represents an Airtable Api.
 
-    The Api Key or Access Token is provided on init and ``base_id`` and ``table_id``
+    The Api Key or Authorization Token is provided on init and ``base_id`` and ``table_id``
     can be provided on each method call.
 
     If you are only operating on one Table, or one Base, consider using
     :class:`Base` or :class:`Table`.
 
     Usage:
-        >>> api = Api('apikey/accesstoken')
+        >>> api = Api('auth_token')
         >>> api.all('base_id', 'table_name')
     """
 
