@@ -71,9 +71,9 @@ T = TypeVar("T", bound="Model")
 
 class Model(metaclass=abc.ABCMeta):
     """
-    This class allows you create an orm-style class for your Airtable tables.
+    This class allows you to create an orm-style class for your Airtable tables.
 
-    This is a meta class and can only be used to define sub-classes.
+    This is a metaclass and can only be used to define sub-classes.
 
     The ``Meta`` is reuired and must specify all three attributes: ``base_id``,
     ``table_id``, and ``api_key``.
@@ -146,7 +146,7 @@ class Model(metaclass=abc.ABCMeta):
         ...
         >>> Test._field_name_attribute_map()
         >>> {
-        ...     "First Name": "first_name"
+        ...     "First Name": "first_name",
         ...     "Age": "age"
         ... }
         """
@@ -164,6 +164,7 @@ class Model(metaclass=abc.ABCMeta):
             setattr(self, key, value)
 
         self.typecast = getattr(self.Meta, "typecast", True)
+        self.raise_key_error = getattr(self.Meta, "raise_key_error", True)
 
     @classmethod
     def _validate_class(cls):
@@ -259,22 +260,31 @@ class Model(metaclass=abc.ABCMeta):
         """Create instance from record dictionary"""
         name_attr_map = cls._field_name_attribute_map()
         name_field_map = cls._field_name_descriptor_map()
-        try:
-            # Convert Column Names into model field names
-            # Use field's to_internal to cast into model fields
+        raise_key_error = getattr(cls.Meta, 'raise_key_error', True)
+
+        if raise_key_error:
+            try:
+                # Convert Column Names into model field names
+                # Use field's to_internal to cast into model fields
+                kwargs = {
+                    name_attr_map[k]: name_field_map[k].to_internal_value(v)
+                    for k, v in record["fields"].items()
+                }
+            except KeyError as exc:
+                raise ValueError("Invalid Field Name: {} for model {}".format(exc, cls))
+        else:
             kwargs = {
                 name_attr_map[k]: name_field_map[k].to_internal_value(v)
-                for k, v in record["fields"].items()
+                for k, v in record["fields"].items() if k in name_attr_map
             }
-        except KeyError as exc:
-            raise ValueError("Invalid Field Name: {} for model {}".format(exc, cls))
+
         instance = cls(**kwargs)
         instance.created_time = record["createdTime"]
         instance.id = record["id"]
         return instance
 
     @classmethod
-    def from_id(cls: Type[T], record_id: str, fetch=True) -> T:
+    def from_id(cls: Type[T], record_id: str, fetch=True, raise_key_error=True) -> T:
         """
         Create an instance from a `record_id`
 
