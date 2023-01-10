@@ -284,14 +284,15 @@ class Model(metaclass=abc.ABCMeta):
         return instance
 
     @classmethod
-    def from_id(cls: Type[T], record_id: str, fetch=True, raise_key_error=True) -> T:
+    def from_id(cls: Type[T], record_id: str, fetch=True) -> T:
         """
         Create an instance from a `record_id`
 
         Args:
             record_id: |arg_record_id|
+            fetch:
 
-        Keyward Args:
+        Keyword Args:
             fetch: If `True`, record will be fetched and fields will be
                 updated. If `False`, a new instance is created with the provided `id`,
                 but field values are unset. Default is `True`.
