@@ -35,6 +35,7 @@ coverage:
 	open htmlcov/index.html
 
 lint:
+	mypy pyairtable
 	flake8 .
 	black --diff .
 

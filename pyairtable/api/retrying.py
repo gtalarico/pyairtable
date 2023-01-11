@@ -1,7 +1,6 @@
 from requests import Session
 from requests.adapters import HTTPAdapter
-
-from .. import compat
+from requests.packages.urllib3.util.retry import Retry
 
 
 DEFAULT_RETRIABLE_STATUS_CODES = (429, 500, 502, 503, 504)
@@ -15,7 +14,7 @@ def retry_strategy(
     backoff_factor=DEFAULT_BACKOFF_FACTOR,
     total=DEFAULT_MAX_RETRIES,
     **kwargs,
-) -> "compat.Retry":
+) -> Retry:
     """
     Creates a ``Retry`` instance with optional default values.
     See `urllib3 Retry docs <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html>`_
@@ -30,14 +29,6 @@ def retry_strategy(
             while``1`` will exececute a total of two requests (1 + 1 retry).
         **kwargs: All parameters supported by ``urllib3.util.Retry`` can be used.
     """
-
-    try:
-        from urllib3.util import Retry
-    except ImportError:
-        raise ImportError(
-            "urllib3.util.Retry not found. Install newer urllib3 to use `Retry`."
-        )
-
     return Retry(
         total=total,
         backoff_factor=backoff_factor,
@@ -47,7 +38,7 @@ def retry_strategy(
 
 
 class _RetryingSession(Session):
-    def __init__(self, retry_strategy: "compat.Retry"):
+    def __init__(self, retry_strategy: Retry):
         super().__init__()
 
         adapter = HTTPAdapter(max_retries=retry_strategy)
