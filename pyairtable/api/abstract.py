@@ -213,6 +213,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         method = "put" if replace else "patch"
         params = self._options_to_params(**options)
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+            start_time = time.time()
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
             response = self._request(
                 method,
@@ -221,7 +222,8 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 params=params
             )
             updated_records += response["records"]
-            time.sleep(self.API_LIMIT)
+            elapsed_time = time.time() - start_time
+            time.sleep(max(0, self.API_LIMIT - elapsed_time))
 
         return updated_records
 
