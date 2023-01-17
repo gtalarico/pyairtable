@@ -237,11 +237,13 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         deleted_records = []
         table_url = self.get_table_url(base_id, table_name)
         for record_ids in self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST):
+            start_time = time.time()
             delete_results = self._request(
                 "delete", table_url, params={"records[]": record_ids}
             )
             deleted_records.extend(delete_results["records"])
-            time.sleep(self.API_LIMIT)
+            elapsed_time = time.time() - start_time
+            time.sleep(max(0, self.API_LIMIT - elapsed_time))
         return deleted_records
 
 
