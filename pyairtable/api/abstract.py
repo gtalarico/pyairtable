@@ -120,6 +120,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         offset = None
         params = self._options_to_params(**options)
         while True:
+            start_time = time.time()
             table_url = self.get_table_url(base_id, table_name)
             if offset:
                 params.update({"offset": offset})
@@ -129,7 +130,8 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             offset = data.get("offset")
             if not offset:
                 break
-            time.sleep(self.API_LIMIT)
+            elapsed_time = time.time() - start_time
+            time.sleep(max(0, self.API_LIMIT - elapsed_time))
 
     def _first(self, base_id: str, table_name: str, **options) -> Optional[dict]:
         for records in self._iterate(
