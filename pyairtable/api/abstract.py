@@ -167,6 +167,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         inserted_records = []
         params = self._options_to_params(**options)
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+            start_time = time.time()
             new_records = self._build_batch_record_objects(chunk)
             response = self._request(
                 "post",
@@ -175,7 +176,8 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 params=params
             )
             inserted_records += response["records"]
-            time.sleep(self.API_LIMIT)
+            elapsed_time = time.time() - start_time
+            time.sleep(max(0, self.API_LIMIT - elapsed_time))
         return inserted_records
 
     def _update(
