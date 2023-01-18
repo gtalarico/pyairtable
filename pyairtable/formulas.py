@@ -33,7 +33,7 @@ def match(dict_values, *, match_any=False):
         >>> match({"First Name": "John", "Age": 21})
         "AND({First Name}='John',{Age}=21)"
         >>> match({"First Name": "John", "Age": 21}, match_any=True)
-        "AND({First Name}='John',{Age}=21)"
+        "OR({First Name}='John',{Age}=21)"
         >>> match({"First Name": "John"})
         "{First Name}='John'"
         >>> match({"Registered": True})
