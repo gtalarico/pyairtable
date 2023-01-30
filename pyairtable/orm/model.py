@@ -209,8 +209,9 @@ class Model(metaclass=abc.ABCMeta):
         """
         table = self.get_table()
         record = self.to_record()
-        _fndm = self._field_name_descriptor_map()
-        fields = {f: v for f, v in record["fields"].items() if not _fndm[f].read_only}
+        # Filter fields by read_only attribute so we only set values for writable fields
+        map_ = self._field_name_descriptor_map()
+        fields = {f: v for f, v in record["fields"].items() if not map_[f].read_only}
 
         if not self.id:
             record = table.create(fields, typecast=self.typecast)
