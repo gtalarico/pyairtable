@@ -4,6 +4,7 @@ from mock import Mock
 from posixpath import join as urljoin
 from requests import HTTPError
 from urllib.parse import urlencode, quote
+from requests import Request
 
 from pyairtable.api import Api, Table, Base
 from collections import OrderedDict
@@ -11,6 +12,8 @@ from collections import OrderedDict
 
 @pytest.fixture
 def json_matcher():
+    """Returns func that when called returns a matcher for a mocker response to match provided json"""
+
     def _matcher(json_data):
         def __matcher(request):
             return sorted(request.json().items()) == sorted(json_data.items())
@@ -24,12 +27,11 @@ def json_matcher():
 def url_builder():
     """Builds Airtable Api Url Manually for mock testing"""
 
-    def _url_builder(base_id, table_name, params=None):
-        urltable_name = quote(table_name, safe="")
-        url = urljoin(Api.API_URL, base_id, urltable_name)
+    def _url_builder(base_url, params=None, paths=[]):
+        url = urljoin(base_url, *paths)
         if params:
             params = OrderedDict(sorted(params.items()))
-            url += "?" + urlencode(params)
+            url = Request("notused", url, params=params).prepare().url
         return url
 
     return _url_builder

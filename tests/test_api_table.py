@@ -72,44 +72,30 @@ def test_get(table, mock_response_single):
     assert dict_equals(resp, mock_response_single)
 
 
-def test_first(table, mock_response_single):
+def test_first(table, mock_response_single, url_builder, json_matcher):
     mock_response = {"records": [mock_response_single]}
     with Mocker() as mock:
-        url = (
-            Request(
-                "post",
-                urljoin(table.table_url, "listRecords"),
-                json={"maxRecords": 1},
-            )
-            .prepare()
-            .url
-        )
+        url = url_builder(table.table_url, paths=["listRecords"])
         mock.post(
             url,
             status_code=200,
             json=mock_response,
+            additional_matcher=json_matcher({"maxRecords": 1, "pageSize": 1}),
         )
         rv = table.first()
         assert rv
     assert rv["id"] == mock_response_single["id"]
 
 
-def test_first_none(table, mock_response_single):
+def test_first_none(table, mock_response_single, url_builder, json_matcher):
     mock_response = {"records": []}
     with Mocker() as mock:
-        url = (
-            Request(
-                "post",
-                urljoin(table.table_url, "listRecords"),
-                json={"maxRecords": 1},
-            )
-            .prepare()
-            .url
-        )
+        url = url_builder(table.table_url, paths=["listRecords"])
         mock.post(
             url,
             status_code=200,
             json=mock_response,
+            additional_matcher=json_matcher({"maxRecords": 1, "pageSize": 1}),
         )
         rv = table.first()
         assert rv is None
@@ -248,16 +234,12 @@ def test_delete(table, mock_response_single):
     assert resp == expected
 
 
-def test_batch_delete(table, mock_records):
+def test_batch_delete(table, mock_records, url_builder):
     ids = [i["id"] for i in mock_records]
     with Mocker() as mock:
         for chunk in _chunk(ids, 10):
             json_response = {"records": [{"delete": True, "id": id_} for id_ in chunk]}
-            url_match = (
-                Request("get", table.table_url, params={"records[]": chunk})
-                .prepare()
-                .url
-            )
+            url_match = url_builder(table.table_url, params={"records[]": chunk})
             mock.delete(
                 url_match,
                 status_code=201,
