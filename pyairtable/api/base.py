@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Optional
 
-from .abstract import ApiAbstract
+from .abstract import ApiAbstract, TimeoutTuple
+from .. import compat
 
 
 class Base(ApiAbstract):
@@ -9,24 +10,32 @@ class Base(ApiAbstract):
     except ``base_id`` is provided on init instead of provided on each method call.
 
     Usage:
-        >>> base = Base('apikey', 'base_id')
+        >>> base = Base('auth_token', 'base_id')
         >>> base.all()
     """
 
     base_id: str
 
-    def __init__(self, api_key: str, base_id: str, timeout=None):
+    def __init__(
+        self,
+        api_key: str,
+        base_id: str,
+        *,
+        timeout: Optional[TimeoutTuple] = None,
+        retry_strategy: Optional["compat.Retry"] = None,
+    ):
         """
         Args:
             api_key: |arg_api_key|
             base_id: |arg_base_id|
 
         Keyword Args:
-            timeout(``Tuple``): |arg_timeout|
+            timeout (``Tuple``): |arg_timeout|
+            retry_strategy (``Retry``): |arg_retry_strategy|
         """
 
         self.base_id = base_id
-        super().__init__(api_key, timeout=timeout)
+        super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy)
 
     def get_table(self, table_name: str) -> "Table":
         """

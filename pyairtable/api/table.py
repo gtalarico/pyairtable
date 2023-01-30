@@ -1,5 +1,7 @@
-from typing import List
-from .abstract import ApiAbstract
+from typing import List, Optional
+
+from .abstract import ApiAbstract, TimeoutTuple
+from .. import compat
 
 
 class Table(ApiAbstract):
@@ -9,14 +11,22 @@ class Table(ApiAbstract):
     on each method call.
 
     Usage:
-        >>> table = Table('apikey', 'base_id', 'table_name')
+        >>> table = Table('apikey/accesstoken', 'base_id', 'table_name')
         >>> table.all()
     """
 
     base_id: str
     table_name: str
 
-    def __init__(self, api_key: str, base_id: str, table_name: str, *, timeout=None):
+    def __init__(
+        self,
+        api_key: str,
+        base_id: str,
+        table_name: str,
+        *,
+        timeout: Optional[TimeoutTuple] = None,
+        retry_strategy: Optional["compat.Retry"] = None,
+    ):
         """
         Args:
             api_key: |arg_api_key|
@@ -24,11 +34,12 @@ class Table(ApiAbstract):
             table_name: |arg_table_name|
 
         Keyword Args:
-            timeout(``Tuple``): |arg_timeout|
+            timeout (``Tuple``): |arg_timeout|
+            retry_strategy (``Retry``): |arg_retry_strategy|
         """
         self.base_id = base_id
         self.table_name = table_name
-        super().__init__(api_key, timeout=timeout)
+        super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy)
 
     @property
     def table_url(self):
@@ -79,20 +90,20 @@ class Table(ApiAbstract):
         """
         return super()._all(self.base_id, self.table_name, **options)
 
-    def create(self, fields: dict, typecast=False):
+    def create(self, fields: dict, typecast=False, **options):
         """
         Same as :meth:`Api.create <pyairtable.api.Api.create>`
         but without ``base_id`` and ``table_name`` arg.
         """
-        return super()._create(self.base_id, self.table_name, fields, typecast=typecast)
+        return super()._create(self.base_id, self.table_name, fields, typecast=typecast, **options)
 
-    def batch_create(self, records, typecast=False):
+    def batch_create(self, records, typecast=False, **options):
         """
         Same as :meth:`Api.batch_create <pyairtable.api.Api.batch_create>`
         but without ``base_id`` and ``table_name`` arg.
         """
         return super()._batch_create(
-            self.base_id, self.table_name, records, typecast=typecast
+            self.base_id, self.table_name, records, typecast=typecast, **options
         )
 
     def update(
@@ -101,6 +112,7 @@ class Table(ApiAbstract):
         fields: dict,
         replace=False,
         typecast=False,
+        **options
     ):
         """
         Same as :meth:`Api.update <pyairtable.api.Api.update>`
@@ -113,15 +125,16 @@ class Table(ApiAbstract):
             fields,
             replace=replace,
             typecast=typecast,
+            **options
         )
 
-    def batch_update(self, records: List[dict], replace=False, typecast=False):
+    def batch_update(self, records: List[dict], replace=False, typecast=False, **options):
         """
         Same as :meth:`Api.batch_update <pyairtable.api.Api.batch_update>`
         but without ``base_id`` and ``table_name`` arg.
         """
         return super()._batch_update(
-            self.base_id, self.table_name, records, replace=replace, typecast=typecast
+            self.base_id, self.table_name, records, replace=replace, typecast=typecast, **options
         )
 
     def delete(self, record_id: str):

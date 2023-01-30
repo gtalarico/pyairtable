@@ -1,6 +1,6 @@
 
 
-.. |arg_api_key| replace:: An Airtable API Key.
+.. |arg_api_key| replace:: An Airtable API Key or An Airtable Authorization Token.
 
 .. |arg_base_id| replace:: An Airtable base id.
 
@@ -13,6 +13,11 @@
     eg. ``timeout=(2,5)`` would configure a 2 second timeout for
     the connection to be established  and 5 seconds for a
     server read timeout. Default is ``None`` (no timeout).
+
+.. |arg_retry_strategy| replace:: An instance of ``urllib3.util.Retry``.
+    :func:`pyairtable.retrying.retry_strategy` returns one with reasonable
+    defaults, but you may provide your own custom instance of ``Retry``.
+    Default is ``None`` (no retry).
 
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.
@@ -50,7 +55,7 @@
     automatic data conversion from string values. Default is False.
 
 .. |kwarg_cell_format| replace:: The cell format to request from the Airtable
-    API. Supported options are `json` (the default) and `string`. 
+    API. Supported options are `json` (the default) and `string`.
     `json` will return cells as a JSON object. `string` will return
     the cell as a string. `user_locale` and `time_zone` must be set when using
     `string`.

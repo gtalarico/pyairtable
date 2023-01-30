@@ -8,7 +8,7 @@ Airtable tables.
 ...     last_name = fields.TextField("Last Name")
 ...     email = fields.EmailField("Email")
 ...     is_registered = fields.CheckboxField("Registered")
-...     partner = fields.LinkField("Partner", "Contact", lazy=False)
+...     company = fields.LinkField("Company", Company, lazy=False)
 ...
 ...     class Meta:
 ...         base_id = "appaPqizdsNHDvlEm"

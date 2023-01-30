@@ -1,13 +1,19 @@
 import abc
-from functools import lru_cache
 import posixpath
-from typing import List, Optional, Tuple
-import time
-from urllib.parse import quote
-
 import requests
+import time
+from functools import lru_cache
+from typing import List, Optional, Tuple
+
+from urllib.parse import quote
+from requests.sessions import Session
 
 from .params import to_params_dict
+from .retrying import _RetryingSession
+from .. import compat
+
+
+TimeoutTuple = Tuple[int, int]
 
 
 class ApiAbstract(metaclass=abc.ABCMeta):
@@ -17,12 +23,21 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
 
-    session: requests.Session
-    tiemout: Optional[Tuple[int, int]]
+    session: Session
+    tiemout: TimeoutTuple
 
-    def __init__(self, api_key: str, timeout=None):
-        session = requests.Session()
-        self.session = session
+    def __init__(
+        self,
+        api_key: str,
+        timeout: Optional[TimeoutTuple] = None,
+        retry_strategy: Optional["compat.Retry"] = None,
+    ):
+
+        if not retry_strategy:
+            self.session = Session()
+        else:
+            self.session = _RetryingSession(retry_strategy)
+
         self.timeout = timeout
         self.api_key = api_key
 
@@ -110,11 +125,11 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 params.update({"offset": offset})
             data = self._request("get", table_url, params=params)
             records = data.get("records", [])
-            time.sleep(self.API_LIMIT)
             yield records
             offset = data.get("offset")
             if not offset:
                 break
+            time.sleep(self.API_LIMIT)
 
     def _first(self, base_id: str, table_name: str, **options) -> Optional[dict]:
         for records in self._iterate(
@@ -131,27 +146,31 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             all_records.extend(records)
         return all_records
 
-    def _create(self, base_id: str, table_name: str, fields: dict, typecast=False):
+    def _create(self, base_id: str, table_name: str, fields: dict, typecast=False, **options):
 
         table_url = self.get_table_url(base_id, table_name)
+        params = self._options_to_params(**options)
         return self._request(
             "post",
             table_url,
             json_data={"fields": fields, "typecast": typecast},
+            params=params
         )
 
     def _batch_create(
-        self, base_id: str, table_name: str, records: List[dict], typecast=False
+        self, base_id: str, table_name: str, records: List[dict], typecast=False, **options
     ) -> List[dict]:
 
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
+        params = self._options_to_params(**options)
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             new_records = self._build_batch_record_objects(chunk)
             response = self._request(
                 "post",
                 table_url,
                 json_data={"records": new_records, "typecast": typecast},
+                params=params
             )
             inserted_records += response["records"]
             time.sleep(self.API_LIMIT)
@@ -165,12 +184,15 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         fields: dict,
         replace=False,
         typecast=False,
+        **options
     ) -> List[dict]:
         record_url = self._get_record_url(base_id, table_name, record_id)
 
         method = "put" if replace else "patch"
+        params = self._options_to_params(**options)
         return self._request(
-            method, record_url, json_data={"fields": fields, "typecast": typecast}
+            method, record_url, json_data={"fields": fields, "typecast": typecast},
+            params=params
         )
 
     def _batch_update(
@@ -180,16 +202,19 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         records: List[dict],
         replace=False,
         typecast=False,
+        **options
     ):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
+        params = self._options_to_params(**options)
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
             response = self._request(
                 method,
                 table_url,
                 json_data={"records": chunk_records, "typecast": typecast},
+                params=params
             )
             updated_records += response["records"]
             time.sleep(self.API_LIMIT)

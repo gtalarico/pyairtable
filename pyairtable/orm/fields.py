@@ -234,6 +234,31 @@ class PhoneField(TextField):
         return self.to_record_value( super().__get__(*args, **kwargs) )
     
 
+class LookupField(Field):
+    """Airtable Lookup Fields. Uses ``list`` to store value"""
+    
+    def __init__(self, field_name, model: Union[str, Type[T_Linked]]=Field) -> None:
+        
+        if isinstance(model, str):
+            model = cast(Type[T_Linked], locate(model))
+        
+        self._model = model
+        
+        
+    def to_record_value(self, value: Any) -> list:
+        return list(value)
+
+    def to_internal_value(self, value: list) -> list:
+        return list(value)
+
+    def valid_or_raise(self, value) -> None:
+        if not isinstance(value, list):
+            raise ValueError(f"LookupField '{self.field_name}' value ({value}) must be a 'list'")
+
+    def __get__(self, *args, **kwargs) -> Optional[list]:
+        return super().__get__(*args, **kwargs)
+
+    
 class LinkField(Field, Generic[T_Linked]):
     """Airtable Link field. Uses ``List[Model]`` to store value"""
 
@@ -308,7 +333,7 @@ class LinkField(Field, Generic[T_Linked]):
 - [ ] multilineText
 - [ ] multipleAttachments
 - [ ] multipleCollaborators
-- [ ] multipleLookupValues
+- [x] multipleLookupValues
 - [ ] multipleRecordLinks
 - [ ] multipleSelects
 - [x] number
