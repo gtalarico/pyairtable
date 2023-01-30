@@ -2,7 +2,6 @@ import pytest
 from posixpath import join as urljoin
 from requests import Request
 from requests_mock import Mocker
-
 from pyairtable import Table
 
 
@@ -76,8 +75,16 @@ def test_get(table, mock_response_single):
 def test_first(table, mock_response_single):
     mock_response = {"records": [mock_response_single]}
     with Mocker() as mock:
-        url = Request("get", table.table_url, params={"maxRecords": 1}).prepare().url
-        mock.get(
+        url = (
+            Request(
+                "post",
+                urljoin(table.table_url, "listRecords"),
+                json={"maxRecords": 1},
+            )
+            .prepare()
+            .url
+        )
+        mock.post(
             url,
             status_code=200,
             json=mock_response,
@@ -90,8 +97,16 @@ def test_first(table, mock_response_single):
 def test_first_none(table, mock_response_single):
     mock_response = {"records": []}
     with Mocker() as mock:
-        url = Request("get", table.table_url, params={"maxRecords": 1}).prepare().url
-        mock.get(
+        url = (
+            Request(
+                "post",
+                urljoin(table.table_url, "listRecords"),
+                json={"maxRecords": 1},
+            )
+            .prepare()
+            .url
+        )
+        mock.post(
             url,
             status_code=200,
             json=mock_response,
@@ -100,59 +115,72 @@ def test_first_none(table, mock_response_single):
         assert rv is None
 
 
-def test_all(table, mock_response_list, mock_records):
+def test_all(table, mock_response_list, mock_records, json_matcher):
+
     with Mocker() as mock:
-        mock.get(
-            table.table_url,
+        list_records_url = urljoin(table.table_url, "listRecords")
+
+        mock.post(
+            list_records_url,
+            additional_matcher=lambda req: "offset" not in req.json(),
             status_code=200,
             json=mock_response_list[0],
             complete_qs=True,
         )
-        for n, resp in enumerate(mock_response_list, 1):
+
+        for n, resp in enumerate(mock_response_list):
             offset = resp.get("offset", None)
-            if not offset:
+            if offset is None:
                 continue
-            offset_url = table.table_url + "?offset={}".format(offset)
-            mock.get(
-                offset_url,
+
+            def make_matcher(offset):
+                return lambda req: req.json().get("offset", None) == offset
+
+            mock.post(
+                list_records_url,
+                additional_matcher=make_matcher(offset),
                 status_code=200,
-                json=mock_response_list[1],
+                json=mock_response_list[n + 1],
                 complete_qs=True,
             )
         response = table.all()
 
-    for n, resp in enumerate(response):
-        assert dict_equals(resp, mock_records[n])
+    assert len(response) == len(mock_records)
+    seq_equals(response, mock_records)
 
 
 def test_iterate(table, mock_response_list, mock_records):
     with Mocker() as mock:
+        list_records_url = urljoin(table.table_url, "listRecords")
 
-        mock.get(
-            table.table_url,
+        mock.post(
+            list_records_url,
+            additional_matcher=lambda req: "offset" not in req.json(),
             status_code=200,
             json=mock_response_list[0],
             complete_qs=True,
         )
-        for n, resp in enumerate(mock_response_list, 1):
+
+        for n, resp in enumerate(mock_response_list):
             offset = resp.get("offset", None)
-            if not offset:
+            if offset is None:
                 continue
-            params = {"offset": offset}
-            offset_url = Request("get", table.table_url, params=params).prepare().url
-            mock.get(
-                offset_url,
+
+            def make_matcher(offset):
+                return lambda req: req.json().get("offset", None) == offset
+
+            mock.post(
+                list_records_url,
+                additional_matcher=make_matcher(offset),
                 status_code=200,
-                json=mock_response_list[1],
+                json=mock_response_list[n + 1],
                 complete_qs=True,
             )
-
-        pages = []
+        records = []
         for page in table.iterate():
-            pages.append(page)
+            records.extend(page)
 
-    for n, response in enumerate(mock_response_list):
-        assert seq_equals(pages[n], response["records"])
+    assert seq_equals(records, mock_records)
 
 
 def test_create(table, mock_response_single):

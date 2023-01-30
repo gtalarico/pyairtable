@@ -10,6 +10,17 @@ from collections import OrderedDict
 
 
 @pytest.fixture
+def json_matcher():
+    def _matcher(json_data):
+        def __matcher(request):
+            return sorted(request.json().items()) == sorted(json_data.items())
+
+        return __matcher
+
+    return _matcher
+
+
+@pytest.fixture
 def url_builder():
     """Builds Airtable Api Url Manually for mock testing"""
 
@@ -83,21 +94,6 @@ def mock_response_list(mock_records):
         {"records": mock_records[0:2], "offset": "recuOeLpF6TQpArJi"},
         {"records": [mock_records[2]]},
     ]
-
-
-@pytest.fixture
-def mock_response_insert(mock_records):
-    {
-        "id": "rec9MgW8WhqcbnBx4",
-        "fields": {
-            "Editorial": ["recdaBsWECUC2aml3"],
-            "Persona": "Startup CEO",
-            "Verticals": ["recpI1hFWtSrbw5XI"],
-            "Content Types": ["How-to posts", "Tutorials"],
-            "Notes": "Driven by high impact; looking for ways to implement data driven initiatives",
-        },
-        "createdTime": "2017-06-06T18:31:12.000Z",
-    }
 
 
 @pytest.fixture

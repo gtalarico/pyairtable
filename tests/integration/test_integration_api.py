@@ -80,6 +80,24 @@ def test_integration_field_equals(table: Table, cols):
 
 
 @pytest.mark.integration
+def test_integration_table_multiple(table, cols):
+    # Get all
+    table.batch_create(
+        records=[
+            {cols.TEXT: "D", cols.NUM: 1, cols.BOOL: True},
+            {cols.TEXT: "C", cols.NUM: 2, cols.BOOL: True},
+            {cols.TEXT: "B", cols.NUM: 3, cols.BOOL: True},
+            {cols.TEXT: "A", cols.NUM: 4, cols.BOOL: True},
+        ]
+    )
+    records = table.all(
+        max_records=3, sort=[cols.TEXT], user_locale="es", time_zone="utc"
+    )
+    assert len(records) == 3
+    assert records[0]["fields"][cols.TEXT] == "A"
+
+
+@pytest.mark.integration
 def test_integration_formula_datetime(table: Table, cols):
     VALUE = datetime.utcnow()
     str_value = fo.to_airtable_value(VALUE)

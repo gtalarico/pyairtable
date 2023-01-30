@@ -65,8 +65,12 @@ def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
     return values
 
 
-def to_params_dict(param_name: str, value: Any):
-    """Returns a dictionary for use in Request 'params'"""
+def to_params_dict(param_name: str, value: Any, query=True) -> dict:
+    """
+    Returns a dictionary representing api params.
+    When `query` is True, params returned are for use in query params (param=)
+    When False, they are formatted for use in a body payload (json_data=)
+    """
     if param_name == "max_records":
         return {"maxRecords": value}
     elif param_name == "view":
@@ -78,7 +82,7 @@ def to_params_dict(param_name: str, value: Any):
     elif param_name == "formula":
         return {"filterByFormula": value}
     elif param_name == "fields":
-        return {"fields[]": value}
+        return {"fields[]": value} if query else {"fields": value}
     elif param_name == "cell_format":
         return {"cellFormat": value}
     elif param_name == "time_zone":
@@ -86,10 +90,10 @@ def to_params_dict(param_name: str, value: Any):
     elif param_name == "user_locale":
         return {"userLocale": value}
     elif param_name == "return_fields_by_field_id":
-        return {"returnFieldsByFieldId": int(value)}
+        return {"returnFieldsByFieldId": int(value) if query else bool(value)}
     elif param_name == "sort":
-        sorting_dict_list = field_names_to_sorting_dict(value)
-        return dict_list_to_request_params("sort", sorting_dict_list)
+        value = field_names_to_sorting_dict(value)
+        return dict_list_to_request_params("sort", value) if query else {"sort": value}
     else:
         msg = "'{0}' is not a supported parameter".format(param_name)
         raise InvalidParamException(msg)

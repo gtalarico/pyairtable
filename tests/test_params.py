@@ -1,5 +1,6 @@
 import pytest
 import requests
+from posixpath import join as urljoin
 from requests_mock import Mocker
 
 from pyairtable.api.params import (
@@ -10,13 +11,15 @@ from pyairtable.api.params import (
 )
 
 
-def test_params_integration(table, mock_records, mock_response_iterator):
+def test_params_integration_all_query(table, mock_records, mock_response_single):
     params = {
         "max_records": 1,
         "view": "View",
         "sort": ["Name"],
         "fields": ["Name", "Age"],
         "return_fields_by_field_id": True,
+        "time_zone": "utc",
+        "user_locale": "es",
     }
     with Mocker() as m:
         url_params = (
@@ -27,13 +30,47 @@ def test_params_integration(table, mock_records, mock_response_iterator):
             "&fields%5B%5D=Name"
             "&fields%5B%5D=Age"
             "&returnFieldsByFieldId=1"
-            ""
+            "&timeZone=utc"
+            "&userLocale=es"
         )
-        mock_url = "{0}?{1}".format(table.table_url, url_params)
-        m.get(mock_url, status_code=200, json=mock_response_iterator)
-        response = table.all(**params)
-    for n, resp in enumerate(response):
-        resp["id"] == mock_records[n]["id"]
+        mock_url = "{0}?{1}".format(table.get_record_url("rec"), url_params)
+        m.get(mock_url, status_code=200, json=mock_response_single)
+        response = table.get("rec", **params)
+    assert response["id"] == mock_response_single["id"]
+
+
+def test_params_integration_list_records_post(
+    table, mock_records, mock_response_iterator, json_matcher
+):
+    options = {
+        "view": "View",
+        "sort": ["Name"],
+        "fields": ["Name", "Age"],
+        "return_fields_by_field_id": True,
+        "time_zone": "utc",
+        "user_locale": "es",
+    }
+    with Mocker() as m:
+        json_data = {
+            "view": "View",
+            "sort": [{"field": "Name", "direction": "asc"}],
+            "fields": ["Name", "Age"],
+            "returnFieldsByFieldId": True,
+            # This are added only because of our use of first() in tes
+            "maxRecords": 1,
+            "pageSize": 1,
+        }
+        url_params = "timeZone=utc&userLocale=es"
+
+        mock_url = "{0}?{1}".format(urljoin(table.table_url, "listRecords"), url_params)
+        m.post(
+            mock_url,
+            additional_matcher=json_matcher(json_data),
+            status_code=200,
+            json=mock_response_iterator,
+        )
+        response = table.first(**options)
+        assert response["id"] == mock_records[0]["id"]
 
 
 @pytest.mark.parametrize(

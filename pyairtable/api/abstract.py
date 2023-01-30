@@ -67,14 +67,29 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         table_url = self.get_table_url(base_id, table_name)
         return posixpath.join(table_url, record_id)
 
-    def _options_to_params(self, **options):
+    def _options_to_query_params(self, **options) -> dict:
         """
         Process params names or values as needed using filters
         """
         params = {}
         for name, value in options.items():
-            params.update(to_params_dict(name, value))
+            params.update(to_params_dict(name, value, query=True))
         return params
+
+    def _options_to_query_and_json_params(self, **options) -> Tuple[dict, dict]:
+        """
+        Process params names or values as needed using filters. Returns dicts for use in query and json params
+        """
+        # https://github.com/gtalarico/pyairtable/pull/210#discussion_r1046014885
+        query_params = {}
+        json_params = {}
+        LEGACY_PARAMS = ("time_zone", "user_locale")
+        for name, value in options.items():
+            if name in LEGACY_PARAMS:
+                query_params.update(to_params_dict(name, value, query=True))
+            else:
+                json_params.update(to_params_dict(name, value, query=False))
+        return query_params, json_params
 
     def _chunk(self, iterable, chunk_size):
         """Break iterable into chunks"""
@@ -113,17 +128,20 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self, base_id: str, table_name: str, record_id: str, **options
     ) -> dict:
         record_url = self._get_record_url(base_id, table_name, record_id)
-        params = self._options_to_params(**options)
+        params = self._options_to_query_params(**options)
         return self._request("get", record_url, params=params)
 
     def _iterate(self, base_id: str, table_name: str, **options):
         offset = None
-        params = self._options_to_params(**options)
+        query_params, json_params = self._options_to_query_and_json_params(**options)
         while True:
             table_url = self.get_table_url(base_id, table_name)
+            list_records_url = posixpath.join(table_url, "listRecords")
             if offset:
-                params.update({"offset": offset})
-            data = self._request("get", table_url, params=params)
+                json_params.update({"offset": offset})
+            data = self._request(
+                "post", list_records_url, params=query_params, json_data=json_params
+            )
             records = data.get("records", [])
             yield records
             offset = data.get("offset")
@@ -146,31 +164,38 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             all_records.extend(records)
         return all_records
 
-    def _create(self, base_id: str, table_name: str, fields: dict, typecast=False, **options):
+    def _create(
+        self, base_id: str, table_name: str, fields: dict, typecast=False, **options
+    ):
 
         table_url = self.get_table_url(base_id, table_name)
-        params = self._options_to_params(**options)
+        params = self._options_to_query_params(**options)
         return self._request(
             "post",
             table_url,
             json_data={"fields": fields, "typecast": typecast},
-            params=params
+            params=params,
         )
 
     def _batch_create(
-        self, base_id: str, table_name: str, records: List[dict], typecast=False, **options
+        self,
+        base_id: str,
+        table_name: str,
+        records: List[dict],
+        typecast=False,
+        **options,
     ) -> List[dict]:
 
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
-        params = self._options_to_params(**options)
+        params = self._options_to_query_params(**options)
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             new_records = self._build_batch_record_objects(chunk)
             response = self._request(
                 "post",
                 table_url,
                 json_data={"records": new_records, "typecast": typecast},
-                params=params
+                params=params,
             )
             inserted_records += response["records"]
             time.sleep(self.API_LIMIT)
@@ -184,15 +209,17 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         fields: dict,
         replace=False,
         typecast=False,
-        **options
+        **options,
     ) -> List[dict]:
         record_url = self._get_record_url(base_id, table_name, record_id)
 
         method = "put" if replace else "patch"
-        params = self._options_to_params(**options)
+        params = self._options_to_query_params(**options)
         return self._request(
-            method, record_url, json_data={"fields": fields, "typecast": typecast},
-            params=params
+            method,
+            record_url,
+            json_data={"fields": fields, "typecast": typecast},
+            params=params,
         )
 
     def _batch_update(
@@ -202,19 +229,19 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         records: List[dict],
         replace=False,
         typecast=False,
-        **options
+        **options,
     ):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
-        params = self._options_to_params(**options)
+        params = self._options_to_query_params(**options)
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
             response = self._request(
                 method,
                 table_url,
                 json_data={"records": chunk_records, "typecast": typecast},
-                params=params
+                params=params,
             )
             updated_records += response["records"]
             time.sleep(self.API_LIMIT)

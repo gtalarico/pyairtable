@@ -5,6 +5,12 @@ Changelog
 .. warning::
     Looking for airtable-python-wrapper changelog? See :doc:`migrations`.
 
+1.5.0
+------
+* Doc Updates
+* Added ORM ``LookupField`` `PR #182 <https://github.com/gtalarico/pyairtable/pull/182>`
+* Use POST for List Records Requests (``all()`` and ``iterate()``) `PR #222 <https://github.com/gtalarico/pyairtable/pull/222/>`
+
 1.4.0
 ------
 * Added :ref:`Retrying` ()
