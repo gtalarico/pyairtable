@@ -10,8 +10,11 @@ def datetime_to_iso_str(value: datetime) -> str:
     Args:
         value: datetime object
     """
-    if value.utcoffset() is None:
-        return value.isoformat(timespec="milliseconds") + "Z"
+    # Add local timezone if naive datetime object was passed in
+    # https://docs.python.org/3/library/datetime.html#datetime.datetime.astimezone
+    if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+        value = value.astimezone()
+
     return value.isoformat(timespec="milliseconds")
 
 
@@ -23,8 +26,6 @@ def datetime_from_iso_str(value: str) -> datetime:
     Args:
         value: datetime string e.g. "2014-09-05T07:00:00.000Z"
     """
-    if "Z" in value:
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
     return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f%z")
 
 
