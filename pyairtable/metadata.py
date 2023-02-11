@@ -116,3 +116,39 @@ def get_table_schema(table: Table) -> Optional[dict]:
         if table.table_name == table_record["name"]:
             return table_record
     return None
+
+
+def get_identity(api: Api) -> dict:
+    """
+    Returns the user ID and scopes (for OAuth access tokens) associated with the token used
+
+    Args:
+        api: :class:`Api` instance
+
+    Usage:
+        >>> get_identity(api)
+        {
+            "id": "usrpqeuTLdw2G5paa",
+            "scopes": [
+                "data.records:read",
+                "data.records:write",
+                "schema.bases:read",
+                "schema.bases:write",
+                "webhook:manage",
+                "data.recordComments:read",
+                "data.recordComments:write",
+                "enterprise.groups:read",
+                "workspacesAndBases:write",
+                "workspacesAndBases.shares:manage",
+                "enterprise.scim.usersAndGroups:manage",
+                "enterprise.auditLogs:read",
+                "enterprise.account:read",
+                "enterprise.user:read",
+                "enterprise.user:write",
+                "workspacesAndBases:manage"
+            ]
+        }
+    """
+    whoami_url = posixpath.join(api.API_URL, 'meta', 'whoami')
+    return api._request('get', whoami_url)
+
