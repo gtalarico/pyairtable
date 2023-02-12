@@ -146,5 +146,25 @@ class Base(ApiAbstract):
     def __repr__(self) -> str:
         return "<Airtable Base id={}>".format(self.base_id)
 
+    def list_webhooks(self):
+        return self._list_webhooks(self.base_id)
+    
+    def get_webhook(self, webhook_id: str):
+        return self._get_webhook(self.base_id, webhook_id)
 
+    def create_webhook(self, specification: dict, notificationUrl = None):
+        return self._create_webhook(self.base_id, specification, notificationUrl)
+    
+    def delete_webhook(self, webhook_id: str):
+        return self._delete_webhook(self.base_id, webhook_id)
+    
+    def toggle_notifications(self, webhook_id: str, enabled: bool):
+        return self._toggle_notifications_webhook(self.base_id, webhook_id, enabled)
+    
+    def refresh_webhook(self, webhook_id: str):
+        return self._refresh_webhook(self.base_id, webhook_id)
+    
+    def get_payloads(self, webhook_id: str, cursor=1, limit=50):
+        return self._payloads_webhook(self.base_id, webhook_id, cursor, limit)
+    
 from .table import Table  # noqa
