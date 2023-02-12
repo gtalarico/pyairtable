@@ -146,5 +146,86 @@ class Base(ApiAbstract):
     def __repr__(self) -> str:
         return "<Airtable Base id={}>".format(self.base_id)
 
+    def list_webhooks(self):
+        """
+        Returns webhooks associated with this base
 
+        Returns:
+            webhooks (``list``): List of Webhooks
+        """
+        return self._list_webhooks(self.base_id)
+    
+    def get_webhook(self, webhook_id: str):
+        """
+        Returns single webhook by ID
+        Args:
+            webhook_id: |arg_webhook_id|
+        Returns:
+            webhook: Webhook
+        """
+        return self._get_webhook(self.base_id, webhook_id)
+
+    def create_webhook(self, specification: dict, notificationUrl = None):
+        """
+        Creates a new webhook with passed specifications and posting to the optional notificationUrl
+
+        Usage:
+        >>> base = Base(api_key)
+        >>> base.create_webhook({
+                "options": {
+                    "filters": {
+                        "dataTypes": ['tableData']
+                    }
+                }
+        ... }) 
+
+        Args:
+            specification: |arg_specification|
+            webhook_id: |arg_notificationUrl|
+        """
+        return self._create_webhook(self.base_id, specification, notificationUrl)
+    
+    def delete_webhook(self, webhook_id: str):
+        """
+        Deletes the webhook with passed webhook ID
+
+        Args:
+            webhook_id: |arg_webhook_id|
+        """
+        return self._delete_webhook(self.base_id, webhook_id)
+    
+    def toggle_notifications(self, webhook_id: str, enabled: bool):
+        """
+        Enables or disable notifications for the webhook with the passed webhook ID.
+        
+        Args:
+            webhook_id: |arg_webhook_id|
+            enabled: |arg_enabled|
+        """
+        return self._toggle_notifications_webhook(self.base_id, webhook_id, enabled)
+    
+    def refresh_webhook(self, webhook_id: str):
+        """
+        Extends the life of the webhook by 7 days from current date/time.
+
+        Args:
+            webhook_id: |arg_webhook_id|
+        """
+        return self._refresh_webhook(self.base_id, webhook_id)
+    
+    def get_payloads(self, webhook_id: str, cursor=1, limit=50):
+        """
+        Retrieves notifications/posts to the webhook, with a maximum of 50 returned at a time. 
+        The cursor can be used to iterate over all payloads by storing the next cursor returned by this function.
+
+        Args:
+            webhook_id: |arg_webhook_id|
+            cursor: |arg_cursor|
+            limit: |arg_limit|
+
+        Returns:
+            payloads (``list``): List of Webhook Notifications
+        """
+        return self._payloads_webhook(self.base_id, webhook_id, cursor, limit)
+    
 from .table import Table  # noqa
