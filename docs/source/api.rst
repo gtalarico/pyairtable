@@ -295,7 +295,7 @@ Parameters
 
 Airtable offers a variety of options to control how you fetch data.
 
-Most options in the Airtable Api (eg. ``sort``, ``fields``, etc)
+Most options in the Airtable Api (e.g. ``sort``, ``fields``, etc.)
 have a corresponding ``kwargs`` that can be used with fetching methods like :meth:`~pyairtable.api.Table.iterate`.
 
 
@@ -344,14 +344,14 @@ Formulas
 
 .. versionadded:: 1.0.0
 
-The formula module provides funcionality to help you compose airtable formulas.
+The formula module provides functionality to help you compose Airtable formulas.
 For more information see `Airtable Formula Reference <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_
 
 Match
 ---------------
 
 :func:`~pyairtable.formulas.match` helps you build a formula to check for equality
-against a python dictionary:
+against a Python dictionary:
 
 .. code-block:: python
 
