@@ -7,6 +7,7 @@ from pyairtable.metadata import get_base_schema, get_api_bases, get_table_schema
 def test_get_api_bases(base: Base, base_name: str):
     rv = get_api_bases(base)
     assert base_name in [b["name"] for b in rv["bases"]]
+    assert "offset" not in rv.keys()
 
 
 @pytest.mark.skip("metadata api returning 404 for base schema")
