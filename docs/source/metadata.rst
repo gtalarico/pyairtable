@@ -1,21 +1,16 @@
 .. include:: substitutions.rst
 
-Metadata Api
-==============
+Metadata
+========
 
 .. versionadded:: 1.0.0
 
-The metadata api gives you the ability to list all of your bases, tables, fields, and views.
+These functions give you the ability to list all bases your access token can read as well as retrieve the schema (tables, fields, and views) for a given base.
 
 .. warning::
-    This api is experimental
-
-.. warning::
-    If you want to develop an integration using the Metadata API,
-    you must register `here <https://airtable.com/api/meta>`_ for access
-    and to receive a client secret.
-    Enterprise Airtable accounts do not require a
-    separate Metadata API client secret.
+    The Metadata API previously required specific registration with Airtable.
+    As of `November 2022 <https://airtable.com/developers/web/api/changelog#anchor-2022-11-15>`_, any developer can use these methods when authenticating
+    with a Personal Access or OAuth token (with the correct `scopes <https://airtable.com/developers/web/api/scopes>`_).
 
 
 .. automodule:: pyairtable.metadata
