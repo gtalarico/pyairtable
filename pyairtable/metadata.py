@@ -1,4 +1,5 @@
 import posixpath
+import time
 from typing import Union, Optional
 from pyairtable.api import Api, Base, Table
 
@@ -29,7 +30,11 @@ def get_api_bases(api: Union[Api, Base]) -> dict:
             }
     """
     base_list_url = posixpath.join(api.API_URL, "meta", "bases")
-    return api._request("get", base_list_url)
+
+    all_bases = []
+    for bases in _iterate_base_list(base_list_url, api):
+        all_bases.extend(bases)
+    return {"bases": all_bases}
 
 
 def get_base_schema(base: Union[Base, Table]) -> dict:
@@ -116,3 +121,18 @@ def get_table_schema(table: Table) -> Optional[dict]:
         if table.table_name == table_record["name"]:
             return table_record
     return None
+
+
+def _iterate_base_list(base_list_url: str, api: Union[Api, Base]):
+    offset = None
+    params = {}
+    while True:
+        if offset:
+            params.update({"offset": offset})
+        data = api._request("get", base_list_url, params=params)
+        bases = data.get("bases", [])
+        yield bases
+        offset = data.get("offset")
+        if not offset:
+            break
+        time.sleep(api.API_LIMIT)
