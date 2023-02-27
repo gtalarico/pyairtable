@@ -6,7 +6,7 @@ from pyairtable.api import Api, Base, Table
 def get_api_bases(api: Union[Api, Base]) -> dict:
     """
     Return list of Bases from an Api or Base instance.
-    For More Details `Metadata Api Documentation <https://airtable.com/api/meta>`_
+    For More Details `List bases endpoint <https://airtable.com/developers/web/api/list-bases>`_
 
     Args:
         api: :class:`Api` or :class:`Base` instance
@@ -35,7 +35,7 @@ def get_api_bases(api: Union[Api, Base]) -> dict:
 def get_base_schema(base: Union[Base, Table]) -> dict:
     """
     Returns Schema of a Base
-    For More Details `Metadata Api Documentation <https://airtable.com/api/meta>`_
+    For More Details `Get get base schema endpoint <https://airtable.com/developers/web/api/get-base-schema>`_
 
     Args:
         base: :class:`Base` or :class:`Table` instance
