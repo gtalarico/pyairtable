@@ -21,6 +21,8 @@ def retry_strategy(
     See `urllib3 Retry docs <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html>`_
     for more details.
 
+    .. versionadded:: 1.4.0
+
     Keyword Args:
         status_forcelist (``Tuple[int]``): list status code which should be retried.
         backoff_factor (``float``): backoff factor.

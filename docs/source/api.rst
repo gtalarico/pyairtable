@@ -21,13 +21,13 @@ For example, the three ``all()`` calls below would return the same result:
 
   from pyairtable import Api, Base, Table
 
-  api = Api('apikey')
+  api = Api('auth_token')
   api.all('base_id', 'table_name')
 
-  base = Base('apikey', 'base_id')
+  base = Base('auth_token', 'base_id')
   base.all('table_name')
 
-  table = Table('apikey', 'base_id', 'table_name')
+  table = Table('auth_token', 'base_id', 'table_name')
   table.all()
 
 Interface
@@ -215,7 +215,7 @@ specified on each request.
 
 .. code-block:: python
 
-  >>> base = Base('apikey', 'base_id')
+  >>> base = Base('auth_token', 'base_id')
   >>> base.all('Contacts)
   [{id:'rec123asa23', fields': {'Last Name': 'Alfred', "Age": 84}, ... ]
 
@@ -249,7 +249,7 @@ Table
 Retrying
 ********
 
-.. versionadded:: 1.3.0
+.. versionadded:: 1.4.0
 
 You may provide an instance of ``urllib3.util.Retry`` to configure
 retrying behaviour.
@@ -265,7 +265,7 @@ Default Retry Strategy
 .. code-block:: python
 
   from pyairtable import Api, retry_strategy
-  api = Api('apikey', retry_strategy=retry_strategy())
+  api = Api('auth_token', retry_strategy=retry_strategy())
 
 
 Adjusted Default Strategy
@@ -273,7 +273,7 @@ Adjusted Default Strategy
 .. code-block:: python
 
   from pyairtable import Api, retry_strategy
-  api = Api('apikey', retry_strategy=retry_strategy(total=3))
+  api = Api('auth_token', retry_strategy=retry_strategy(total=3))
 
 Custom Retry
 
@@ -283,7 +283,7 @@ Custom Retry
   from urllib3.util import Retry
 
   myRetry = Retry(**kwargs)
-  api = Api('apikey', retry_strategy=myRetry)
+  api = Api('auth_token', retry_strategy=myRetry)
 
 
 .. autofunction:: pyairtable.api.retrying.retry_strategy
@@ -358,7 +358,7 @@ against a python dictionary:
   >>> from pyairtable import Table
   >>> from pyairtable.formulas import match
   >>>
-  >>> table = Table("apikey", "base_id", "Contact")
+  >>> table = Table("auth_token", "base_id", "Contact")
   >>> formula = match({"First Name": "John", "Age": 21})
   >>> table.first(formula=formula)
   {"id": "recUwKa6lbNSMsetH", "fields": {"First Name": "John", "Age": 21}}

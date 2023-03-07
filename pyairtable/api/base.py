@@ -10,7 +10,7 @@ class Base(ApiAbstract):
     except ``base_id`` is provided on init instead of provided on each method call.
 
     Usage:
-        >>> base = Base('apikey', 'base_id')
+        >>> base = Base('auth_token', 'base_id')
         >>> base.all()
     """
 

@@ -11,7 +11,7 @@ class Table(ApiAbstract):
     on each method call.
 
     Usage:
-        >>> table = Table('apikey', 'base_id', 'table_name')
+        >>> table = Table('apikey/accesstoken', 'base_id', 'table_name')
         >>> table.all()
     """
 

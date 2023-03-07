@@ -6,15 +6,15 @@ revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.g
 sphinx-autodoc-typehints==1.12.0
 
 # Packaging
-wheel==0.36.2
+wheel==0.38.1
 twine==3.3.0
 build==0.6.0.post1
 
 # Formatting, Linting
 flake8==3.8.4
 # Only installed in environments that can handle it; don't try running the `lint`
-# tox environment on Python < 3.6.
-black  ; python_version >="3.6"
+# tox environment on Python < 3.7.
+black  ; python_version >="3.7"
 # mypy
 types-requests==2.25.0
 mypy==0.910
