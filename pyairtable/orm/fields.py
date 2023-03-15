@@ -215,15 +215,15 @@ class DateField(Field):
 
 class LookupField(Field):
     """Airtable Lookup Fields. Uses ``list`` to store value"""
-    
+
     def __init__(self, field_name, model: Union[str, Type[T_Linked]]=Field) -> None:
-        
+
         if isinstance(model, str):
             model = cast(Type[T_Linked], locate(model))
-        
+
         self._model = model
-        
-        
+
+
     def to_record_value(self, value: Any) -> list:
         return list(value)
 
@@ -237,7 +237,7 @@ class LookupField(Field):
     def __get__(self, *args, **kwargs) -> Optional[list]:
         return super().__get__(*args, **kwargs)
 
-    
+
 class LinkField(Field, Generic[T_Linked]):
     """Airtable Link field. Uses ``List[Model]`` to store value"""
 
@@ -285,7 +285,7 @@ class LinkField(Field, Generic[T_Linked]):
             or self._model.from_id(id_, fetch=should_fetch)
             for id_ in value
         ]
-        self._model._linked_cache.update({m.id: m for m in linked_models})
+        # self._model._linked_cache.update({m.id: m for m in linked_models})
         return linked_models
 
     def to_record_value(self, value: Any) -> List[str]:
