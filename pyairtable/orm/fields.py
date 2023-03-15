@@ -209,12 +209,16 @@ class LookupField(Field):
     Airtable Lookup Fields. Uses ``list`` to store value
 
     .. versionadded:: 1.5.0
+
     """
 
-    def __init__(self, field_name, model: Optional[Type[T_Linked]] = None) -> None:
+    def __init__(self, field_name, model: Union[str, Type[T_Linked]]=Field) -> None:
+
         if isinstance(model, str):
-            raise NotImplementedError("path import not implemented")
-            # model = cast(Type[T_Linked], locate(model))
+            # raise NotImplementedError("path import not implemented")
+            model = cast(Type[T_Linked], locate(model))
+
+        self._model = model
 
     def to_record_value(self, value: Any) -> list:
         return list(value)
@@ -279,7 +283,8 @@ class LinkField(Field, Generic[T_Linked]):
             or self._model.from_id(id_, fetch=should_fetch)
             for id_ in value
         ]
-        self._model._linked_cache.update({m.id: m for m in linked_models})
+        # commented this to remove caching for linked field.
+        # self._model._linked_cache.update({m.id: m for m in linked_models})
         return linked_models
 
     def to_record_value(self, value: Any) -> List[str]:
