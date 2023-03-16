@@ -176,7 +176,7 @@ Return Values
 -------------
 
 Return Values: when records are returned,
-will most often be alist of Airtable records (dictionary) in a format as shown below.
+will most often be a list of Airtable records (dictionary) in a format as shown below.
 
 .. code-block:: python
 
