@@ -289,7 +289,7 @@ class LinkField(Field, Generic[T_Linked]):
             raise TypeError("LinkField value must be iterable")
         for model_instance in value:
             if not isinstance(model_instance, self._model):
-                raise ValueError("must be model intance")
+                raise ValueError("must be model instance")
 
     def to_internal_value(self, value: Any) -> List[T_Linked]:
         # If Lazy, create empty from model class and set id
