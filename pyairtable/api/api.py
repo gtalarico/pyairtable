@@ -52,6 +52,27 @@ class Api(ApiAbstract):
         """
         return Base(self.api_key, base_id, timeout=self.timeout)
 
+    def create_table(
+            self, base_id: str, table_name: str, fields:list, description=None
+    )  -> "Table":
+        """
+        Creates and returns a new :class:`Table` instance using all shared
+        attributes from :class:`Api` and the ID of the new table
+        """
+        create_table_response = super()._create_table(base_id, table_name, fields, description)
+        return self.get_table(base_id, table_name)
+    
+    def create_base(
+            self, workspace_id: str, base_name:str, tables:list
+    )  -> "Base":
+        """
+        Creates and returns a new :class:`Base` instance using all shared
+        attributes from :class:`Api` and the ID of the new Base
+        """
+        create_base_response = super()._create_base(workspace_id, base_name, tables)
+        base_id = create_base_response.get('id')
+        return self.get_base(base_id)    
+
     def get_record_url(self, base_id: str, table_name: str, record_id: str):
         """
         Returns a url for the provided record

@@ -67,6 +67,31 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         table_url = self.get_table_url(base_id, table_name)
         return posixpath.join(table_url, record_id)
 
+    def _get_meta_bases_url(self, base_id=None):
+        meta_bases_url = posixpath.join(self.API_URL, "meta", "bases")
+        if base_id is not None:
+            meta_bases_url = posixpath.join(meta_bases_url, base_id, "tables")
+        return meta_bases_url
+
+    def _create_table(self, base_id: str, table_name: str, fields:list, description=None):
+        meta_bases_url = self._get_meta_bases_url(base_id)
+        params = {
+            "fields": fields,
+            "name": table_name
+        }
+        if description is not None:
+            params['description'] = description
+        return self._request("post", meta_bases_url, json_data=params)
+    
+    def _create_base(self, workspace_id: str, base_name:str, tables:list):
+        meta_bases_url = self._get_meta_bases_url() 
+        params = {
+            "tables": tables,
+            "name": base_name,
+            "workspaceId": workspace_id
+        }
+        return self._request("post", meta_bases_url, json_data=params)
+
     def _options_to_params(self, **options):
         """
         Process params names or values as needed using filters
