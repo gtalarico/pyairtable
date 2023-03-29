@@ -238,6 +238,42 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             time.sleep(self.API_LIMIT)
         return deleted_records
 
+    def _get_webhook_url(self, base_id: str, webhook_id = "", resource = ""):
+            return posixpath.join(self.API_URL, "bases", base_id , 'webhooks', webhook_id, resource)
+
+    def _list_webhooks(self, base_id: str):
+        webhook_url = self._get_webhook_url(base_id)
+        return self._request('get', webhook_url).get('webhooks')
+
+    def _get_webhook(self, base_id: str, webhook_id: str):
+        webhooks = self._list_webhooks(base_id)
+        for webhook in webhooks:
+            if webhook.get('id') == webhook_id:
+                return webhook
+
+    def _create_webhook(self, base_id: str, specification: dict, notificationUrl = None):
+        webhook_body = {
+            "specification": specification,
+            "notificationUrl": notificationUrl
+        }
+        webhook_url = self._get_webhook_url(base_id)
+        return self._request('post', webhook_url, json_data=webhook_body)
+
+    def _delete_webhook(self, base_id: str, webhook_id: str):
+        webhook_url = self._get_webhook_url(base_id, webhook_id=webhook_id)
+        return self._request('delete', webhook_url)
+
+    def _toggle_notifications_webhook(self, base_id: str, webhook_id: str, enabled: bool):
+        webhook_url = self._get_webhook_url(base_id, webhook_id, 'enableNotifications')
+        return self._request('post', webhook_url, json_data={'enable':enabled})
+
+    def _refresh_webhook(self, base_id: str, webhook_id: str):
+        webhook_url = self._get_webhook_url(base_id, webhook_id, 'refresh')
+        return self._request('post', webhook_url)
+
+    def _payloads_webhook(self, base_id: str, webhook_id: str, cursor=1, limit=50):
+        webhook_url = self._get_webhook_url(base_id, webhook_id, 'payloads')
+        return self._request('get', webhook_url, params={'cursor':str(cursor), 'limit':str(limit)})
 
 from pyairtable.api.table import Table  # noqa
 from pyairtable.api.base import Base  # noqa
