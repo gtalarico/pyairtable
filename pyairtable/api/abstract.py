@@ -115,6 +115,31 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         record_url = self._get_record_url(base_id, table_name, record_id)
         params = self._options_to_params(**options)
         return self._request("get", record_url, params=params)
+    
+    def _get_comments(self, base_id: str, table_name: str, record_id: str, offset=None):
+        url = posixpath.join(self.API_URL, base_id, table_name, record_id, 'comments')
+        params = {} if offset == None else {"offset":offset}
+        response = self._request("get", url, params = params)
+        return response
+    
+    def _create_comment(self, base_id: str, table_name: str, record_id: str, text: str):
+        url = posixpath.join(self.API_URL, base_id, table_name, record_id, 'comments')
+        response = self._request('post', url, json_data={
+            "text": text
+        })
+        return response
+    
+    def _update_comment(self, base_id: str, table_name: str, record_id: str, comment_id: str, text: str):
+        url = posixpath.join(self.API_URL, base_id, table_name, record_id, 'comments', comment_id)
+        response = self._request('patch', url, json_data={
+            "text": text
+        })
+        return response
+    
+    def _delete_comment(self, base_id: str, table_name: str, record_id: str, comment_id: str):
+        url = posixpath.join(self.API_URL, base_id, table_name, record_id, 'comments', comment_id)
+        response = self._request('delete', url)
+        return response.get('deleted')
 
     def _iterate(self, base_id: str, table_name: str, **options):
         offset = None

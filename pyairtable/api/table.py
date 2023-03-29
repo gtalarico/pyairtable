@@ -150,6 +150,25 @@ class Table(ApiAbstract):
         but without ``base_id`` and ``table_name`` arg.
         """
         return super()._batch_delete(self.base_id, self.table_name, record_ids)
+    
+    def get_comments(self, record_id: str):
+        meta_response = super()._get_comments(self.base_id, self.table_name, record_id)
+        comments = meta_response.get('comments')
+        offset = meta_response.get('offset')
+        while offset is not None:
+            meta_response = super()._get_comments(self.base_id, self.table_name, record_id, offset=offset)
+            comments += meta_response.get('comments')
+            offset = meta_response.get('offset')
+        return comments
+    
+    def update_comment(self, record_id: str, comment_id: str, text: str):
+        return super()._update_comment(self.base_id, self.table_name, record_id, comment_id, text)
+    
+    def create_comment(self, record_id: str, text: str):
+        return super()._create_comment(self.base_id, self.table_name, record_id, text)
+    
+    def delete_comment(self, record_id: str, comment_id: str):
+        return super()._delete_comment(self.base_id, self.table_name, record_id, comment_id)
 
     def __repr__(self) -> str:
         return "<Table base_id={} table_name={}>".format(self.base_id, self.table_name)
