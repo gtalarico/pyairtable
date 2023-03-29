@@ -44,6 +44,16 @@ class Base(ApiAbstract):
         """
         return Table(self.api_key, self.base_id, table_name, timeout=self.timeout)
 
+    def create_table(
+            self, table_name: str, fields:list, description=None
+    )  -> "Table":
+        """
+        Creates and returns a new :class:`Table` instance using all shared
+        attributes from :class:`Base` and the ID of the new table
+        """
+        super()._create_table(self.base_id, table_name, fields, description)
+        return self.get_table(table_name)
+
     def get_record_url(self, table_name: str, record_id: str):
         """
         Same as :meth:`Api.get_record_url <pyairtable.api.Api.get_record_url>`
