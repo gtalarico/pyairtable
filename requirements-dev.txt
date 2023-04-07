@@ -11,10 +11,10 @@ twine==3.3.0
 build==0.6.0.post1
 
 # Formatting, Linting
-black>=23.3.0
-flake8>=6.0.0
+black
+flake8
 
 # Type checking
-mypy>=1.2.0
+mypy
 types-requests
 types-urllib3

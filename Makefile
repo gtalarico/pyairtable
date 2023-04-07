@@ -43,7 +43,7 @@ format:
 	black .
 
 docs:
-	@bash -c "./scripts/build_docs.sh"
+	tox -e docs
 
 clean:
 	@bash -c "./scripts/clean.sh"
