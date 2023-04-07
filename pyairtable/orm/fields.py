@@ -237,7 +237,7 @@ class LookupField(Field):
     def __get__(self, *args, **kwargs) -> Optional[list]:
         return super().__get__(*args, **kwargs)
 
-    
+
 class LinkField(Field, Generic[T_Linked]):
     """Airtable Link field. Uses ``List[Model]`` to store value"""
 
