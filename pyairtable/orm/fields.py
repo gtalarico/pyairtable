@@ -215,15 +215,12 @@ class DateField(Field):
 
 class LookupField(Field):
     """Airtable Lookup Fields. Uses ``list`` to store value"""
-    
-    def __init__(self, field_name, model: Union[str, Type[T_Linked]]=Field) -> None:
-        
+
+    def __init__(self, field_name, model: Optional[Type[T_Linked]] = None) -> None:
         if isinstance(model, str):
-            model = cast(Type[T_Linked], locate(model))
-        
-        self._model = model
-        
-        
+            raise NotImplementedError("path import not implemented")
+            # model = cast(Type[T_Linked], locate(model))
+
     def to_record_value(self, value: Any) -> list:
         return list(value)
 
