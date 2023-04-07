@@ -229,7 +229,9 @@ class LookupField(Field):
 
     def valid_or_raise(self, value) -> None:
         if not isinstance(value, list):
-            raise ValueError(f"LookupField '{self.field_name}' value ({value}) must be a 'list'")
+            raise ValueError(
+                f"LookupField '{self.field_name}' value ({value}) must be a 'list'"
+            )
 
     def __get__(self, *args, **kwargs) -> Optional[list]:
         return super().__get__(*args, **kwargs)

@@ -20,6 +20,3 @@ The metadata api gives you the ability to list all of your bases, tables, fields
 
 .. automodule:: pyairtable.metadata
     :members:
-
-
-

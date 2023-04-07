@@ -127,7 +127,6 @@ def test_all(table, mock_response_list, mock_records):
 
 def test_iterate(table, mock_response_list, mock_records):
     with Mocker() as mock:
-
         mock.get(
             table.table_url,
             status_code=200,

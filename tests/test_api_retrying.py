@@ -29,7 +29,6 @@ def table_with_retry_strategy(constants):
 
 @mock.patch("urllib3.connectionpool.HTTPConnectionPool._get_conn")
 def test_retry_exceed(m, table_with_retry_strategy):
-
     strategy = retry_strategy(total=2, status_forcelist=[429])
     table = table_with_retry_strategy(strategy)
 
@@ -47,7 +46,6 @@ def test_retry_exceed(m, table_with_retry_strategy):
 
 @mock.patch("urllib3.connectionpool.HTTPConnectionPool._get_conn")
 def test_retry_status_not_allowed(m, table_with_retry_strategy, mock_response_single):
-
     strategy = retry_strategy(total=2, status_forcelist=[429, 500])
     table = table_with_retry_strategy(strategy)
 
@@ -66,7 +64,6 @@ def test_retry_status_not_allowed(m, table_with_retry_strategy, mock_response_si
 
 @mock.patch("urllib3.connectionpool.HTTPConnectionPool._get_conn")
 def test_retry_eventual_success(m, table_with_retry_strategy, mock_response_single):
-
     strategy = retry_strategy(total=2, status_forcelist=[429, 500])
     table = table_with_retry_strategy(strategy)
 

@@ -23,6 +23,3 @@ Fields
 
 .. automodule:: pyairtable.orm.fields
     :members:
-
-
-
