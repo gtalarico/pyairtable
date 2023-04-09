@@ -1,9 +1,10 @@
-import pytest
 import os
 from datetime import datetime
+
+import pytest
+
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
-
 
 BASE_ID = "appaPqizdsNHDvlEm"
 

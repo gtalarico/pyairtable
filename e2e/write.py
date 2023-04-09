@@ -5,8 +5,9 @@ https://airtable.com/appaPqizdsNHDvlEm/tblfbOcVkVnnKxurq/viwhi8Qtuw2psSdGG?block
 
 import os
 from datetime import datetime
+
 from pyairtable import Table
-from pyairtable.utils import datetime_to_iso_str, date_to_iso_str
+from pyairtable.utils import date_to_iso_str, datetime_to_iso_str
 
 apikey = os.environ["AIRTABLE_KEY"]
 base_id = "appaPqizdsNHDvlEm"

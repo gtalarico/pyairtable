@@ -1,10 +1,11 @@
 from datetime import datetime
+from uuid import uuid4
 
 import pytest
+
 from pyairtable import Table
 from pyairtable import formulas as fo
 from pyairtable.utils import attachment
-from uuid import uuid4
 
 
 @pytest.mark.integration

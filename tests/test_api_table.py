@@ -1,5 +1,6 @@
-import pytest
 from posixpath import join as urljoin
+
+import pytest
 from requests import Request
 from requests_mock import Mocker
 

@@ -61,8 +61,9 @@ True
 
 """
 import abc
+from typing import List, Type, TypeVar
+
 from pyairtable import Table
-from typing import TypeVar, Type, List
 
 from .fields import Field
 

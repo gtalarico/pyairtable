@@ -1,7 +1,7 @@
 from unittest import mock
 
+from pyairtable import Base, Table
 from pyairtable.api.abstract import ApiAbstract
-from pyairtable import Table, Base
 
 
 def test_repr(base):

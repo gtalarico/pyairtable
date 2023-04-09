@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from pyairtable import Base, Table

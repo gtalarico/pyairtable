@@ -1,7 +1,8 @@
-import pytest
-from pyairtable import utils
+from datetime import date, datetime
 
-from datetime import datetime, date
+import pytest
+
+from pyairtable import utils
 
 
 @pytest.mark.parametrize(

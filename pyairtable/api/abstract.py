@@ -1,17 +1,15 @@
 import abc
 import posixpath
-import requests
 import time
 from functools import lru_cache
 from typing import List, Optional, Tuple
-
 from urllib.parse import quote
+
+import requests
 from requests.sessions import Session
 
 from .params import to_params_dict
-from .retrying import _RetryingSession
-from .retrying import Retry
-
+from .retrying import Retry, _RetryingSession
 
 TimeoutTuple = Tuple[int, int]
 
@@ -245,5 +243,5 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         return deleted_records
 
 
-from pyairtable.api.table import Table  # noqa
 from pyairtable.api.base import Base  # noqa
+from pyairtable.api.table import Table  # noqa

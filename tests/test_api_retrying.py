@@ -1,12 +1,12 @@
 """
 For these tests Mocker cannot be used because Retry is operating on a lower level
 """
-import pytest
-from unittest import mock
-
 import io
 import json
 from http.client import HTTPMessage, HTTPResponse
+from unittest import mock
+
+import pytest
 import requests
 
 from pyairtable.api.retrying import retry_strategy

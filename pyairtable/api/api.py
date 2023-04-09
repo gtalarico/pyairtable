@@ -1,4 +1,5 @@
 from typing import List, Optional
+
 from .abstract import ApiAbstract, TimeoutTuple
 from .retrying import Retry
 
@@ -333,5 +334,5 @@ class Api(ApiAbstract):
         return "<pyairtable.Api>"
 
 
-from pyairtable.api.table import Table  # noqa
 from pyairtable.api.base import Base  # noqa
+from pyairtable.api.table import Table  # noqa

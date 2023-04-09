@@ -1,7 +1,9 @@
 from datetime import datetime
 from unittest import mock
-from requests_mock import Mocker
+
 import pytest
+from requests_mock import Mocker
+
 from pyairtable import Table
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
