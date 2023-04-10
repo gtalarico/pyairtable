@@ -26,22 +26,18 @@ bump:
 
 .PHONY: test test-e2e tox coverage lint format docs clean
 test:
-	pytest -v -m 'not integration'
-
-test-e2e:
-	pytest -v
-
-tox:
 	tox -e py
 
+test-e2e:
+	tox -e py -- ""
+
+tox: test
+
 coverage:
-	pytest --cov=pyairtable --cov-report=html
+	tox -e coverage
 	open htmlcov/index.html
 
-lint:
-	mypy pyairtable
-	flake8 .
-	black --diff .
+lint: format
 
 format:
 	tox -e pre-commit

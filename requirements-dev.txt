@@ -10,6 +10,9 @@ wheel==0.38.1
 twine==3.3.0
 build==0.6.0.post1
 
+# Hooks
+pre-commit
+
 # Formatting, Linting
 black
 flake8
