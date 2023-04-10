@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from .abstract import ApiAbstract, TimeoutTuple
-from .. import compat
+from .retrying import Retry
 
 
 class Table(ApiAbstract):
@@ -25,7 +25,7 @@ class Table(ApiAbstract):
         table_name: str,
         *,
         timeout: Optional[TimeoutTuple] = None,
-        retry_strategy: Optional["compat.Retry"] = None,
+        retry_strategy: Optional[Retry] = None,
     ):
         """
         Args:

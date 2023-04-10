@@ -10,7 +10,7 @@ from requests.sessions import Session
 
 from .params import to_params_dict
 from .retrying import _RetryingSession
-from .. import compat
+from .retrying import Retry
 
 
 TimeoutTuple = Tuple[int, int]
@@ -30,7 +30,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self,
         api_key: str,
         timeout: Optional[TimeoutTuple] = None,
-        retry_strategy: Optional["compat.Retry"] = None,
+        retry_strategy: Optional[Retry] = None,
     ):
 
         if not retry_strategy:
