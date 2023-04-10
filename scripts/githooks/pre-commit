@@ -1,20 +1,8 @@
-#!/bin/bash
+#!/bin/bash -e
 
-source ./scripts/console.sh
-
-info 'Pre-Commit Hook'
-
-info "Checking for breakpoints"
-
-breakpoint=$(git grep breakpoint -- '*.py')
-if [ -n "$breakpoint" ]
-then
-    error "COMMIT REJECTED: Please remove breakpoint before commiting."
-    error $breakpoint
-    exit 1
-fi
-
-set -e
-
-make lint
-make docs
+# This script is deprecated and just replaces itself with pre-commit.
+echo "$0: deprecated githooks script; replacing with pre-commit"
+cd $(dirname $0)/../..
+git config --local core.hooksPath && git config --local --unset core.hooksPath
+make setup
+.git/hooks/pre-commit "$@"

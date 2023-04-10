@@ -6,7 +6,6 @@ usage:
 setup: hooks
 
 hooks:
-	@(git config --local core.hooksPath && git config --unset core.hooksPath) || true
 	tox -re pre-commit --notest
 	.tox/pre-commit/bin/pre-commit install
 	.tox/pre-commit/bin/pre-commit install-hooks
