@@ -161,6 +161,9 @@ class Table(ApiAbstract):
             offset = meta_response.get('offset')
         return comments
     
+    def get_comments_url(self, record_id: str, comment_id: str = ''):
+        return super()._get_comments_url(self.base_id, self.table_name, record_id, comment_id)
+    
     def update_comment(self, record_id: str, comment_id: str, text: str):
         return super()._update_comment(self.base_id, self.table_name, record_id, comment_id, text)
     

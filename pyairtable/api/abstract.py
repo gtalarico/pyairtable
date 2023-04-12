@@ -116,6 +116,10 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         params = self._options_to_params(**options)
         return self._request("get", record_url, params=params)
     
+    def _get_comments_url(self, base_id: str, table_name: str, record_id: str, comment_id: str):
+        url = posixpath.join(self.API_URL, base_id, table_name, record_id, 'comments', comment_id)
+        return url
+    
     def _get_comments(self, base_id: str, table_name: str, record_id: str, offset=None):
         url = posixpath.join(self.API_URL, base_id, table_name, record_id, 'comments')
         params = {} if offset == None else {"offset":offset}

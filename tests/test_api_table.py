@@ -72,7 +72,6 @@ def test_get(table, mock_response_single):
         resp = table.get(_id)
     assert dict_equals(resp, mock_response_single)
 
-
 def test_first(table, mock_response_single):
     mock_response = {"records": [mock_response_single]}
     with Mocker() as mock:
@@ -240,6 +239,18 @@ def test_batch_delete(table, mock_records):
     expected = [{"delete": True, "id": i} for i in ids]
     assert resp == expected
 
+def test_comment_update(table, mock_comment_update, mock_response_single):
+    _comment_id = mock_comment_update["id"]
+    _record_id = mock_response_single["id"]
+    _text = mock_comment_update['text']
+    with Mocker() as mock:
+        mock.patch(table.get_comments_url(_record_id, _comment_id), status_code=200, json=mock_comment_update)
+        resp = table.update_comment(_record_id, _comment_id, _text)
+    assert dict_equals(resp, mock_comment_update)
+
+def test_comment_mentioned(mock_comment_single):
+    _usr_mentioned = list(mock_comment_single["mentioned"])[0]
+    assert _usr_mentioned in mock_comment_single['text']
 
 # Helpers
 

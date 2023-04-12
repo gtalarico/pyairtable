@@ -45,6 +45,54 @@ def base(constants):
 def table(constants):
     return Table(constants["API_KEY"], constants["BASE_ID"], constants["TABLE_NAME"])
 
+@pytest.fixture
+def mock_comments():
+    return [
+        {
+            "author": {
+                "email": "foo@bam.com", "id": "usrsOEchC9xuwRgKk", "name": "Foo Bam"
+            },
+            "createdTime": "2021-03-01T10:00:00.000Z",
+            "id": "comeNPu0X9K4Rxzid",
+            "lastUpdatedTime": None,
+            "mentioned": {
+                    "usrL2PNC5o3H4lBEi": {
+                        "displayName": "Foo Bar", 
+                        "email": "foo@bar.com", 
+                        "id": "usrL2PNC5o3H4lBEi", 
+                        "type": "user"
+                }
+            },
+            "text": "Hello world! Hello @[usrL2PNC5o3H4lBEi]"
+        },
+        {
+            "author": {
+                "email": "foo@bar.com", "id": "usrL2PNC5o3H4lBEi","name": "Foo Bar"
+            },
+            "createdTime": "2021-03-01T09:00:00.000Z",
+            "id": "comB5z37Mg9zaEPw6",
+            "lastUpdatedTime": None,
+            "text": "Hello, world!"
+        }
+    ]
+
+@pytest.fixture
+def mock_comment_update():
+    return {
+        "author": {
+            "email": "foo@bar.com",
+            "id": "usrL2PNC5o3H4lBEi",
+            "name": "Foo Bar"
+        },
+        "createdTime": "2021-03-01T09:00:00.000Z",
+        "id": "comB5z37Mg9zaEPw6",
+        "lastUpdatedTime": "2021-04-01T09:00:00.000Z",
+        "text": "Update, world!"
+        }
+
+@pytest.fixture
+def mock_comment_single(mock_comments):
+    return mock_comments[0]
 
 @pytest.fixture
 def mock_records():
