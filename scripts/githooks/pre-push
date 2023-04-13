@@ -1,9 +1,7 @@
-#!/bin/bash
+#!/bin/bash -e
 
-set -e
-
-echo "> Linting"
-make lint
-
-echo "> Testing"
-make test
+# This script is deprecated and just replaces itself with pre-commit.
+echo "$0: deprecated githooks script; replacing with pre-commit"
+cd $(dirname $0)/../..
+git config --local core.hooksPath && git config --local --unset core.hooksPath
+make setup

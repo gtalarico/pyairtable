@@ -1,5 +1,6 @@
-import pytest
 from posixpath import join as urljoin
+
+import pytest
 from requests import Request
 from requests_mock import Mocker
 
@@ -127,7 +128,6 @@ def test_all(table, mock_response_list, mock_records):
 
 def test_iterate(table, mock_response_list, mock_records):
     with Mocker() as mock:
-
         mock.get(
             table.table_url,
             status_code=200,

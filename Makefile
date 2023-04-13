@@ -1,13 +1,16 @@
-.PHONY: test docs setup
-
+.PHONY: usage
 usage:
-	cat Makefile
+	@grep '^[^#[:space:]].*:' Makefile | grep -v '^\.PHONY:' | cut -d: -f1
 
-setup:
-	git config core.hooksPath scripts/githooks
-	pip install -e .
-	pip install -r requirements-test.txt -r requirements-dev.txt
+.PHONY: setup hooks
+setup: hooks
 
+hooks:
+	tox -re pre-commit --notest
+	.tox/pre-commit/bin/pre-commit install
+	.tox/pre-commit/bin/pre-commit install-hooks
+
+.PHONY: release release-test bump
 release:
 	make clean
 	python -m build --sdist --wheel --outdir ./dist
@@ -21,30 +24,26 @@ release-test:
 bump:
 	@bash -c "./scripts/bump.sh"
 
+.PHONY: test test-e2e tox coverage lint format docs clean
 test:
-	pytest -v -m 'not integration'
-
-test-e2e:
-	pytest -v
-
-tox:
 	tox -e py
 
+test-e2e:
+	tox -e py -- ""
+
+tox: test
+
 coverage:
-	pytest --cov=pyairtable --cov-report=html
+	tox -e coverage
 	open htmlcov/index.html
 
-lint:
-	mypy pyairtable
-	flake8 .
-	black --diff .
+lint: format
 
 format:
-	black .
+	tox -e pre-commit
 
 docs:
 	tox -e docs
 
 clean:
 	@bash -c "./scripts/clean.sh"
-

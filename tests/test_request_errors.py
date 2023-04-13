@@ -1,6 +1,6 @@
 import pytest
-from requests import HTTPError
 from mock import Mock
+from requests import HTTPError
 
 
 def test_error_mesg_in_json(table, response):

@@ -392,4 +392,3 @@ can use if you want to compose formulas:
 .. autofunction:: pyairtable.formulas.IF
 .. autofunction:: pyairtable.formulas.STR_VALUE
 .. autofunction:: pyairtable.formulas.LOWER
-

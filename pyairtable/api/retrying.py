@@ -2,7 +2,6 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-
 DEFAULT_RETRIABLE_STATUS_CODES = (429, 500, 502, 503, 504)
 DEFAULT_BACKOFF_FACTOR = 0.3
 DEFAULT_MAX_RETRIES = 5

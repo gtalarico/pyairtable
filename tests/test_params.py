@@ -3,10 +3,10 @@ import requests
 from requests_mock import Mocker
 
 from pyairtable.api.params import (
-    to_params_dict,
+    InvalidParamException,
     dict_list_to_request_params,
     field_names_to_sorting_dict,
-    InvalidParamException,
+    to_params_dict,
 )
 
 

@@ -1,17 +1,15 @@
 import abc
 import posixpath
-import requests
 import time
 from functools import lru_cache
 from typing import List, Optional, Tuple
-
 from urllib.parse import quote
+
+import requests
 from requests.sessions import Session
 
 from .params import to_params_dict
-from .retrying import _RetryingSession
-from .retrying import Retry
-
+from .retrying import Retry, _RetryingSession
 
 TimeoutTuple = Tuple[int, int]
 
@@ -32,7 +30,6 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         timeout: Optional[TimeoutTuple] = None,
         retry_strategy: Optional[Retry] = None,
     ):
-
         if not retry_strategy:
             self.session = Session()
         else:
@@ -146,21 +143,26 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             all_records.extend(records)
         return all_records
 
-    def _create(self, base_id: str, table_name: str, fields: dict, typecast=False, **options):
-
+    def _create(
+        self, base_id: str, table_name: str, fields: dict, typecast=False, **options
+    ):
         table_url = self.get_table_url(base_id, table_name)
         params = self._options_to_params(**options)
         return self._request(
             "post",
             table_url,
             json_data={"fields": fields, "typecast": typecast},
-            params=params
+            params=params,
         )
 
     def _batch_create(
-        self, base_id: str, table_name: str, records: List[dict], typecast=False, **options
+        self,
+        base_id: str,
+        table_name: str,
+        records: List[dict],
+        typecast=False,
+        **options,
     ) -> List[dict]:
-
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
         params = self._options_to_params(**options)
@@ -170,7 +172,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 "post",
                 table_url,
                 json_data={"records": new_records, "typecast": typecast},
-                params=params
+                params=params,
             )
             inserted_records += response["records"]
             time.sleep(self.API_LIMIT)
@@ -184,15 +186,17 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         fields: dict,
         replace=False,
         typecast=False,
-        **options
+        **options,
     ) -> List[dict]:
         record_url = self._get_record_url(base_id, table_name, record_id)
 
         method = "put" if replace else "patch"
         params = self._options_to_params(**options)
         return self._request(
-            method, record_url, json_data={"fields": fields, "typecast": typecast},
-            params=params
+            method,
+            record_url,
+            json_data={"fields": fields, "typecast": typecast},
+            params=params,
         )
 
     def _batch_update(
@@ -202,7 +206,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         records: List[dict],
         replace=False,
         typecast=False,
-        **options
+        **options,
     ):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
@@ -214,7 +218,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 method,
                 table_url,
                 json_data={"records": chunk_records, "typecast": typecast},
-                params=params
+                params=params,
             )
             updated_records += response["records"]
             time.sleep(self.API_LIMIT)
@@ -239,5 +243,5 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         return deleted_records
 
 
-from pyairtable.api.table import Table  # noqa
 from pyairtable.api.base import Base  # noqa
+from pyairtable.api.table import Table  # noqa

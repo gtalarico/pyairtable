@@ -1,5 +1,5 @@
-from typing import List, Dict, Any
 from collections import OrderedDict
+from typing import Any, Dict, List
 
 
 class InvalidParamException(ValueError):
@@ -53,7 +53,6 @@ def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
     values = []
 
     for field_name in field_names:
-
         if field_name.startswith("-"):
             direction = "desc"
             field_name = field_name[1:]

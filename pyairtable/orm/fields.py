@@ -52,16 +52,7 @@ In other words, you can transverse related records through their ``Link Fields``
 """
 import abc
 from datetime import date, datetime
-from typing import (
-    Any,
-    TypeVar,
-    Type,
-    Generic,
-    Optional,
-    List,
-    TYPE_CHECKING,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Generic, List, Optional, Type, TypeVar, Union
 
 from pyairtable import utils
 
@@ -229,7 +220,9 @@ class LookupField(Field):
 
     def valid_or_raise(self, value) -> None:
         if not isinstance(value, list):
-            raise ValueError(f"LookupField '{self.field_name}' value ({value}) must be a 'list'")
+            raise ValueError(
+                f"LookupField '{self.field_name}' value ({value}) must be a 'list'"
+            )
 
     def __get__(self, *args, **kwargs) -> Optional[list]:
         return super().__get__(*args, **kwargs)

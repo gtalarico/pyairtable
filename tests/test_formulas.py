@@ -1,15 +1,16 @@
 import pytest
+
 from pyairtable.formulas import (
     AND,
-    OR,
     EQUAL,
     FIELD,
-    STR_VALUE,
-    IF,
-    match,
-    escape_quotes,
     FIND,
+    IF,
     LOWER,
+    OR,
+    STR_VALUE,
+    escape_quotes,
+    match,
 )
 
 

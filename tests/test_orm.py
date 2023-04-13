@@ -1,14 +1,15 @@
 from datetime import datetime
 from unittest import mock
-from requests_mock import Mocker
+
 import pytest
+from requests_mock import Mocker
+
 from pyairtable import Table
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
 
 
 def test_model_missing_meta():
-
     with pytest.raises(ValueError):
 
         class Address(Model):
@@ -21,7 +22,6 @@ def test_model_missing_meta():
 
 
 def test_model_overlapping():
-
     # Should raise error because conflicts with .exists()
     with pytest.raises(ValueError):
 
@@ -45,7 +45,6 @@ def test_model():
             api_key = "fake"
 
     class Contact(Model):
-
         first_name = f.TextField("First Name")
         last_name = f.TextField("Last Name")
         email = f.EmailField("Email")
@@ -93,7 +92,6 @@ def test_model():
 
 def test_from_record():
     class Contact(Model):
-
         first_name = f.TextField("First Name")
         timestamp = f.DatetimeField("Timestamp")
 
