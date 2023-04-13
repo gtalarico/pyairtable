@@ -1,5 +1,4 @@
 # Required to run test suite
-codecov
 mock
 pytest
 pytest-cov
