@@ -32,7 +32,12 @@ jobs:
 
       - run: tox
         env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          COVERAGE_FORMAT: xml
+
+      - uses: codecov/codecov-action@v3
+        if: ${{ !cancelled() && hashFiles('coverage.xml') }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   publish:
     runs-on: ubuntu-latest
