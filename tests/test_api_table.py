@@ -243,6 +243,45 @@ def test_comment_mentioned(mock_comment_single):
     _usr_mentioned = list(mock_comment_single["mentioned"])[0]
     assert _usr_mentioned in mock_comment_single['text']
 
+def test_comment_update(table, mock_comment_update, mock_response_single):
+    comment_id_ = mock_comment_update["id"]
+    record_id_ = mock_response_single["id"]
+    text = mock_comment_update['text']
+
+    expected = {"author":{"email":"foo@bar.com","id":"usrL2PNC5o3H4lBEi","name":"Foo Bar"},"createdTime":"2021-03-01T09:00:00.000Z","id": comment_id_,"lastUpdatedTime":"2021-04-01T09:00:00.000Z","text":"Update, world!"}
+    with Mocker() as mock:
+        mock.patch(urljoin(table.table_url, record_id_, 'comments', comment_id_), status_code=200, json=expected)
+        resp = table.update_comment(record_id_, comment_id_, text)
+    assert resp == expected
+
+def test_comment_delete(table, mock_comment_update, mock_response_single):
+    comment_id_ = mock_comment_update["id"]
+    record_id_ = mock_response_single["id"]
+    expected = {"delete": True, "id": comment_id_}
+
+    with Mocker() as mock:
+        mock.delete(urljoin(table.table_url, record_id_, 'comments', comment_id_), status_code=200, json=expected)
+        resp = table.delete_comment(record_id_, comment_id_)
+    assert resp == expected
+
+def test_comment_create(table, mock_comment_single, mock_response_single):
+    record_id_ = mock_response_single["id"]
+    text = mock_comment_single['text']
+    expected = mock_comment_single
+
+    with Mocker() as mock:
+        mock.post(urljoin(table.table_url, record_id_, 'comments'), status_code=200, json=expected)
+        resp = table.create_comment(record_id_, text)
+    assert resp == expected
+
+def test_comment_list(table, mock_comments, mock_response_single):
+    record_id_ = mock_response_single["id"]
+    expected = {"comments":mock_comments}
+    with Mocker() as mock:
+        mock.get(urljoin(table.table_url, record_id_, 'comments'), status_code=200, json=expected)
+        resp = table.get_comments(record_id_)
+    assert resp == expected['comments']
+
 # Helpers
 
 

@@ -139,7 +139,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     def _delete_comment(self, base_id: str, table_name: str, record_id: str, comment_id: str):
         url = posixpath.join(self.API_URL, base_id, table_name, record_id, 'comments', comment_id)
         response = self._request('delete', url)
-        return response.get('deleted')
+        return response
 
     def _iterate(self, base_id: str, table_name: str, **options):
         offset = None

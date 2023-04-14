@@ -88,7 +88,7 @@ def mock_comment_update():
         "id": "comB5z37Mg9zaEPw6",
         "lastUpdatedTime": "2021-04-01T09:00:00.000Z",
         "text": "Update, world!"
-        }
+    }
 
 @pytest.fixture
 def mock_comment_single(mock_comments):
