@@ -23,6 +23,7 @@ class Base(ApiAbstract):
         *,
         timeout: Optional[TimeoutTuple] = None,
         retry_strategy: Optional[Retry] = None,
+        api_base_url: Optional[str] = None,
     ):
         """
         Args:
@@ -35,7 +36,7 @@ class Base(ApiAbstract):
         """
 
         self.base_id = base_id
-        super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy)
+        super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy, api_base_url=api_base_url)
 
     def get_table(self, table_name: str) -> "Table":
         """

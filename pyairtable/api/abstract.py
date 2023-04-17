@@ -16,12 +16,13 @@ TimeoutTuple = Tuple[int, int]
 
 class ApiAbstract(metaclass=abc.ABCMeta):
     VERSION = "v0"
-    API_BASE_URL = "https://api.airtable.com/"
     API_LIMIT = 1.0 / 5  # 5 per second
-    API_URL = posixpath.join(API_BASE_URL, VERSION)
     MAX_RECORDS_PER_REQUEST = 10
+    DEFAULT_API_BASE_URL = "https://api.airtable.com/"
 
     session: Session
+    api_base_url = DEFAULT_API_BASE_URL
+    api_url: str
     tiemout: TimeoutTuple
 
     def __init__(
@@ -29,12 +30,17 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         api_key: str,
         timeout: Optional[TimeoutTuple] = None,
         retry_strategy: Optional[Retry] = None,
+        api_base_url: Optional[str] = None,
     ):
         if not retry_strategy:
             self.session = Session()
         else:
             self.session = _RetryingSession(retry_strategy)
 
+        if api_base_url:
+            self.api_base_url = api_base_url
+
+        self.api_url = posixpath.join(self.api_base_url, self.VERSION)    
         self.timeout = timeout
         self.api_key = api_key
 
@@ -55,7 +61,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     @lru_cache()
     def get_table_url(self, base_id: str, table_name: str):
         url_safe_table_name = quote(table_name, safe="")
-        table_url = posixpath.join(self.API_URL, base_id, url_safe_table_name)
+        table_url = posixpath.join(self.api_url, base_id, url_safe_table_name)
         return table_url
 
     @lru_cache()

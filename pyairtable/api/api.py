@@ -25,6 +25,7 @@ class Api(ApiAbstract):
         *,
         timeout: Optional[TimeoutTuple] = None,
         retry_strategy: Optional[Retry] = None,
+        api_base_url: Optional[str] = None,
     ):
         """
 
@@ -36,21 +37,21 @@ class Api(ApiAbstract):
             retry_strategy (``Retry``): |arg_retry_strategy|
 
         """
-        super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy)
+        super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy, api_base_url=api_base_url)
 
     def get_table(self, base_id: str, table_name: str) -> "Table":
         """
         Returns a new :class:`Table` instance using all shared
         attributes from :class:`Api`
         """
-        return Table(self.api_key, base_id, table_name, timeout=self.timeout)
+        return Table(self.api_key, base_id, table_name, timeout=self.timeout, api_base_url=self.api_base_url)
 
     def get_base(self, base_id: str) -> "Base":
         """
         Returns a new :class:`Base` instance using all shared
         attributes from :class:`Api`
         """
-        return Base(self.api_key, base_id, timeout=self.timeout)
+        return Base(self.api_key, base_id, timeout=self.timeout, api_base_url=self.api_base_url)
 
     def get_record_url(self, base_id: str, table_name: str, record_id: str):
         """
