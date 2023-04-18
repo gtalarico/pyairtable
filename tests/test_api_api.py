@@ -27,6 +27,11 @@ def test_default_endpoint_url(api: Api):
 def test_endpoint_url(api_with_endpoint_url: Api):
     assert api_with_endpoint_url.endpoint_url == "https://api.example.com"
 
+
+def test_api_url(api_with_endpoint_url_trailing_slash: Api):
+    assert api_with_endpoint_url_trailing_slash.api_url == "https://api.example.com/" + api_with_endpoint_url_trailing_slash.VERSION
+
+
 @mock.patch.object(ApiAbstract, "_get_record")
 def test_get(m, api: Api, mock_response_single):
     m.return_value = mock_response_single
