@@ -23,7 +23,7 @@ class Base(ApiAbstract):
         *,
         timeout: Optional[TimeoutTuple] = None,
         retry_strategy: Optional[Retry] = None,
-        endpoint_url: Optional[str] = None,
+        endpoint_url: Optional[str] = "https://api.airtable.com",
     ):
         """
         Args:
