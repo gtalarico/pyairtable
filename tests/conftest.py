@@ -35,6 +35,10 @@ def constants():
 def api(constants):
     return Api(constants["API_KEY"])
 
+@pytest.fixture()
+def api_with_endpoint_url(constants):
+    return Api(constants["API_KEY"], endpoint_url="https://api.example.com")
+
 
 @pytest.fixture()
 def base(constants):
