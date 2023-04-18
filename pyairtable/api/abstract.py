@@ -18,10 +18,9 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     VERSION = "v0"
     API_LIMIT = 1.0 / 5  # 5 per second
     MAX_RECORDS_PER_REQUEST = 10
-    DEFAULT_API_BASE_URL = "https://api.airtable.com/"
 
     session: Session
-    endpoint_url = DEFAULT_API_BASE_URL
+    endpoint_url: str
     api_url: str
     tiemout: TimeoutTuple
 
@@ -30,7 +29,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         api_key: str,
         timeout: Optional[TimeoutTuple] = None,
         retry_strategy: Optional[Retry] = None,
-        endpoint_url: Optional[str] = None,
+        endpoint_url: Optional[str] = "https://api.airtable.com/",
     ):
         if not retry_strategy:
             self.session = Session()
