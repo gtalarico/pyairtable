@@ -29,16 +29,14 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         api_key: str,
         timeout: Optional[TimeoutTuple] = None,
         retry_strategy: Optional[Retry] = None,
-        endpoint_url: Optional[str] = "https://api.airtable.com/",
+        endpoint_url: Optional[str] = "https://api.airtable.com",
     ):
         if not retry_strategy:
             self.session = Session()
         else:
             self.session = _RetryingSession(retry_strategy)
 
-        if endpoint_url:
-            self.endpoint_url = endpoint_url
-
+        self.endpoint_url = endpoint_url
         self.api_url = posixpath.join(self.endpoint_url, self.VERSION)    
         self.timeout = timeout
         self.api_key = api_key
