@@ -21,15 +21,15 @@ def test_get_table(api: Api):
 
     
 def test_default_endpoint_url(api: Api):
-    assert api.endpoint_url == "https://api.airtable.com"
+    assert api.endpoint_url == "https://api.airtable.com/" + api.VERSION
 
 
 def test_endpoint_url(api_with_endpoint_url: Api):
-    assert api_with_endpoint_url.endpoint_url == "https://api.example.com"
+    assert api_with_endpoint_url.endpoint_url == "https://api.example.com/" + api_with_endpoint_url.VERSION
 
 
 def test_api_url(api_with_endpoint_url_trailing_slash: Api):
-    assert api_with_endpoint_url_trailing_slash.api_url == "https://api.example.com/" + api_with_endpoint_url_trailing_slash.VERSION
+    assert api_with_endpoint_url_trailing_slash.endpoint_url == "https://api.example.com/" + api_with_endpoint_url_trailing_slash.VERSION
 
 
 @mock.patch.object(ApiAbstract, "_get_record")

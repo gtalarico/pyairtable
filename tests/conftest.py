@@ -15,7 +15,7 @@ def url_builder():
 
     def _url_builder(base_id, table_name, params=None):
         urltable_name = quote(table_name, safe="")
-        url = urljoin(Api.api_url, base_id, urltable_name)
+        url = urljoin(Api.endpoint_url, base_id, urltable_name)
         if params:
             params = OrderedDict(sorted(params.items()))
             url += "?" + urlencode(params)

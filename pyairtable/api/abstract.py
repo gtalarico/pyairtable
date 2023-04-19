@@ -21,7 +21,6 @@ class ApiAbstract(metaclass=abc.ABCMeta):
 
     session: Session
     endpoint_url: str
-    api_url: str
     tiemout: TimeoutTuple
 
     def __init__(
@@ -36,8 +35,11 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         else:
             self.session = _RetryingSession(retry_strategy)
 
-        self.endpoint_url = endpoint_url
-        self.api_url = posixpath.join(self.endpoint_url, self.VERSION)    
+        if not endpoint_url.endswith(self.VERSION):
+            self.endpoint_url = posixpath.join(endpoint_url, self.VERSION)
+        else:
+            self.endpoint_url = endpoint_url
+        print(self.endpoint_url)
         self.timeout = timeout
         self.api_key = api_key
 
@@ -58,7 +60,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     @lru_cache()
     def get_table_url(self, base_id: str, table_name: str):
         url_safe_table_name = quote(table_name, safe="")
-        table_url = posixpath.join(self.api_url, base_id, url_safe_table_name)
+        table_url = posixpath.join(self.endpoint_url, base_id, url_safe_table_name)
         return table_url
 
     @lru_cache()

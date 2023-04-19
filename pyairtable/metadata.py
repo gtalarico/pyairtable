@@ -29,7 +29,7 @@ def get_api_bases(api: Union[Api, Base]) -> dict:
                 ]
             }
     """
-    base_list_url = posixpath.join(api.api_url, "meta", "bases")
+    base_list_url = posixpath.join(api.endpoint_url, "meta", "bases")
     return api._request("get", base_list_url)
 
 
@@ -78,7 +78,7 @@ def get_base_schema(base: Union[Base, Table]) -> dict:
             }
     """
     base_schema_url = posixpath.join(
-        base.api_url, "meta", "bases", base.base_id, "tables"
+        base.endpoint_url, "meta", "bases", base.base_id, "tables"
     )
     return base._request("get", base_schema_url)
 

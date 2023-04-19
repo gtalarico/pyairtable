@@ -21,7 +21,7 @@ def test_repr(table):
 )
 def test_url(base_id, table_name, table_url_suffix):
     table = Table("apikey", base_id, table_name)
-    assert table.table_url == "{0}/{1}".format(table.api_url, table_url_suffix)
+    assert table.table_url == "{0}/{1}".format(table.endpoint_url, table_url_suffix)
 
 
 def test_chunk(table):
