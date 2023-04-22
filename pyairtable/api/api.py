@@ -35,7 +35,7 @@ class Api(ApiAbstract):
         Keyword Args:
             timeout (``Tuple``): |arg_timeout|
             retry_strategy (``Retry``): |arg_retry_strategy|
-
+            endpoint_url (``str``): |arg_endpoint_url|
         """
         super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy, endpoint_url=endpoint_url)
 
