@@ -126,6 +126,39 @@ def test_all(table, mock_response_list, mock_records):
         assert dict_equals(resp, mock_records[n])
 
 
+def test_all__long_formula(table: Table):
+    """
+    Tests that we automatically convert a GET into a POST if the URL is too long,
+    but that certain parameters (timeZone and userLocale) remain query params.
+
+    See https://github.com/gtalarico/pyairtable/pull/210#discussion_r1046014885
+    """
+    # Here we construct a URL that is *exactly* over the limit.
+    user_locale = "en-ie"
+    time_zone = "UTC"
+    formula = "x" * (
+        table.MAX_URL_LENGTH
+        - len(table.table_url)
+        - len("?filterByFormula=")
+        - len(f"&userLocale={user_locale}&timeZone={time_zone}")
+    )
+
+    with Mocker() as mock:
+        url = f"{table.table_url}/listRecords"
+        mock.post(url, status_code=200, json={"records": []})
+        result = table.all(
+            formula=formula,
+            user_locale=user_locale,
+            time_zone=time_zone,
+        )
+
+    assert result == []
+    assert mock.call_count == 1
+    assert mock.last_request.method == "POST"
+    assert mock.last_request.qs == {"timezone": ["utc"], "userlocale": ["en-ie"]}
+    assert mock.last_request.json() == {"filterByFormula": formula}
+
+
 def test_iterate(table, mock_response_list, mock_records):
     with Mocker() as mock:
         mock.get(
