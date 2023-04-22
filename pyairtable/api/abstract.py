@@ -39,7 +39,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             self.endpoint_url = posixpath.join(endpoint_url, self.VERSION)
         else:
             self.endpoint_url = endpoint_url
-        print(self.endpoint_url)
+
         self.timeout = timeout
         self.api_key = api_key
 
