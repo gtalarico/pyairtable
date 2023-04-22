@@ -2,8 +2,7 @@
 
 ![CI](https://github.com/gtalarico/pyairtable/actions/workflows/test_lint_deploy.yml/badge.svg)
 [![PyPI](https://img.shields.io/pypi/v/pyairtable.svg)](https://pypi.org/project/pyairtable/)
-[![PyPI Downloads - 0.x](https://img.shields.io/pypi/dm/airtable-python-wrapper.svg?label=downloads%200.x)](https://pypi.org/project/airtable-python-wrapper/)
-[![PyPI Downloads - 1.x](https://img.shields.io/pypi/dm/pyairtable.svg?label=downloads%201.x)](https://pypi.org/project/pyairtable/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/pyairtable.svg?label=downloads)](https://pypi.org/project/pyairtable/)
 [![Documentation Status](https://readthedocs.org/projects/pyairtable/badge/?version=latest)](http://pyairtable.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/gtalarico/pyairtable/branch/main/graph/badge.svg?token=askmZgmMoV)](https://codecov.io/gh/gtalarico/pyairtable)
 
@@ -17,7 +16,9 @@ pip install pyairtable
 
 ## Documentation
 
-Check out the docs on [pyairtable.readthedocs.io](http://pyairtable.readthedocs.io/).
+Read the full documentation on [pyairtable.readthedocs.io](https://pyairtable.readthedocs.io/en/latest/getting-started.html).
+
+If you're still using airtable-python-wrapper and want to upgrade, read the [migration guide](https://pyairtable.readthedocs.io/en/latest/migrations.html).
 
 ## Contributing
 
@@ -55,7 +56,4 @@ If you have an enterprise API key that can run end-to-end tests, please also run
 
 If you want to discuss an idea you're working on but haven't yet finished all of the above, please [open a draft pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests#draft-pull-requests). That will be a clear signal that you're not asking to merge your code (yet) and are just looking for discussion or feedback.
 
-## Looking for **airtable-python-wrapper**?
-
-airtable-python-wrapper is now **pyAirtable**.
-For the previous version go to https://github.com/gtalarico/airtable-python-wrapper/tree/airtable-python-wrapper
+Thanks in advance for sharing your ideas!
