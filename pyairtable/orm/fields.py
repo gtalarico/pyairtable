@@ -88,10 +88,10 @@ class Field(metaclass=abc.ABCMeta):
     def __set_name__(self, owner, name):
         self.attribute_name = name
 
-    def __get__(self, instance, cls=None):
-        # Raise if descriptor is called on class, where instance is None
+    def __get__(self, instance, owner):
+        # allow calling Model.field to get the field object instead of a value
         if not instance:
-            raise RuntimeError("cannot access descriptors on class")
+            return self
 
         field_name = self.field_name
         try:
