@@ -85,8 +85,9 @@ class Field(metaclass=abc.ABCMeta):
         self.field_name = field_name
         self.validate_type = True
 
-    def __set_name__(self, owner, name):
-        self.attribute_name = name
+    def __set_name__(self, owner, name) -> None:
+        self._model = owner
+        self._attribute_name = name
 
     def __get__(self, instance, owner):
         # allow calling Model.field to get the field object instead of a value
@@ -106,6 +107,11 @@ class Field(metaclass=abc.ABCMeta):
         if self.validate_type:
             self.valid_or_raise(value)
         instance._fields[self.field_name] = value
+
+    def __delete__(self, instance):
+        raise AttributeError(
+            f"cannot delete {self._model.__name__}.{self._attribute_name}"
+        )
 
     def to_record_value(self, value: Any) -> Any:
         return value
@@ -273,7 +279,7 @@ class LinkField(Field, Generic[T_Linked]):
             # model = cast(Type[T_Linked], locate(model))
 
         assert hasattr(model, "get_table"), "model be subclassed from Model"
-        self._model = model
+        self._linked_model = model
         self._lazy = lazy
         super().__init__(field_name)
 
@@ -282,21 +288,23 @@ class LinkField(Field, Generic[T_Linked]):
 
     def valid_or_raise(self, value) -> None:
         if not hasattr(value, "__iter__"):
-            raise TypeError("LinkField value must be iterable")
+            raise TypeError(f"LinkField value must be iterable; got {type(value)}")
         for model_instance in value:
-            if not isinstance(model_instance, self._model):
-                raise ValueError("must be model intance")
+            if not isinstance(model_instance, self._linked_model):
+                raise TypeError(
+                    f"expected {self._linked_model}; got {type(model_instance)}"
+                )
 
     def to_internal_value(self, value: Any) -> List[T_Linked]:
         # If Lazy, create empty from model class and set id
         # If not Lazy, fetch record from pyairtable and create new model instance
         should_fetch = not self._lazy
         linked_models = [
-            self._model._linked_cache.get(id_)
-            or self._model.from_id(id_, fetch=should_fetch)
+            self._linked_model._linked_cache.get(id_)
+            or self._linked_model.from_id(id_, fetch=should_fetch)
             for id_ in value
         ]
-        self._model._linked_cache.update({m.id: m for m in linked_models})
+        self._linked_model._linked_cache.update({m.id: m for m in linked_models})
         return linked_models
 
     def to_record_value(self, value: Any) -> List[str]:

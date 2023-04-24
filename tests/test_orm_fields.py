@@ -24,6 +24,9 @@ def test_field():
     assert t.name == "x"
     assert t.__dict__["_fields"]["Name"] == "x"
 
+    with pytest.raises(AttributeError):
+        del t.name
+
 
 @pytest.mark.parametrize(
     argnames=("field_type", "default_value"),
