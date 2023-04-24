@@ -11,6 +11,19 @@ from pyairtable.testing import fake_meta, fake_record
 
 
 def test_model_missing_meta():
+    """
+    Test that we throw an exception if Meta is missing.
+    """
+    with pytest.raises(AttributeError):
+
+        class Address(Model):
+            street = f.TextField("Street")
+
+
+def test_model_missing_meta_attribute():
+    """
+    Test that we throw an exception if Meta is missing a required attribute.
+    """
     with pytest.raises(ValueError):
 
         class Address(Model):
@@ -20,6 +33,17 @@ def test_model_missing_meta():
                 base_id = "required"
                 table_name = "required"
                 # api_key = "required"
+
+
+def test_model_empty_meta():
+    """
+    Test that we throw an exception when a required Meta attribute is None.
+    """
+    with pytest.raises(ValueError):
+
+        class Address(Model):
+            Meta = fake_meta(api_key=None)
+            street = f.TextField("Street")
 
 
 def test_model_overlapping():
