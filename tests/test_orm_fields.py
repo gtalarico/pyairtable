@@ -26,6 +26,33 @@ def test_field():
 
 
 @pytest.mark.parametrize(
+    argnames=("field_type", "default_value"),
+    argvalues=[
+        (f.TextField, None),
+        (f.CheckboxField, False),
+        (f.EmailField, None),
+        (f.NumberField, None),
+        (f.IntegerField, None),
+        (f.FloatField, None),
+        (f.DateField, None),
+        (f.DatetimeField, None),
+        (f.LookupField, None),  # TODO: should this be empty list?
+    ],
+)
+def test_orm_missing_values(field_type, default_value):
+    """
+    Test that each ORM field type produces the correct default value
+    when a field is missing a value.
+    """
+
+    class T:
+        the_field = field_type("Field Name")
+
+    t = T()
+    assert t.the_field == default_value
+
+
+@pytest.mark.parametrize(
     "value",
     [
         "Test",

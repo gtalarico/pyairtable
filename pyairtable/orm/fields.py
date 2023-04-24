@@ -78,6 +78,9 @@ class Field(metaclass=abc.ABCMeta):
     #: Types that are allowed to be passed to this field.
     valid_types: ClassVar["_ClassInfo"] = ()
 
+    #: The value we'll use when a field value is not present in the record.
+    value_if_missing: ClassVar[Any] = None
+
     def __init__(self, field_name, validate_type=True) -> None:
         self.field_name = field_name
         self.validate_type = True
@@ -95,7 +98,7 @@ class Field(metaclass=abc.ABCMeta):
             # Field Field is not yet in dict, return None
             return instance._fields[field_name]
         except (KeyError, AttributeError):
-            return None
+            return self.value_if_missing
 
     def __set__(self, instance, value):
         if not hasattr(instance, "_fields"):
@@ -178,6 +181,7 @@ class CheckboxField(Field):
     """Airtable Checkbox field. Uses ``bool`` to store value"""
 
     valid_types = bool
+    value_if_missing = False
 
     def to_internal_value(self, value: Any) -> bool:
         return bool(value)
