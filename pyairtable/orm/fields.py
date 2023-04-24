@@ -52,17 +52,32 @@ In other words, you can transverse related records through their ``Link Fields``
 """
 import abc
 from datetime import date, datetime
-from typing import TYPE_CHECKING, Any, Generic, List, Optional, Type, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pyairtable import utils
 
 if TYPE_CHECKING:
+    from builtins import _ClassInfo
+
     from pyairtable.orm import Model  # noqa
 
 T_Linked = TypeVar("T_Linked", bound="Model")
 
 
 class Field(metaclass=abc.ABCMeta):
+    #: Types that are allowed to be passed to this field.
+    valid_types: ClassVar["_ClassInfo"] = ()
+
     def __init__(self, field_name, validate_type=True) -> None:
         self.field_name = field_name
         self.validate_type = True
@@ -96,7 +111,10 @@ class Field(metaclass=abc.ABCMeta):
         return value
 
     def valid_or_raise(self, value) -> None:
-        ...
+        if self.valid_types and not isinstance(value, self.valid_types):
+            raise TypeError(
+                f"{self.__class__.__name__} value must be {self.valid_types}; got {type(value)}"
+            )
 
     def __repr__(self):
         return "<{} field_name='{}'>".format(self.__class__.__name__, self.field_name)
@@ -105,12 +123,10 @@ class Field(metaclass=abc.ABCMeta):
 class TextField(Field):
     """Airtable Single Text or Multiline Text Fields. Uses ``str`` to store value"""
 
+    valid_types = str
+
     def to_internal_value(self, value: Any) -> str:
         return str(value)
-
-    def valid_or_raise(self, value) -> None:
-        if not isinstance(value, str):
-            raise ValueError("TextField value must be 'str'")
 
     def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
@@ -119,20 +135,28 @@ class TextField(Field):
 class EmailField(TextField):
     """Airtable Email field. Uses ``str`` to store value"""
 
-    def valid_or_raise(self, value) -> None:
-        if not isinstance(value, str):
-            raise ValueError("EmailField value must be 'str'")
+
+class NumberField(Field):
+    """Airtable Number field with unspecified precision. Uses ``int`` or ``float`` to store value"""
+
+    valid_types = (int, float)
+
+    def to_internal_value(self, value: Any) -> Any:
+        if not isinstance(value, (float, int)):
+            raise TypeError(type(value))
+        return value
+
+    def __get__(self, *args, **kwargs) -> Optional[Union[int, float]]:
+        return super().__get__(*args, **kwargs)
 
 
 class IntegerField(Field):
     """Airtable Number field with Integer Precision. Uses ``int`` to store value"""
 
+    valid_types = int
+
     def to_internal_value(self, value: Any) -> int:
         return int(value)
-
-    def valid_or_raise(self, value) -> None:
-        if not isinstance(value, int):
-            raise ValueError("IntegerField value must be 'int'")
 
     def __get__(self, *args, **kwargs) -> Optional[int]:
         return super().__get__(*args, **kwargs)
@@ -141,12 +165,10 @@ class IntegerField(Field):
 class FloatField(Field):
     """Airtable Number field with Decimal precision. Uses ``float`` to store value"""
 
+    valid_types = float
+
     def to_internal_value(self, value: Any) -> float:
         return float(value)
-
-    def valid_or_raise(self, value) -> None:
-        if not isinstance(value, float):
-            raise ValueError("FloatField value must be 'float'")
 
     def __get__(self, *args, **kwargs) -> Optional[float]:
         return super().__get__(*args, **kwargs)
@@ -155,12 +177,10 @@ class FloatField(Field):
 class CheckboxField(Field):
     """Airtable Checkbox field. Uses ``bool`` to store value"""
 
+    valid_types = bool
+
     def to_internal_value(self, value: Any) -> bool:
         return bool(value)
-
-    def valid_or_raise(self, value) -> None:
-        if not isinstance(value, bool):
-            raise ValueError("CheckboxField value must be 'bool'")
 
     def __get__(self, *args, **kwargs) -> Optional[bool]:
         return super().__get__(*args, **kwargs)
@@ -168,6 +188,8 @@ class CheckboxField(Field):
 
 class DatetimeField(Field):
     """Airtable Datetime field. Uses ``datetime`` to store value"""
+
+    valid_types = datetime
 
     def to_record_value(self, value: datetime) -> str:
         """Airtable expects ISO 8601 string datetime eg. "2014-09-05T12:34:56.000Z" """
@@ -177,16 +199,14 @@ class DatetimeField(Field):
         """Airtable returns ISO 8601 string datetime eg. "2014-09-05T07:00:00.000Z" """
         return utils.datetime_from_iso_str(value)
 
-    def valid_or_raise(self, value) -> None:
-        if not isinstance(value, datetime):
-            raise ValueError("DatetimeField value must be 'datetime'")
-
     def __get__(self, *args, **kwargs) -> Optional[datetime]:
         return super().__get__(*args, **kwargs)
 
 
 class DateField(Field):
     """Airtable Date field. Uses ``Date`` to store value"""
+
+    valid_types = date
 
     def to_record_value(self, value: date) -> str:
         """Airtable expects ISO 8601 date string eg. "2014-09-05"""
@@ -196,11 +216,7 @@ class DateField(Field):
         """Airtable returns ISO 8601 date string eg. "2014-09-05"""
         return utils.date_from_iso_str(value)
 
-    def valid_or_raise(self, value) -> None:
-        if not isinstance(value, date):
-            raise ValueError("DateField value must be 'date'")
-
-    def __get__(self, *args, **kwargs) -> Optional[datetime]:
+    def __get__(self, *args, **kwargs) -> Optional[date]:
         return super().__get__(*args, **kwargs)
 
 
@@ -211,22 +227,19 @@ class LookupField(Field):
     .. versionadded:: 1.5.0
     """
 
+    valid_types = list
+
     def __init__(self, field_name, model: Optional[Type[T_Linked]] = None) -> None:
         if isinstance(model, str):
             raise NotImplementedError("path import not implemented")
             # model = cast(Type[T_Linked], locate(model))
+        super().__init__(field_name)
 
     def to_record_value(self, value: Any) -> list:
         return list(value)
 
     def to_internal_value(self, value: list) -> list:
         return list(value)
-
-    def valid_or_raise(self, value) -> None:
-        if not isinstance(value, list):
-            raise ValueError(
-                f"LookupField '{self.field_name}' value ({value}) must be a 'list'"
-            )
 
     def __get__(self, *args, **kwargs) -> Optional[list]:
         return super().__get__(*args, **kwargs)
