@@ -15,7 +15,7 @@ def url_builder():
 
     def _url_builder(base_id, table_name, params=None):
         urltable_name = quote(table_name, safe="")
-        url = urljoin(Api.API_URL, base_id, urltable_name)
+        url = urljoin(Api.endpoint_url, base_id, urltable_name)
         if params:
             params = OrderedDict(sorted(params.items()))
             url += "?" + urlencode(params)
@@ -34,6 +34,11 @@ def constants():
 @pytest.fixture()
 def api(constants):
     return Api(constants["API_KEY"])
+
+
+@pytest.fixture()
+def api_with_endpoint_url(constants):
+    return Api(constants["API_KEY"], endpoint_url="https://api.example.com")
 
 
 @pytest.fixture()

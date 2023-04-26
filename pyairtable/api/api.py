@@ -25,6 +25,7 @@ class Api(ApiAbstract):
         *,
         timeout: Optional[TimeoutTuple] = None,
         retry_strategy: Optional[Retry] = None,
+        endpoint_url: str = "https://api.airtable.com",
     ):
         """
 
@@ -34,23 +35,36 @@ class Api(ApiAbstract):
         Keyword Args:
             timeout (``Tuple``): |arg_timeout|
             retry_strategy (``Retry``): |arg_retry_strategy|
-
+            endpoint_url (``str``): |arg_endpoint_url|
         """
-        super().__init__(api_key, timeout=timeout, retry_strategy=retry_strategy)
+        super().__init__(
+            api_key,
+            timeout=timeout,
+            retry_strategy=retry_strategy,
+            endpoint_url=endpoint_url,
+        )
 
     def get_table(self, base_id: str, table_name: str) -> "Table":
         """
         Returns a new :class:`Table` instance using all shared
         attributes from :class:`Api`
         """
-        return Table(self.api_key, base_id, table_name, timeout=self.timeout)
+        return Table(
+            self.api_key,
+            base_id,
+            table_name,
+            timeout=self.timeout,
+            endpoint_url=self.endpoint_url,
+        )
 
     def get_base(self, base_id: str) -> "Base":
         """
         Returns a new :class:`Base` instance using all shared
         attributes from :class:`Api`
         """
-        return Base(self.api_key, base_id, timeout=self.timeout)
+        return Base(
+            self.api_key, base_id, timeout=self.timeout, endpoint_url=self.endpoint_url
+        )
 
     def get_record_url(self, base_id: str, table_name: str, record_id: str):
         """

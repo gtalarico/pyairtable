@@ -20,6 +20,22 @@ def test_get_table(api: Api):
     assert rv.table_name == "y"
 
 
+def test_default_endpoint_url(api: Api):
+    assert api.endpoint_url == "https://api.airtable.com/" + api.VERSION
+
+
+def test_endpoint_url(api_with_endpoint_url: Api):
+    assert (
+        api_with_endpoint_url.endpoint_url
+        == "https://api.example.com/" + api_with_endpoint_url.VERSION
+    )
+
+
+def test_endpoint_url_with_trailing_slash():
+    api = Api("apikey", endpoint_url="https://api.example.com/")
+    assert api.endpoint_url == "https://api.example.com/" + api.VERSION
+
+
 @mock.patch.object(ApiAbstract, "_get_record")
 def test_get(m, api: Api, mock_response_single):
     m.return_value = mock_response_single

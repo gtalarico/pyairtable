@@ -19,6 +19,9 @@
     defaults, but you may provide your own custom instance of ``Retry``.
     Default is ``None`` (no retry).
 
+.. |arg_endpoint_url| replace:: The API endpoint to hit. You might want to override it if you are using an API proxy to debug your API calls.
+    Default is ``https://api.airtable.com``.
+
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.
     The records will be sorted according to the order of the view.

@@ -5,10 +5,15 @@ Changelog
 .. warning::
     Looking for airtable-python-wrapper changelog? See :doc:`migrations`.
 
+1.5.0 (unreleased)
+-------------------
+* Added ``endpoint_url=`` param to :class:`~pyairtable.api.Table`, :class:`~pyairtable.api.Base`, :class:`~pyairtable.api.Api`
+  - `PR #243 <https://github.com/gtalarico/pyairtable/pull/243>`_.
+
 1.4.0
 ------
 * Added :ref:`Retrying` ()
-* Misc fix in sleep for batch requests `PR #180 <https://github.com/gtalarico/pyairtable/pull/180>`
+* Misc fix in sleep for batch requests `PR #180 <https://github.com/gtalarico/pyairtable/pull/180>`_.
 
 1.3.0
 ------
