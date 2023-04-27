@@ -40,7 +40,6 @@ class Table(ApiAbstract):
         """
         self.base_id = base_id
         self.table_name = table_name
-        self.endpoint_url = endpoint_url
         super().__init__(
             api_key,
             timeout=timeout,

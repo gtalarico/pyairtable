@@ -1,6 +1,6 @@
 from unittest import mock
 
-from pyairtable import Api, Table
+from pyairtable import Api, Base, Table
 from pyairtable.api.abstract import ApiAbstract
 
 
@@ -13,27 +13,36 @@ def test_record_url(api: Api):
     assert rv == ApiAbstract("x")._get_record_url("baseid", "tablename", "rec")
 
 
+def test_get_base(api: Api):
+    rv = api.get_base("appTest")
+    assert isinstance(rv, Base)
+    assert rv.base_id == "appTest"
+    assert rv.endpoint_url == api.endpoint_url
+
+
 def test_get_table(api: Api):
-    rv = api.get_table("x", "y")
+    rv = api.get_table("appTest", "tblTest")
     assert isinstance(rv, Table)
-    assert rv.base_id == "x"
-    assert rv.table_name == "y"
+    assert rv.base_id == "appTest"
+    assert rv.table_name == "tblTest"
+    assert rv.endpoint_url == api.endpoint_url
+    assert rv.table_url == "https://api.airtable.com/v0/appTest/tblTest"
 
 
 def test_default_endpoint_url(api: Api):
-    assert api.endpoint_url == "https://api.airtable.com/" + api.VERSION
+    rv = api.build_url("appTest", "tblTest")
+    assert rv == "https://api.airtable.com/v0/appTest/tblTest"
 
 
 def test_endpoint_url(api_with_endpoint_url: Api):
-    assert (
-        api_with_endpoint_url.endpoint_url
-        == "https://api.example.com/" + api_with_endpoint_url.VERSION
-    )
+    rv = api_with_endpoint_url.build_url("appTest", "tblTest")
+    assert rv == "https://api.example.com/v0/appTest/tblTest"
 
 
 def test_endpoint_url_with_trailing_slash():
     api = Api("apikey", endpoint_url="https://api.example.com/")
-    assert api.endpoint_url == "https://api.example.com/" + api.VERSION
+    rv = api.build_url("appTest", "tblTest")
+    assert rv == "https://api.example.com/v0/appTest/tblTest"
 
 
 @mock.patch.object(ApiAbstract, "_get_record")

@@ -35,7 +35,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         else:
             self.session = _RetryingSession(retry_strategy)
 
-        self.endpoint_url = posixpath.join(endpoint_url, self.VERSION)
+        self.endpoint_url = endpoint_url
         self.timeout = timeout
         self.api_key = api_key
 
@@ -50,14 +50,20 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self._update_api_key(value)
         self._api_key = value
 
+    def build_url(self, *components: str) -> str:
+        """
+        Returns a URL to the Airtable API endpoint with the given URL components,
+        including the API version number.
+        """
+        return posixpath.join(self.endpoint_url, self.VERSION, *components)
+
     def _update_api_key(self, api_key: str) -> None:
         self.session.headers.update({"Authorization": "Bearer {}".format(api_key)})
 
     @lru_cache()
     def get_table_url(self, base_id: str, table_name: str):
         url_safe_table_name = quote(table_name, safe="")
-        table_url = posixpath.join(self.endpoint_url, base_id, url_safe_table_name)
-        return table_url
+        return self.build_url(base_id, url_safe_table_name)
 
     @lru_cache()
     def _get_record_url(self, base_id: str, table_name: str, record_id):

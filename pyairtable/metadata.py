@@ -1,4 +1,3 @@
-import posixpath
 from typing import Optional, Union
 
 from pyairtable.api import Api, Base, Table
@@ -29,7 +28,7 @@ def get_api_bases(api: Union[Api, Base]) -> dict:
                 ]
             }
     """
-    base_list_url = posixpath.join(api.endpoint_url, "meta", "bases")
+    base_list_url = api.build_url("meta", "bases")
     return api._request("get", base_list_url)
 
 
@@ -77,9 +76,7 @@ def get_base_schema(base: Union[Base, Table]) -> dict:
                 ]
             }
     """
-    base_schema_url = posixpath.join(
-        base.endpoint_url, "meta", "bases", base.base_id, "tables"
-    )
+    base_schema_url = base.build_url("meta", "bases", base.base_id, "tables")
     return base._request("get", base_schema_url)
 
 

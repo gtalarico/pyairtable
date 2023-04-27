@@ -10,7 +10,7 @@ def test_repr(base):
 
 def test_record_url(base: Base):
     rv = base.get_record_url("tablename", "rec")
-    assert rv == ApiAbstract("x")._get_record_url(base.base_id, "tablename", "rec")
+    assert rv == f"https://api.airtable.com/v0/{base.base_id}/tablename/rec"
 
 
 def test_get_table(base: Base):
@@ -18,6 +18,7 @@ def test_get_table(base: Base):
     assert isinstance(rv, Table)
     assert rv.base_id == base.base_id
     assert rv.table_name == "tablename"
+    assert rv.table_url == f"https://api.airtable.com/v0/{base.base_id}/tablename"
 
 
 @mock.patch.object(ApiAbstract, "_get_record")
