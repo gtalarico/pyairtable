@@ -21,7 +21,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
 
     session: Session
     endpoint_url: str
-    tiemout: TimeoutTuple
+    timeout: Optional[TimeoutTuple]
 
     def __init__(
         self,
