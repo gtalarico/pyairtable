@@ -29,11 +29,6 @@ def test_integration_table(table, cols):
     assert rec["id"] in [r["id"] for r in records]
     assert cols.NUM in records[0]["fields"]  # col name in "fields"
 
-    # Get all via POST
-    formula = f"{cols.TEXT} != '{'x' * 17000}'"
-    records = table.all(formula=formula)
-    assert rec["id"] in [r["id"] for r in records]
-
     # All `return_by_field_ids`
     records = table.all(return_fields_by_field_id=True)
     assert cols.NUM not in records[0]["fields"]  # fields returns fieldId

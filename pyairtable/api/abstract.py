@@ -2,7 +2,7 @@ import abc
 import posixpath
 import time
 from functools import lru_cache
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from urllib.parse import quote
 
 import requests
@@ -14,16 +14,10 @@ from .retrying import Retry, _RetryingSession
 TimeoutTuple = Tuple[int, int]
 
 
-#: List of parameter names that cannot be passed via POST, only GET
-#: See https://github.com/gtalarico/pyairtable/pull/210#discussion_r1046014885
-PARAMS_NOT_SUPPORTED_VIA_POST = ("userLocale", "timeZone")
-
-
 class ApiAbstract(metaclass=abc.ABCMeta):
     VERSION = "v0"
     API_LIMIT = 1.0 / 5  # 5 per second
     MAX_RECORDS_PER_REQUEST = 10
-    MAX_URL_LENGTH = 16000
 
     session: Session
     endpoint_url: str
@@ -113,55 +107,10 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         else:
             return response.json()
 
-    def _request(
-        self,
-        method: str,
-        url: str,
-        fallback_post_url: Optional[str] = None,
-        params: Optional[Dict] = None,
-        json_data: Optional[Dict] = None,
-    ):
-        """
-        Makes a request to the Airtable API, optionally converting a GET to a POST
-        if the URL exceeds the API's maximum URL length.
-
-        See https://support.airtable.com/docs/enforcement-of-url-length-limit-for-web-api-requests
-
-        Args:
-            method (``str``): HTTP method to use.
-            url (``str``): The URL we're attempting to call.
-
-        Keyword Args:
-            fallback_post_url (``str``, optional): The URL to use if we have to convert a GET to a POST.
-            params (``dict``, optional): The query params to append to the URL.
-            json_data (``dict``, optional): The JSON payload for a POST/PUT/PATCH/DELETE request.
-        """
-        request = requests.Request(method, url=url, params=params, json=json_data)
-        prepared = self.session.prepare_request(request)
-
-        # If our URL is too long, move *most* (not all) query params into the body.
-        if (
-            fallback_post_url
-            and method.upper() == "GET"
-            and len(str(prepared.url)) >= self.MAX_URL_LENGTH
-        ):
-            params = dict(params or {})
-            json_data = {
-                **(json_data or {}),
-                **{
-                    key: params.pop(key)
-                    for key in list(params)
-                    if key not in PARAMS_NOT_SUPPORTED_VIA_POST
-                },
-            }
-            return self._request(
-                method="POST",
-                url=fallback_post_url,
-                params=params,
-                json_data=json_data,
-            )
-
-        response = self.session.send(prepared, timeout=self.timeout)
+    def _request(self, method: str, url: str, params=None, json_data=None):
+        response = self.session.request(
+            method, url, params=params, json=json_data, timeout=self.timeout
+        )
         return self._process_response(response)
 
     def _get_record(
@@ -178,12 +127,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             table_url = self.get_table_url(base_id, table_name)
             if offset:
                 params.update({"offset": offset})
-            data = self._request(
-                method="get",
-                url=table_url,
-                fallback_post_url=posixpath.join(table_url, "listRecords"),
-                params=params,
-            )
+            data = self._request("get", table_url, params=params)
             records = data.get("records", [])
             yield records
             offset = data.get("offset")
