@@ -8,6 +8,7 @@ from pyairtable.api.params import (
     field_names_to_sorting_dict,
     options_to_json_and_params,
     options_to_params,
+    to_params_dict,
 )
 
 
@@ -114,6 +115,13 @@ def test_params_integration(table, mock_records, mock_response_iterator):
 def test_convert_options_to_params(option, value, url_params):
     """Ensure kwargs received build a proper params"""
     processed_params = options_to_params({option: value})
+    request = requests.Request("get", "https://example.com", params=processed_params)
+    assert request.prepare().url.endswith(url_params)
+
+    # TODO: remove in 2.0.0
+    with pytest.deprecated_call():
+        processed_params = to_params_dict(option, value)
+
     request = requests.Request("get", "https://example.com", params=processed_params)
     assert request.prepare().url.endswith(url_params)
 
