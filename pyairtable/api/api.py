@@ -215,7 +215,7 @@ class Api(ApiAbstract):
         (5 per second)
 
         >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
-        >>> api.batch_insert('base_id', 'table_name', records)
+        >>> api.batch_create('base_id', 'table_name', records)
 
         Args:
             base_id: |arg_base_id|
