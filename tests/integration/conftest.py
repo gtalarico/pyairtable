@@ -4,6 +4,8 @@ import pytest
 
 from pyairtable import Base, Table
 
+BASE_ID = "appaPqizdsNHDvlEm"
+
 
 @pytest.fixture
 def base_name():
@@ -31,7 +33,7 @@ def cols():
 
 @pytest.fixture
 def base():
-    base_id = "appaPqizdsNHDvlEm"
+    base_id = BASE_ID
     base = Base(os.environ["AIRTABLE_API_KEY"], base_id)
     yield base
     table_name = "TEST_TABLE"
@@ -41,7 +43,7 @@ def base():
 
 @pytest.fixture
 def table():
-    base_id = "appaPqizdsNHDvlEm"
+    base_id = BASE_ID
     table_name = "TEST_TABLE"
     table = Table(os.environ["AIRTABLE_API_KEY"], base_id, table_name)
     yield table

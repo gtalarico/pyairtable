@@ -87,20 +87,38 @@ class Base(ApiAbstract):
         """
         return super()._all(self.base_id, table_name, **options)
 
-    def create(self, table_name: str, fields: dict, typecast=False):
+    def create(
+        self,
+        table_name: str,
+        fields: dict,
+        typecast=False,
+        return_fields_by_field_id=False,
+    ):
         """
         Same as :meth:`Api.create <pyairtable.api.Api.create>`
         but without ``base_id`` arg.
         """
-        return super()._create(self.base_id, table_name, fields, typecast=typecast)
+        return super()._create(
+            self.base_id,
+            table_name,
+            fields,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
+        )
 
-    def batch_create(self, table_name: str, records, typecast=False):
+    def batch_create(
+        self, table_name: str, records, typecast=False, return_fields_by_field_id=False
+    ):
         """
         Same as :meth:`Api.batch_create <pyairtable.api.Api.batch_create>`
         but without ``base_id`` arg.
         """
         return super()._batch_create(
-            self.base_id, table_name, records, typecast=typecast
+            self.base_id,
+            table_name,
+            records,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
         )
 
     def update(
@@ -125,14 +143,24 @@ class Base(ApiAbstract):
         )
 
     def batch_update(
-        self, table_name: str, records: List[dict], replace=False, typecast=False
+        self,
+        table_name: str,
+        records: List[dict],
+        replace=False,
+        typecast=False,
+        return_fields_by_field_id=False,
     ):
         """
         Same as :meth:`Api.batch_update <pyairtable.api.Api.batch_update>`
         but without ``base_id`` arg.
         """
         return super()._batch_update(
-            self.base_id, table_name, records, replace=replace, typecast=typecast
+            self.base_id,
+            table_name,
+            records,
+            replace=replace,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
         )
 
     def delete(self, table_name: str, record_id: str):

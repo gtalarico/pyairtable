@@ -5,8 +5,9 @@ import pytest
 
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
+from tests.integration.conftest import BASE_ID
 
-BASE_ID = "appaPqizdsNHDvlEm"
+pytestmark = [pytest.mark.integration]
 
 
 @pytest.fixture
@@ -52,7 +53,6 @@ def Contact(Address):
     table.batch_delete([r["id"] for r in records])
 
 
-@pytest.mark.integration
 def test_integration_orm(Contact, Address):
     STREET = "123 Han"
     address = Address(street=STREET)

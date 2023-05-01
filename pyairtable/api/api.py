@@ -149,6 +149,10 @@ class Api(ApiAbstract):
             fields: |kwarg_fields|
             sort: |kwarg_sort|
             formula: |kwarg_formula|
+            cell_format: |kwarg_cell_format|
+            user_locale: |kwarg_user_locale|
+            time_zone: |kwarg_time_zone|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
         return super()._first(base_id, table_name, **options)
 
@@ -185,7 +189,14 @@ class Api(ApiAbstract):
         """
         return super()._all(base_id, table_name, **options)
 
-    def create(self, base_id: str, table_name: str, fields: dict, typecast=False):
+    def create(
+        self,
+        base_id: str,
+        table_name: str,
+        fields: dict,
+        typecast=False,
+        return_fields_by_field_id=False,
+    ):
         """
         Creates a new record
 
@@ -200,14 +211,28 @@ class Api(ApiAbstract):
 
         Keyword Args:
             typecast: |kwarg_typecast|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
             record (``dict``): Inserted record
 
         """
-        return super()._create(base_id, table_name, fields, typecast=typecast)
+        return super()._create(
+            base_id,
+            table_name,
+            fields,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
+        )
 
-    def batch_create(self, base_id: str, table_name: str, records, typecast=False):
+    def batch_create(
+        self,
+        base_id: str,
+        table_name: str,
+        records,
+        typecast=False,
+        return_fields_by_field_id=False,
+    ):
         """
         Breaks records into chunks of 10 and inserts them in batches.
         Follows the set API rate.
@@ -225,11 +250,18 @@ class Api(ApiAbstract):
 
         Keyword Args:
             typecast: |kwarg_typecast|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
             records (``list``): list of added records
         """
-        return super()._batch_create(base_id, table_name, records, typecast=typecast)
+        return super()._batch_create(
+            base_id,
+            table_name,
+            records,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
+        )
 
     def update(
         self,
@@ -254,7 +286,7 @@ class Api(ApiAbstract):
             table_name: |arg_table_name|
             record_id: |arg_record_id|
             fields(``dict``): Fields to update.
-                Must be dictionary with Column names as Key
+                Must be a dict with column names or IDs as keys
 
         Keyword Args:
             replace (``bool``, optional): If ``True``, record is replaced in its entirety
@@ -283,6 +315,7 @@ class Api(ApiAbstract):
         records: List[dict],
         replace=False,
         typecast=False,
+        return_fields_by_field_id=False,
     ):
         """
         Updates a records by their record id's in batch.
@@ -298,12 +331,18 @@ class Api(ApiAbstract):
                 bet set to null. If False, only provided fields are updated.
                 Default is ``False``.
             typecast: |kwarg_typecast|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
             records(``list``): list of updated records
         """
         return super()._batch_update(
-            base_id, table_name, records, replace=replace, typecast=typecast
+            base_id,
+            table_name,
+            records,
+            replace=replace,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
         )
 
     def delete(self, base_id: str, table_name: str, record_id: str):
