@@ -260,15 +260,14 @@ class Model(metaclass=abc.ABCMeta):
         """Create instance from record dictionary"""
         name_attr_map = cls._field_name_attribute_map()
         name_field_map = cls._field_name_descriptor_map()
-        try:
-            # Convert Column Names into model field names
-            # Use field's to_internal to cast into model fields
-            kwargs = {
-                name_attr_map[k]: name_field_map[k].to_internal_value(v)
-                for k, v in record["fields"].items()
-            }
-        except KeyError as exc:
-            raise ValueError("Invalid Field Name: {} for model {}".format(exc, cls))
+        # Convert Column Names into model field names
+        kwargs = {
+            # Use field's to_internal_value to cast into model fields
+            name_attr_map[k]: name_field_map[k].to_internal_value(v)
+            for k, v in record["fields"].items()
+            # Silently proceed if Airtable returns fields we don't recognize
+            if k in name_attr_map
+        }
         instance = cls(**kwargs)
         instance.created_time = record["createdTime"]
         instance.id = record["id"]

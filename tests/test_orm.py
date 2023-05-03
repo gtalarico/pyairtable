@@ -7,6 +7,7 @@ from requests_mock import Mocker
 from pyairtable import Table
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
+from pyairtable.testing import fake_meta, fake_record
 
 
 def test_model_missing_meta():
@@ -26,36 +27,24 @@ def test_model_overlapping():
     with pytest.raises(ValueError):
 
         class Address(Model):
+            Meta = fake_meta()
             exists = f.TextField("Exists")  # clases with Model.exists()
-
-            class Meta:
-                base_id = "required"
-                table_name = "required"
-                api_key = "required"
 
 
 def test_model():
     class Address(Model):
+        Meta = fake_meta(table_name="Address")
         street = f.TextField("Street")
         number = f.TextField("Number")
 
-        class Meta:
-            base_id = "address_base_id"
-            table_name = "Address"
-            api_key = "fake"
-
     class Contact(Model):
+        Meta = fake_meta(table_name="Contact")
         first_name = f.TextField("First Name")
         last_name = f.TextField("Last Name")
         email = f.EmailField("Email")
         is_registered = f.CheckboxField("Registered")
         link = f.LinkField("Link", Address, lazy=True)
         birthday = f.DateField("Birthday")
-
-        class Meta:
-            base_id = "contact_base_id"
-            table_name = "Contact"
-            api_key = "fake"
 
     contact = Contact(
         first_name="Gui",
@@ -92,13 +81,9 @@ def test_model():
 
 def test_from_record():
     class Contact(Model):
+        Meta = fake_meta()
         first_name = f.TextField("First Name")
         timestamp = f.DatetimeField("Timestamp")
-
-        class Meta:
-            base_id = "contact_base_id"
-            table_name = "Contact"
-            api_key = "fake"
 
     # Fetch = True
     with mock.patch.object(Table, "get") as m_get:
@@ -124,20 +109,12 @@ def test_from_record():
 
 def test_linked_record():
     class Address(Model):
+        Meta = fake_meta(table_name="Address")
         street = f.TextField("Street")
 
-        class Meta:
-            base_id = "address_base_id"
-            table_name = "Address"
-            api_key = "fake"
-
     class Contact(Model):
+        Meta = fake_meta(table_name="Contact")
         address = f.LinkField("Link", Address, lazy=True)
-
-        class Meta:
-            base_id = "contact_base_id"
-            table_name = "Contact"
-            api_key = "fake"
 
     record = {"id": "recFake", "createdTime": "", "fields": {"Street": "A"}}
     address = Address.from_id("recFake", fetch=False)
@@ -153,3 +130,38 @@ def test_linked_record():
         contact.address[0].fetch()
 
     assert contact.address[0].street == "A"
+
+
+def test_undeclared_field__from_id(requests_mock):
+    """
+    Test that Model.from_id ignores any fields which are missing from the Model definition.
+    See https://github.com/gtalarico/pyairtable/issues/190
+    """
+
+    class JustName(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    record = fake_record({"Name": "Alice", "Address": "123 Fake St"})
+    requests_mock.get(
+        JustName.get_table().get_record_url(record["id"]),
+        status_code=200,
+        json=record,
+    )
+
+    instance = JustName.from_id(record["id"])
+    assert instance.to_record()["fields"] == {"Name": "Alice"}
+
+
+def test_undeclared_field__all():
+    """
+    Test that Model.all ignores any fields which are missing from the Model definition.
+    """
+    pytest.skip("To be implemented in 2.0.0; see #249")  # TODO
+
+
+def test_undeclared_field__first():
+    """
+    Test that Model.first ignores any fields which are missing from the Model definition.
+    """
+    pytest.skip("To be implemented in 2.0.0; see #249")  # TODO
