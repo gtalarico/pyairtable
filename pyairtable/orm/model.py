@@ -216,7 +216,7 @@ class Model(metaclass=abc.ABCMeta):
             record = table.create(fields, typecast=self.typecast)
             did_create = True
         else:
-            record = table.update(self.id, fields, replace=True, typecast=self.typecast)
+            record = table.update(self.id, fields, typecast=self.typecast)
             did_create = False
 
         self.id = record["id"]
