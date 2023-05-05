@@ -88,3 +88,37 @@ def test_integration_orm(Contact, Address):
     assert not rv_address_2.street
     rv_address_2.fetch()
     assert rv_address_2.street == rv_address.street == STREET
+
+
+@pytest.mark.integration
+def test_undeclared_fields():
+    """
+    Test that if our ORM is missing some fields, it does not fail on retrieval
+    and does not clobber their values on save.
+    """
+
+    class Contact(Model):
+        first_name = f.TextField("First Name")
+        last_name = f.TextField("Last Name")
+
+        class Meta:
+            base_id = BASE_ID
+            api_key = os.environ["AIRTABLE_API_KEY"]
+            table_name = "Contact"
+
+    table = Contact.get_table()
+    record = table.create(
+        {
+            "First Name": "Alice",
+            "Last Name": "Arnold",
+            "Email": "alice@example.com",
+            "Birthday": "1970-01-01",
+        }
+    )
+
+    # This should not raise an exception
+    contact = Contact.from_id(record["id"])
+
+    # This should not clobber the values in 'Email' or 'Birthday'
+    contact.save()
+    assert table.get(record["id"]) == record
