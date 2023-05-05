@@ -303,8 +303,8 @@ have a corresponding ``kwargs`` that can be used with fetching methods like :met
    :widths: 25 25 50
    :header-rows: 1
 
-   * - Parameter
-     - Airtable Option
+   * - Keyword Argument
+     - Airtable Parameter
      - Notes
    * - ``max_records``
      - ``maxRecords``

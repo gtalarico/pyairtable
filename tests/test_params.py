@@ -6,6 +6,8 @@ from pyairtable.api.params import (
     InvalidParamException,
     dict_list_to_request_params,
     field_names_to_sorting_dict,
+    options_to_json_and_params,
+    options_to_params,
     to_params_dict,
 )
 
@@ -110,32 +112,104 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         # ],
     ],
 )
-def test_process_params(option, value, url_params):
+def test_convert_options_to_params(option, value, url_params):
     """Ensure kwargs received build a proper params"""
-    # https://codepen.io/airtable/full/rLKkYB
-
-    processed_params = to_params_dict(option, value)
-    request = requests.Request("get", "https://fake.com", params=processed_params)
+    processed_params = options_to_params({option: value})
+    request = requests.Request("get", "https://example.com", params=processed_params)
     assert request.prepare().url.endswith(url_params)
+
+    # TODO: remove in 2.0.0
+    with pytest.deprecated_call():
+        processed_params = to_params_dict(option, value)
+
+    request = requests.Request("get", "https://example.com", params=processed_params)
+    assert request.prepare().url.endswith(url_params)
+
+
+@pytest.mark.parametrize(
+    "option,value,expected",
+    [
+        ["view", "SomeView", {"view": "SomeView"}],
+        ["max_records", 5, {"maxRecords": 5}],
+        ["page_size", 5, {"pageSize": 5}],
+        ["formula", "NOT(1)", {"filterByFormula": "NOT(1)"}],
+        ["formula", "NOT(1)", {"filterByFormula": "NOT(1)"}],
+        [
+            "formula",
+            "AND({COLUMN_ID}<=6, {COLUMN_ID}>3)",
+            {"filterByFormula": "AND({COLUMN_ID}<=6, {COLUMN_ID}>3)"},
+        ],
+        ["fields", ["Name"], {"fields": ["Name"]}],
+        [
+            "fields",
+            ["Name", "Phone"],
+            {"fields": ["Name", "Phone"]},
+        ],
+        [
+            "sort",
+            ["Name"],
+            {"sort": [{"field": "Name", "direction": "asc"}]},
+        ],
+        [
+            "sort",
+            ["Name", "Phone"],
+            {
+                "sort": [
+                    {"field": "Name", "direction": "asc"},
+                    {"field": "Phone", "direction": "asc"},
+                ]
+            },
+        ],
+        [
+            "sort",
+            ["Name", "-Phone"],
+            {
+                "sort": [
+                    {"field": "Name", "direction": "asc"},
+                    {"field": "Phone", "direction": "desc"},
+                ]
+            },
+        ],
+        ["cell_format", "string", {"cellFormat": "string"}],
+        ["return_fields_by_field_id", True, {"returnFieldsByFieldId": True}],
+        ["return_fields_by_field_id", 1, {"returnFieldsByFieldId": True}],
+        ["return_fields_by_field_id", False, {"returnFieldsByFieldId": False}],
+        # userLocale and timeZone are not supported via POST, so they return "spare params"
+        ["user_locale", "en-US", ({}, {"userLocale": "en-US"})],
+        ["time_zone", "America/Chicago", ({}, {"timeZone": "America/Chicago"})],
+    ],
+)
+def test_convert_options_to_json(option, value, expected):
+    if isinstance(expected, dict):
+        expected = (expected, {})  # most of the time, this returns empty "spare params"
+    assert options_to_json_and_params({option: value}) == expected
 
 
 def test_process_params_invalid():
     with pytest.raises(InvalidParamException):
-        to_params_dict("ffields", "x")
+        options_to_params({"ffields": "x"})
 
 
 def test_dict_list_to_request_params():
     values = [{"field": "a", "direction": "asc"}, {"field": "b", "direction": "desc"}]
     rv = dict_list_to_request_params("sort", values)
-    assert rv["sort[0][field]"] == "a"
-    assert rv["sort[0][direction]"] == "asc"
-    assert rv["sort[1][field]"] == "b"
-    assert rv["sort[1][direction]"] == "desc"
+    assert rv == {
+        "sort[0][field]": "a",
+        "sort[0][direction]": "asc",
+        "sort[1][field]": "b",
+        "sort[1][direction]": "desc",
+    }
 
 
 def test_field_names_to_sorting_dict():
     rv = field_names_to_sorting_dict(["Name", "-Age"])
-    assert rv[0]["field"] == "Name"
-    assert rv[0]["direction"] == "asc"
-    assert rv[1]["field"] == "Age"
-    assert rv[1]["direction"] == "desc"
+    assert rv == [
+        {
+            "field": "Name",
+            "direction": "asc",
+        },
+        {
+            "field": "Age",
+            "direction": "desc",
+        },
+    ]

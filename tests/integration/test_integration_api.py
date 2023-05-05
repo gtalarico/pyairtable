@@ -59,6 +59,50 @@ def test_integration_table(table, cols):
 
 
 @pytest.mark.integration
+def test_get_records_options(table: Table, cols):
+    rec = table.create({cols.TEXT: "abracadabra"})
+
+    # Test that each supported option works via GET
+    # (or, at least, that we don't get complaints from the API)
+    assert table.all(view="view") == [rec]
+    assert table.all(max_records=1) == [rec]
+    assert table.all(page_size=1) == [rec]
+    assert table.all(offset="") == [rec]
+    assert table.all(fields=[cols.TEXT, cols.NUM]) == [rec]
+    assert table.all(cell_format="json") == [rec]
+    assert table.all(sort=[cols.TEXT, cols.NUM]) == [rec]
+    assert table.all(time_zone="utc") == [rec]
+    assert table.all(user_locale="en-ie") == [rec]
+    assert table.all(return_fields_by_field_id=True) == [
+        {
+            "id": rec["id"],
+            "createdTime": rec["createdTime"],
+            "fields": {cols.TEXT_ID: rec["fields"][cols.TEXT]},
+        }
+    ]
+
+    # Test that each supported parameter works with a POST
+    # (or, at least, that we don't get complaints from the API)
+    formula = f"{cols.TEXT} != '{'x' * 17000}'"
+    assert table.all(formula=formula, view="view") == [rec]
+    assert table.all(formula=formula, max_records=1) == [rec]
+    assert table.all(formula=formula, page_size=1) == [rec]
+    assert table.all(formula=formula, offset="") == [rec]
+    assert table.all(formula=formula, fields=[cols.TEXT, cols.NUM]) == [rec]
+    assert table.all(formula=formula, cell_format="json") == [rec]
+    assert table.all(formula=formula, sort=[cols.TEXT, cols.NUM]) == [rec]
+    assert table.all(formula=formula, time_zone="utc") == [rec]
+    assert table.all(formula=formula, user_locale="en-ie") == [rec]
+    assert table.all(formula=formula, return_fields_by_field_id=True) == [
+        {
+            "id": rec["id"],
+            "createdTime": rec["createdTime"],
+            "fields": {cols.TEXT_ID: rec["fields"][cols.TEXT]},
+        }
+    ]
+
+
+@pytest.mark.integration
 def test_integration_field_equals(table: Table, cols):
     TEXT_VALUE = "Test {}".format(uuid4())
     NUM_VALUE = 12345

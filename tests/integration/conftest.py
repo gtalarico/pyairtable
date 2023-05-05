@@ -20,6 +20,7 @@ def cols():
     class Columns:
         # Table should have these Columns
         TEXT = "text"  # Text
+        TEXT_ID = "fldzbVdWW4xJdZ1em"  # for returnFieldsByFieldId
         NUM = "number"  # Number, float
         BOOL = "boolean"  # Boolean
         DATETIME = "datetime"  # Datetime

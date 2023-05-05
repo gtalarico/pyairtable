@@ -88,6 +88,22 @@ def test_first(table, mock_response_single):
     assert rv["id"] == mock_response_single["id"]
 
 
+def test_first_via_post(table, mock_response_single):
+    mock_response = {"records": [mock_response_single]}
+    with Mocker() as mock:
+        url = table.table_url + "/listRecords"
+        formula = f"RECORD_ID() != '{'x' * 17000}'"
+        mock_endpoint = mock.post(url, status_code=200, json=mock_response)
+        rv = table.first(formula=formula)
+
+    assert mock_endpoint.last_request.json() == {
+        "filterByFormula": formula,
+        "maxRecords": 1,
+        "pageSize": 1,
+    }
+    assert rv == mock_response_single
+
+
 def test_first_none(table, mock_response_single):
     mock_response = {"records": []}
     with Mocker() as mock:

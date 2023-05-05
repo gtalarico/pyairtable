@@ -2,13 +2,13 @@ import abc
 import posixpath
 import time
 from functools import lru_cache
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 import requests
 from requests.sessions import Session
 
-from .params import to_params_dict
+from .params import options_to_json_and_params, options_to_params
 from .retrying import Retry, _RetryingSession
 
 TimeoutTuple = Tuple[int, int]
@@ -18,6 +18,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     VERSION = "v0"
     API_LIMIT = 1.0 / 5  # 5 per second
     MAX_RECORDS_PER_REQUEST = 10
+    MAX_URL_LENGTH = 16000
 
     session: Session
     endpoint_url: str
@@ -71,15 +72,6 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         table_url = self.get_table_url(base_id, table_name)
         return posixpath.join(table_url, record_id)
 
-    def _options_to_params(self, **options):
-        """
-        Process params names or values as needed using filters
-        """
-        params = {}
-        for name, value in options.items():
-            params.update(to_params_dict(name, value))
-        return params
-
     def _chunk(self, iterable, chunk_size):
         """Break iterable into chunks"""
         for i in range(0, len(iterable), chunk_size):
@@ -107,27 +99,84 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         else:
             return response.json()
 
-    def _request(self, method: str, url: str, params=None, json_data=None):
-        response = self.session.request(
-            method, url, params=params, json=json_data, timeout=self.timeout
+    def _request(
+        self,
+        method: str,
+        url: str,
+        fallback_post_url: Optional[str] = None,
+        options: Optional[Dict] = None,
+        params: Optional[Dict] = None,
+        json_data: Optional[Dict] = None,
+    ):
+        """
+        Makes a request to the Airtable API, optionally converting a GET to a POST
+        if the URL exceeds the API's maximum URL length.
+
+        See https://support.airtable.com/docs/enforcement-of-url-length-limit-for-web-api-requests
+
+        Args:
+            method (``str``): HTTP method to use.
+            url (``str``): The URL we're attempting to call.
+
+        Keyword Args:
+            fallback_post_url (``str``, optional): The URL to use if we have to convert a GET to a POST.
+            options (``dict``, optional): Airtable-specific query params to use while fetching records.
+            params (``dict``, optional): Additional query params to append to the URL as-is.
+            json_data (``dict``, optional): The JSON payload for a POST/PUT/PATCH/DELETE request.
+        """
+        # Convert Airtable-specific options to query params, but give priority to query params
+        # that are explicitly passed via `params=`. This is to preserve backwards-compatibility for
+        # any library users who might be calling `self._request` directly.
+        request_params = {
+            **options_to_params(options or {}),
+            **(params or {}),
+        }
+
+        # Build a requests.PreparedRequest so we can examine how long the URL is.
+        prepared = self.session.prepare_request(
+            requests.Request(
+                method,
+                url=url,
+                params=request_params,
+                json=json_data,
+            )
         )
+
+        # If our URL is too long, move *most* (not all) query params into a POST body.
+        if (
+            len(str(prepared.url)) >= self.MAX_URL_LENGTH
+            and method.upper() == "GET"
+            and fallback_post_url
+        ):
+            json_data, spare_params = options_to_json_and_params(options or {})
+            return self._request(
+                method="POST",
+                url=fallback_post_url,
+                params={**spare_params, **(params or {})},
+                json_data=json_data,
+            )
+
+        response = self.session.send(prepared, timeout=self.timeout)
         return self._process_response(response)
 
     def _get_record(
         self, base_id: str, table_name: str, record_id: str, **options
     ) -> dict:
         record_url = self._get_record_url(base_id, table_name, record_id)
-        params = self._options_to_params(**options)
-        return self._request("get", record_url, params=params)
+        return self._request("get", record_url, options=options)
 
     def _iterate(self, base_id: str, table_name: str, **options):
         offset = None
-        params = self._options_to_params(**options)
+        table_url = self.get_table_url(base_id, table_name)
         while True:
-            table_url = self.get_table_url(base_id, table_name)
             if offset:
-                params.update({"offset": offset})
-            data = self._request("get", table_url, params=params)
+                options.update({"offset": offset})
+            data = self._request(
+                method="get",
+                url=table_url,
+                fallback_post_url=f"{table_url}/listRecords",
+                options=options,
+            )
             records = data.get("records", [])
             yield records
             offset = data.get("offset")
@@ -154,12 +203,11 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self, base_id: str, table_name: str, fields: dict, typecast=False, **options
     ):
         table_url = self.get_table_url(base_id, table_name)
-        params = self._options_to_params(**options)
         return self._request(
             "post",
             table_url,
             json_data={"fields": fields, "typecast": typecast},
-            params=params,
+            options=options,
         )
 
     def _batch_create(
@@ -172,14 +220,13 @@ class ApiAbstract(metaclass=abc.ABCMeta):
     ) -> List[dict]:
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
-        params = self._options_to_params(**options)
         for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             new_records = self._build_batch_record_objects(chunk)
             response = self._request(
                 "post",
                 table_url,
                 json_data={"records": new_records, "typecast": typecast},
-                params=params,
+                options=options,
             )
             inserted_records += response["records"]
             time.sleep(self.API_LIMIT)
@@ -198,12 +245,11 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         record_url = self._get_record_url(base_id, table_name, record_id)
 
         method = "put" if replace else "patch"
-        params = self._options_to_params(**options)
         return self._request(
             method,
             record_url,
             json_data={"fields": fields, "typecast": typecast},
-            params=params,
+            options=options,
         )
 
     def _batch_update(
@@ -218,14 +264,13 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
-        params = self._options_to_params(**options)
         for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
             response = self._request(
                 method,
                 table_url,
                 json_data={"records": chunk_records, "typecast": typecast},
-                params=params,
+                options=options,
             )
             updated_records += response["records"]
             time.sleep(self.API_LIMIT)
