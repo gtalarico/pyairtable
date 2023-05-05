@@ -289,6 +289,50 @@ class ApiAbstract(metaclass=abc.ABCMeta):
 
         return updated_records
 
+    def _batch_upsert(
+        self,
+        base_id: str,
+        table_name: str,
+        records: List[dict],
+        key_fields: List[str],
+        replace=False,
+        typecast=False,
+        return_fields_by_field_id=False,
+    ):
+        # The API will reject a request where a record is missing any of fieldsToMergeOn,
+        # but we might not reach that error until we've done several batch operations.
+        # To spare implementers from having to recover from a partially applied upsert,
+        # and to simplify our API, we will raise an exception before any network calls.
+        for record in records:
+            if "id" in record:
+                continue
+            missing = set(key_fields) - set(record.get("fields", []))
+            if missing:
+                raise ValueError(f"missing {missing!r} in {record['fields'].keys()!r}")
+
+        updated_records = []
+        table_url = self.get_table_url(base_id, table_name)
+        method = "put" if replace else "patch"
+        for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+            formatted_records = [
+                {k: v for (k, v) in record.items() if k in ("id", "fields")}
+                for record in records
+            ]
+            response = self._request(
+                method,
+                table_url,
+                json_data={
+                    "records": formatted_records,
+                    "typecast": typecast,
+                    "returnFieldsByFieldId": return_fields_by_field_id,
+                    "performUpsert": {"fieldsToMergeOn": key_fields},
+                },
+            )
+            updated_records += response["records"]
+            time.sleep(self.API_LIMIT)
+
+        return updated_records
+
     def _delete(self, base_id: str, table_name: str, record_id: str):
         record_url = self._get_record_url(base_id, table_name, record_id)
         return self._request("delete", record_url)

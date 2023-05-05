@@ -345,6 +345,48 @@ class Api(ApiAbstract):
             return_fields_by_field_id=return_fields_by_field_id,
         )
 
+    def batch_upsert(
+        self,
+        base_id: str,
+        table_name: str,
+        records: List[dict],
+        key_fields: List[str],
+        replace=False,
+        typecast=False,
+        return_fields_by_field_id=False,
+    ):
+        """
+        Updates or creates records in batches, either using ``id`` (if given) or using a set of
+        fields (``key_fields``) to look for matches. For more information on the mechanics,
+        see `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`_.
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: |arg_table_name|
+            records (``list``): List of dict: [{"id": record_id, "fields": fields_to_update_dict}]
+            key_fields (``list``): List of field names that Airtable should use to match
+                records in the input with existing records on the server.
+
+        Keyword Args:
+            replace (``bool``, optional): If ``True``, record is replaced in its entirety
+                by provided fields - e.g. if a field is not included its value will
+                bet set to null. If False, only provided fields are updated.
+                Default is ``False``.
+            typecast: |kwarg_typecast|
+
+        Returns:
+            records (``list``): list of updated records
+        """
+        return super()._batch_upsert(
+            base_id=base_id,
+            table_name=table_name,
+            records=records,
+            key_fields=key_fields,
+            replace=replace,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
+        )
+
     def delete(self, base_id: str, table_name: str, record_id: str):
         """
         Deletes a record by its id

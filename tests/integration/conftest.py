@@ -24,6 +24,7 @@ def cols():
         TEXT = "text"  # Text
         TEXT_ID = "fldzbVdWW4xJdZ1em"  # for returnFieldsByFieldId
         NUM = "number"  # Number, float
+        NUM_ID = "fldFLyuxGuWobyMV2"  # for returnFieldsByFieldId
         BOOL = "boolean"  # Boolean
         DATETIME = "datetime"  # Datetime
         ATTACHMENT = "attachment"  # attachment
