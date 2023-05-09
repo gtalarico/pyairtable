@@ -205,7 +205,11 @@ class DateField(Field):
 
 
 class LookupField(Field):
-    """Airtable Lookup Fields. Uses ``list`` to store value"""
+    """
+    Airtable Lookup Fields. Uses ``list`` to store value
+
+    .. versionadded:: 1.5.0
+    """
 
     def __init__(self, field_name, model: Optional[Type[T_Linked]] = None) -> None:
         if isinstance(model, str):
