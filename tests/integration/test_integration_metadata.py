@@ -3,8 +3,9 @@ import pytest
 from pyairtable import Base, Table
 from pyairtable.metadata import get_api_bases, get_base_schema, get_table_schema
 
+pytestmark = [pytest.mark.integration]
 
-@pytest.mark.integration
+
 def test_get_api_bases(base: Base, base_name: str):
     rv = get_api_bases(base)
     assert base_name in [b["name"] for b in rv["bases"]]

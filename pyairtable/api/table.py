@@ -96,27 +96,43 @@ class Table(ApiAbstract):
         """
         return super()._all(self.base_id, self.table_name, **options)
 
-    def create(self, fields: dict, typecast=False, **options):
+    def create(
+        self,
+        fields: dict,
+        typecast=False,
+        return_fields_by_field_id=False,
+    ):
         """
         Same as :meth:`Api.create <pyairtable.api.Api.create>`
         but without ``base_id`` and ``table_name`` arg.
         """
         return super()._create(
-            self.base_id, self.table_name, fields, typecast=typecast, **options
+            self.base_id,
+            self.table_name,
+            fields,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
         )
 
-    def batch_create(self, records, typecast=False, **options):
+    def batch_create(
+        self,
+        records,
+        typecast=False,
+        return_fields_by_field_id=False,
+    ):
         """
         Same as :meth:`Api.batch_create <pyairtable.api.Api.batch_create>`
         but without ``base_id`` and ``table_name`` arg.
         """
         return super()._batch_create(
-            self.base_id, self.table_name, records, typecast=typecast, **options
+            self.base_id,
+            self.table_name,
+            records,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
         )
 
-    def update(
-        self, record_id: str, fields: dict, replace=False, typecast=False, **options
-    ):
+    def update(self, record_id: str, fields: dict, replace=False, typecast=False):
         """
         Same as :meth:`Api.update <pyairtable.api.Api.update>`
         but without ``base_id`` and ``table_name`` arg.
@@ -128,11 +144,14 @@ class Table(ApiAbstract):
             fields,
             replace=replace,
             typecast=typecast,
-            **options,
         )
 
     def batch_update(
-        self, records: List[dict], replace=False, typecast=False, **options
+        self,
+        records: List[dict],
+        replace=False,
+        typecast=False,
+        return_fields_by_field_id=False,
     ):
         """
         Same as :meth:`Api.batch_update <pyairtable.api.Api.batch_update>`
@@ -144,7 +163,7 @@ class Table(ApiAbstract):
             records,
             replace=replace,
             typecast=typecast,
-            **options,
+            return_fields_by_field_id=return_fields_by_field_id,
         )
 
     def delete(self, record_id: str):

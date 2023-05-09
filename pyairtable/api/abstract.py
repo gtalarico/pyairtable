@@ -200,14 +200,22 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         return all_records
 
     def _create(
-        self, base_id: str, table_name: str, fields: dict, typecast=False, **options
+        self,
+        base_id: str,
+        table_name: str,
+        fields: dict,
+        typecast=False,
+        return_fields_by_field_id=False,
     ):
         table_url = self.get_table_url(base_id, table_name)
         return self._request(
             "post",
             table_url,
-            json_data={"fields": fields, "typecast": typecast},
-            options=options,
+            json_data={
+                "fields": fields,
+                "typecast": typecast,
+                "returnFieldsByFieldId": return_fields_by_field_id,
+            },
         )
 
     def _batch_create(
@@ -216,7 +224,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         table_name: str,
         records: List[dict],
         typecast=False,
-        **options,
+        return_fields_by_field_id=False,
     ) -> List[dict]:
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
@@ -225,8 +233,11 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             response = self._request(
                 "post",
                 table_url,
-                json_data={"records": new_records, "typecast": typecast},
-                options=options,
+                json_data={
+                    "records": new_records,
+                    "typecast": typecast,
+                    "returnFieldsByFieldId": return_fields_by_field_id,
+                },
             )
             inserted_records += response["records"]
             time.sleep(self.API_LIMIT)
@@ -240,7 +251,6 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         fields: dict,
         replace=False,
         typecast=False,
-        **options,
     ) -> List[dict]:
         record_url = self._get_record_url(base_id, table_name, record_id)
 
@@ -249,7 +259,6 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             method,
             record_url,
             json_data={"fields": fields, "typecast": typecast},
-            options=options,
         )
 
     def _batch_update(
@@ -259,7 +268,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         records: List[dict],
         replace=False,
         typecast=False,
-        **options,
+        return_fields_by_field_id=False,
     ):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
@@ -269,8 +278,11 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             response = self._request(
                 method,
                 table_url,
-                json_data={"records": chunk_records, "typecast": typecast},
-                options=options,
+                json_data={
+                    "records": chunk_records,
+                    "typecast": typecast,
+                    "returnFieldsByFieldId": return_fields_by_field_id,
+                },
             )
             updated_records += response["records"]
             time.sleep(self.API_LIMIT)
