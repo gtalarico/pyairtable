@@ -357,8 +357,10 @@ class Api(ApiAbstract):
     ):
         """
         Updates or creates records in batches, either using ``id`` (if given) or using a set of
-        fields (``key_fields``) to look for matches. For more information on the mechanics,
-        see `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`_.
+        fields (``key_fields``) to look for matches. For more information on how this operation
+        behaves, see Airtable's API documentation for `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`_.
+
+        .. versionadded:: 1.5.0
 
         Args:
             base_id: |arg_base_id|
@@ -373,6 +375,7 @@ class Api(ApiAbstract):
                 bet set to null. If False, only provided fields are updated.
                 Default is ``False``.
             typecast: |kwarg_typecast|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
             records (``list``): list of updated records
