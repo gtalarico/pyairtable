@@ -163,6 +163,29 @@ class Base(ApiAbstract):
             return_fields_by_field_id=return_fields_by_field_id,
         )
 
+    def batch_upsert(
+        self,
+        table_name: str,
+        records: List[dict],
+        key_fields: List[str],
+        replace=False,
+        typecast=False,
+        return_fields_by_field_id=False,
+    ):
+        """
+        Same as :meth:`Api.batch_upsert <pyairtable.api.Api.batch_upsert>`
+        but without ``base_id`` arg.
+        """
+        return super()._batch_upsert(
+            self.base_id,
+            table_name,
+            records,
+            key_fields=key_fields,
+            replace=replace,
+            typecast=typecast,
+            return_fields_by_field_id=return_fields_by_field_id,
+        )
+
     def delete(self, table_name: str, record_id: str):
         """
         Same as :meth:`Api.delete <pyairtable.api.Api.delete>`

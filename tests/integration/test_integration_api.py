@@ -167,6 +167,64 @@ def test_integration_field_equals(table: Table, cols):
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 
+def test_batch_upsert(table: Table, cols):
+    one, two = table.batch_create(
+        [
+            {cols.TEXT: "One"},
+            {cols.TEXT: "Two"},
+        ]
+    )
+
+    # Test batch_upsert where replace=False
+    results = table.batch_upsert(
+        [
+            {"id": one["id"], "fields": {cols.NUM: 3}},  # use id
+            {"fields": {cols.TEXT: "Two", cols.NUM: 4}},  # use key_fields
+            {"fields": {cols.TEXT: "Three", cols.NUM: 5}},  # create record
+        ],
+        key_fields=[cols.TEXT],
+    )
+    assert len(results) == 3
+    assert results[0]["id"] == one["id"]
+    assert results[0]["fields"] == {cols.TEXT: "One", cols.NUM: 3}
+    assert results[1]["id"] == two["id"]
+    assert results[1]["fields"] == {cols.TEXT: "Two", cols.NUM: 4}
+    assert results[2]["fields"] == {cols.TEXT: "Three", cols.NUM: 5}
+
+    # Test batch_upsert where replace=True
+    results = table.batch_upsert(
+        [
+            {"id": one["id"], "fields": {cols.NUM: 3}},  # removes cols.TEXT
+            {"fields": {cols.TEXT: "Two"}},  # removes cols.NUM
+            {"fields": {cols.TEXT: "Three", cols.NUM: 6}},  # replaces cols.NUM
+            {"fields": {cols.TEXT: None, cols.NUM: 7}},  # creates a record
+        ],
+        key_fields=[cols.TEXT],
+        replace=True,
+    )
+    assert len(results) == 4
+    assert results[0]["id"] == one["id"]
+    assert results[0]["fields"] == {cols.NUM: 3}
+    assert results[1]["id"] == two["id"]
+    assert results[1]["fields"] == {cols.TEXT: "Two"}
+    assert results[2]["fields"] == {cols.TEXT: "Three", cols.NUM: 6}
+    assert results[3]["fields"] == {cols.NUM: 7}
+
+    # Test that batch_upsert passes along return_fields_by_field_id
+    results = table.batch_upsert(
+        [{"fields": {cols.TEXT: "Two", cols.NUM: 8}}],
+        key_fields=[cols.TEXT],
+        return_fields_by_field_id=True,
+    )
+    assert results == [
+        {
+            "id": two["id"],
+            "createdTime": two["createdTime"],
+            "fields": {cols.TEXT_ID: "Two", cols.NUM_ID: 8},
+        }
+    ]
+
+
 def test_integration_formula_datetime(table: Table, cols):
     VALUE = datetime.utcnow()
     str_value = fo.to_airtable_value(VALUE)

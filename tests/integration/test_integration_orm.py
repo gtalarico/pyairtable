@@ -90,7 +90,6 @@ def test_integration_orm(Contact, Address):
     assert rv_address_2.street == rv_address.street == STREET
 
 
-@pytest.mark.integration
 def test_undeclared_fields():
     """
     Test that if our ORM is missing some fields, it does not fail on retrieval

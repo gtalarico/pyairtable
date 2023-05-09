@@ -150,6 +150,20 @@ Batch update records from a list of records.
   [{'id': 'recwPQIfs4wKPyc9D', 'fields': {"First Name": "Matt", ...}}, ...]
 
 
+:meth:`~pyairtable.api.Table.batch_upsert`
+
+Batch upsert (create or update) records from a list of records. For details on the behavior
+of this Airtable API endpoint, see `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`_.
+
+.. code-block:: python
+
+  >>> table.batch_upsert(
+  ...     [{"id": "recwPQIfs4wKPyc9D", "fields": {"First Name": "Matt"}}, ...],
+  ...     key_fields=["First Name"]
+  ... )
+  [{'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'Matt', 'Age': 21, ...}}, ...]
+
+
 Deleting Records
 -----------------
 
