@@ -7,9 +7,9 @@ Changelog
 
 Release Date: 2023-05-15
 
-* Add support for Airtable's upsert operation (see `Updating Records`).
+* Add support for Airtable's upsert operation (see :ref:`Updating Records`).
   - `PR #255 <https://github.com/gtalarico/pyairtable/pull/255>`_.
-* Fix ``return_fields_by_field_id`` behavior on create/update API calls.
+* Fix ``return_fields_by_field_id`` in :meth:`~pyairtable.api.Api.batch_create` and :meth:`~pyairtable.api.Api.batch_update`.
   - `PR #252 <https://github.com/gtalarico/pyairtable/pull/252>`_.
 * Fix ORM crash when Airtable returned additional fields.
   - `PR #250 <https://github.com/gtalarico/pyairtable/pull/250>`_.
