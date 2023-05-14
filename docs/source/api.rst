@@ -152,6 +152,8 @@ Batch update records from a list of records.
 
 :meth:`~pyairtable.api.Table.batch_upsert`
 
+.. versionadded:: 1.5.0
+
 Batch upsert (create or update) records from a list of records. For details on the behavior
 of this Airtable API endpoint, see `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`_.
 
