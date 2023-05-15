@@ -131,6 +131,38 @@ def test_from_record():
         assert not contact.first_name == "X"
 
 
+def test_readonly_field_not_saved():
+    """
+    Test that we do not attempt to save readonly fields to the API,
+    but we can retrieve readonly fields and set them on instantiation.
+    """
+
+    class Contact(Model):
+        Meta = fake_meta(table_name="Contact")
+        birthday = f.DateField("Birthday")
+        age = f.IntegerField("Age", readonly=True)
+
+    record = {
+        "id": "recwnBLPIeQJoYVt4",
+        "createdTime": datetime.utcnow().isoformat(),
+        "fields": {
+            "Birthday": "1970-01-01",
+            "Age": 57,
+        },
+    }
+
+    contact = Contact.from_record(record)
+    with mock.patch.object(Table, "update") as m_update:
+        m_update.return_value = record
+        contact.birthday = datetime(2000, 1, 1)
+        contact.save()
+
+    # We should not pass 'Age' to the API
+    m_update.assert_called_once_with(
+        contact.id, {"Birthday": "2000-01-01"}, typecast=True
+    )
+
+
 def test_linked_record():
     class Address(Model):
         Meta = fake_meta(table_name="Address")

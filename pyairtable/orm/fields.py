@@ -81,9 +81,36 @@ class Field(metaclass=abc.ABCMeta):
     #: The value we'll use when a field value is not present in the record.
     value_if_missing: ClassVar[Any] = None
 
-    def __init__(self, field_name, validate_type=True) -> None:
+    #: Whether to allow modification of the value in this field.
+    readonly: bool = False
+
+    def __init__(
+        self,
+        field_name: str,
+        validate_type: bool = True,
+        readonly: Optional[bool] = None,
+    ) -> None:
+        """
+        Args:
+            field_name: The name of the field in Airtable.
+
+        Keyword Args:
+            validate_type: Whether to raise a TypeError if anything attempts to write
+                an object of an unsupported type as a field value. If ``False``, you
+                may encounter unpredictable behavior from the Airtable API.
+            readonly: If ``True``, any attempt to write a value to this field will
+                raise an ``AttributeError``. Each field implements appropriate default
+                values, but you may find it useful to mark fields as readonly if you
+                know that the access token your code uses does not have permission
+                to modify specific fields.
+        """
         self.field_name = field_name
-        self.validate_type = True
+        self.validate_type = validate_type
+
+        # Each class will define its own default, but implementers can override it.
+        # Overriding this to be `readonly=False` is probably always wrong, though.
+        if readonly is not None:
+            self.readonly = readonly
 
     def __set_name__(self, owner, name) -> None:
         self._model = owner
@@ -102,6 +129,7 @@ class Field(metaclass=abc.ABCMeta):
             return self.value_if_missing
 
     def __set__(self, instance, value):
+        self._raise_if_readonly()
         if not hasattr(instance, "_fields"):
             instance._fields = {}
         if self.validate_type:
@@ -123,6 +151,12 @@ class Field(metaclass=abc.ABCMeta):
         if self.valid_types and not isinstance(value, self.valid_types):
             raise TypeError(
                 f"{self.__class__.__name__} value must be {self.valid_types}; got {type(value)}"
+            )
+
+    def _raise_if_readonly(self) -> None:
+        if self.readonly:
+            raise AttributeError(
+                f"{self._model.__name__}.{self._attribute_name} is read-only"
             )
 
     def __repr__(self):
@@ -345,3 +379,17 @@ class LinkField(Field, Generic[T_Linked]):
 - [ ] singleSelect
 - [ ] url
 """
+
+
+#: Set of all Field subclasses available.
+ALL_FIELDS = {
+    field_class
+    for name, field_class in vars().items()
+    if isinstance(field_class, type)
+    and issubclass(field_class, Field)
+    and not name.startswith("_")
+}
+
+
+#: Set of all Field subclasses that do not allow writes.
+READONLY_FIELDS = {cls for cls in ALL_FIELDS if cls.readonly}
