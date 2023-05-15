@@ -51,7 +51,8 @@ In other words, you can transverse related records through their ``Link Fields``
 
 """
 import abc
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -71,6 +72,8 @@ if TYPE_CHECKING:
 
     from pyairtable.orm import Model  # noqa
 
+
+T = TypeVar("T")
 T_Linked = TypeVar("T_Linked", bound="Model")
 
 
@@ -179,7 +182,19 @@ class EmailField(TextField):
     """Airtable Email field. Uses ``str`` to store value"""
 
 
-class NumberField(Field):
+class _NumericField(Field):
+    """Base class for Number, Float, and Integer. Shares a common validation rule."""
+
+    def valid_or_raise(self, value) -> None:
+        # Because `bool` is a subclass of `int`, we have to explicitly check for it here.
+        if isinstance(value, bool):
+            raise TypeError(
+                f"{self.__class__.__name__} value must be {self.valid_types}; got {type(value)}"
+            )
+        return super().valid_or_raise(value)
+
+
+class NumberField(_NumericField):
     """Airtable Number field with unspecified precision. Uses ``int`` or ``float`` to store value"""
 
     valid_types = (int, float)
@@ -193,7 +208,9 @@ class NumberField(Field):
         return super().__get__(*args, **kwargs)
 
 
-class IntegerField(Field):
+# This cannot inherit from NumberField because valid_types would be more restrictive
+# in the subclass than what is defined in the parent class.
+class IntegerField(_NumericField):
     """Airtable Number field with Integer Precision. Uses ``int`` to store value"""
 
     valid_types = int
@@ -205,7 +222,9 @@ class IntegerField(Field):
         return super().__get__(*args, **kwargs)
 
 
-class FloatField(Field):
+# This cannot inherit from NumberField because valid_types would be more restrictive
+# in the subclass than what is defined in the parent class.
+class FloatField(_NumericField):
     """Airtable Number field with Decimal precision. Uses ``float`` to store value"""
 
     valid_types = float
@@ -215,6 +234,13 @@ class FloatField(Field):
 
     def __get__(self, *args, **kwargs) -> Optional[float]:
         return super().__get__(*args, **kwargs)
+
+
+class RatingField(IntegerField):
+    def valid_or_raise(self, value: int) -> None:
+        super().valid_or_raise(value)
+        if value < 1:
+            raise ValueError("rating cannot be below 1")
 
 
 class CheckboxField(Field):
@@ -264,121 +290,220 @@ class DateField(Field):
         return super().__get__(*args, **kwargs)
 
 
-class LookupField(Field):
+class DurationField(Field):
     """
-    Airtable Lookup Fields. Uses ``list`` to store value
-
-    .. versionadded:: 1.5.0
+    Airtable's ``Duration`` field type, which the API returns as number of seconds.
+    Stored as ``datetime.timedelta`` internally.
     """
 
-    valid_types = list
+    valid_types = timedelta
 
-    def __init__(self, field_name, model: Optional[Type[T_Linked]] = None) -> None:
-        if isinstance(model, str):
-            raise NotImplementedError("path import not implemented")
-            # model = cast(Type[T_Linked], locate(model))
-        super().__init__(field_name)
+    def to_record_value(self, value: timedelta) -> float:
+        return value.total_seconds()
 
-    def to_record_value(self, value: Any) -> list:
-        return list(value)
+    def to_internal_value(self, value: Union[int, float]) -> timedelta:
+        return timedelta(seconds=value)
 
-    def to_internal_value(self, value: list) -> list:
-        return list(value)
-
-    def __get__(self, *args, **kwargs) -> Optional[list]:
+    def __get__(self, *args, **kwargs) -> Optional[timedelta]:
         return super().__get__(*args, **kwargs)
 
 
-class LinkField(Field, Generic[T_Linked]):
-    """Airtable Link field. Uses ``List[Model]`` to store value"""
+class _DictField(Field):
+    """
+    Generic field type that stores a single dict. Not for use via API;
+    should be subclassed by concrete field types (below).
+    """
+
+    valid_types = dict
+
+    def __get__(self, *args, **kwargs) -> Optional[dict]:
+        return super().__get__(*args, **kwargs)
+
+
+class ListField(Field, Generic[T]):
+    """
+    Generic type for a field that stores a list of values.
+    """
+
+    valid_types = list
+    linked_model: Optional[Type[T]] = None
 
     def __init__(
-        self, field_name: str, model: Union[str, Type[T_Linked]], lazy=True
-    ) -> None:
+        self,
+        field_name: str,
+        model: Optional[Type[T]] = None,
+        validate_type: bool = True,
+        readonly: Optional[bool] = None,
+    ):
         """
+        Constructs a new field.
 
+        Args:
+            field_name: Name of the Airtable field.
+            model: Type we expect to get from the API.
+        """
+        super().__init__(field_name, validate_type=validate_type, readonly=readonly)
+        if model is not None:
+            self.linked_model = model
+
+    def __get__(self, instance, owner) -> List[T]:
+        value = super().__get__(instance, owner)
+        if value is None:
+            value = []
+            setattr(instance, self._attribute_name, value)
+        return value
+
+    def __set__(self, instance, value) -> None:
+        if isinstance(value, (set, tuple, GeneratorType)):
+            value = list(value)
+        super().__set__(instance, value)
+
+    def valid_or_raise(self, value) -> None:
+        super().valid_or_raise(value)
+        if self.linked_model:
+            for obj in value:
+                if not isinstance(obj, self.linked_model):
+                    raise TypeError(f"expected {self.linked_model}; got {type(obj)}")
+
+    def to_internal_value(self, value: Optional[List[T]]) -> List[T]:
+        if value is None:
+            value = []
+        return value
+
+
+class LinkField(ListField[T_Linked]):
+    """Airtable Link field. Uses ``List[Model]`` to store value"""
+
+    def __init__(self, field_name: str, model: Union[str, Type[T_Linked]], lazy=True):
+        """
         Args:
             field_name: Name of Airtable Column
             model: Model of Linked Type. Must be subtype of :class:`Model`
             lazy: Use `True` to load linked model when looking up attribute. `False`
                 will create empty object with only `id` but will not fetch fields.
-
-        Usage:
-            >>> TODO
         """
-
         if isinstance(model, str):
             raise NotImplementedError("path import not implemented")
             # https://github.com/FactoryBoy/factory_boy/blob/37f962720814dff42d7a6a848ccfd200fc7f5ae2/factory/declarations.py#L339
             # model = cast(Type[T_Linked], locate(model))
 
-        assert hasattr(model, "get_table"), "model be subclassed from Model"
-        self._linked_model = model
+        if not hasattr(model, "get_table"):
+            raise TypeError(f"{type(model)} does not appear to subclass orm.Model")
+
         self._lazy = lazy
-        super().__init__(field_name)
-
-    def __get__(self, *args, **kwargs) -> List[T_Linked]:
-        return super().__get__(*args, **kwargs)
-
-    def valid_or_raise(self, value) -> None:
-        if not hasattr(value, "__iter__"):
-            raise TypeError(f"LinkField value must be iterable; got {type(value)}")
-        for model_instance in value:
-            if not isinstance(model_instance, self._linked_model):
-                raise TypeError(
-                    f"expected {self._linked_model}; got {type(model_instance)}"
-                )
+        super().__init__(field_name, model=model)
 
     def to_internal_value(self, value: Any) -> List[T_Linked]:
         # If Lazy, create empty from model class and set id
         # If not Lazy, fetch record from pyairtable and create new model instance
+        if not self.linked_model:
+            raise RuntimeError(f"{self.__class__.__name__} must be declared with model")
         should_fetch = not self._lazy
         linked_models = [
-            self._linked_model._linked_cache.get(id_)
-            or self._linked_model.from_id(id_, fetch=should_fetch)
+            self.linked_model._linked_cache.get(id_)
+            or self.linked_model.from_id(id_, fetch=should_fetch)
             for id_ in value
         ]
-        self._linked_model._linked_cache.update({m.id: m for m in linked_models})
+        self.linked_model._linked_cache.update({m.id: m for m in linked_models})
         return linked_models
 
     def to_record_value(self, value: Any) -> List[str]:
         return [v.id for v in value]
 
 
-"""
-- [ ] autoNumber
-- [ ] barcode
-- [ ] button
-- [x] checkbox
-- [ ] count
-- [ ] createdBy
-- [ ] createdTime
-- [ ] currency
-- [x] date
-- [x] dateTime
-- [ ] duration
-- [x] email
-- [ ] externalSyncSource
-- [ ] formula
-- [ ] lastModifiedBy
-- [ ] lastModifiedTime
-- [ ] multilineText
-- [ ] multipleAttachments
-- [ ] multipleCollaborators
-- [x] multipleLookupValues
-- [ ] multipleRecordLinks
-- [ ] multipleSelects
-- [x] number
-- [ ] percent
-- [ ] phoneNumber
-- [ ] rating
-- [ ] richText
-- [ ] rollup
-- [ ] singleCollaborator
-- [x] singleLineText
-- [ ] singleSelect
-- [ ] url
-"""
+# Many of these are "passthrough" subclasses for now. E.g. there is no real
+# difference between `field = TextField()` and `field = PhoneNumberField()`.
+#
+# But we might choose to add more type-specific functionality later, so
+# we'll allow implementers to get as specific as they care to and they might
+# get some extra functionality for free in the future.
+
+
+class AutoNumberField(IntegerField):
+    readonly = True
+
+
+class BarcodeField(_DictField):
+    pass
+
+
+class ButtonField(_DictField):
+    readonly = True
+
+
+class CollaboratorField(_DictField):
+    pass
+
+
+class CountField(IntegerField):
+    readonly = True
+
+
+class CreatedByField(CollaboratorField):
+    readonly = True
+
+
+class CreatedTimeField(DatetimeField):
+    readonly = True
+
+
+class CurrencyField(NumberField):
+    pass
+
+
+class ExternalSyncSourceField(TextField):
+    readonly = True
+
+
+class LastModifiedByField(CollaboratorField):
+    readonly = True
+
+
+class LastModifiedTimeField(DatetimeField):
+    readonly = True
+
+
+# TODO: LookupField actually needs to support other types besides str.
+class LookupField(ListField[str]):
+    linked_model = str
+
+
+class MultipleAttachmentsField(ListField[dict]):
+    """
+    Accepts a list of dicts that should conform to the format detailed in the
+    `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_
+    documentation.
+    """
+
+    linked_model = dict
+
+
+class MultipleCollaboratorsField(ListField[dict]):
+    linked_model = dict
+
+
+class MultipleSelectField(ListField[str]):
+    linked_model = str
+
+
+class PercentField(NumberField):
+    pass
+
+
+class PhoneNumberField(TextField):
+    pass
+
+
+class RichTextField(TextField):
+    pass
+
+
+class SelectField(TextField):
+    pass
+
+
+class UrlField(TextField):
+    pass
 
 
 #: Set of all Field subclasses available.
@@ -393,3 +518,46 @@ ALL_FIELDS = {
 
 #: Set of all Field subclasses that do not allow writes.
 READONLY_FIELDS = {cls for cls in ALL_FIELDS if cls.readonly}
+
+
+#: Mapping of Airtable field type names to their ORM classes.
+#: See https://airtable.com/developers/web/api/field-model
+#:
+#: The data type of "formula" and "rollup" fields will depend
+#: on the underlying fields they reference, so it is not practical
+#: for the ORM to know or detect those fields' types. These two
+#: field type names are mapped to the constant ``NotImplemented``.
+FIELD_TYPES_TO_CLASSES = {
+    "autoNumber": AutoNumberField,
+    "barcode": BarcodeField,
+    "button": ButtonField,
+    "checkbox": CheckboxField,
+    "count": CountField,
+    "createdBy": CreatedByField,
+    "createdTime": CreatedTimeField,
+    "currency": CurrencyField,
+    "date": DateField,
+    "dateTime": DatetimeField,
+    "duration": DurationField,
+    "email": EmailField,
+    "externalSyncSource": ExternalSyncSourceField,
+    "formula": NotImplemented,
+    "lastModifiedBy": LastModifiedByField,
+    "lastModifiedTime": LastModifiedTimeField,
+    "lookup": LookupField,
+    "multilineText": TextField,
+    "multipleAttachments": MultipleAttachmentsField,
+    "multipleCollaborators": MultipleCollaboratorsField,
+    "multipleRecordLinks": LinkField,
+    "multipleSelects": MultipleSelectField,
+    "number": NumberField,
+    "percent": PercentField,
+    "phoneNumber": PhoneNumberField,
+    "rating": RatingField,
+    "richText": RichTextField,
+    "rollup": NotImplemented,
+    "singleCollaborator": CollaboratorField,
+    "singleLineText": TextField,
+    "singleSelect": SelectField,
+    "url": UrlField,
+}

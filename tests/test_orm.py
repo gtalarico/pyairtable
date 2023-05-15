@@ -117,7 +117,6 @@ def test_from_record():
             "fields": {"First Name": "X", "Timestamp": "2014-09-05T12:34:56.000Z"},
         }
         contact = Contact.from_id("recwnBLPIeQJoYVt4")
-        assert m_get.called
 
     assert m_get.called
     assert contact.id == "recwnBLPIeQJoYVt4"
