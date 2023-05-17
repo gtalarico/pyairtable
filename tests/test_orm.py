@@ -1,4 +1,5 @@
 from datetime import datetime
+from operator import itemgetter
 from unittest import mock
 
 import pytest
@@ -55,21 +56,24 @@ def test_model_overlapping():
             exists = f.TextField("Exists")  # clases with Model.exists()
 
 
+class Address(Model):
+    Meta = fake_meta(table_name="Address")
+    street = f.TextField("Street")
+    number = f.TextField("Number")
+
+
+class Contact(Model):
+    Meta = fake_meta(table_name="Contact")
+    first_name = f.TextField("First Name")
+    last_name = f.TextField("Last Name")
+    email = f.EmailField("Email")
+    is_registered = f.CheckboxField("Registered")
+    address = f.LinkField("Link", Address, lazy=True)
+    birthday = f.DateField("Birthday")
+    created_at = f.CreatedTimeField("Created At")
+
+
 def test_model():
-    class Address(Model):
-        Meta = fake_meta(table_name="Address")
-        street = f.TextField("Street")
-        number = f.TextField("Number")
-
-    class Contact(Model):
-        Meta = fake_meta(table_name="Contact")
-        first_name = f.TextField("First Name")
-        last_name = f.TextField("Last Name")
-        email = f.EmailField("Email")
-        is_registered = f.CheckboxField("Registered")
-        link = f.LinkField("Link", Address, lazy=True)
-        birthday = f.DateField("Birthday")
-
     contact = Contact(
         first_name="Gui",
         last_name="Talarico",
@@ -104,24 +108,19 @@ def test_model():
 
 
 def test_from_record():
-    class Contact(Model):
-        Meta = fake_meta()
-        first_name = f.TextField("First Name")
-        timestamp = f.DatetimeField("Timestamp")
-
     # Fetch = True
     with mock.patch.object(Table, "get") as m_get:
         m_get.return_value = {
             "id": "recwnBLPIeQJoYVt4",
             "createdTime": "",
-            "fields": {"First Name": "X", "Timestamp": "2014-09-05T12:34:56.000Z"},
+            "fields": {"First Name": "X", "Created At": "2014-09-05T12:34:56.000Z"},
         }
         contact = Contact.from_id("recwnBLPIeQJoYVt4")
 
     assert m_get.called
     assert contact.id == "recwnBLPIeQJoYVt4"
     assert contact.first_name == "X"
-    assert contact.timestamp.year == 2014
+    assert contact.created_at.year == 2014
 
     # Fetch = False
     with mock.patch.object(Table, "get") as m_get_no_fetch:
@@ -135,11 +134,6 @@ def test_readonly_field_not_saved():
     Test that we do not attempt to save readonly fields to the API,
     but we can retrieve readonly fields and set them on instantiation.
     """
-
-    class Contact(Model):
-        Meta = fake_meta(table_name="Contact")
-        birthday = f.DateField("Birthday")
-        age = f.IntegerField("Age", readonly=True)
 
     record = {
         "id": "recwnBLPIeQJoYVt4",
@@ -163,14 +157,6 @@ def test_readonly_field_not_saved():
 
 
 def test_linked_record():
-    class Address(Model):
-        Meta = fake_meta(table_name="Address")
-        street = f.TextField("Street")
-
-    class Contact(Model):
-        Meta = fake_meta(table_name="Contact")
-        address = f.LinkField("Link", Address, lazy=True)
-
     record = {"id": "recFake", "createdTime": "", "fields": {"Street": "A"}}
     address = Address.from_id("recFake", fetch=False)
 
@@ -187,36 +173,41 @@ def test_linked_record():
     assert contact.address[0].street == "A"
 
 
-def test_undeclared_field__from_id(requests_mock):
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        ("from_id", lambda cls, id: cls.from_id(id)),
+        ("first", lambda cls, _: cls.first()),
+        ("all", lambda cls, _: cls.all()[0]),
+    ],
+    ids=itemgetter(0),
+)
+def test_undeclared_field(requests_mock, test_case):
     """
-    Test that Model.from_id ignores any fields which are missing from the Model definition.
+    Test that Model methods which fetch data from the Airtable API will
+    ignore any fields which are missing from the Model definition.
+
     See https://github.com/gtalarico/pyairtable/issues/190
     """
 
-    class JustName(Model):
-        Meta = fake_meta()
-        name = f.TextField("Name")
+    record = fake_record(
+        Number="123",
+        Street="Fake St",
+        City="Springfield",
+        State="IL",
+    )
 
-    record = fake_record({"Name": "Alice", "Address": "123 Fake St"})
     requests_mock.get(
-        JustName.get_table().get_record_url(record["id"]),
+        Address.get_table().table_url,
+        status_code=200,
+        json={"records": [record]},
+    )
+    requests_mock.get(
+        Address.get_table().get_record_url(record["id"]),
         status_code=200,
         json=record,
     )
 
-    instance = JustName.from_id(record["id"])
-    assert instance.to_record()["fields"] == {"Name": "Alice"}
-
-
-def test_undeclared_field__all():
-    """
-    Test that Model.all ignores any fields which are missing from the Model definition.
-    """
-    pytest.skip("To be implemented in 2.0.0; see #249")  # TODO
-
-
-def test_undeclared_field__first():
-    """
-    Test that Model.first ignores any fields which are missing from the Model definition.
-    """
-    pytest.skip("To be implemented in 2.0.0; see #249")  # TODO
+    _, get_model_instance = test_case
+    instance = get_model_instance(Address, record["id"])
+    assert instance.to_record()["fields"] == {"Number": "123", "Street": "Fake St"}
