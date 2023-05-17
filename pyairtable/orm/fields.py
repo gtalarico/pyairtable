@@ -46,9 +46,6 @@ In other words, you can transverse related records through their ``Link Fields``
 ...
 >>> contact.from_id("recS6qSLw0OCA6Xul")
 >>> contact.company.name # outputs value of Company.name attribute
-
------------
-
 """
 import abc
 from datetime import date, datetime, timedelta
@@ -167,7 +164,9 @@ class Field(metaclass=abc.ABCMeta):
 
 
 class TextField(Field):
-    """Airtable Single Text or Multiline Text Fields. Uses ``str`` to store value"""
+    """
+    Used for all Airtable text fields. Accepts `str`.
+    """
 
     valid_types = str
 
@@ -176,10 +175,6 @@ class TextField(Field):
 
     def __get__(self, *args, **kwargs) -> Optional[str]:
         return super().__get__(*args, **kwargs)
-
-
-class EmailField(TextField):
-    """Airtable Email field. Uses ``str`` to store value"""
 
 
 class _NumericField(Field):
@@ -195,7 +190,9 @@ class _NumericField(Field):
 
 
 class NumberField(_NumericField):
-    """Airtable Number field with unspecified precision. Uses ``int`` or ``float`` to store value"""
+    """
+    Number field with unspecified precision. Accepts either `int` or `float`.
+    """
 
     valid_types = (int, float)
 
@@ -211,7 +208,9 @@ class NumberField(_NumericField):
 # This cannot inherit from NumberField because valid_types would be more restrictive
 # in the subclass than what is defined in the parent class.
 class IntegerField(_NumericField):
-    """Airtable Number field with Integer Precision. Uses ``int`` to store value"""
+    """
+    Number field with integer precision. Accepts only `int` values.
+    """
 
     valid_types = int
 
@@ -225,7 +224,9 @@ class IntegerField(_NumericField):
 # This cannot inherit from NumberField because valid_types would be more restrictive
 # in the subclass than what is defined in the parent class.
 class FloatField(_NumericField):
-    """Airtable Number field with Decimal precision. Uses ``float`` to store value"""
+    """
+    Number field with decimal precision. Accepts only `float` values.
+    """
 
     valid_types = float
 
@@ -237,6 +238,10 @@ class FloatField(_NumericField):
 
 
 class RatingField(IntegerField):
+    """
+    Accepts `int` values that are 1 or greater.
+    """
+
     def valid_or_raise(self, value: int) -> None:
         super().valid_or_raise(value)
         if value < 1:
@@ -244,7 +249,9 @@ class RatingField(IntegerField):
 
 
 class CheckboxField(Field):
-    """Airtable Checkbox field. Uses ``bool`` to store value"""
+    """
+    Returns `False` instead of `None` if the field is empty on the Airtable base.
+    """
 
     valid_types = bool
     value_if_missing = False
@@ -257,7 +264,9 @@ class CheckboxField(Field):
 
 
 class DatetimeField(Field):
-    """Airtable Datetime field. Uses ``datetime`` to store value"""
+    """
+    DateTime field. Accepts only `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_ values.
+    """
 
     valid_types = datetime
 
@@ -274,7 +283,9 @@ class DatetimeField(Field):
 
 
 class DateField(Field):
-    """Airtable Date field. Uses ``Date`` to store value"""
+    """
+    Date field. Accepts only `date <https://docs.python.org/3/library/datetime.html#date-objects>`_ values.
+    """
 
     valid_types = date
 
@@ -292,8 +303,8 @@ class DateField(Field):
 
 class DurationField(Field):
     """
-    Airtable's ``Duration`` field type, which the API returns as number of seconds.
-    Stored as ``datetime.timedelta`` internally.
+    Duration field. Accepts only `timedelta <https://docs.python.org/3/library/datetime.html#timedelta-objects>`_ values.
+    Airtable's API returns this as a number of seconds.
     """
 
     valid_types = timedelta
@@ -322,7 +333,19 @@ class _DictField(Field):
 
 class ListField(Field, Generic[T]):
     """
-    Generic type for a field that stores a list of values.
+    Generic type for a field that stores a list of values. Can be used
+    to refer to a lookup field that might return more than one value.
+
+    >>> from pyairtable.orm import fields as F
+    >>> class MyTable(Model):
+    ...     class Meta:
+    ...         ...
+    ...
+    ...     lookup = F.ListField[str]("My Lookup", readonly=True)
+    ...
+    >>> rec = MyTable.first()
+    >>> rec.lookup
+    ["First value", "Second value", ...]
     """
 
     valid_types = list
@@ -372,7 +395,11 @@ class ListField(Field, Generic[T]):
 
 
 class LinkField(ListField[T_Linked]):
-    """Airtable Link field. Uses ``List[Model]`` to store value"""
+    """
+    MultipleRecordLinks field. Accepts lists of Model instances.
+
+    See :ref:`Link Fields`.
+    """
 
     def __init__(self, field_name: str, model: Union[str, Type[T_Linked]], lazy=True):
         """
@@ -420,51 +447,105 @@ class LinkField(ListField[T_Linked]):
 
 
 class AutoNumberField(IntegerField):
+    """
+    Equivalent to ``IntegerField(readonly=True)``
+    """
+
     readonly = True
 
 
 class BarcodeField(_DictField):
-    pass
+    """
+    Accepts a `dict` that should conform to the format detailed in the
+    `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`_
+    documentation.
+    """
 
 
 class ButtonField(_DictField):
+    """
+    Read-only field that returns a `dict`. For more information, read the
+    `Button <https://airtable.com/developers/web/api/field-model#button>`_
+    documentation.
+    """
+
     readonly = True
 
 
 class CollaboratorField(_DictField):
-    pass
+    """
+    Accepts a `dict` that should conform to the format detailed in the
+    `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`_
+    documentation.
+    """
 
 
 class CountField(IntegerField):
+    """
+    Equivalent to ``IntegerField(readonly=True)``
+    """
+
     readonly = True
 
 
 class CreatedByField(CollaboratorField):
+    """
+    Equivalent to ``CollaboratorField(readonly=True)``
+    """
+
     readonly = True
 
 
 class CreatedTimeField(DatetimeField):
+    """
+    Equivalent to ``DatetimeField(readonly=True)``
+    """
+
     readonly = True
 
 
 class CurrencyField(NumberField):
-    pass
+    """
+    Equivalent to ``NumberField``
+    """
+
+
+class EmailField(TextField):
+    """
+    Equivalent to ``TextField``.
+    """
 
 
 class ExternalSyncSourceField(TextField):
+    """
+    Equivalent to ``TextField(readonly=True)``
+    """
+
     readonly = True
 
 
 class LastModifiedByField(CollaboratorField):
+    """
+    Equivalent to ``CollaboratorField(readonly=True)``
+    """
+
     readonly = True
 
 
 class LastModifiedTimeField(DatetimeField):
+    """
+    Equivalent to ``DatetimeField(readonly=True)``
+    """
+
     readonly = True
 
 
 # TODO: LookupField actually needs to support other types besides str.
 class LookupField(ListField[str]):
+    """
+    Equivalent to ``ListField[str]``.
+    """
+
     linked_model = str
 
 
@@ -479,34 +560,53 @@ class MultipleAttachmentsField(ListField[dict]):
 
 
 class MultipleCollaboratorsField(ListField[dict]):
+    """
+    Accepts a list of dicts that should conform to the format detailed in the
+    `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_
+    documentation.
+    """
+
     linked_model = dict
 
 
 class MultipleSelectField(ListField[str]):
+    """
+    Accepts a list of ``str``.
+    """
+
     linked_model = str
 
 
 class PercentField(NumberField):
-    pass
+    """
+    Equivalent to ``NumberField``
+    """
 
 
 class PhoneNumberField(TextField):
-    pass
+    """
+    Equivalent to ``TextField``
+    """
 
 
 class RichTextField(TextField):
-    pass
+    """
+    Equivalent to ``TextField``
+    """
 
 
 class SelectField(TextField):
-    pass
+    """
+    Equivalent to ``TextField``
+    """
 
 
 class UrlField(TextField):
-    pass
+    """
+    Equivalent to ``TextField``
+    """
 
 
-#: Set of all Field subclasses available.
 ALL_FIELDS = {
     field_class
     for name, field_class in vars().items()
@@ -514,19 +614,21 @@ ALL_FIELDS = {
     and issubclass(field_class, Field)
     and not name.startswith("_")
 }
+"""
+Set of all Field subclasses exposed by the library.
+
+:meta hide-value:
+"""
 
 
-#: Set of all Field subclasses that do not allow writes.
 READONLY_FIELDS = {cls for cls in ALL_FIELDS if cls.readonly}
+"""
+Set of all read-only Field subclasses exposed by the library.
+
+:meta hide-value:
+"""
 
 
-#: Mapping of Airtable field type names to their ORM classes.
-#: See https://airtable.com/developers/web/api/field-model
-#:
-#: The data type of "formula" and "rollup" fields will depend
-#: on the underlying fields they reference, so it is not practical
-#: for the ORM to know or detect those fields' types. These two
-#: field type names are mapped to the constant ``NotImplemented``.
 FIELD_TYPES_TO_CLASSES = {
     "autoNumber": AutoNumberField,
     "barcode": BarcodeField,
@@ -561,3 +663,29 @@ FIELD_TYPES_TO_CLASSES = {
     "singleSelect": SelectField,
     "url": UrlField,
 }
+"""
+Mapping of Airtable field type names to their ORM classes.
+See https://airtable.com/developers/web/api/field-model
+
+The data type of "formula" and "rollup" fields will depend
+on the underlying fields they reference, so it is not practical
+for the ORM to know or detect those fields' types. These two
+field type names are mapped to the constant ``NotImplemented``.
+
+If you need to refer to a formula or rollup field in the ORM,
+you need to know what type of value you expect it to contain.
+You can then declare that as a read-only field:
+
+.. code-block:: python
+
+    from pyairtable.orm import fields as F
+
+    class MyTable(Model):
+        class Meta:
+            ...
+
+        formula_field = F.TextField("My Formula", readonly=True)
+        rollup_field = F.IntegerField("Row Count", readonly=True)
+
+:meta hide-value:
+"""
