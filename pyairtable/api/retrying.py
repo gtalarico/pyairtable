@@ -1,3 +1,5 @@
+from typing import Any, Tuple, Union
+
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -9,10 +11,10 @@ DEFAULT_MAX_RETRIES = 5
 
 def retry_strategy(
     *,
-    status_forcelist=DEFAULT_RETRIABLE_STATUS_CODES,
-    backoff_factor=DEFAULT_BACKOFF_FACTOR,
-    total=DEFAULT_MAX_RETRIES,
-    **kwargs,
+    status_forcelist: Tuple[int, ...] = DEFAULT_RETRIABLE_STATUS_CODES,
+    backoff_factor: Union[int, float] = DEFAULT_BACKOFF_FACTOR,
+    total: int = DEFAULT_MAX_RETRIES,
+    **kwargs: Any,
 ) -> Retry:
     """
     Creates a ``Retry`` instance with optional default values.
@@ -44,3 +46,9 @@ class _RetryingSession(Session):
 
         self.mount("https://", adapter)
         self.mount("http://", adapter)
+
+
+__all__ = [
+    "Retry",
+    "_RetryingSession",
+]

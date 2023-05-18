@@ -1,4 +1,12 @@
-from typing import List, Optional
+from typing import Any, Iterator, List, Optional
+
+from pyairtable.api.types import (
+    Fields,
+    RecordDeletedDict,
+    RecordDict,
+    RecordId,
+    UpdateRecordDict,
+)
 
 from .abstract import ApiAbstract, TimeoutTuple
 from .retrying import Retry
@@ -66,7 +74,7 @@ class Api(ApiAbstract):
             self.api_key, base_id, timeout=self.timeout, endpoint_url=self.endpoint_url
         )
 
-    def get_record_url(self, base_id: str, table_name: str, record_id: str):
+    def get_record_url(self, base_id: str, table_name: str, record_id: RecordId) -> str:
         """
         Returns a url for the provided record
 
@@ -77,7 +85,9 @@ class Api(ApiAbstract):
         """
         return super()._get_record_url(base_id, table_name, record_id)
 
-    def get(self, base_id: str, table_name: str, record_id: str, **options):
+    def get(
+        self, base_id: str, table_name: str, record_id: RecordId, **options: Any
+    ) -> RecordDict:
         """
         Retrieves a record by its id
 
@@ -96,7 +106,9 @@ class Api(ApiAbstract):
         """
         return super()._get_record(base_id, table_name, record_id, **options)
 
-    def iterate(self, base_id: str, table_name: str, **options):
+    def iterate(
+        self, base_id: str, table_name: str, **options: Any
+    ) -> Iterator[List[RecordDict]]:
         """
         Record Retriever Iterator
 
@@ -133,7 +145,9 @@ class Api(ApiAbstract):
         for i in gen:
             yield i
 
-    def first(self, base_id: str, table_name: str, **options):
+    def first(
+        self, base_id: str, table_name: str, **options: Any
+    ) -> Optional[RecordDict]:
         """
         Retrieves the first found record or ``None`` if no records are returned.
 
@@ -156,7 +170,7 @@ class Api(ApiAbstract):
         """
         return super()._first(base_id, table_name, **options)
 
-    def all(self, base_id: str, table_name: str, **options):
+    def all(self, base_id: str, table_name: str, **options: Any) -> List[RecordDict]:
         """
         Retrieves all records repetitively and returns a single list.
 
@@ -193,10 +207,10 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        fields: dict,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        fields: Fields,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> RecordDict:
         """
         Creates a new record
 
@@ -229,10 +243,10 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        records,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        records: List[Fields],
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         """
         Breaks records into chunks of 10 and inserts them in batches.
         Follows the set API rate.
@@ -267,11 +281,11 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        record_id: str,
-        fields: dict,
-        replace=False,
-        typecast=False,
-    ):
+        record_id: RecordId,
+        fields: Fields,
+        replace: bool = False,
+        typecast: bool = False,
+    ) -> RecordDict:
         """
         Updates a record by its record id.
         Only Fields passed are updated, the rest are left as is.
@@ -312,11 +326,11 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        records: List[dict],
-        replace=False,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        records: List[UpdateRecordDict],
+        replace: bool = False,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         """
         Updates a records by their record id's in batch.
 
@@ -349,12 +363,12 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        records: List[dict],
+        records: List[UpdateRecordDict],
         key_fields: List[str],
-        replace=False,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        replace: bool = False,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         """
         Updates or creates records in batches, either using ``id`` (if given) or using a set of
         fields (``key_fields``) to look for matches. For more information on how this operation
@@ -390,7 +404,9 @@ class Api(ApiAbstract):
             return_fields_by_field_id=return_fields_by_field_id,
         )
 
-    def delete(self, base_id: str, table_name: str, record_id: str):
+    def delete(
+        self, base_id: str, table_name: str, record_id: RecordId
+    ) -> RecordDeletedDict:
         """
         Deletes a record by its id
 
@@ -407,7 +423,9 @@ class Api(ApiAbstract):
         """
         return super()._delete(base_id, table_name, record_id)
 
-    def batch_delete(self, base_id: str, table_name: str, record_ids: List[str]):
+    def batch_delete(
+        self, base_id: str, table_name: str, record_ids: List[RecordId]
+    ) -> List[RecordDeletedDict]:
         """
         Breaks records into batches of 10 and deletes in batches, following set
         API Rate Limit (5/sec).

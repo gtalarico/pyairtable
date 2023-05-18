@@ -58,15 +58,17 @@ Finally, you can use :meth:`~pyairtable.orm.model.Model.delete` to delete the re
 
 >>> contact.delete()
 True
-
 """
+from __future__ import annotations
+
 import abc
-from typing import List
+from typing import Any, List, Optional
 
-from typing_extensions import Self
+from typing_extensions import Self as SelfType
 
-from pyairtable import Table
-from pyairtable.orm.fields import Field
+from pyairtable.api.table import Table
+from pyairtable.api.types import FieldName, RecordDict, RecordId
+from pyairtable.orm.fields import AnyField, Field
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -94,15 +96,15 @@ class Model(metaclass=abc.ABCMeta):
     id: str = ""
     created_time: str = ""
     _table: Table
-    _fields: dict = {}
-    _linked_cache: dict = {}
+    _fields: dict[FieldName, Any] = {}
+    _linked_cache: dict[RecordId, SelfType] = {}
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         cls._validate_class()
         super().__init_subclass__(**kwargs)
 
     @classmethod
-    def _attribute_descriptor_map(cls):
+    def _attribute_descriptor_map(cls) -> dict[str, AnyField]:
         """
         Returns a dictionary mapping the model's attribute names to the field's
 
@@ -119,7 +121,7 @@ class Model(metaclass=abc.ABCMeta):
         return {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
 
     @classmethod
-    def _field_name_descriptor_map(cls):
+    def _field_name_descriptor_map(cls) -> dict[FieldName, AnyField]:
         """
         Returns a dictionary that maps Fields 'Names' to descriptor fields
 
@@ -136,7 +138,7 @@ class Model(metaclass=abc.ABCMeta):
         return {f.field_name: f for f in cls._attribute_descriptor_map().values()}
 
     @classmethod
-    def _field_name_attribute_map(cls):
+    def _field_name_attribute_map(cls) -> dict[FieldName, str]:
         """
         Returns a dictionary that maps Fields 'Names' to the model attribute name:
 
@@ -152,28 +154,35 @@ class Model(metaclass=abc.ABCMeta):
         """
         return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
 
-    def __init__(self, **fields):
+    def __init__(self, **fields: Any):
         # To Store Fields
         self._fields = {}
 
         # Set descriptors
         for key, value in fields.items():
             if key not in self._attribute_descriptor_map():
-                msg = "invalid kwarg '{}'".format(key)
-                raise ValueError(msg)
+                raise AttributeError(key)
             setattr(self, key, value)
 
-        self.typecast = getattr(self.Meta, "typecast", True)
+        self.typecast = bool(self._get_meta("typecast", default=True))
 
     @classmethod
-    def _validate_class(cls):
+    def _get_meta(cls, name: str, default: Any = None, required: bool = False) -> Any:
+        if not hasattr(cls, "Meta"):
+            raise AttributeError(f"{cls.__name__}.Meta must be defined")
+        if required and not hasattr(cls.Meta, name):
+            raise ValueError(f"{cls.__name__}.Meta.{name} must be defined")
+        value = getattr(cls.Meta, name, default)
+        if required and value is None:
+            raise ValueError(f"{cls.__name__}.Meta.{name} cannot be None")
+        return value
+
+    @classmethod
+    def _validate_class(cls) -> None:
         # Verify required Meta attributes were set
-        if not getattr(cls.Meta, "base_id", None):
-            raise ValueError("Meta.base_id must be defined in model")
-        if not getattr(cls.Meta, "table_name", None):
-            raise ValueError("Meta.table_name must be defined in model")
-        if not getattr(cls.Meta, "api_key", None):
-            raise ValueError("Meta.api_key must be defined in model")
+        assert cls._get_meta("api_key", required=True)
+        assert cls._get_meta("base_id", required=True)
+        assert cls._get_meta("table_name", required=True)
 
         model_attributes = [a for a in cls.__dict__.keys() if not a.startswith("__")]
         overridden = set(model_attributes).intersection(Model.__dict__.keys())
@@ -189,10 +198,10 @@ class Model(metaclass=abc.ABCMeta):
         """Return Airtable :class:`~pyairtable.api.Table` class instance"""
         if not hasattr(cls, "_table"):
             cls._table = Table(
-                cls.Meta.api_key,  # type: ignore
-                cls.Meta.base_id,  # type: ignore
-                cls.Meta.table_name,  # type: ignore
-                timeout=getattr(cls.Meta, "timeout", None),  # type: ignore
+                cls._get_meta("api_key"),
+                cls._get_meta("base_id"),
+                cls._get_meta("table_name"),
+                timeout=cls._get_meta("timeout"),
             )
         return cls._table
 
@@ -228,11 +237,11 @@ class Model(metaclass=abc.ABCMeta):
             raise ValueError("cannot be deleted because it does not have id")
         table = self.get_table()
         result = table.delete(self.id)
-        # Is it even possible go get "deleted" False?
-        return result["deleted"]
+        # Is it even possible to get "deleted" False?
+        return bool(result["deleted"])
 
     @classmethod
-    def all(cls, **kwargs) -> List[Self]:
+    def all(cls, **kwargs: Any) -> List[SelfType]:
         """
         Returns all records for this model. For the full list of
         keyword arguments, see :meth:`~pyairtable.api.Api.all`
@@ -241,15 +250,17 @@ class Model(metaclass=abc.ABCMeta):
         return [cls.from_record(record) for record in table.all(**kwargs)]
 
     @classmethod
-    def first(cls, **kwargs) -> Self:
+    def first(cls, **kwargs: Any) -> Optional[SelfType]:
         """
         Returns the first record for this model. For the full list of
         keyword arguments, see :meth:`~pyairtable.api.Api.all`
         """
         table = cls.get_table()
-        return cls.from_record(table.first(**kwargs))
+        if record := table.first(**kwargs):
+            return cls.from_record(record)
+        return None
 
-    def to_record(self, only_writable: bool = False) -> dict:
+    def to_record(self, only_writable: bool = False) -> RecordDict:
         """
         Returns a dictionary object as an Airtable record.
         This method converts internal field values into values expected by Airtable.
@@ -269,7 +280,7 @@ class Model(metaclass=abc.ABCMeta):
         return {"id": self.id, "createdTime": self.created_time, "fields": fields}
 
     @classmethod
-    def from_record(cls, record: dict) -> Self:
+    def from_record(cls, record: RecordDict) -> SelfType:
         """Create instance from record dictionary"""
         name_field_map = cls._field_name_descriptor_map()
         # Convert Column Names into model field names
@@ -289,7 +300,7 @@ class Model(metaclass=abc.ABCMeta):
         return instance
 
     @classmethod
-    def from_id(cls, record_id: str, fetch=True) -> Self:
+    def from_id(cls, record_id: str, fetch: bool = True) -> SelfType:
         """
         Create an instance from a `record_id`
 
@@ -313,7 +324,7 @@ class Model(metaclass=abc.ABCMeta):
             instance.id = record_id
             return instance
 
-    def fetch(self):
+    def fetch(self) -> None:
         """Fetches field and resets instance field values from the Airtable record"""
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
@@ -322,7 +333,7 @@ class Model(metaclass=abc.ABCMeta):
         self._fields = updated._fields
         self.created_time = updated.created_time
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<Model={} {}>".format(self.__class__.__name__, hex(id(self)))
 
     # TODO - see metadata.py

@@ -2,16 +2,32 @@ import abc
 import posixpath
 import time
 from functools import lru_cache
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 from urllib.parse import quote
 
 import requests
 from requests.sessions import Session
+from typing_extensions import TypeAlias
+
+from pyairtable.api.types import (
+    FieldName,
+    Fields,
+    RecordDeletedDict,
+    RecordDict,
+    RecordId,
+    UpdateRecordDict,
+)
+from pyairtable.utils import chunked
 
 from .params import options_to_json_and_params, options_to_params
 from .retrying import Retry, _RetryingSession
 
-TimeoutTuple = Tuple[int, int]
+TimeoutTuple: TypeAlias = Tuple[int, int]
+
+
+if TYPE_CHECKING:
+    from pyairtable.api.base import Base  # noqa
+    from pyairtable.api.table import Table  # noqa
 
 
 class ApiAbstract(metaclass=abc.ABCMeta):
@@ -46,7 +62,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         return self._api_key
 
     @api_key.setter
-    def api_key(self, value):
+    def api_key(self, value: str) -> None:
         """Returns the Airtable API Key"""
         self._update_api_key(value)
         self._api_key = value
@@ -62,25 +78,19 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self.session.headers.update({"Authorization": "Bearer {}".format(api_key)})
 
     @lru_cache()
-    def get_table_url(self, base_id: str, table_name: str):
+    def get_table_url(self, base_id: str, table_name: str) -> str:
         url_safe_table_name = quote(table_name, safe="")
         return self.build_url(base_id, url_safe_table_name)
 
     @lru_cache()
-    def _get_record_url(self, base_id: str, table_name: str, record_id):
+    def _get_record_url(
+        self, base_id: str, table_name: str, record_id: RecordId
+    ) -> str:
         """Builds URL with record id"""
         table_url = self.get_table_url(base_id, table_name)
         return posixpath.join(table_url, record_id)
 
-    def _chunk(self, iterable, chunk_size):
-        """Break iterable into chunks"""
-        for i in range(0, len(iterable), chunk_size):
-            yield iterable[i : i + chunk_size]
-
-    def _build_batch_record_objects(self, records):
-        return [{"fields": record} for record in records]
-
-    def _process_response(self, response):
+    def _process_response(self, response: requests.Response) -> Any:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as exc:
@@ -104,10 +114,10 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         method: str,
         url: str,
         fallback_post_url: Optional[str] = None,
-        options: Optional[Dict] = None,
-        params: Optional[Dict] = None,
-        json_data: Optional[Dict] = None,
-    ):
+        options: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        json_data: Optional[Dict[Any, Any]] = None,
+    ) -> Any:
         """
         Makes a request to the Airtable API, optionally converting a GET to a POST
         if the URL exceeds the API's maximum URL length.
@@ -160,12 +170,18 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         return self._process_response(response)
 
     def _get_record(
-        self, base_id: str, table_name: str, record_id: str, **options
-    ) -> dict:
+        self,
+        base_id: str,
+        table_name: str,
+        record_id: RecordId,
+        **options: Any,
+    ) -> RecordDict:
         record_url = self._get_record_url(base_id, table_name, record_id)
         return self._request("get", record_url, options=options)
 
-    def _iterate(self, base_id: str, table_name: str, **options):
+    def _iterate(
+        self, base_id: str, table_name: str, **options: Any
+    ) -> Iterator[List[RecordDict]]:
         offset = None
         table_url = self.get_table_url(base_id, table_name)
         while True:
@@ -184,7 +200,9 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 break
             time.sleep(self.API_LIMIT)
 
-    def _first(self, base_id: str, table_name: str, **options) -> Optional[dict]:
+    def _first(
+        self, base_id: str, table_name: str, **options: Any
+    ) -> Optional[RecordDict]:
         for records in self._iterate(
             base_id, table_name, page_size=1, max_records=1, **options
         ):
@@ -192,7 +210,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 return record
         return None
 
-    def _all(self, base_id: str, table_name: str, **options) -> List[dict]:
+    def _all(self, base_id: str, table_name: str, **options: Any) -> List[RecordDict]:
         all_records = []
 
         for records in self._iterate(base_id, table_name, **options):
@@ -203,10 +221,10 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self,
         base_id: str,
         table_name: str,
-        fields: dict,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        fields: Fields,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> RecordDict:
         table_url = self.get_table_url(base_id, table_name)
         return self._request(
             "post",
@@ -222,14 +240,14 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self,
         base_id: str,
         table_name: str,
-        records: List[dict],
-        typecast=False,
-        return_fields_by_field_id=False,
-    ) -> List[dict]:
+        records: List[Fields],
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         table_url = self.get_table_url(base_id, table_name)
         inserted_records = []
-        for chunk in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
-            new_records = self._build_batch_record_objects(chunk)
+        for chunk in chunked(records, self.MAX_RECORDS_PER_REQUEST):
+            new_records = [{"fields": fields} for fields in chunk]
             response = self._request(
                 "post",
                 table_url,
@@ -247,11 +265,11 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self,
         base_id: str,
         table_name: str,
-        record_id: str,
-        fields: dict,
-        replace=False,
-        typecast=False,
-    ) -> List[dict]:
+        record_id: RecordId,
+        fields: Fields,
+        replace: bool = False,
+        typecast: bool = False,
+    ) -> RecordDict:
         record_url = self._get_record_url(base_id, table_name, record_id)
 
         method = "put" if replace else "patch"
@@ -265,16 +283,16 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self,
         base_id: str,
         table_name: str,
-        records: List[dict],
-        replace=False,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        records: List[UpdateRecordDict],
+        replace: bool = False,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
-        for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
-            chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in records]
+        for chunk in chunked(records, self.MAX_RECORDS_PER_REQUEST):
+            chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in chunk]
             response = self._request(
                 method,
                 table_url,
@@ -293,12 +311,12 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self,
         base_id: str,
         table_name: str,
-        records: List[dict],
-        key_fields: List[str],
-        replace=False,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        records: List[UpdateRecordDict],
+        key_fields: List[FieldName],
+        replace: bool = False,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         # The API will reject a request where a record is missing any of fieldsToMergeOn,
         # but we might not reach that error until we've done several batch operations.
         # To spare implementers from having to recover from a partially applied upsert,
@@ -313,10 +331,10 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         updated_records = []
         table_url = self.get_table_url(base_id, table_name)
         method = "put" if replace else "patch"
-        for records in self._chunk(records, self.MAX_RECORDS_PER_REQUEST):
+        for chunk in chunked(records, self.MAX_RECORDS_PER_REQUEST):
             formatted_records = [
                 {k: v for (k, v) in record.items() if k in ("id", "fields")}
-                for record in records
+                for record in chunk
             ]
             response = self._request(
                 method,
@@ -333,23 +351,21 @@ class ApiAbstract(metaclass=abc.ABCMeta):
 
         return updated_records
 
-    def _delete(self, base_id: str, table_name: str, record_id: str):
+    def _delete(
+        self, base_id: str, table_name: str, record_id: RecordId
+    ) -> RecordDeletedDict:
         record_url = self._get_record_url(base_id, table_name, record_id)
         return self._request("delete", record_url)
 
     def _batch_delete(
-        self, base_id: str, table_name: str, record_ids: List[str]
-    ) -> List[dict]:
+        self, base_id: str, table_name: str, record_ids: List[RecordId]
+    ) -> List[RecordDeletedDict]:
         deleted_records = []
         table_url = self.get_table_url(base_id, table_name)
-        for record_ids in self._chunk(record_ids, self.MAX_RECORDS_PER_REQUEST):
+        for chunk in chunked(record_ids, self.MAX_RECORDS_PER_REQUEST):
             delete_results = self._request(
-                "delete", table_url, params={"records[]": record_ids}
+                "delete", table_url, params={"records[]": chunk}
             )
             deleted_records.extend(delete_results["records"])
             time.sleep(self.API_LIMIT)
         return deleted_records
-
-
-from pyairtable.api.base import Base  # noqa
-from pyairtable.api.table import Table  # noqa

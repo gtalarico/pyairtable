@@ -5,6 +5,7 @@ from requests import Request
 from requests_mock import Mocker
 
 from pyairtable import Table
+from pyairtable.utils import chunked
 
 
 def test_repr(table):
@@ -25,7 +26,7 @@ def test_url(base_id, table_name, table_url_suffix):
 
 
 def test_chunk(table):
-    chunks = [chunk for chunk in table._chunk([0, 0, 1, 1, 2, 2, 3], 2)]
+    chunks = [chunk for chunk in chunked([0, 0, 1, 1, 2, 2, 3], 2)]
     assert chunks[0] == [0, 0]
     assert chunks[1] == [1, 1]
     assert chunks[2] == [2, 2]
