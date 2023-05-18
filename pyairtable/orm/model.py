@@ -204,12 +204,12 @@ class Model(metaclass=abc.ABCMeta):
     def save(self) -> bool:
         """
         Saves or updates a model.
-        If instance has no 'id', it will be created, otherwise updatedself.
+        If instance has no 'id', it will be created, otherwise updated.
 
         Returns `True` if was created and `False` if it was updated
         """
         table = self.get_table()
-        record = self.to_record()
+        record = self.to_record(only_writable=True)
         fields = record["fields"]
 
         if not self.id:
@@ -244,31 +244,41 @@ class Model(metaclass=abc.ABCMeta):
         table = cls.get_table()
         return table.first(**kwargs)
 
-    def to_record(self) -> dict:
+    def to_record(self, only_writable: bool = False) -> dict:
         """
         Returns a dictionary object as an Airtable record.
         This method converts internal field values into values expected by Airtable.
         e.g. a ``datetime`` value from :class:``DateTimeField`` is converted into an
         ISO 8601 string
+
+        Args:
+            only_writable (``bool``): If ``True``, the result will exclude any
+                values which are associated with readonly fields.
         """
         map_ = self._field_name_descriptor_map()
-        fields = {k: map_[k].to_record_value(v) for k, v in self._fields.items()}
+        fields = {
+            field: map_[field].to_record_value(value)
+            for field, value in self._fields.items()
+            if not (map_[field].readonly and only_writable)
+        }
         return {"id": self.id, "createdTime": self.created_time, "fields": fields}
 
     @classmethod
     def from_record(cls: Type[T], record: dict) -> T:
         """Create instance from record dictionary"""
-        name_attr_map = cls._field_name_attribute_map()
         name_field_map = cls._field_name_descriptor_map()
         # Convert Column Names into model field names
-        kwargs = {
+        field_values = {
             # Use field's to_internal_value to cast into model fields
-            name_attr_map[k]: name_field_map[k].to_internal_value(v)
-            for k, v in record["fields"].items()
+            field: name_field_map[field].to_internal_value(value)
+            for (field, value) in record["fields"].items()
             # Silently proceed if Airtable returns fields we don't recognize
-            if k in name_attr_map
+            if field in name_field_map
         }
-        instance = cls(**kwargs)
+        # Since instance(**field_values) will perform validation and fail on
+        # any readonly fields, so instead we directly set instance._fields.
+        instance = cls()
+        instance._fields = field_values
         instance.created_time = record["createdTime"]
         instance.id = record["id"]
         return instance

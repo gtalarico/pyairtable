@@ -56,3 +56,19 @@ def fake_record(fields=None, id=None, **other_fields):
         "createdTime": datetime.datetime.now().isoformat() + "Z",
         "fields": {**(fields or {}), **other_fields},
     }
+
+
+def fake_user(value=None):
+    id = fake_id("usr", value)
+    return {"id": id, "email": f"{value or id}@example.com"}
+
+
+def fake_attachment(**kwargs):
+    return {
+        "id": fake_id("att"),
+        "url": "https://example.com/",
+        "filename": "foo.txt",
+        "size": 100,
+        "type": "text/plain",
+        **kwargs,
+    }
