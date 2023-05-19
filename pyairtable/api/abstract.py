@@ -2,7 +2,7 @@ import abc
 import posixpath
 import time
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, cast
 from urllib.parse import quote
 
 import requests
@@ -177,7 +177,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         **options: Any,
     ) -> RecordDict:
         record_url = self._get_record_url(base_id, table_name, record_id)
-        return self._request("get", record_url, options=options)
+        return cast(RecordDict, self._request("get", record_url, options=options))
 
     def _iterate(
         self, base_id: str, table_name: str, **options: Any
@@ -193,7 +193,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 fallback_post_url=f"{table_url}/listRecords",
                 options=options,
             )
-            records = data.get("records", [])
+            records = cast(List[RecordDict], data.get("records", []))
             yield records
             offset = data.get("offset")
             if not offset:
@@ -226,7 +226,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         return_fields_by_field_id: bool = False,
     ) -> RecordDict:
         table_url = self.get_table_url(base_id, table_name)
-        return self._request(
+        created = self._request(
             "post",
             table_url,
             json_data={
@@ -235,6 +235,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 "returnFieldsByFieldId": return_fields_by_field_id,
             },
         )
+        return cast(RecordDict, created)
 
     def _batch_create(
         self,
@@ -257,7 +258,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                     "returnFieldsByFieldId": return_fields_by_field_id,
                 },
             )
-            inserted_records += response["records"]
+            inserted_records += cast(List[RecordDict], response["records"])
             time.sleep(self.API_LIMIT)
         return inserted_records
 
@@ -271,13 +272,13 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         typecast: bool = False,
     ) -> RecordDict:
         record_url = self._get_record_url(base_id, table_name, record_id)
-
         method = "put" if replace else "patch"
-        return self._request(
+        updated = self._request(
             method,
             record_url,
             json_data={"fields": fields, "typecast": typecast},
         )
+        return cast(RecordDict, updated)
 
     def _batch_update(
         self,
@@ -302,7 +303,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                     "returnFieldsByFieldId": return_fields_by_field_id,
                 },
             )
-            updated_records += response["records"]
+            updated_records += cast(List[RecordDict], response["records"])
             time.sleep(self.API_LIMIT)
 
         return updated_records
@@ -346,7 +347,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                     "performUpsert": {"fieldsToMergeOn": key_fields},
                 },
             )
-            updated_records += response["records"]
+            updated_records += cast(List[RecordDict], response["records"])
             time.sleep(self.API_LIMIT)
 
         return updated_records
@@ -355,7 +356,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self, base_id: str, table_name: str, record_id: RecordId
     ) -> RecordDeletedDict:
         record_url = self._get_record_url(base_id, table_name, record_id)
-        return self._request("delete", record_url)
+        return cast(RecordDeletedDict, self._request("delete", record_url))
 
     def _batch_delete(
         self, base_id: str, table_name: str, record_ids: List[RecordId]
@@ -366,6 +367,6 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             delete_results = self._request(
                 "delete", table_url, params={"records[]": chunk}
             )
-            deleted_records.extend(delete_results["records"])
+            deleted_records += cast(List[RecordDeletedDict], delete_results["records"])
             time.sleep(self.API_LIMIT)
         return deleted_records
