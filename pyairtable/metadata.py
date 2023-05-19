@@ -1,9 +1,9 @@
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from pyairtable.api import Api, Base, Table
 
 
-def get_api_bases(api: Union[Api, Base]) -> dict:
+def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:
     """
     Return list of Bases from an Api or Base instance.
     For More Details `Metadata Api Documentation <https://airtable.com/api/meta>`_
@@ -29,10 +29,11 @@ def get_api_bases(api: Union[Api, Base]) -> dict:
             }
     """
     base_list_url = api.build_url("meta", "bases")
-    return api._request("get", base_list_url)
+    assert isinstance(response := api._request("get", base_list_url), dict)
+    return response
 
 
-def get_base_schema(base: Union[Base, Table]) -> dict:
+def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:
     """
     Returns Schema of a Base
     For More Details `Metadata Api Documentation <https://airtable.com/api/meta>`_
@@ -77,10 +78,11 @@ def get_base_schema(base: Union[Base, Table]) -> dict:
             }
     """
     base_schema_url = base.build_url("meta", "bases", base.base_id, "tables")
-    return base._request("get", base_schema_url)
+    assert isinstance(response := base._request("get", base_schema_url), dict)
+    return response
 
 
-def get_table_schema(table: Table) -> Optional[dict]:
+def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:
     """
     Returns the specific table schema record provided by base schema list
 
@@ -111,6 +113,7 @@ def get_table_schema(table: Table) -> Optional[dict]:
     """
     base_schema = get_base_schema(table)
     for table_record in base_schema.get("tables", {}):
+        assert isinstance(table_record, dict)
         if table.table_name == table_record["name"]:
             return table_record
     return None
