@@ -9,6 +9,7 @@ from pyairtable.api.types import (
     UpdateRecordDict,
 )
 
+from . import base
 from .abstract import ApiAbstract, TimeoutTuple
 from .retrying import Retry
 
@@ -61,12 +62,12 @@ class Table(ApiAbstract):
         """Returns the table URL"""
         return super().get_table_url(self.base_id, self.table_name)
 
-    def get_base(self) -> "Base":
+    def get_base(self) -> "base.Base":
         """
         Returns a new :class:`Base` instance using all shared
         attributes from :class:`Table`
         """
-        return Base(self.api_key, self.base_id, timeout=self.timeout)
+        return base.Base(self.api_key, self.base_id, timeout=self.timeout)
 
     def get_record_url(self, record_id: RecordId) -> str:
         """
@@ -219,6 +220,3 @@ class Table(ApiAbstract):
 
     def __repr__(self) -> str:
         return "<Table base_id={} table_name={}>".format(self.base_id, self.table_name)
-
-
-from pyairtable.api.base import Base  # noqa

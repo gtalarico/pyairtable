@@ -8,6 +8,7 @@ from pyairtable.api.types import (
     UpdateRecordDict,
 )
 
+from . import base, table
 from .abstract import ApiAbstract, TimeoutTuple
 from .retrying import Retry
 
@@ -52,12 +53,12 @@ class Api(ApiAbstract):
             endpoint_url=endpoint_url,
         )
 
-    def get_table(self, base_id: str, table_name: str) -> "Table":
+    def get_table(self, base_id: str, table_name: str) -> "table.Table":
         """
         Returns a new :class:`Table` instance using all shared
         attributes from :class:`Api`
         """
-        return Table(
+        return table.Table(
             self.api_key,
             base_id,
             table_name,
@@ -65,12 +66,12 @@ class Api(ApiAbstract):
             endpoint_url=self.endpoint_url,
         )
 
-    def get_base(self, base_id: str) -> "Base":
+    def get_base(self, base_id: str) -> "base.Base":
         """
         Returns a new :class:`Base` instance using all shared
         attributes from :class:`Api`
         """
-        return Base(
+        return base.Base(
             self.api_key, base_id, timeout=self.timeout, endpoint_url=self.endpoint_url
         )
 
@@ -448,7 +449,3 @@ class Api(ApiAbstract):
 
     def __repr__(self) -> str:
         return "<pyairtable.Api>"
-
-
-from pyairtable.api.base import Base  # noqa
-from pyairtable.api.table import Table  # noqa

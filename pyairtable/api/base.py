@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional
+from typing import Any, Iterator, List, Optional
 
 from pyairtable.api.types import (
     FieldName,
@@ -9,11 +9,9 @@ from pyairtable.api.types import (
     UpdateRecordDict,
 )
 
+from . import table
 from .abstract import ApiAbstract, TimeoutTuple
 from .retrying import Retry
-
-if TYPE_CHECKING:
-    from .table import Table  # noqa
 
 
 class Base(ApiAbstract):
@@ -55,12 +53,12 @@ class Base(ApiAbstract):
             endpoint_url=endpoint_url,
         )
 
-    def get_table(self, table_name: str) -> "Table":
+    def get_table(self, table_name: str) -> "table.Table":
         """
         Returns a new :class:`Table` instance using all shared
         attributes from :class:`Base`
         """
-        return Table(self.api_key, self.base_id, table_name, timeout=self.timeout)
+        return table.Table(self.api_key, self.base_id, table_name, timeout=self.timeout)
 
     def get_record_url(self, table_name: str, record_id: RecordId) -> str:
         """

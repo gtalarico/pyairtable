@@ -1,5 +1,5 @@
 """
-Types and type hinting utilities for pyAirtable.
+Types and TypedDicts for pyAirtable.
 """
 from typing import Dict, List, Literal, Optional, TypedDict, Union
 
@@ -8,76 +8,6 @@ from typing_extensions import Required, TypeAlias
 RecordId: TypeAlias = str
 Timestamp: TypeAlias = str
 FieldName: TypeAlias = str
-
-
-#: Represents the value of a field, excluding lists of values.
-RawFieldValue: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    "CollaboratorDict",
-    "BarcodeDict",
-    "ButtonDict",
-]
-
-
-#: Represents the value of a field on a particular record.
-FieldValue: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    "CollaboratorDict",
-    "BarcodeDict",
-    "ButtonDict",
-    List[str],
-    List[int],
-    List[float],
-    List[bool],
-    List["AttachmentDict"],
-    List["CollaboratorDict"],
-]
-
-
-#: A mapping of field names to values.
-Fields: TypeAlias = Dict[FieldName, FieldValue]
-
-
-class RecordDict(TypedDict):
-    """
-    Represents a record returned from the Airtable API.
-    """
-
-    id: RecordId
-    createdTime: Timestamp
-    fields: Fields
-
-
-class CreateRecordDict(TypedDict):
-    """
-    Represents the payload passed to the Airtable API to create a record.
-    """
-
-    fields: Fields
-
-
-class UpdateRecordDict(TypedDict):
-    """
-    Represents the payload passed to the Airtable API to create a record.
-    """
-
-    id: RecordId
-    fields: Fields
-
-
-class RecordDeletedDict(TypedDict):
-    """
-    Represents the payload passed to the Airtable API to create a record.
-    """
-
-    id: RecordId
-    deleted: Literal[True]
 
 
 class AttachmentDict(TypedDict, total=False):
@@ -178,3 +108,73 @@ class CollaboratorDict(TypedDict, total=False):
     email: str
     name: str
     profilePicUrl: str
+
+
+#: Represents the value of a field, excluding lists of values.
+RawFieldValue: TypeAlias = Union[
+    str,
+    int,
+    float,
+    bool,
+    CollaboratorDict,
+    BarcodeDict,
+    ButtonDict,
+]
+
+
+#: Represents the value of a field on a particular record.
+FieldValue: TypeAlias = Union[
+    str,
+    int,
+    float,
+    bool,
+    CollaboratorDict,
+    BarcodeDict,
+    ButtonDict,
+    List[str],
+    List[int],
+    List[float],
+    List[bool],
+    List[AttachmentDict],
+    List[CollaboratorDict],
+]
+
+
+#: A mapping of field names to values.
+Fields: TypeAlias = Dict[FieldName, FieldValue]
+
+
+class RecordDict(TypedDict):
+    """
+    Represents a record returned from the Airtable API.
+    """
+
+    id: RecordId
+    createdTime: Timestamp
+    fields: Fields
+
+
+class CreateRecordDict(TypedDict):
+    """
+    Represents the payload passed to the Airtable API to create a record.
+    """
+
+    fields: Fields
+
+
+class UpdateRecordDict(TypedDict):
+    """
+    Represents the payload passed to the Airtable API to create a record.
+    """
+
+    id: RecordId
+    fields: Fields
+
+
+class RecordDeletedDict(TypedDict):
+    """
+    Represents the payload passed to the Airtable API to create a record.
+    """
+
+    id: RecordId
+    deleted: Literal[True]
