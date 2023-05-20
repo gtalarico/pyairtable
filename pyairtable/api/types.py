@@ -1,10 +1,13 @@
 """
 Types and TypedDicts for pyAirtable.
 """
-from typing import Dict, List, Literal, Optional, TypedDict, Union
+from functools import lru_cache
+from typing import Any, Dict, List, Literal, Optional, Type, TypeVar, Union, cast
 
-from typing_extensions import Required, TypeAlias
+import pydantic
+from typing_extensions import Required, TypeAlias, TypedDict
 
+T = TypeVar("T")
 RecordId: TypeAlias = str
 Timestamp: TypeAlias = str
 FieldName: TypeAlias = str
@@ -58,7 +61,7 @@ class BarcodeDict(TypedDict, total=False):
     """
 
     type: str
-    text: str
+    text: Required[str]
 
 
 class ButtonDict(TypedDict):
@@ -178,3 +181,45 @@ class RecordDeletedDict(TypedDict):
 
     id: RecordId
     deleted: Literal[True]
+
+
+@lru_cache
+def _create_model_from_typeddict(cls: Type[T]) -> Type[pydantic.BaseModel]:
+    """
+    Creates a pydantic model from a TypedDict to use as a validator.
+    Memoizes the result so we don't have to call this more than once per class.
+    """
+    return pydantic.create_model_from_typeddict(cls)
+
+
+def assert_typed_dict(cls: Type[T], obj: Any) -> T:
+    """
+    Raises a TypeError if the given object is not an instance of the given TypedDict.
+
+    Args:
+        cls: The TypedDict class.
+        obj: The object that should be a TypedDict.
+    """
+    if not isinstance(obj, dict):
+        raise TypeError(f"expected dict, got {type(obj)}")
+    # mypy complains cls isn't Hashable, but it is; see https://github.com/python/mypy/issues/2412
+    model = _create_model_from_typeddict(cls)  # type: ignore
+    try:
+        model(**obj)
+    except pydantic.ValidationError:
+        raise TypeError(f"dict with keys {sorted(obj)} is not {cls.__name__}")
+    return cast(T, obj)
+
+
+def assert_typed_dicts(cls: Type[T], objects: Any) -> List[T]:
+    """
+    Raises a TypeError if the given object is not a list of dicts where
+    each is an instance of the given TypedDict.
+
+    Args:
+        cls: The TypedDict class.
+        objects: The object that should be a list of TypedDicts.
+    """
+    if not isinstance(objects, list):
+        raise TypeError(f"expected list, got {type(objects)}")
+    return [assert_typed_dict(cls, obj) for obj in objects]

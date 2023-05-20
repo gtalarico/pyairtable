@@ -2,7 +2,7 @@ import abc
 import posixpath
 import time
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 from urllib.parse import quote
 
 import requests
@@ -16,6 +16,8 @@ from pyairtable.api.types import (
     RecordDict,
     RecordId,
     UpdateRecordDict,
+    assert_typed_dict,
+    assert_typed_dicts,
 )
 from pyairtable.utils import chunked
 
@@ -177,7 +179,9 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         **options: Any,
     ) -> RecordDict:
         record_url = self._get_record_url(base_id, table_name, record_id)
-        return cast(RecordDict, self._request("get", record_url, options=options))
+        return assert_typed_dict(
+            RecordDict, self._request("get", record_url, options=options)
+        )
 
     def _iterate(
         self, base_id: str, table_name: str, **options: Any
@@ -193,7 +197,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 fallback_post_url=f"{table_url}/listRecords",
                 options=options,
             )
-            records = cast(List[RecordDict], data.get("records", []))
+            records = assert_typed_dicts(RecordDict, data.get("records", []))
             yield records
             offset = data.get("offset")
             if not offset:
@@ -212,7 +216,6 @@ class ApiAbstract(metaclass=abc.ABCMeta):
 
     def _all(self, base_id: str, table_name: str, **options: Any) -> List[RecordDict]:
         all_records = []
-
         for records in self._iterate(base_id, table_name, **options):
             all_records.extend(records)
         return all_records
@@ -235,7 +238,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                 "returnFieldsByFieldId": return_fields_by_field_id,
             },
         )
-        return cast(RecordDict, created)
+        return assert_typed_dict(RecordDict, created)
 
     def _batch_create(
         self,
@@ -258,7 +261,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                     "returnFieldsByFieldId": return_fields_by_field_id,
                 },
             )
-            inserted_records += cast(List[RecordDict], response["records"])
+            inserted_records += assert_typed_dicts(RecordDict, response["records"])
             time.sleep(self.API_LIMIT)
         return inserted_records
 
@@ -278,7 +281,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             record_url,
             json_data={"fields": fields, "typecast": typecast},
         )
-        return cast(RecordDict, updated)
+        return assert_typed_dict(RecordDict, updated)
 
     def _batch_update(
         self,
@@ -303,7 +306,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                     "returnFieldsByFieldId": return_fields_by_field_id,
                 },
             )
-            updated_records += cast(List[RecordDict], response["records"])
+            updated_records += assert_typed_dicts(RecordDict, response["records"])
             time.sleep(self.API_LIMIT)
 
         return updated_records
@@ -347,7 +350,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
                     "performUpsert": {"fieldsToMergeOn": key_fields},
                 },
             )
-            updated_records += cast(List[RecordDict], response["records"])
+            updated_records += assert_typed_dicts(RecordDict, response["records"])
             time.sleep(self.API_LIMIT)
 
         return updated_records
@@ -356,7 +359,7 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         self, base_id: str, table_name: str, record_id: RecordId
     ) -> RecordDeletedDict:
         record_url = self._get_record_url(base_id, table_name, record_id)
-        return cast(RecordDeletedDict, self._request("delete", record_url))
+        return assert_typed_dict(RecordDeletedDict, self._request("delete", record_url))
 
     def _batch_delete(
         self, base_id: str, table_name: str, record_ids: List[RecordId]
@@ -367,6 +370,8 @@ class ApiAbstract(metaclass=abc.ABCMeta):
             delete_results = self._request(
                 "delete", table_url, params={"records[]": chunk}
             )
-            deleted_records += cast(List[RecordDeletedDict], delete_results["records"])
+            deleted_records += assert_typed_dicts(
+                RecordDeletedDict, delete_results["records"]
+            )
             time.sleep(self.API_LIMIT)
         return deleted_records
