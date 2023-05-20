@@ -52,7 +52,7 @@ def test_orm_missing_values(field_type, default_value):
 
 # Mapping from types to a test value for that type.
 TYPE_VALIDATION_TEST_VALUES = {
-    **{t: t() for t in (str, bool, list, dict, set, tuple)},
+    **{t: t() for t in (str, bool, list, dict)},
     int: 1,  # cannot use int() because RatingField requires value >= 1
     float: 1.0,  # cannot use float() because RatingField requires value >= 1
     datetime.date: datetime.date.today(),
@@ -75,17 +75,17 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.PhoneNumberField, str),
         (f.DurationField, datetime.timedelta),
         (f.RatingField, int),
-        (f.ListField, (list, tuple, set)),
+        (f.ListField, list),
         (f.UrlField, str),
-        (f.LookupField, (list, tuple, set)),
-        (f.MultipleSelectField, (list, tuple, set)),
+        (f.LookupField, list),
+        (f.MultipleSelectField, list),
         (f.PercentField, (int, float)),
         (f.DateField, (datetime.date, datetime.datetime)),
         (f.FloatField, float),
         (f.CollaboratorField, dict),
         (f.SelectField, str),
         (f.EmailField, str),
-        (f.MultipleCollaboratorsField, (list, tuple, set)),
+        (f.MultipleCollaboratorsField, list),
         (f.CurrencyField, (int, float)),
     ],
     ids=operator.itemgetter(0),
@@ -266,30 +266,6 @@ def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
         test_names = sorted(fn.__name__ for fn in test_fns)
         fail_names = "\n".join(f"- {name}" for name in missing)
         pytest.fail(f"Some fields were not tested by {test_names}:\n{fail_names}")
-
-
-@pytest.mark.parametrize(
-    argnames="values",
-    argvalues=[
-        (1, 2, 3, 4),  # tuple
-        {1, 2, 3, 4},  # set
-        (n + 1 for n in range(4)),  # generator
-    ],
-    ids=type,
-)
-def test_list_field_assignment(values):
-    """
-    Test that we can assign any sort of iterable to a list field
-    and it will result in a list being stored internally.
-    """
-
-    class T:
-        items = f.ListField("Items")
-
-    t = T()
-    t.items = values
-    assert isinstance(t.items, list)
-    assert sorted(t.items) == [1, 2, 3, 4]
 
 
 def test_list_field_with_string():

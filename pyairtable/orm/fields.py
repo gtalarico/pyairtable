@@ -49,13 +49,11 @@ In other words, you can transverse related records through their ``Link Fields``
 """
 import abc
 from datetime import date, datetime, timedelta
-from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     Generic,
-    Iterable,
     List,
     Optional,
     Type,
@@ -407,15 +405,12 @@ class ListField(Generic[T], Field[List[RecordId], List[T]]):
             setattr(model, self._attribute_name, value)
         return value
 
-    def __set__(self, instance: "Model", value: Optional[Iterable[T]]) -> None:
-        if isinstance(value, (set, tuple, GeneratorType)):
-            value = list(value)
-        elif value is not None and not isinstance(value, list):
-            raise TypeError(type(value))
-        super().__set__(instance, value)
-
     def valid_or_raise(self, value: Any) -> None:
         super().valid_or_raise(value)
+        if value is None:
+            value = []
+        if not isinstance(value, list):
+            raise TypeError(type(value))
         if self.linked_model:
             for obj in value:
                 if not isinstance(obj, self.linked_model):
