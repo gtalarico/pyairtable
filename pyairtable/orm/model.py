@@ -61,13 +61,12 @@ True
 
 """
 import abc
-from typing import List, Type, TypeVar
+from typing import List
+
+from typing_extensions import Self
 
 from pyairtable import Table
-
-from .fields import Field
-
-T = TypeVar("T", bound="Model")
+from pyairtable.orm.fields import Field
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -233,16 +232,22 @@ class Model(metaclass=abc.ABCMeta):
         return result["deleted"]
 
     @classmethod
-    def all(cls, **kwargs) -> List[T]:
-        """Returns all records for this model. See :meth:`~pyairtable.api.Api.all`"""
+    def all(cls, **kwargs) -> List[Self]:
+        """
+        Returns all records for this model. For the full list of
+        keyword arguments, see :meth:`~pyairtable.api.Api.all`
+        """
         table = cls.get_table()
-        return table.all(**kwargs)
+        return [cls.from_record(record) for record in table.all(**kwargs)]
 
     @classmethod
-    def first(cls, **kwargs) -> List[T]:
-        """Returns first record for this model. See :meth:`~pyairtable.api.Api.first`"""
+    def first(cls, **kwargs) -> Self:
+        """
+        Returns the first record for this model. For the full list of
+        keyword arguments, see :meth:`~pyairtable.api.Api.all`
+        """
         table = cls.get_table()
-        return table.first(**kwargs)
+        return cls.from_record(table.first(**kwargs))
 
     def to_record(self, only_writable: bool = False) -> dict:
         """
@@ -264,7 +269,7 @@ class Model(metaclass=abc.ABCMeta):
         return {"id": self.id, "createdTime": self.created_time, "fields": fields}
 
     @classmethod
-    def from_record(cls: Type[T], record: dict) -> T:
+    def from_record(cls, record: dict) -> Self:
         """Create instance from record dictionary"""
         name_field_map = cls._field_name_descriptor_map()
         # Convert Column Names into model field names
@@ -284,7 +289,7 @@ class Model(metaclass=abc.ABCMeta):
         return instance
 
     @classmethod
-    def from_id(cls: Type[T], record_id: str, fetch=True) -> T:
+    def from_id(cls, record_id: str, fetch=True) -> Self:
         """
         Create an instance from a `record_id`
 
