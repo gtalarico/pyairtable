@@ -37,18 +37,13 @@ def api(constants):
 
 
 @pytest.fixture()
-def api_with_endpoint_url(constants):
-    return Api(constants["API_KEY"], endpoint_url="https://api.example.com")
+def base(api, constants):
+    return Base(api, constants["BASE_ID"])
 
 
 @pytest.fixture()
-def base(constants):
-    return Base(constants["API_KEY"], constants["BASE_ID"])
-
-
-@pytest.fixture()
-def table(constants):
-    return Table(constants["API_KEY"], constants["BASE_ID"], constants["TABLE_NAME"])
+def table(base, constants):
+    return Table(base, constants["TABLE_NAME"])
 
 
 @pytest.fixture

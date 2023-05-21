@@ -60,10 +60,13 @@ Finally, you can use :meth:`~pyairtable.orm.model.Model.delete` to delete the re
 True
 """
 import abc
+from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self as SelfType
 
+from pyairtable.api.api import Api
+from pyairtable.api.base import Base
 from pyairtable.api.table import Table
 from pyairtable.api.types import FieldName, RecordDict, RecordId
 from pyairtable.orm.fields import AnyField, Field
@@ -153,6 +156,8 @@ class Model(metaclass=abc.ABCMeta):
         return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
 
     def __init__(self, **fields: Any):
+        self._typecast = bool(self._get_meta("typecast", default=True))
+
         # To Store Fields
         self._fields = {}
 
@@ -161,8 +166,6 @@ class Model(metaclass=abc.ABCMeta):
             if key not in self._attribute_descriptor_map():
                 raise AttributeError(key)
             setattr(self, key, value)
-
-        self.typecast = bool(self._get_meta("typecast", default=True))
 
     @classmethod
     def _get_meta(cls, name: str, default: Any = None, required: bool = False) -> Any:
@@ -192,16 +195,22 @@ class Model(metaclass=abc.ABCMeta):
             )
 
     @classmethod
+    @lru_cache
+    def get_api(cls) -> Api:
+        return Api(
+            api_key=cls._get_meta("api_key"),
+            timeout=cls._get_meta("timeout"),
+        )
+
+    @classmethod
+    @lru_cache
+    def get_base(cls) -> Base:
+        return cls.get_api().base(cls._get_meta("base_id"))
+
+    @classmethod
+    @lru_cache
     def get_table(cls) -> Table:
-        """Return Airtable :class:`~pyairtable.api.Table` class instance"""
-        if not hasattr(cls, "_table"):
-            cls._table = Table(
-                cls._get_meta("api_key"),
-                cls._get_meta("base_id"),
-                cls._get_meta("table_name"),
-                timeout=cls._get_meta("timeout"),
-            )
-        return cls._table
+        return cls.get_base().table(cls._get_meta("table_name"))
 
     def exists(self) -> bool:
         """Returns boolean indicating if instance exists (has 'id' attribute)"""
@@ -219,10 +228,10 @@ class Model(metaclass=abc.ABCMeta):
         fields = record["fields"]
 
         if not self.id:
-            record = table.create(fields, typecast=self.typecast)
+            record = table.create(fields, typecast=self._typecast)
             did_create = True
         else:
-            record = table.update(self.id, fields, typecast=self.typecast)
+            record = table.update(self.id, fields, typecast=self._typecast)
             did_create = False
 
         self.id = record["id"]

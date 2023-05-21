@@ -151,7 +151,7 @@ def mock_endpoint(mock_endpoint_server):
 @pytest.fixture
 def table_with_retry_strategy(constants, mock_endpoint_server):
     def _table_with_retry(retry_strategy):
-        return Table(
+        return Table.from_ids(
             constants["API_KEY"],
             constants["BASE_ID"],
             constants["TABLE_NAME"],

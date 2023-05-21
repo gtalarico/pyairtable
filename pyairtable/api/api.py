@@ -1,32 +1,37 @@
-from typing import Any, Iterator, List, Optional
+import posixpath
+import time
+from functools import lru_cache
+from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
 
-from pyairtable.api.types import (
-    Fields,
-    RecordDeletedDict,
-    RecordDict,
-    RecordId,
-    UpdateRecordDict,
-)
+import requests
+from requests.sessions import Session
+from typing_extensions import TypeAlias
 
-from . import base, table
-from .abstract import ApiAbstract, TimeoutTuple
-from .retrying import Retry
+import pyairtable.api.base
+import pyairtable.api.table
+from pyairtable.api.params import options_to_json_and_params, options_to_params
+from pyairtable.utils import chunked
+
+from .retrying import Retry, _RetryingSession
+
+T = TypeVar("T")
+TimeoutTuple: TypeAlias = Tuple[int, int]
 
 
-class Api(ApiAbstract):
+class Api:
     """
-    Represents an Airtable Api.
-
-    The Api Key or Authorization Token is provided on init and ``base_id`` and ``table_id``
-    can be provided on each method call.
-
-    If you are only operating on one Table, or one Base, consider using
-    :class:`Base` or :class:`Table`.
+    Represents an Airtable API. Implements basic URL construction,
+    session and request management, and retrying logic.
 
     Usage:
         >>> api = Api('auth_token')
         >>> api.all('base_id', 'table_name')
     """
+
+    VERSION = "v0"
+    API_LIMIT = 1.0 / 5  # 5 per second
+    MAX_RECORDS_PER_REQUEST = 10
+    MAX_URL_LENGTH = 16000
 
     def __init__(
         self,
@@ -37,7 +42,6 @@ class Api(ApiAbstract):
         endpoint_url: str = "https://api.airtable.com",
     ):
         """
-
         Args:
             api_key: |arg_api_key|
 
@@ -46,376 +50,136 @@ class Api(ApiAbstract):
             retry_strategy: |arg_retry_strategy|
             endpoint_url: |arg_endpoint_url|
         """
-        super().__init__(
-            api_key,
-            timeout=timeout,
-            retry_strategy=retry_strategy,
-            endpoint_url=endpoint_url,
-        )
+        if not retry_strategy:
+            self.session = Session()
+        else:
+            self.session = _RetryingSession(retry_strategy)
 
-    def get_table(self, base_id: str, table_name: str) -> "table.Table":
-        """
-        Returns a new :class:`Table` instance using all shared
-        attributes from :class:`Api`
-        """
-        return table.Table(
-            self.api_key,
-            base_id,
-            table_name,
-            timeout=self.timeout,
-            endpoint_url=self.endpoint_url,
-        )
+        self.endpoint_url = endpoint_url
+        self.timeout = timeout
+        self.api_key = api_key
 
-    def get_base(self, base_id: str) -> "base.Base":
-        """
-        Returns a new :class:`Base` instance using all shared
-        attributes from :class:`Api`
-        """
-        return base.Base(
-            self.api_key, base_id, timeout=self.timeout, endpoint_url=self.endpoint_url
-        )
+    @property
+    def api_key(self) -> str:
+        """Returns the Airtable API Key"""
+        return self._api_key
 
-    def get_record_url(self, base_id: str, table_name: str, record_id: RecordId) -> str:
-        """
-        Returns a url for the provided record
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-
-        """
-        return super()._get_record_url(base_id, table_name, record_id)
-
-    def get(
-        self, base_id: str, table_name: str, record_id: RecordId, **options: Any
-    ) -> RecordDict:
-        """
-        Retrieves a record by its id
-
-        >>> record = api.get('base_id', 'table_name', 'recwPQIfs4wKPyc9D')
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            record_id: |arg_record_id|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-        """
-        return super()._get_record(base_id, table_name, record_id, **options)
-
-    def iterate(
-        self, base_id: str, table_name: str, **options: Any
-    ) -> Iterator[List[RecordDict]]:
-        """
-        Record Retriever Iterator
-
-        Returns iterator with lists in batches according to pageSize.
-        To get all records at once use :meth:`all`
-
-        >>> for page in api.iterate('base_id', 'table_name'):
-        ...     for record in page:
-        ...         print(record)
-        {"id": ... }
-        ...
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-
-        Keyword Args:
-            view: |kwarg_view|
-            page_size: |kwarg_page_size|
-            max_records: |kwarg_max_records|
-            fields: |kwarg_fields|
-            sort: |kwarg_sort|
-            formula: |kwarg_formula|
-            cell_format: |kwarg_cell_format|
-            user_locale: |kwarg_user_locale|
-            time_zone: |kwarg_time_zone|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-
-        Returns:
-            Iterator of pages of records, no greater than ``page_size``
-        """
-        gen = super()._iterate(base_id, table_name, **options)
-        for i in gen:
-            yield i
-
-    def first(
-        self, base_id: str, table_name: str, **options: Any
-    ) -> Optional[RecordDict]:
-        """
-        Retrieves the first found record or ``None`` if no records are returned.
-
-        This is similar to :meth:`~pyairtable.api.api.Api.all`, except it
-        it sets ``page_size`` and ``max_records`` to ``1``.
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-
-        Keyword Args:
-            view: |kwarg_view|
-            fields: |kwarg_fields|
-            sort: |kwarg_sort|
-            formula: |kwarg_formula|
-            cell_format: |kwarg_cell_format|
-            user_locale: |kwarg_user_locale|
-            time_zone: |kwarg_time_zone|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-        """
-        return super()._first(base_id, table_name, **options)
-
-    def all(self, base_id: str, table_name: str, **options: Any) -> List[RecordDict]:
-        """
-        Retrieves all records repetitively and returns a single list.
-
-        >>> api.all('base_id', 'table_name', view='MyView', fields=['ColA', '-ColB'])
-        [{'fields': ... }, ...]
-        >>> api.all('base_id', 'table_name', max_records=50)
-        [{'fields': ... }, ...]
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-
-        Keyword Args:
-            view: |kwarg_view|
-            page_size: |kwarg_page_size|
-            max_records: |kwarg_max_records|
-            fields: |kwarg_fields|
-            sort: |kwarg_sort|
-            formula: |kwarg_formula|
-            cell_format: |kwarg_cell_format|
-            user_locale: |kwarg_user_locale|
-            time_zone: |kwarg_time_zone|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-
-        Returns:
-            List of records retrieved.
-
-        >>> records = all(max_records=3, view='All')
-
-        """
-        return super()._all(base_id, table_name, **options)
-
-    def create(
-        self,
-        base_id: str,
-        table_name: str,
-        fields: Fields,
-        typecast: bool = False,
-        return_fields_by_field_id: bool = False,
-    ) -> RecordDict:
-        """
-        Creates a new record
-
-        >>> record = {'Name': 'John'}
-        >>> api.create('base_id', 'table_name', record)
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            fields: Fields to insert.
-            typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-
-        Returns:
-            The created record.
-        """
-        return super()._create(
-            base_id,
-            table_name,
-            fields,
-            typecast=typecast,
-            return_fields_by_field_id=return_fields_by_field_id,
-        )
-
-    def batch_create(
-        self,
-        base_id: str,
-        table_name: str,
-        records: List[Fields],
-        typecast: bool = False,
-        return_fields_by_field_id: bool = False,
-    ) -> List[RecordDict]:
-        """
-        Breaks records into chunks of 10 and inserts them in batches.
-        Follows the set API rate.
-        To change the rate limit you can change ``API_LIMIT = 0.2``
-        (5 per second)
-
-        >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
-        >>> api.batch_create('base_id', 'table_name', records)
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            records: List of dicts representing records to be created.
-            typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-
-        Returns:
-            List of created records.
-        """
-        return super()._batch_create(
-            base_id,
-            table_name,
-            records,
-            typecast=typecast,
-            return_fields_by_field_id=return_fields_by_field_id,
-        )
-
-    def update(
-        self,
-        base_id: str,
-        table_name: str,
-        record_id: RecordId,
-        fields: Fields,
-        replace: bool = False,
-        typecast: bool = False,
-    ) -> RecordDict:
-        """
-        Updates a record by its record id.
-        Only Fields passed are updated, the rest are left as is.
-
-        >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21})
-        {id:'recwPQIfs4wKPyc9D', fields': {"First Name": "John", "Age": 21}}
-        >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21}, replace=True)
-        {id:'recwPQIfs4wKPyc9D', fields': {"Age": 21}}
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            record_id: |arg_record_id|
-            fields: Fields to update. Must be a dict with column names or IDs as keys.
-            replace: |kwarg_replace|
-            typecast: |kwarg_typecast|
-
-        Returns:
-            The updated record.
-        """
-
-        return super()._update(
-            base_id,
-            table_name,
-            record_id,
-            fields,
-            replace=replace,
-            typecast=typecast,
-        )
-
-    def batch_update(
-        self,
-        base_id: str,
-        table_name: str,
-        records: List[UpdateRecordDict],
-        replace: bool = False,
-        typecast: bool = False,
-        return_fields_by_field_id: bool = False,
-    ) -> List[RecordDict]:
-        """
-        Updates a records by their record id's in batch.
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            records: List of dicts with ``"id"`` and ``"fields"`` as keys.
-            replace: |kwarg_replace|
-            typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-
-        Returns:
-            List of updated records.
-        """
-        return super()._batch_update(
-            base_id,
-            table_name,
-            records,
-            replace=replace,
-            typecast=typecast,
-            return_fields_by_field_id=return_fields_by_field_id,
-        )
-
-    def batch_upsert(
-        self,
-        base_id: str,
-        table_name: str,
-        records: List[UpdateRecordDict],
-        key_fields: List[str],
-        replace: bool = False,
-        typecast: bool = False,
-        return_fields_by_field_id: bool = False,
-    ) -> List[RecordDict]:
-        """
-        Updates or creates records in batches, either using ``id`` (if given) or using a set of
-        fields (``key_fields``) to look for matches. For more information on how this operation
-        behaves, see Airtable's API documentation for `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`_.
-
-        .. versionadded:: 1.5.0
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            records: List of dicts with ``"id"`` and ``"fields"`` as keys.
-            key_fields: List of field names that Airtable should use to match
-                records in the input with existing records on the server.
-            replace: |kwarg_replace|
-            typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-
-        Returns:
-            List of updated records.
-        """
-        return super()._batch_upsert(
-            base_id=base_id,
-            table_name=table_name,
-            records=records,
-            key_fields=key_fields,
-            replace=replace,
-            typecast=typecast,
-            return_fields_by_field_id=return_fields_by_field_id,
-        )
-
-    def delete(
-        self, base_id: str, table_name: str, record_id: RecordId
-    ) -> RecordDeletedDict:
-        """
-        Deletes a record by its id
-
-        >>> record = api.match('base_id', 'table_name', 'Employee Id', 'DD13332454')
-        >>> api.delete('base_id', 'table_name', record['id'])
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            record_id: |arg_record_id|
-
-        Returns:
-            Confirmation of the deleted record.
-        """
-        return super()._delete(base_id, table_name, record_id)
-
-    def batch_delete(
-        self, base_id: str, table_name: str, record_ids: List[RecordId]
-    ) -> List[RecordDeletedDict]:
-        """
-        Breaks records into batches of 10 and deletes in batches, following set
-        API Rate Limit (5/sec).
-        To change the rate limit set value of ``API_LIMIT`` to
-        the time in seconds it should sleep before calling the function again.
-
-        >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
-        >>> api.batch_delete('base_id', 'table_name', records_ids)
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            record_ids: Record IDs to delete
-
-        Returns:
-            Confirmation of each record deleted.
-        """
-        return super()._batch_delete(base_id, table_name, record_ids)
+    @api_key.setter
+    def api_key(self, value: str) -> None:
+        self.session.headers.update({"Authorization": "Bearer {}".format(value)})
+        self._api_key = value
 
     def __repr__(self) -> str:
         return "<pyairtable.Api>"
+
+    def build_url(self, *components: str) -> str:
+        """
+        Returns a URL to the Airtable API endpoint with the given URL components,
+        including the API version number.
+        """
+        return posixpath.join(self.endpoint_url, self.VERSION, *components)
+
+    @lru_cache
+    def base(self, base_id: str) -> "pyairtable.api.base.Base":
+        """
+        Returns a new :class:`Base` instance that uses this instance of :class:`Api`.
+        """
+        return pyairtable.api.base.Base(self, base_id)
+
+    def table(self, base_id: str, table_name: str) -> "pyairtable.api.table.Table":
+        """
+        Returns a new :class:`Table` instance that uses this instance of :class:`Api`.
+        """
+        return self.base(base_id).table(table_name)
+
+    def request(
+        self,
+        method: str,
+        url: str,
+        fallback: Optional[Tuple[str, str]] = None,
+        options: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Makes a request to the Airtable API, optionally converting a GET to a POST
+        if the URL exceeds the API's maximum URL length.
+
+        See https://support.airtable.com/docs/enforcement-of-url-length-limit-for-web-api-requests
+
+        Args:
+            method: HTTP method to use.
+            url: The URL we're attempting to call.
+
+        Keyword Args:
+            fallback: The method and URL to use if we have to convert a GET to a POST.
+            options: Airtable-specific query params to use while fetching records.
+            params: Additional query params to append to the URL as-is.
+            json: The JSON payload for a POST/PUT/PATCH/DELETE request.
+        """
+        # Convert Airtable-specific options to query params, but give priority to query params
+        # that are explicitly passed via `params=`. This is to preserve backwards-compatibility for
+        # any library users who might be calling `self._request` directly.
+        request_params = {
+            **options_to_params(options or {}),
+            **(params or {}),
+        }
+
+        # Build a requests.PreparedRequest so we can examine how long the URL is.
+        prepared = self.session.prepare_request(
+            requests.Request(
+                method,
+                url=url,
+                params=request_params,
+                json=json,
+            )
+        )
+
+        # If our URL is too long, move *most* (not all) query params into a POST body.
+        if (
+            fallback
+            and method.upper() == "GET"
+            and len(str(prepared.url)) >= self.MAX_URL_LENGTH
+        ):
+            json, spare_params = options_to_json_and_params(options or {})
+            return self.request(
+                method=fallback[0],
+                url=fallback[1],
+                params={**spare_params, **(params or {})},
+                json=json,
+            )
+
+        response = self.session.send(prepared, timeout=self.timeout)
+        return self._process_response(response)
+
+    def _process_response(self, response: requests.Response) -> Any:
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            err_msg = str(exc)
+
+            # Attempt to get Error message from response, Issue #16
+            try:
+                error_dict = response.json()
+            except ValueError:
+                pass
+            else:
+                if "error" in error_dict:
+                    err_msg += " [Error: {}]".format(error_dict["error"])
+            exc.args = (*exc.args, err_msg)
+            raise exc
+        else:
+            return response.json()
+
+    def chunked(self, iterable: Sequence[T]) -> Iterator[Sequence[T]]:
+        """
+        Iterates through chunks of the given sequence that are equal in size
+        to the maximum number of records per request allowed by the API.
+        """
+        return chunked(iterable, self.MAX_RECORDS_PER_REQUEST)
+
+    def wait(self) -> None:
+        """
+        Sleep for 1/N seconds, where N is the maximum RPS allowed by the Airtable API.
+        """
+        time.sleep(self.API_LIMIT)

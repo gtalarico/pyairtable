@@ -28,8 +28,9 @@ def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:
             ]
         }
     """
+    api = api.api if isinstance(api, Base) else api
     base_list_url = api.build_url("meta", "bases")
-    assert isinstance(response := api._request("get", base_list_url), dict)
+    assert isinstance(response := api.request("get", base_list_url), dict)
     return response
 
 
@@ -77,8 +78,9 @@ def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:
             ]
         }
     """
-    base_schema_url = base.build_url("meta", "bases", base.base_id, "tables")
-    assert isinstance(response := base._request("get", base_schema_url), dict)
+    base = base.base if isinstance(base, Table) else base
+    base_schema_url = base.api.build_url("meta", "bases", base.id, "tables")
+    assert isinstance(response := base.api.request("get", base_schema_url), dict)
     return response
 
 
@@ -114,6 +116,6 @@ def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:
     base_schema = get_base_schema(table)
     for table_record in base_schema.get("tables", {}):
         assert isinstance(table_record, dict)
-        if table.table_name == table_record["name"]:
+        if table.name == table_record["name"]:
             return table_record
     return None
