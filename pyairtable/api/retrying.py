@@ -18,17 +18,17 @@ def retry_strategy(
 ) -> Retry:
     """
     Creates a ``Retry`` instance with optional default values.
-    See `urllib3 Retry docs <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html>`_
+    See `urllib3 Retry docs <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html>`__
     for more details.
 
     .. versionadded:: 1.4.0
 
     Keyword Args:
-        status_forcelist (``Tuple[int]``): list status code which should be retried.
-        backoff_factor (``float``): backoff factor.
+        status_forcelist (``Tuple[int, ...]``): list of status codes which should be retried.
+        backoff_factor (``int`` or ``float``): backoff factor.
         total (``int``): max. number of retries. Note ``0`` means no retries,
-            while``1`` will exececute a total of two requests (1 + 1 retry).
-        **kwargs: All parameters supported by ``urllib3.util.Retry`` can be used.
+            while ``1`` will execute a total of two requests (1 + 1 retry).
+        **kwargs: Any valid parameter to `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`__.
     """
     return Retry(
         total=total,

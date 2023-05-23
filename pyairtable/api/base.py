@@ -41,8 +41,9 @@ class Base(ApiAbstract):
             base_id: |arg_base_id|
 
         Keyword Args:
-            timeout (``Tuple``): |arg_timeout|
-            retry_strategy (``Retry``): |arg_retry_strategy|
+            timeout: |arg_timeout|
+            retry_strategy: |arg_retry_strategy|
+            endpoint_url: |arg_endpoint_url|
         """
 
         self.base_id = base_id

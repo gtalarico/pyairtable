@@ -33,7 +33,7 @@ False
 >>> contact.exists()
 True
 >>> contact.id
-rec123asa23
+'rec123asa23'
 
 
 You can read and modify attributes. If record already exists,
@@ -44,13 +44,13 @@ You can read and modify attributes. If record already exists,
 >>> assert contact.is_registered is True
 >>> contact.to_record()
 {
-    "id": recS6qSLw0OCA6Xul",
+    "id": "recS6qSLw0OCA6Xul",
     "createdTime": "2021-07-14T06:42:37.000Z",
     "fields": {
         "First Name": "Mike",
         "Last Name": "McDonalds",
         "Email": "mike@mcd.com",
-        "Resgistered": True
+        "Registered": True
     }
 }
 
@@ -232,7 +232,7 @@ class Model(metaclass=abc.ABCMeta):
         return did_create
 
     def delete(self) -> bool:
-        """Deleted record. Must have 'id' field"""
+        """Deletes record. Must have 'id' field"""
         if not self.id:
             raise ValueError("cannot be deleted because it does not have id")
         table = self.get_table()
@@ -268,7 +268,7 @@ class Model(metaclass=abc.ABCMeta):
         ISO 8601 string
 
         Args:
-            only_writable (``bool``): If ``True``, the result will exclude any
+            only_writable: If ``True``, the result will exclude any
                 values which are associated with readonly fields.
         """
         map_ = self._field_name_descriptor_map()
@@ -306,14 +306,9 @@ class Model(metaclass=abc.ABCMeta):
 
         Args:
             record_id: |arg_record_id|
-
-        Keyward Args:
             fetch: If `True`, record will be fetched and fields will be
                 updated. If `False`, a new instance is created with the provided `id`,
                 but field values are unset. Default is `True`.
-
-        Returns:
-            (``Model``): Instance of model
         """
         if fetch:
             table = cls.get_table()

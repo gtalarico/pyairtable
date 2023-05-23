@@ -19,7 +19,7 @@ def fake_id(type: str = "rec", value: Any = None) -> str:
     """
     Generates a fake Airtable-style ID.
 
-    Keyword Args:
+    Args:
         type: the object type prefix, defaults to "rec"
         value: any value to use as the ID, defaults to random letters and digits
 

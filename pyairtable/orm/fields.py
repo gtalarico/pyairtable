@@ -29,9 +29,8 @@ Link Fields
 -----------
 
 In addition to standard data type fields, the :class:`LinkField` class
-offers a special behaviour that can fetch linked records.
-
-In other words, you can transverse related records through their ``Link Fields``:
+offers a special behaviour that can fetch linked records, so that you can
+traverse between related records.
 
 >>> from pyairtable.orm import Model, fields
 >>> class Company(Model):
@@ -56,6 +55,7 @@ from typing import (
     Generic,
     List,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -76,11 +76,10 @@ from pyairtable.api.types import (
 )
 
 if TYPE_CHECKING:
-    from builtins import _ClassInfo
-
     from pyairtable.orm import Model  # noqa
 
 
+_ClassInfo: TypeAlias = Union[type, Tuple["_ClassInfo", ...]]
 T = TypeVar("T")
 T_Linked = TypeVar("T_Linked", bound="Model")
 T_API = TypeVar("T_API")  # type used to exchange values w/ Airtable API
@@ -102,7 +101,7 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
     """
 
     #: Types that are allowed to be passed to this field.
-    valid_types: ClassVar["_ClassInfo"] = ()
+    valid_types: ClassVar[_ClassInfo] = ()
 
     #: Whether to allow modification of the value in this field.
     readonly: bool = False
@@ -116,8 +115,6 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
         """
         Args:
             field_name: The name of the field in Airtable.
-
-        Keyword Args:
             validate_type: Whether to raise a TypeError if anything attempts to write
                 an object of an unsupported type as a field value. If ``False``, you
                 may encounter unpredictable behavior from the Airtable API.

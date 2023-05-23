@@ -28,7 +28,6 @@ def dict_list_to_request_params(
         "sort[1][field]": "FieldTwo",
         "sort[1][direction]: "desc",
     }
-
     """
     return {
         key: value

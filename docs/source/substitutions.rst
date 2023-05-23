@@ -14,13 +14,14 @@
     the connection to be established  and 5 seconds for a
     server read timeout. Default is ``None`` (no timeout).
 
-.. |arg_retry_strategy| replace:: An instance of ``urllib3.util.Retry``.
-    :func:`pyairtable.retrying.retry_strategy` returns one with reasonable
-    defaults, but you may provide your own custom instance of ``Retry``.
+.. |arg_retry_strategy| replace:: An instance of
+    `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`__.
+    You can use :func:`~pyairtable.api.retrying.retry_strategy` to build one with reasonable
+    defaults, or provide your own custom instance of ``Retry``.
     Default is ``None`` (no retry).
 
-.. |arg_endpoint_url| replace:: The API endpoint to hit. You might want to override it if you are using an API proxy to debug your API calls.
-    Default is ``https://api.airtable.com``.
+.. |arg_endpoint_url| replace:: The API endpoint to hit. You might want to override it if you are using
+    a proxy to debug your API calls. Default is ``https://api.airtable.com``.
 
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.
@@ -72,6 +73,10 @@
     when using `string` as the `cell_format`. See
     https://support.airtable.com/hc/en-us/articles/216141558-Supported-timezones-for-SET-TIMEZONE
     for valid values.
+
+.. |kwarg_replace| replace:: If ``True``, record is replaced in its entirety
+    by provided fields; if a field is not included its value will
+    bet set to null. If False, only provided fields are updated.
 
 .. |kwarg_return_fields_by_field_id| replace:: An optional boolean value that lets you return field objects where the
     key is the field id. This defaults to `false`, which returns field objects where the key is the field name.

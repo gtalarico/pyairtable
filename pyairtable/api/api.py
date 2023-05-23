@@ -42,9 +42,9 @@ class Api(ApiAbstract):
             api_key: |arg_api_key|
 
         Keyword Args:
-            timeout (``Tuple``): |arg_timeout|
-            retry_strategy (``Retry``): |arg_retry_strategy|
-            endpoint_url (``str``): |arg_endpoint_url|
+            timeout: |arg_timeout|
+            retry_strategy: |arg_retry_strategy|
+            endpoint_url: |arg_endpoint_url|
         """
         super().__init__(
             api_key,
@@ -98,12 +98,7 @@ class Api(ApiAbstract):
             base_id: |arg_base_id|
             table_name: |arg_table_name|
             record_id: |arg_record_id|
-
-        Keyword Args:
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-
-        Returns:
-            record: Record
         """
         return super()._get_record(base_id, table_name, record_id, **options)
 
@@ -139,8 +134,7 @@ class Api(ApiAbstract):
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            iterator: Record Iterator, grouped by page size
-
+            Iterator of pages of records, no greater than ``page_size``
         """
         gen = super()._iterate(base_id, table_name, **options)
         for i in gen:
@@ -197,7 +191,7 @@ class Api(ApiAbstract):
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records (``list``): List of Records
+            List of records retrieved.
 
         >>> records = all(max_records=3, view='All')
 
@@ -221,16 +215,12 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            fields(``dict``): Fields to insert.
-                Must be dictionary with Column names as Key.
-
-        Keyword Args:
+            fields: Fields to insert.
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            record (``dict``): Inserted record
-
+            The created record.
         """
         return super()._create(
             base_id,
@@ -260,15 +250,12 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            records(``List[dict]``): List of dictionaries representing
-                records to be created.
-
-        Keyword Args:
+            records: List of dicts representing records to be created.
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records (``list``): list of added records
+            List of created records.
         """
         return super()._batch_create(
             base_id,
@@ -300,18 +287,12 @@ class Api(ApiAbstract):
             base_id: |arg_base_id|
             table_name: |arg_table_name|
             record_id: |arg_record_id|
-            fields(``dict``): Fields to update.
-                Must be a dict with column names or IDs as keys
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - eg. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            fields: Fields to update. Must be a dict with column names or IDs as keys.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
 
         Returns:
-            record (``dict``): Updated record
+            The updated record.
         """
 
         return super()._update(
@@ -338,18 +319,13 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            records(``list``): List of dict: [{"id": record_id, "fields": fields_to_update_dict}]
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - eg. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            records: List of dicts with ``"id"`` and ``"fields"`` as keys.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records(``list``): list of updated records
+            List of updated records.
         """
         return super()._batch_update(
             base_id,
@@ -380,20 +356,15 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            records (``list``): List of dict: [{"id": record_id, "fields": fields_to_update_dict}]
-            key_fields (``list``): List of field names that Airtable should use to match
+            records: List of dicts with ``"id"`` and ``"fields"`` as keys.
+            key_fields: List of field names that Airtable should use to match
                 records in the input with existing records on the server.
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - e.g. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records (``list``): list of updated records
+            List of updated records.
         """
         return super()._batch_upsert(
             base_id=base_id,
@@ -420,7 +391,7 @@ class Api(ApiAbstract):
             record_id: |arg_record_id|
 
         Returns:
-            record (``dict``): Deleted Record
+            Confirmation of the deleted record.
         """
         return super()._delete(base_id, table_name, record_id)
 
@@ -439,11 +410,10 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            record_ids(``list``): Record Ids to delete
+            record_ids: Record IDs to delete
 
         Returns:
-            records(``list``): list of records deleted
-
+            Confirmation of each record deleted.
         """
         return super()._batch_delete(base_id, table_name, record_ids)
 

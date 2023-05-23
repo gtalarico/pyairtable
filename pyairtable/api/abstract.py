@@ -127,8 +127,8 @@ class ApiAbstract(metaclass=abc.ABCMeta):
         See https://support.airtable.com/docs/enforcement-of-url-length-limit-for-web-api-requests
 
         Args:
-            method (``str``): HTTP method to use.
-            url (``str``): The URL we're attempting to call.
+            method: HTTP method to use.
+            url: The URL we're attempting to call.
 
         Keyword Args:
             fallback_post_url (``str``, optional): The URL to use if we have to convert a GET to a POST.

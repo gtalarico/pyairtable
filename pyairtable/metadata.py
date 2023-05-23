@@ -13,20 +13,20 @@ def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:
 
     Usage:
         >>> table.get_bases()
-            {
-                "bases": [
-                    {
-                        "id": "appY3WxIBCdKPDdIa",
-                        "name": "Apartment Hunting",
-                        "permissionLevel": "create"
-                    },
-                    {
-                        "id": "appSW9R5uCNmRmfl6",
-                        "name": "Project Tracker",
-                        "permissionLevel": "edit"
-                    }
-                ]
-            }
+        {
+            "bases": [
+                {
+                    "id": "appY3WxIBCdKPDdIa",
+                    "name": "Apartment Hunting",
+                    "permissionLevel": "create"
+                },
+                {
+                    "id": "appSW9R5uCNmRmfl6",
+                    "name": "Project Tracker",
+                    "permissionLevel": "edit"
+                }
+            ]
+        }
     """
     base_list_url = api.build_url("meta", "bases")
     assert isinstance(response := api._request("get", base_list_url), dict)
@@ -43,39 +43,39 @@ def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:
 
     Usage:
         >>> get_base_schema(base)
-            {
-                "tables": [
-                    {
-                        "id": "tbltp8DGLhqbUmjK1",
-                        "name": "Apartments",
-                        "primaryFieldId": "fld1VnoyuotSTyxW1",
-                        "fields": [
-                            {
-                                "id": "fld1VnoyuotSTyxW1",
-                                "name": "Name",
-                                "type": "singleLineText"
-                            },
-                            {
-                                "id": "fldoaIqdn5szURHpw",
-                                "name": "Pictures",
-                                "type": "multipleAttachment"
-                            },
-                            {
-                                "id": "fldumZe00w09RYTW6",
-                                "name": "District",
-                                "type": "multipleRecordLinks"
-                            }
-                        ],
-                        "views": [
-                            {
-                                "id": "viwQpsuEDqHFqegkp",
-                                "name": "Grid view",
-                                "type": "grid"
-                            }
-                        ]
-                    }
-                ]
-            }
+        {
+            "tables": [
+                {
+                    "id": "tbltp8DGLhqbUmjK1",
+                    "name": "Apartments",
+                    "primaryFieldId": "fld1VnoyuotSTyxW1",
+                    "fields": [
+                        {
+                            "id": "fld1VnoyuotSTyxW1",
+                            "name": "Name",
+                            "type": "singleLineText"
+                        },
+                        {
+                            "id": "fldoaIqdn5szURHpw",
+                            "name": "Pictures",
+                            "type": "multipleAttachment"
+                        },
+                        {
+                            "id": "fldumZe00w09RYTW6",
+                            "name": "District",
+                            "type": "multipleRecordLinks"
+                        }
+                    ],
+                    "views": [
+                        {
+                            "id": "viwQpsuEDqHFqegkp",
+                            "name": "Grid view",
+                            "type": "grid"
+                        }
+                    ]
+                }
+            ]
+        }
     """
     base_schema_url = base.build_url("meta", "bases", base.base_id, "tables")
     assert isinstance(response := base._request("get", base_schema_url), dict)

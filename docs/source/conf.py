@@ -3,7 +3,9 @@
 #
 import os
 import sys
+import typing
 
+import pyairtable.api.types
 from pyairtable import __version__ as version
 
 extensions = [
@@ -22,19 +24,6 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
-# Auto Create Api Reference
-autoapi_dirs = ["../pyairtable"]
-autoapi_add_toctree_entry = True
-autoapi_options = [
-    "members",
-    "undoc-members",
-    "private-members",
-    "show-inheritance",
-    "show-module-summary",
-    "special-members",
-    "imported-members",
-]
-
 # Open Graph extension config. https://pypi.org/project/sphinxext-opengraph/
 ogp_site_url = "https://pyairtable.readthedocs.io/"
 ogp_image = "https://pyairtable.readthedocs.io/en/master/_images/logo.png"
@@ -43,6 +32,36 @@ ogp_description_length = 300
 ogp_custom_meta_tags = [
     '<meta name="twitter:card" content="summary_large_image">',
 ]
+
+# See https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+autodoc_class_signature = "separated"
+autodoc_default_options = {
+    "exclude-members": "__new__",
+}
+
+# See https://github.com/tox-dev/sphinx-autodoc-typehints#options
+typehints_defaults = "comma"
+typehints_use_signature = True
+typehints_use_signature_return = True
+
+
+def typehints_formatter(annotation, config):
+    """
+    Provide links from function signatures to TypedDict docstrings.
+    """
+    for name, value in vars(pyairtable.api.types).items():
+        if annotation != value:
+            continue
+        if isinstance(value, type) and issubclass(value, dict):  # TypedDict
+            return f":data:`{name} <pyairtable.api.types.{name}>`"
+        if isinstance(value, typing._GenericAlias):  # Union, Dict, etc.
+            return f":data:`{name} <pyairtable.api.types.{name}>`"
+
+    return None
+
+
+# Needed for autoapi to not choke on retrying.Retry
+suppress_warnings = ["autoapi.python_import_resolution"]
 
 
 ################################
@@ -99,7 +118,7 @@ author = "Gui Talarico"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

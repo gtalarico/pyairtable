@@ -28,8 +28,9 @@ def match(dict_values: Fields, *, match_any: bool = False) -> str:
         dict_values: dictionary containing column names and values
 
     Keyword Args:
-        match_any: matches if **any** of the provided values match. Default is ``False``
-            (all values must match)
+        match_any (``bool``, default: ``False``):
+            If ``True``, matches if **any** of the provided values match.
+            Otherwise, all values must match.
 
     Usage:
         >>> match({"First Name": "John", "Age": 21})
@@ -96,7 +97,7 @@ def to_airtable_value(value: Any) -> Any:
         * - all others
           - unchanged
 
-    Arg:
+    Args:
         value: value to be cast.
 
     """
