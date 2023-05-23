@@ -3,7 +3,7 @@ pyAirtable provides a number of type aliases and TypedDicts which are used as in
 and return values to various pyAirtable methods.
 """
 from functools import lru_cache
-from typing import Any, Dict, List, Literal, Optional, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
 import pydantic
 from typing_extensions import Required, TypeAlias, TypedDict
@@ -208,7 +208,7 @@ class RecordDeletedDict(TypedDict):
     """
 
     id: RecordId
-    deleted: Literal[True]
+    deleted: bool
 
 
 @lru_cache
