@@ -203,7 +203,15 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
             )
 
     def __repr__(self) -> str:
-        return "<{} field_name='{}'>".format(self.__class__.__name__, self.field_name)
+        args = [repr(self.field_name)]
+        args += [f"{key}={val!r}" for (key, val) in self._repr_fields()]
+        return self.__class__.__name__ + "(" + ", ".join(args) + ")"
+
+    def _repr_fields(self) -> List[Tuple[str, Any]]:
+        return [
+            ("readonly", self.readonly),
+            ("validate_type", self.validate_type),
+        ]
 
 
 #: A generic Field whose internal and API representations are the same type.
@@ -395,6 +403,12 @@ class ListField(Generic[T], Field[List[RecordId], List[T]]):
         if model is not None:
             self.linked_model = model
 
+    def _repr_fields(self) -> List[Tuple[str, Any]]:
+        return [
+            ("model", self.linked_model),
+            *super()._repr_fields(),
+        ]
+
     def get_value(self, model: "Model") -> List[T]:
         value = super().get_value(model)
         if value is None:
@@ -449,6 +463,12 @@ class LinkField(ListField[T_Linked]):
 
         self._lazy = lazy
         super().__init__(field_name, model=model)
+
+    def _repr_fields(self) -> List[Tuple[str, Any]]:
+        return [
+            ("model", self.linked_model),
+            ("lazy", self._lazy),
+        ]
 
     def to_internal_value(self, value: Any) -> List[T_Linked]:
         # If Lazy, create empty from model class and set id

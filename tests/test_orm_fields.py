@@ -27,6 +27,35 @@ def test_field():
 
 
 @pytest.mark.parametrize(
+    "instance,expected",
+    [
+        (
+            f.Field("Name"),
+            "Field('Name', readonly=False, validate_type=True)",
+        ),
+        (
+            f.CollaboratorField("Collaborator"),
+            "CollaboratorField('Collaborator', readonly=False, validate_type=True)",
+        ),
+        (
+            f.LastModifiedByField("User"),
+            "LastModifiedByField('User', readonly=True, validate_type=True)",
+        ),
+        (
+            f.ListField("Items", dict, validate_type=False),
+            "ListField('Items', model=<class 'dict'>, readonly=False, validate_type=False)",
+        ),
+        (
+            f.LinkField("Records", type("TestModel", (Model,), {"Meta": fake_meta()})),
+            "LinkField('Records', model=<class 'abc.TestModel'>, lazy=True)",
+        ),
+    ],
+)
+def test_repr(instance, expected):
+    assert repr(instance) == expected
+
+
+@pytest.mark.parametrize(
     argnames=("field_type", "default_value"),
     argvalues=[
         (f.Field, None),

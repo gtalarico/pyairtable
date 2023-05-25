@@ -59,10 +59,8 @@ Finally, you can use :meth:`~pyairtable.orm.model.Model.delete` to delete the re
 >>> contact.delete()
 True
 """
-from __future__ import annotations
-
 import abc
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import Self as SelfType
 
@@ -96,15 +94,15 @@ class Model(metaclass=abc.ABCMeta):
     id: str = ""
     created_time: str = ""
     _table: Table
-    _fields: dict[FieldName, Any] = {}
-    _linked_cache: dict[RecordId, SelfType] = {}
+    _fields: Dict[FieldName, Any] = {}
+    _linked_cache: Dict[RecordId, SelfType] = {}
 
     def __init_subclass__(cls, **kwargs: Any):
         cls._validate_class()
         super().__init_subclass__(**kwargs)
 
     @classmethod
-    def _attribute_descriptor_map(cls) -> dict[str, AnyField]:
+    def _attribute_descriptor_map(cls) -> Dict[str, AnyField]:
         """
         Returns a dictionary mapping the model's attribute names to the field's
 
@@ -121,7 +119,7 @@ class Model(metaclass=abc.ABCMeta):
         return {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
 
     @classmethod
-    def _field_name_descriptor_map(cls) -> dict[FieldName, AnyField]:
+    def _field_name_descriptor_map(cls) -> Dict[FieldName, AnyField]:
         """
         Returns a dictionary that maps Fields 'Names' to descriptor fields
 
@@ -138,7 +136,7 @@ class Model(metaclass=abc.ABCMeta):
         return {f.field_name: f for f in cls._attribute_descriptor_map().values()}
 
     @classmethod
-    def _field_name_attribute_map(cls) -> dict[FieldName, str]:
+    def _field_name_attribute_map(cls) -> Dict[FieldName, str]:
         """
         Returns a dictionary that maps Fields 'Names' to the model attribute name:
 
@@ -330,31 +328,3 @@ class Model(metaclass=abc.ABCMeta):
 
     def __repr__(self) -> str:
         return "<Model={} {}>".format(self.__class__.__name__, hex(id(self)))
-
-    # TODO - see metadata.py
-    # def verify_schema(cls) -> Tuple[bool, dict]:
-    #     """verify local airtable models"""
-
-    #     base_list = cls.get_base_list()
-    #     base_id_exists = cls.base_id in [b["id"] for b in base_list["bases"]]
-
-    #     if base_id_exists:
-    #         base_schema = cls.get_base_schema()
-    #         table_schema: dict = next(
-    #             (t for t in base_schema["tables"] if t["name"] == cls.table_name), {}
-    #         )
-    #         table_exists = bool(table_schema)
-    #     else:
-    #         table_exists = False
-
-    #     if table_exists:
-    #         airtable_field_names = [f["name"] for f in table_schema["fields"]]
-    #         # Fields.NAME = "|NAME|", Fields.ID = "|ID|") -> ["|NAME|", "|ID|"]
-    #         local_field_names = [v for k, v in vars(cls.Fields).items() if k.isupper()]
-    #         fields = {n: n in airtable_field_names for n in local_field_names}
-    #     else:
-    #         fields = {}
-
-    #     in_sync = base_id_exists and table_exists and all(fields.values())
-    #     details = {"base": base_id_exists, "table": table_exists, "fields": fields}
-    #     return (in_sync, details)
