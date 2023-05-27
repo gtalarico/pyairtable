@@ -1,6 +1,6 @@
 .. include:: substitutions.rst
 
-Airtable Api
+Airtable API
 ============
 
 Overview
