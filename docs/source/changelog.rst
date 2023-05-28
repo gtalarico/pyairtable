@@ -2,18 +2,21 @@
 Changelog
 =========
 
-2.0.0
------
+2.0.0 (TBD)
+------------------------
 
-Release Date: TBD
+See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
 
-* Removed ``ApiAbstract``. See :ref:`Migrating from 1.x to 2.x`.
+* Removed ``ApiAbstract``.
+* Implemented strict type annotations on all functions and methods.
+* Added :ref:`ORM` support for all Airtable field types.
+  - `PR #260 <https://github.com/gtalarico/pyairtable/pull/260>`_.
+* Return Model instances, not dicts, from
+  :meth:`Model.all <pyairtable.orm.Model.all>` and :meth:`Model.first <pyairtable.orm.Model.first>`.
+  - `PR #262 <https://github.com/gtalarico/pyairtable/pull/262>`_.
 
-
-1.5.0
-------
-
-Release Date: 2023-05-15
+1.5.0 (2023-05-15)
+-------------------------
 
 * Add support for Airtable's upsert operation (see :ref:`Updating Records`).
   - `PR #255 <https://github.com/gtalarico/pyairtable/pull/255>`_.
@@ -30,48 +33,36 @@ Release Date: 2023-05-15
 * Dropped support for Python 3.6 (reached end of life 2021-12-23)
   - `PR #213 <https://github.com/gtalarico/pyairtable/pull/213>`_.
 
-1.4.0
-------
-
-Release Date: 2022-12-14
+1.4.0 (2022-12-14)
+-------------------------
 
 * Added :ref:`Retrying` ()
 * Misc fix in sleep for batch requests `PR #180 <https://github.com/gtalarico/pyairtable/pull/180>`_.
 
-1.3.0
-------
-
-Release Date: 2022-08-23
+1.3.0 (2022-08-23)
+-------------------------
 
 * Added new ``LOWER`` formula - `PR #171 <https://github.com/gtalarico/pyairtable/pull/171>`_. See updated :ref:`Formulas`.
 * Added ``match(..., match_any=True)`` to :meth:`~pyairtable.formulas.match`
 * Added ``return_fields_by_field_id`` in :meth:`~pyairtable.api.Api.get`
 
-1.2.0
-------
-
-Release Date: 2022-07-09
+1.2.0 (2022-07-09)
+-------------------------
 
 * Fixed missing rate limit in :meth:`~pyairtable.api.Api.batch_update` - `PR #162 <https://github.com/gtalarico/pyairtable/pull/162>`_.
 * Added support for new parameter `return_fields_by_field_id` - `PR #161 <https://github.com/gtalarico/pyairtable/pull/161>`_. See updated :ref:`Parameters`.
 * Added new ``OR`` formula - `PR #148 <https://github.com/gtalarico/pyairtable/pull/148>`_. See updated :ref:`Formulas`.
 
-1.1.0
-------
-
-Release Date: 2022-02-21
+1.1.0 (2022-02-21)
+-------------------------
 
 * Added support for ``cellFormat`` - `PR #140 <https://github.com/gtalarico/pyairtable/pull/140>`_.  See updated :ref:`Parameters`.
 
 
-1.0.0
-------
-
-Release Date: 2021-08-11
+1.0.0 (2021-08-11)
+-------------------------
 
 * pyAirtable rewrite for 1.x - see :doc:`migrations`.
 
-0.15.3
-------
-
-Release Date: 2021-07-26
+0.15.3 (2021-07-26)
+-------------------------

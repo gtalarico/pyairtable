@@ -24,7 +24,6 @@ pyAirtable
 
    getting-started
    api
-   utils
    experimental
    migrations
 
