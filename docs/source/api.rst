@@ -1,6 +1,6 @@
 .. include:: substitutions.rst
 
-Airtable API
+API Reference
 =============
 
 
@@ -164,4 +164,10 @@ Types
 *******
 
 .. automodule:: pyairtable.api.types
+    :members:
+
+Utilities
+***********
+
+.. automodule:: pyairtable.utils
     :members:
