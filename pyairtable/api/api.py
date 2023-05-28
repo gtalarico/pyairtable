@@ -43,10 +43,18 @@ class Api:
     ):
         """
         Args:
-            api_key: |arg_api_key|
-            timeout: |arg_timeout|
-            retry_strategy: |arg_retry_strategy|
-            endpoint_url: |arg_endpoint_url|
+            api_key: An Airtable API key or personal access token.
+            timeout: A tuple indicating a connect and read timeout.
+                e.g. ``timeout=(2,5)`` would configure a 2 second timeout for
+                the connection to be established  and 5 seconds for a
+                server read timeout. Default is ``None`` (no timeout).
+            retry_strategy: An instance of
+                `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`__.
+                You can use :func:`~pyairtable.api.retrying.retry_strategy` to build one with reasonable
+                defaults, or provide your own custom instance of ``Retry``.
+                Default is ``None`` (no retry).
+            endpoint_url: The API endpoint to hit. You might want to override it if you are using
+                a proxy to debug your API calls. Default is ``https://api.airtable.com``.
         """
         if not retry_strategy:
             self.session = Session()

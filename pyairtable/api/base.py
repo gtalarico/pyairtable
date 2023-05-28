@@ -36,7 +36,11 @@ class Base:
     def table(self, table_name: str) -> "pyairtable.api.table.Table":
         """
         Returns a new :class:`Table` instance using all shared
-        attributes from :class:`Base`
+        attributes from :class:`Base`.
+
+        Args:
+            table_name: An Airtable table name. Table name should be unencoded,
+                as shown on browser.
         """
         return pyairtable.api.table.Table(self, table_name)
 

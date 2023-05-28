@@ -1,27 +1,6 @@
-
-
-.. |arg_api_key| replace:: An Airtable API Key or An Airtable Authorization Token.
-
 .. |arg_base_id| replace:: An Airtable base id.
 
 .. |arg_record_id| replace:: An Airtable record id.
-
-.. |arg_table_name| replace:: An Airtable table name. Table name should be unencoded,
-    as shown on browser.
-
-.. |arg_timeout| replace:: A tuple indicating a connect and read timeout.
-    eg. ``timeout=(2,5)`` would configure a 2 second timeout for
-    the connection to be established  and 5 seconds for a
-    server read timeout. Default is ``None`` (no timeout).
-
-.. |arg_retry_strategy| replace:: An instance of
-    `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`__.
-    You can use :func:`~pyairtable.api.retrying.retry_strategy` to build one with reasonable
-    defaults, or provide your own custom instance of ``Retry``.
-    Default is ``None`` (no retry).
-
-.. |arg_endpoint_url| replace:: The API endpoint to hit. You might want to override it if you are using
-    a proxy to debug your API calls. Default is ``https://api.airtable.com``.
 
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.
