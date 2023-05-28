@@ -77,48 +77,37 @@ Parameters
 
 Airtable offers a variety of options to control how you fetch data.
 
-Most options in the Airtable Api (e.g. ``sort``, ``fields``, etc.)
-have a corresponding ``kwargs`` that can be used with fetching methods
+Most options in the Airtable API (e.g. ``sort``, ``fields``, etc.)
+have a corresponding keyword argument that can be used with fetching methods
 like :meth:`~pyairtable.api.Table.iterate` or :meth:`~pyairtable.api.Table.all`.
 
 
 .. list-table::
-   :widths: 25 25 50
+   :widths: 35 65
    :header-rows: 1
 
    * - Keyword Argument
-     - Airtable Parameter
      - Notes
    * - ``max_records``
-     - ``maxRecords``
      - |kwarg_max_records|
    * - ``sort``
-     - ``sort``
      - |kwarg_sort|
    * - ``view``
-     - ``view``
      - |kwarg_view|
    * - ``page_size``
-     - ``pageSize``
      - |kwarg_page_size|
    * - ``formula``
-     - ``filterByFormula``
      - |kwarg_formula|
    * - ``fields``
-     - ``fields``
      - |kwarg_fields|
    * - ``cell_format``
-     - ``cellFormat``
      - |kwarg_cell_format|
    * - ``user_locale``
-     - ``userLocale``
      - |kwarg_user_locale|
    * - ``time_zone``
-     - ``timeZone``
      - |kwarg_time_zone|
    * - ``return_fields_by_field_id``
         .. versionadded:: 1.3.0
-     - ``returnFieldsByFieldId``
      - |kwarg_return_fields_by_field_id|
 
 
