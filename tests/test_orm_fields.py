@@ -34,6 +34,10 @@ def test_field():
             "Field('Name', readonly=False, validate_type=True)",
         ),
         (
+            f.Field("Name", readonly=True, validate_type=False),
+            "Field('Name', readonly=True, validate_type=False)",
+        ),
+        (
             f.CollaboratorField("Collaborator"),
             "CollaboratorField('Collaborator', readonly=False, validate_type=True)",
         ),
@@ -241,6 +245,9 @@ def test_writable_fields(test_case):
     new_obj.the_field = orm_value
     assert new_obj.to_record()["fields"] == {"Field Name": api_value}
 
+    from_init = T(the_field=orm_value)
+    assert from_init.the_field == orm_value
+
     existing_obj = T.from_record(fake_record({"Field Name": api_value}))
     assert existing_obj.the_field == orm_value
 
@@ -297,6 +304,47 @@ def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
         pytest.fail(f"Some fields were not tested by {test_names}:\n{fail_names}")
 
 
+def test_invalid_kwarg():
+    """
+    Ensure we raise AttributeError if an invalid kwarg is passed to the constructor.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = f.TextField("Field Name")
+
+    assert T(the_field="whatever").the_field == "whatever"
+    with pytest.raises(AttributeError):
+        T(foo="bar")
+
+
+def test_list_field_with_none():
+    """
+    Ensure that a ListField represents a null value as an empty list.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = f.ListField("Fld")
+
+    assert T.from_record(fake_record()).the_field == []
+    assert T.from_record(fake_record(Fld=None)).the_field == []
+
+
+def test_list_field_with_invalid_type():
+    """
+    Ensure that a ListField represents a null value as an empty list.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = f.ListField("Field Name")
+
+    obj = T.from_record(fake_record())
+    with pytest.raises(TypeError):
+        obj.the_field = object()
+
+
 def test_list_field_with_string():
     """
     If we pass a string to a list field, it should not be turned
@@ -323,7 +371,18 @@ def test_linked_field():
     class T(Model):
         Meta = fake_meta()
 
-    f.LinkField("Field Name", model=T)
+    class X(Model):
+        Meta = fake_meta()
+        t = f.LinkField("Field Name", model=T)
+
+    x = X(t=[])
+    x.t = [T(), T(), T()]
+
+    with pytest.raises(TypeError):
+        x.t = [1, 2, 3]
+
+    with pytest.raises(TypeError):
+        x.t = -1
 
 
 def test_lookup_field():
@@ -354,3 +413,20 @@ def test_lookup_field():
         and rv_to_internal[1] == "2000-02-02T03:04:05.000Z"
         and rv_to_internal[2] == "2000-03-02T03:04:05.000Z"
     )
+
+
+def test_rating_field():
+    """
+    Test that a RatingField does not accept floats or values below 1.
+    """
+
+    class T:
+        rating = f.RatingField("Rating")
+
+    T().rating = 1
+
+    with pytest.raises(TypeError):
+        T().rating = 0.5
+
+    with pytest.raises(ValueError):
+        T().rating = 0

@@ -418,10 +418,6 @@ class ListField(Generic[T], Field[List[RecordId], List[T]]):
 
     def valid_or_raise(self, value: Any) -> None:
         super().valid_or_raise(value)
-        if value is None:
-            value = []
-        if not isinstance(value, list):
-            raise TypeError(type(value))
         if self.linked_model:
             for obj in value:
                 if not isinstance(obj, self.linked_model):

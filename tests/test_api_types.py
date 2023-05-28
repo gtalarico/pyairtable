@@ -58,3 +58,8 @@ def test_assert_not_typed_dict(cls, value):
         T.assert_typed_dict(cls, value)
     with pytest.raises(TypeError):
         T.assert_typed_dicts(cls, [value])
+
+
+def test_assert_typed_dicts__not_list():
+    with pytest.raises(TypeError):
+        T.assert_typed_dicts(T.RecordDict, object())
