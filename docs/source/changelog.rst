@@ -9,6 +9,7 @@ Release Date: TBD
 
 * Removed ``ApiAbstract``. See :ref:`Migrating from 1.x to 2.x`.
 
+
 1.5.0
 ------
 

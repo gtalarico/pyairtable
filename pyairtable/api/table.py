@@ -80,11 +80,12 @@ class Table:
         >>> record = api.get('base_id', 'table_name', 'recwPQIfs4wKPyc9D')
 
         Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
             record_id: |arg_record_id|
 
         Keyword Args:
+            cell_format: |kwarg_cell_format|
+            time_zone: |kwarg_time_zone|
+            user_locale: |kwarg_user_locale|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
         record = self.api.request("get", self.record_url(record_id), options=options)
@@ -99,10 +100,6 @@ class Table:
         [[{"id": ...}, {"id": ...}, {"id": ...}, ...],
          [{"id": ...}, {"id": ...}, {"id": ...}, ...],
          [{"id": ...}]
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
 
         Keyword Args:
             view: |kwarg_view|
@@ -138,12 +135,8 @@ class Table:
         Retrieves the first matching record.
         Returns ``None`` if no records are returned.
 
-        This is similar to :meth:`~pyairtable.api.api.Api.all`, except
+        This is similar to :meth:`~pyairtable.api.Table.all`, except
         it sets ``page_size`` and ``max_records`` to ``1``.
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
 
         Keyword Args:
             view: |kwarg_view|
@@ -169,10 +162,6 @@ class Table:
         [{'fields': ...}, ...]
         >>> api.all('base_id', 'table_name', max_records=50)
         [{'fields': ...}, ...]
-
-        Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
 
         Keyword Args:
             view: |kwarg_view|
@@ -202,8 +191,6 @@ class Table:
 
         Args:
             fields: Fields to insert. Must be a dict with field names or IDs as keys.
-
-        Keyword Args:
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
@@ -232,8 +219,6 @@ class Table:
 
         Args:
             records: List of dicts representing records to be created.
-
-        Keyword Args:
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
@@ -267,22 +252,14 @@ class Table:
         Only Fields passed are updated, the rest are left as is.
 
         >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21})
-        {id:'recwPQIfs4wKPyc9D', fields': {"First Name": "John", "Age": 21}}
-        >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21}, replace=True)
-        {id:'recwPQIfs4wKPyc9D', fields': {"Age": 21}}
+        {id: 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
+        >>> table.update('recwPQIfs4wKPyc9D', {"Age": 22}, replace=True)
+        {id: 'recwPQIfs4wKPyc9D', 'fields': {'Age': 22}}
 
         Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
             record_id: |arg_record_id|
-            fields(``dict``): Fields to update.
-                Must be a dict with column names or IDs as keys
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - eg. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            fields: Fields to update. Must be a dict with column names or IDs as keys.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
         """
         method = "put" if replace else "patch"
@@ -304,20 +281,13 @@ class Table:
         Updates a records by their record id's in batch.
 
         Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            records: List of dict: [{"id": record_id, "fields": fields_to_update_dict}]
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - eg. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            records: Records to update.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records: The list of updated records.
+            The list of updated records.
         """
         updated_records = []
         method = "put" if replace else "patch"
@@ -349,27 +319,20 @@ class Table:
         """
         Updates or creates records in batches, either using ``id`` (if given) or using a set of
         fields (``key_fields``) to look for matches. For more information on how this operation
-        behaves, see Airtable's API documentation for `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`_.
+        behaves, see Airtable's API documentation for `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`__.
 
         .. versionadded:: 1.5.0
 
         Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
-            records: List of dict: [{"id": record_id, "fields": fields_to_update_dict}]
+            records: Records to update.
             key_fields: List of field names that Airtable should use to match
                 records in the input with existing records on the server.
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - e.g. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records: The list of updated records.
+            The list of updated records.
         """
         # The API will reject a request where a record is missing any of fieldsToMergeOn,
         # but we might not reach that error until we've done several batch operations.
@@ -412,12 +375,10 @@ class Table:
         >>> api.delete('base_id', 'table_name', record['id'])
 
         Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
             record_id: |arg_record_id|
 
         Returns:
-            record: a dict containing the ID of the deleted record
+            A dict containing the ID of the deleted record.
         """
         return assert_typed_dict(
             RecordDeletedDict,
@@ -435,12 +396,10 @@ class Table:
         >>> api.batch_delete('base_id', 'table_name', records_ids)
 
         Args:
-            base_id: |arg_base_id|
-            table_name: |arg_table_name|
             record_ids: Record IDs to delete
 
         Returns:
-            records: list of records deleted
+            List of dicts containing IDs of the deleted records.
         """
         deleted_records = []
 

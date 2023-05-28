@@ -44,8 +44,6 @@ class Api:
         """
         Args:
             api_key: |arg_api_key|
-
-        Keyword Args:
             timeout: |arg_timeout|
             retry_strategy: |arg_retry_strategy|
             endpoint_url: |arg_endpoint_url|
@@ -110,10 +108,9 @@ class Api:
         Args:
             method: HTTP method to use.
             url: The URL we're attempting to call.
-
-        Keyword Args:
             fallback: The method and URL to use if we have to convert a GET to a POST.
             options: Airtable-specific query params to use while fetching records.
+                See :ref:`Parameters` for valid options.
             params: Additional query params to append to the URL as-is.
             json: The JSON payload for a POST/PUT/PATCH/DELETE request.
         """

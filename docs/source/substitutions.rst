@@ -29,10 +29,11 @@
 
 .. |kwarg_page_size| replace:: The number of records returned
     in each request. Must be less than or equal to 100.
-    Default is 100.
+    If no value given, `Airtable's default <https://airtable.com/developers/web/api/list-records>`__ is 100.
 
 .. |kwarg_max_records| replace:: The maximum total number of
-    records that will be returned. If this value is larger than `page_size` multiple requests will be needed
+    records that will be returned. If this value is larger than
+    ``page_size``, multiple requests will be needed
     to fetch all records.
 
 .. |kwarg_fields| replace:: Name of field or fields  to
@@ -50,10 +51,10 @@
     prefixing the column name with a minus sign ``-``.
 
 .. |kwarg_formula| replace:: An Airtable formula. The formula will be evaluated for each record, and if the result
-    is not 0, false, "", NaN, [], or #Error! the record will be included
+    is none of ``0``, ``false``, ``""``, ``NaN``, ``[]``, or ``#Error!`` the record will be included
     in the response. If combined with view, only records in that view which satisfy the
     formula will be returned. For example, to only include records where
-    ``COLUMN_A`` isn't empty, pass in: ``"NOT({COLUMN_A}='')"``.
+    ``COLUMN_A`` isn't empty, pass in ``formula="{COLUMN_A}"``.
 
 .. |kwarg_typecast| replace:: The Airtable API will perform best-effort
     automatic data conversion from string values. Default is False.
@@ -80,3 +81,8 @@
 
 .. |kwarg_return_fields_by_field_id| replace:: An optional boolean value that lets you return field objects where the
     key is the field id. This defaults to `false`, which returns field objects where the key is the field name.
+
+.. |warn_rate_limit| replace::
+    Due to Airtable API limits, the library inserts a 0.2 second delay in between requests.
+    If you retrieve many pages of records, expect the library to take several seconds to return.
+    Read more: `Rate limits <https://airtable.com/developers/web/api/rate-limits>`__
