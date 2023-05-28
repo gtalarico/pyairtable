@@ -3,8 +3,6 @@
 Metadata Api
 ==============
 
-.. versionadded:: 1.0.0
-
 The metadata api gives you the ability to list all of your bases, tables, fields, and views.
 
 .. warning::

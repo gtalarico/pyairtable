@@ -7,7 +7,6 @@ Airtable API
 Api
 *******
 
-.. versionadded:: 1.0.0
 .. autoclass:: pyairtable.api.Api
   :members:
 
@@ -15,7 +14,6 @@ Api
 Base
 *******
 
-.. versionadded:: 1.0.0
 .. autoclass:: pyairtable.api.Base
     :members:
 
@@ -23,7 +21,6 @@ Base
 Table
 *******
 
-.. versionadded:: 1.0.0
 .. autoclass:: pyairtable.api.Table
     :members:
 
@@ -114,7 +111,6 @@ like :meth:`~pyairtable.api.Table.iterate` or :meth:`~pyairtable.api.Table.all`.
 Formulas
 ********
 
-.. versionadded:: 1.0.0
 
 The formula module provides functionality to help you compose Airtable formulas.
 For more information see `Airtable Formula Reference <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_
@@ -149,7 +145,6 @@ Formula Helpers
 Raw Formulas
 ------------
 
-.. versionadded:: 1.0.0
 
 This module also includes many lower level functions you
 can use if you want to compose formulas:
