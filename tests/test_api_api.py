@@ -12,6 +12,13 @@ def test_get_base(api: Api):
     assert rv.api == api
 
 
+def test_get_table(api: Api):
+    rv = api.table("appTest", "tblTest")
+    assert isinstance(rv, Table)
+    assert rv.name == "tblTest"
+    assert rv.base.id == "appTest"
+
+
 def test_default_endpoint_url(api: Api):
     rv = api.build_url("appTest", "tblTest")
     assert rv == "https://api.airtable.com/v0/appTest/tblTest"

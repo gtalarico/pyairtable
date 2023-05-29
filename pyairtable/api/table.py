@@ -1,7 +1,6 @@
 import urllib.parse
-from typing import Any, Iterator, List, Optional
-
-from typing_extensions import Self as SelfType
+import warnings
+from typing import Any, Iterator, List, Optional, Union, overload
 
 import pyairtable.api.api
 import pyairtable.api.base
@@ -24,41 +23,58 @@ class Table:
     Usage:
 
         >>> api = Api(access_token)
-        >>> base = Base(api, "base_id")
-        >>> Table(base, "table_name")
-
-    Can also be accessed as:
-
-        >>> Api(access_token).base("base_id").table("table_name")
+        >>> table = api.table("base_id", "table_name")
 
     The previous method of constructing Table instances (by directly providing ``api_key`` and ``base_id``)
-    has been moved into a classmethod, :meth:`from_ids`. This is provided for convenience to developers
-    who may be switching from 1.5 to 2.0.
+    will still function, but is deprecated. It is maintained as convenience and will be removed in the future.
 
-        >>> Table.from_ids(api_key=access_token, base_id="base_id", table_name="table_name")
+        >>> Table(access_token, "base_id", "table_name")
     """
 
+    api: "pyairtable.api.api.Api"
     base: "pyairtable.api.base.Base"
     name: str
 
-    def __init__(self, base: "pyairtable.api.base.Base", table_name: str) -> None:
+    @overload
+    def __init__(self, api: str, base: str, table_name: str, /):
+        ...
+
+    @overload
+    def __init__(
+        self,
+        api: "pyairtable.api.api.Api",
+        base: "pyairtable.api.base.Base",
+        table_name: str,
+    ):
+        ...
+
+    def __init__(
+        self,
+        api: Union["pyairtable.api.api.Api", str],
+        base: Union["pyairtable.api.base.Base", str],
+        table_name: str,
+    ):
+        if isinstance(api, str) or isinstance(base, str):
+            warnings.warn(
+                "Passing API keys or base IDs to pyairtable.Table is deprecated;"
+                " use Api.table() or Base.table() instead."
+                " See https://pyairtable.rtfd.org/en/latest/migrations.html for details.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if isinstance(api, str):
+            api = pyairtable.api.api.Api(api)
+
+        if isinstance(base, str):
+            base = api.base(base)
+
+        self.api = api
         self.base = base
         self.name = table_name
 
     def __repr__(self) -> str:
         return f"<Table base_id={self.base.id!r} table_name={self.name!r}>"
-
-    @classmethod
-    def from_ids(
-        cls, api_key: str, base_id: str, table_name: str, **api_kwargs: Any
-    ) -> SelfType:
-        api = pyairtable.api.api.Api(api_key, **api_kwargs)
-        base = api.base(base_id)
-        return cls(base, table_name)
-
-    @property
-    def api(self) -> "pyairtable.api.api.Api":
-        return self.base.api
 
     @property
     def url(self) -> str:

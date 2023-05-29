@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     assert_type(base.table(table_name), pyairtable.api.Table)
 
     # Ensure the type signatures for pyairtable.api.Table don't change.
-    table = pyairtable.api.Table(base, table_name)
+    table = pyairtable.api.Table(api, base, table_name)
     assert_type(table.get(record_id), T.RecordDict)
     assert_type(table.iterate(), Iterator[List[T.RecordDict]])
     assert_type(table.all(), List[T.RecordDict])

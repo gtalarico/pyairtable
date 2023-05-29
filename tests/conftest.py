@@ -32,18 +32,18 @@ def constants():
 
 
 @pytest.fixture()
-def api(constants):
+def api(constants) -> Api:
     return Api(constants["API_KEY"])
 
 
 @pytest.fixture()
-def base(api, constants):
-    return Base(api, constants["BASE_ID"])
+def base(api: Api, constants) -> Base:
+    return api.base(constants["BASE_ID"])
 
 
 @pytest.fixture()
-def table(base, constants):
-    return Table(base, constants["TABLE_NAME"])
+def table(base: Base, constants) -> Table:
+    return base.table(constants["TABLE_NAME"])
 
 
 @pytest.fixture

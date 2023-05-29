@@ -1,7 +1,5 @@
 import pytest
 
-from pyairtable.api import Table
-
 
 @pytest.mark.parametrize(
     "table_name,escaped",
@@ -13,10 +11,10 @@ from pyairtable.api import Table
         ("percentage % table", "percentage%20%25%20table"),
     ],
 )
-def test_url_escape(table_name, escaped):
+def test_url_escape(base, table_name, escaped):
     """
     Test for proper escaping of urls including unsafe characters in
     table names (which Airtable *will* allow).
     """
-    table = Table.from_ids("apikey", "base_id", table_name)
+    table = base.table(table_name)
     assert table.url.endswith(escaped)

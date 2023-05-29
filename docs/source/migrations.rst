@@ -6,29 +6,64 @@ Migrating from 1.x to 2.0
 ============================
 
 With the 2.0 release, we've made some breaking changes to the pyAirtable API. These are summarized below.
-You can read more about the rationale behind these changes in `#257 <https://github.com/gtalarico/pyairtable/issues/257>`_.
+You can read more about the rationale behind these changes in `#257 <https://github.com/gtalarico/pyairtable/issues/257>`_,
+or you can read more about new library features in the :ref:`Changelog`.
 
-New Features in 2.0
--------------------
+ApiAbstract removed
+-----------------------
 
-* The :ref:`ORM` module now has support for all Airtable field types.
+We've removed the ``pyairtable.api.abstract`` module. If you had code which inherited from ``ApiAbstract``,
+you will need to refactor it. We recommend taking an instance of :class:`~pyairtable.api.Api` as a
+constructor parameter, and using that to construct :class:`~pyairtable.api.Table` instances as needed.
 
-API Changes in 2.0
+Changes to Api, Base, and Table
+-----------------------------------
+
+:class:`~pyairtable.api.Api`, :class:`~pyairtable.api.Base`, and :class:`~pyairtable.api.Table`
+no longer inherit from the same base class. Each has its own scope of responsibility and has
+methods which refer to the other classes as needed. See :ref:`Getting Started`.
+
+If your code relies on calling :class:`~pyairtable.api.Base` with ``api_key=`` as a keyword arg,
+or calling :class:`~pyairtable.api.Table` with ``api_key=`` and ``base_id=`` as keyword args,
+you will need to change how you call the constructor. See below for (un)supported patterns:
+
+.. code-block:: python
+
+    # The following are supported:
+    >>> api = Api(api_key, timeout=..., retry_strategy=..., endpoint_url=...)
+    >>> base = api.base(base_id)  # [str]
+    >>> base = Base(api, base_id)  # [Api, str]
+    >>> table = base.table(table_name)  # [str]
+    >>> table = api.table(base_id, table_name)  # [str, str]
+    >>> table = Table(api, base, table_name)  # [Api, Base, str]
+
+    # The following are still supported but will issue a DeprecationWarning:
+    >>> base = Base(api_key, base_id)  # [str, str]
+    >>> table = Table(api, base_id, table_name)  # [Api, str, str]
+    >>> table = Table(api_key, base, table_name)  # [str, Base, str]
+    >>> table = Table(api_key, base_id, table_name)  # [str, str, str]
+
+    # The following will raise a TypeError for unexpected keyword arguments
+    # because the names of these parameters have changed:
+    >>> base = Base(api_key=api_key, base_id=base_id)
+    >>> table = Table(api_key=api_key, base_id=base_id, table_name=table_name)
+
+    # The following will raise a TypeError for unexpected keyword arguments
+    # because keyword parameters for Api are no longer supported:
+    >>> base = Base(api_key, base_id, timeout=...)
+    >>> table = Table(api_key, base_id, table_name, timeout=...)
+
+Changes to the ORM
 ------------------
-
-* :class:`~pyairtable.api.Api`, :class:`~pyairtable.api.Base`, and :class:`~pyairtable.api.Table`
-  no longer inherit from the same base class. Each has its own scope of responsibility and has
-  methods which refer to the other classes as needed. See :ref:`Getting Started`.
-
-* We've removed the `pyairtable.api.abstract` module. If you had code which inherited from `ApiAbstract`,
-  you will need to refactor it. We recommend taking an instance of :class:`~pyairtable.api.Api` as a
-  constructor parameter, and using that to construct :class:`~pyairtable.api.Table` instances as needed.
 
 * :meth:`Model.all <pyairtable.orm.Model.all>` and :meth:`Model.first <pyairtable.orm.Model.first>`
   return instances of the model class instead of returning dicts.
 
+Changes to types
+----------------
+
 * All functions and methods in this library have full type annotations that will pass ``mypy --strict``.
-  See the :ref:`Types` section for more information on the types available to use in this library.
+  See the :ref:`Types` section for more information on the types this library accepts and returns.
 
 
 Migrating from 0.x to 1.0

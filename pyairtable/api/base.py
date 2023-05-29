@@ -1,3 +1,4 @@
+import warnings
 from functools import lru_cache
 from typing import Union
 
@@ -25,7 +26,14 @@ class Base:
             base_id: |arg_base_id|
         """
         if isinstance(api, str):
+            warnings.warn(
+                "Passing API keys to pyairtable.Base is deprecated; use Api.base() instead."
+                " See https://pyairtable.rtfd.org/en/latest/migrations.html for details.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
             api = pyairtable.api.api.Api(api)
+
         self.api = api
         self.id = base_id
 
@@ -42,7 +50,7 @@ class Base:
             table_name: An Airtable table name. Table name should be unencoded,
                 as shown on browser.
         """
-        return pyairtable.api.table.Table(self, table_name)
+        return pyairtable.api.table.Table(self.api, self, table_name)
 
     @property
     def url(self) -> str:

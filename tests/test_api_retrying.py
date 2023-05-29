@@ -14,8 +14,8 @@ from wsgiref.simple_server import WSGIRequestHandler, make_server
 import pytest
 import requests
 
+from pyairtable.api import Api
 from pyairtable.api.retrying import retry_strategy
-from pyairtable.api.table import Table
 from pyairtable.testing import fake_record
 
 
@@ -151,14 +151,13 @@ def mock_endpoint(mock_endpoint_server):
 @pytest.fixture
 def table_with_retry_strategy(constants, mock_endpoint_server):
     def _table_with_retry(retry_strategy):
-        return Table.from_ids(
-            constants["API_KEY"],
-            constants["BASE_ID"],
-            constants["TABLE_NAME"],
+        api = Api(
+            api_key=constants["API_KEY"],
             timeout=(0.1, 0.1),
             retry_strategy=retry_strategy,
             endpoint_url=mock_endpoint_server.url,
         )
+        return api.table(constants["BASE_ID"], constants["TABLE_NAME"])
 
     return _table_with_retry
 

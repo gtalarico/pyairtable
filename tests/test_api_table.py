@@ -4,8 +4,44 @@ import pytest
 from requests import Request
 from requests_mock import Mocker
 
-from pyairtable import Table
+from pyairtable import Api, Base, Table
 from pyairtable.utils import chunked
+
+
+def test_constructor(api: Api, base: Base):
+    """
+    Test the constructor.
+    """
+    table = Table(api, base, "table_name")
+    assert table.api == api
+    assert table.base == base
+    assert table.name == "table_name"
+
+
+def test_deprecated_constructor(api: Api, base: Base):
+    """
+    Test that "legacy" constructors (passing strings instead of instances)
+    will throw deprecation warnings, but that they will work.
+    """
+    for table_args in [
+        (api, base.id, "table_name"),
+        (api.api_key, base.id, "table_name"),
+        (api.api_key, base, "table_name"),
+    ]:
+        with pytest.warns(DeprecationWarning):
+            table = Table(*table_args)
+
+        assert table.api.api_key == api.api_key
+        assert table.base.id == base.id
+        assert table.name == "table_name"
+
+
+def test_invalid_constructor():
+    """
+    Test that we get a TypeError if passing invalid kwargs to Table.
+    """
+    with pytest.raises(TypeError):
+        Table("api_key", "base_id", "table_name", timeout=(1, 1))
 
 
 def test_repr(table: Table):
@@ -20,8 +56,8 @@ def test_repr(table: Table):
         ("abc", "Table-fake", "abc/Table-fake"),
     ],
 )
-def test_url(base_id, table_name, table_url_suffix):
-    table = Table.from_ids("apikey", base_id, table_name)
+def test_url(api: Api, base_id, table_name, table_url_suffix):
+    table = api.table(base_id, table_name)
     assert table.url == f"https://api.airtable.com/v0/{table_url_suffix}"
 
 
