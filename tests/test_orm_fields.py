@@ -27,6 +27,39 @@ def test_field():
 
 
 @pytest.mark.parametrize(
+    "instance,expected",
+    [
+        (
+            f.Field("Name"),
+            "Field('Name', readonly=False, validate_type=True)",
+        ),
+        (
+            f.Field("Name", readonly=True, validate_type=False),
+            "Field('Name', readonly=True, validate_type=False)",
+        ),
+        (
+            f.CollaboratorField("Collaborator"),
+            "CollaboratorField('Collaborator', readonly=False, validate_type=True)",
+        ),
+        (
+            f.LastModifiedByField("User"),
+            "LastModifiedByField('User', readonly=True, validate_type=True)",
+        ),
+        (
+            f.ListField("Items", dict, validate_type=False),
+            "ListField('Items', model=<class 'dict'>, readonly=False, validate_type=False)",
+        ),
+        (
+            f.LinkField("Records", type("TestModel", (Model,), {"Meta": fake_meta()})),
+            "LinkField('Records', model=<class 'abc.TestModel'>, lazy=True)",
+        ),
+    ],
+)
+def test_repr(instance, expected):
+    assert repr(instance) == expected
+
+
+@pytest.mark.parametrize(
     argnames=("field_type", "default_value"),
     argvalues=[
         (f.Field, None),
@@ -52,7 +85,7 @@ def test_orm_missing_values(field_type, default_value):
 
 # Mapping from types to a test value for that type.
 TYPE_VALIDATION_TEST_VALUES = {
-    **{t: t() for t in (str, bool, list, dict, set, tuple)},
+    **{t: t() for t in (str, bool, list, dict)},
     int: 1,  # cannot use int() because RatingField requires value >= 1
     float: 1.0,  # cannot use float() because RatingField requires value >= 1
     datetime.date: datetime.date.today(),
@@ -75,17 +108,17 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.PhoneNumberField, str),
         (f.DurationField, datetime.timedelta),
         (f.RatingField, int),
-        (f.ListField, (list, tuple, set)),
+        (f.ListField, list),
         (f.UrlField, str),
-        (f.LookupField, (list, tuple, set)),
-        (f.MultipleSelectField, (list, tuple, set)),
+        (f.LookupField, list),
+        (f.MultipleSelectField, list),
         (f.PercentField, (int, float)),
         (f.DateField, (datetime.date, datetime.datetime)),
         (f.FloatField, float),
         (f.CollaboratorField, dict),
         (f.SelectField, str),
         (f.EmailField, str),
-        (f.MultipleCollaboratorsField, (list, tuple, set)),
+        (f.MultipleCollaboratorsField, list),
         (f.CurrencyField, (int, float)),
     ],
     ids=operator.itemgetter(0),
@@ -212,6 +245,9 @@ def test_writable_fields(test_case):
     new_obj.the_field = orm_value
     assert new_obj.to_record()["fields"] == {"Field Name": api_value}
 
+    from_init = T(the_field=orm_value)
+    assert from_init.the_field == orm_value
+
     existing_obj = T.from_record(fake_record({"Field Name": api_value}))
     assert existing_obj.the_field == orm_value
 
@@ -268,28 +304,45 @@ def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
         pytest.fail(f"Some fields were not tested by {test_names}:\n{fail_names}")
 
 
-@pytest.mark.parametrize(
-    argnames="values",
-    argvalues=[
-        (1, 2, 3, 4),  # tuple
-        {1, 2, 3, 4},  # set
-        (n + 1 for n in range(4)),  # generator
-    ],
-    ids=type,
-)
-def test_list_field_assignment(values):
+def test_invalid_kwarg():
     """
-    Test that we can assign any sort of iterable to a list field
-    and it will result in a list being stored internally.
+    Ensure we raise AttributeError if an invalid kwarg is passed to the constructor.
     """
 
-    class T:
-        items = f.ListField("Items")
+    class T(Model):
+        Meta = fake_meta()
+        the_field = f.TextField("Field Name")
 
-    t = T()
-    t.items = values
-    assert isinstance(t.items, list)
-    assert sorted(t.items) == [1, 2, 3, 4]
+    assert T(the_field="whatever").the_field == "whatever"
+    with pytest.raises(AttributeError):
+        T(foo="bar")
+
+
+def test_list_field_with_none():
+    """
+    Ensure that a ListField represents a null value as an empty list.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = f.ListField("Fld")
+
+    assert T.from_record(fake_record()).the_field == []
+    assert T.from_record(fake_record(Fld=None)).the_field == []
+
+
+def test_list_field_with_invalid_type():
+    """
+    Ensure that a ListField represents a null value as an empty list.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = f.ListField("Field Name")
+
+    obj = T.from_record(fake_record())
+    with pytest.raises(TypeError):
+        obj.the_field = object()
 
 
 def test_list_field_with_string():
@@ -318,7 +371,18 @@ def test_linked_field():
     class T(Model):
         Meta = fake_meta()
 
-    f.LinkField("Field Name", model=T)
+    class X(Model):
+        Meta = fake_meta()
+        t = f.LinkField("Field Name", model=T)
+
+    x = X(t=[])
+    x.t = [T(), T(), T()]
+
+    with pytest.raises(TypeError):
+        x.t = [1, 2, 3]
+
+    with pytest.raises(TypeError):
+        x.t = -1
 
 
 def test_lookup_field():
@@ -349,3 +413,20 @@ def test_lookup_field():
         and rv_to_internal[1] == "2000-02-02T03:04:05.000Z"
         and rv_to_internal[2] == "2000-03-02T03:04:05.000Z"
     )
+
+
+def test_rating_field():
+    """
+    Test that a RatingField does not accept floats or values below 1.
+    """
+
+    class T:
+        rating = f.RatingField("Rating")
+
+    T().rating = 1
+
+    with pytest.raises(TypeError):
+        T().rating = 0.5
+
+    with pytest.raises(ValueError):
+        T().rating = 0

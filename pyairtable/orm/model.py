@@ -33,7 +33,7 @@ False
 >>> contact.exists()
 True
 >>> contact.id
-rec123asa23
+'rec123asa23'
 
 
 You can read and modify attributes. If record already exists,
@@ -44,13 +44,13 @@ You can read and modify attributes. If record already exists,
 >>> assert contact.is_registered is True
 >>> contact.to_record()
 {
-    "id": recS6qSLw0OCA6Xul",
+    "id": "recS6qSLw0OCA6Xul",
     "createdTime": "2021-07-14T06:42:37.000Z",
     "fields": {
         "First Name": "Mike",
         "Last Name": "McDonalds",
         "Email": "mike@mcd.com",
-        "Resgistered": True
+        "Registered": True
     }
 }
 
@@ -58,15 +58,15 @@ Finally, you can use :meth:`~pyairtable.orm.model.Model.delete` to delete the re
 
 >>> contact.delete()
 True
-
 """
 import abc
-from typing import List
+from typing import Any, Dict, List, Optional
 
-from typing_extensions import Self
+from typing_extensions import Self as SelfType
 
-from pyairtable import Table
-from pyairtable.orm.fields import Field
+from pyairtable.api.table import Table
+from pyairtable.api.types import FieldName, RecordDict, RecordId
+from pyairtable.orm.fields import AnyField, Field
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -94,15 +94,15 @@ class Model(metaclass=abc.ABCMeta):
     id: str = ""
     created_time: str = ""
     _table: Table
-    _fields: dict = {}
-    _linked_cache: dict = {}
+    _fields: Dict[FieldName, Any] = {}
+    _linked_cache: Dict[RecordId, SelfType] = {}
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         cls._validate_class()
         super().__init_subclass__(**kwargs)
 
     @classmethod
-    def _attribute_descriptor_map(cls):
+    def _attribute_descriptor_map(cls) -> Dict[str, AnyField]:
         """
         Returns a dictionary mapping the model's attribute names to the field's
 
@@ -119,7 +119,7 @@ class Model(metaclass=abc.ABCMeta):
         return {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
 
     @classmethod
-    def _field_name_descriptor_map(cls):
+    def _field_name_descriptor_map(cls) -> Dict[FieldName, AnyField]:
         """
         Returns a dictionary that maps Fields 'Names' to descriptor fields
 
@@ -136,7 +136,7 @@ class Model(metaclass=abc.ABCMeta):
         return {f.field_name: f for f in cls._attribute_descriptor_map().values()}
 
     @classmethod
-    def _field_name_attribute_map(cls):
+    def _field_name_attribute_map(cls) -> Dict[FieldName, str]:
         """
         Returns a dictionary that maps Fields 'Names' to the model attribute name:
 
@@ -152,28 +152,35 @@ class Model(metaclass=abc.ABCMeta):
         """
         return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
 
-    def __init__(self, **fields):
+    def __init__(self, **fields: Any):
         # To Store Fields
         self._fields = {}
 
         # Set descriptors
         for key, value in fields.items():
             if key not in self._attribute_descriptor_map():
-                msg = "invalid kwarg '{}'".format(key)
-                raise ValueError(msg)
+                raise AttributeError(key)
             setattr(self, key, value)
 
-        self.typecast = getattr(self.Meta, "typecast", True)
+        self.typecast = bool(self._get_meta("typecast", default=True))
 
     @classmethod
-    def _validate_class(cls):
+    def _get_meta(cls, name: str, default: Any = None, required: bool = False) -> Any:
+        if not hasattr(cls, "Meta"):
+            raise AttributeError(f"{cls.__name__}.Meta must be defined")
+        if required and not hasattr(cls.Meta, name):
+            raise ValueError(f"{cls.__name__}.Meta.{name} must be defined")
+        value = getattr(cls.Meta, name, default)
+        if required and value is None:
+            raise ValueError(f"{cls.__name__}.Meta.{name} cannot be None")
+        return value
+
+    @classmethod
+    def _validate_class(cls) -> None:
         # Verify required Meta attributes were set
-        if not getattr(cls.Meta, "base_id", None):
-            raise ValueError("Meta.base_id must be defined in model")
-        if not getattr(cls.Meta, "table_name", None):
-            raise ValueError("Meta.table_name must be defined in model")
-        if not getattr(cls.Meta, "api_key", None):
-            raise ValueError("Meta.api_key must be defined in model")
+        assert cls._get_meta("api_key", required=True)
+        assert cls._get_meta("base_id", required=True)
+        assert cls._get_meta("table_name", required=True)
 
         model_attributes = [a for a in cls.__dict__.keys() if not a.startswith("__")]
         overridden = set(model_attributes).intersection(Model.__dict__.keys())
@@ -189,10 +196,10 @@ class Model(metaclass=abc.ABCMeta):
         """Return Airtable :class:`~pyairtable.api.Table` class instance"""
         if not hasattr(cls, "_table"):
             cls._table = Table(
-                cls.Meta.api_key,  # type: ignore
-                cls.Meta.base_id,  # type: ignore
-                cls.Meta.table_name,  # type: ignore
-                timeout=getattr(cls.Meta, "timeout", None),  # type: ignore
+                cls._get_meta("api_key"),
+                cls._get_meta("base_id"),
+                cls._get_meta("table_name"),
+                timeout=cls._get_meta("timeout"),
             )
         return cls._table
 
@@ -223,16 +230,16 @@ class Model(metaclass=abc.ABCMeta):
         return did_create
 
     def delete(self) -> bool:
-        """Deleted record. Must have 'id' field"""
+        """Deletes record. Must have 'id' field"""
         if not self.id:
             raise ValueError("cannot be deleted because it does not have id")
         table = self.get_table()
         result = table.delete(self.id)
-        # Is it even possible go get "deleted" False?
-        return result["deleted"]
+        # Is it even possible to get "deleted" False?
+        return bool(result["deleted"])
 
     @classmethod
-    def all(cls, **kwargs) -> List[Self]:
+    def all(cls, **kwargs: Any) -> List[SelfType]:
         """
         Returns all records for this model. For the full list of
         keyword arguments, see :meth:`~pyairtable.api.Api.all`
@@ -241,15 +248,17 @@ class Model(metaclass=abc.ABCMeta):
         return [cls.from_record(record) for record in table.all(**kwargs)]
 
     @classmethod
-    def first(cls, **kwargs) -> Self:
+    def first(cls, **kwargs: Any) -> Optional[SelfType]:
         """
         Returns the first record for this model. For the full list of
         keyword arguments, see :meth:`~pyairtable.api.Api.all`
         """
         table = cls.get_table()
-        return cls.from_record(table.first(**kwargs))
+        if record := table.first(**kwargs):
+            return cls.from_record(record)
+        return None
 
-    def to_record(self, only_writable: bool = False) -> dict:
+    def to_record(self, only_writable: bool = False) -> RecordDict:
         """
         Returns a dictionary object as an Airtable record.
         This method converts internal field values into values expected by Airtable.
@@ -257,7 +266,7 @@ class Model(metaclass=abc.ABCMeta):
         ISO 8601 string
 
         Args:
-            only_writable (``bool``): If ``True``, the result will exclude any
+            only_writable: If ``True``, the result will exclude any
                 values which are associated with readonly fields.
         """
         map_ = self._field_name_descriptor_map()
@@ -269,7 +278,7 @@ class Model(metaclass=abc.ABCMeta):
         return {"id": self.id, "createdTime": self.created_time, "fields": fields}
 
     @classmethod
-    def from_record(cls, record: dict) -> Self:
+    def from_record(cls, record: RecordDict) -> SelfType:
         """Create instance from record dictionary"""
         name_field_map = cls._field_name_descriptor_map()
         # Convert Column Names into model field names
@@ -289,20 +298,15 @@ class Model(metaclass=abc.ABCMeta):
         return instance
 
     @classmethod
-    def from_id(cls, record_id: str, fetch=True) -> Self:
+    def from_id(cls, record_id: str, fetch: bool = True) -> SelfType:
         """
         Create an instance from a `record_id`
 
         Args:
             record_id: |arg_record_id|
-
-        Keyward Args:
             fetch: If `True`, record will be fetched and fields will be
                 updated. If `False`, a new instance is created with the provided `id`,
                 but field values are unset. Default is `True`.
-
-        Returns:
-            (``Model``): Instance of model
         """
         if fetch:
             table = cls.get_table()
@@ -313,7 +317,7 @@ class Model(metaclass=abc.ABCMeta):
             instance.id = record_id
             return instance
 
-    def fetch(self):
+    def fetch(self) -> None:
         """Fetches field and resets instance field values from the Airtable record"""
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
@@ -322,33 +326,5 @@ class Model(metaclass=abc.ABCMeta):
         self._fields = updated._fields
         self.created_time = updated.created_time
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<Model={} {}>".format(self.__class__.__name__, hex(id(self)))
-
-    # TODO - see metadata.py
-    # def verify_schema(cls) -> Tuple[bool, dict]:
-    #     """verify local airtable models"""
-
-    #     base_list = cls.get_base_list()
-    #     base_id_exists = cls.base_id in [b["id"] for b in base_list["bases"]]
-
-    #     if base_id_exists:
-    #         base_schema = cls.get_base_schema()
-    #         table_schema: dict = next(
-    #             (t for t in base_schema["tables"] if t["name"] == cls.table_name), {}
-    #         )
-    #         table_exists = bool(table_schema)
-    #     else:
-    #         table_exists = False
-
-    #     if table_exists:
-    #         airtable_field_names = [f["name"] for f in table_schema["fields"]]
-    #         # Fields.NAME = "|NAME|", Fields.ID = "|ID|") -> ["|NAME|", "|ID|"]
-    #         local_field_names = [v for k, v in vars(cls.Fields).items() if k.isupper()]
-    #         fields = {n: n in airtable_field_names for n in local_field_names}
-    #     else:
-    #         fields = {}
-
-    #     in_sync = base_id_exists and table_exists and all(fields.values())
-    #     details = {"base": base_id_exists, "table": table_exists, "fields": fields}
-    #     return (in_sync, details)

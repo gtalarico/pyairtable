@@ -5,6 +5,7 @@ from requests import Request
 from requests_mock import Mocker
 
 from pyairtable import Table
+from pyairtable.utils import chunked
 
 
 def test_repr(table):
@@ -25,7 +26,7 @@ def test_url(base_id, table_name, table_url_suffix):
 
 
 def test_chunk(table):
-    chunks = [chunk for chunk in table._chunk([0, 0, 1, 1, 2, 2, 3], 2)]
+    chunks = [chunk for chunk in chunked([0, 0, 1, 1, 2, 2, 3], 2)]
     assert chunks[0] == [0, 0]
     assert chunks[1] == [1, 1]
     assert chunks[2] == [2, 2]
@@ -262,7 +263,7 @@ def test_batch_upsert__missing_field(table, requests_mock):
 
 def test_delete(table, mock_response_single):
     id_ = mock_response_single["id"]
-    expected = {"delete": True, "id": id_}
+    expected = {"deleted": True, "id": id_}
     with Mocker() as mock:
         mock.delete(urljoin(table.table_url, id_), status_code=201, json=expected)
         resp = table.delete(id_)
@@ -273,7 +274,7 @@ def test_batch_delete(table, mock_records):
     ids = [i["id"] for i in mock_records]
     with Mocker() as mock:
         for chunk in _chunk(ids, 10):
-            json_response = {"records": [{"delete": True, "id": id_} for id_ in chunk]}
+            json_response = {"records": [{"deleted": True, "id": id_} for id_ in chunk]}
             url_match = (
                 Request("get", table.table_url, params={"records[]": chunk})
                 .prepare()
@@ -286,7 +287,7 @@ def test_batch_delete(table, mock_records):
             )
 
         resp = table.batch_delete(ids)
-    expected = [{"delete": True, "id": i} for i in ids]
+    expected = [{"deleted": True, "id": i} for i in ids]
     assert resp == expected
 
 

@@ -2,10 +2,12 @@ import re
 from datetime import date, datetime
 from typing import Any
 
+from pyairtable.api.types import Fields
+
 from .utils import date_to_iso_str, datetime_to_iso_str
 
 
-def match(dict_values, *, match_any=False):
+def match(dict_values: Fields, *, match_any: bool = False) -> str:
     """
     Creates one or more ``EQUAL()`` expressions for each provided dict value.
     If more than one assetions is included, the expressions are
@@ -26,8 +28,9 @@ def match(dict_values, *, match_any=False):
         dict_values: dictionary containing column names and values
 
     Keyword Args:
-        match_any: matches if **any** of the provided values match. Default is ``False``
-            (all values must match)
+        match_any (``bool``, default: ``False``):
+            If ``True``, matches if **any** of the provided values match.
+            Otherwise, all values must match.
 
     Usage:
         >>> match({"First Name": "John", "Age": 21})
@@ -58,7 +61,7 @@ def match(dict_values, *, match_any=False):
             return OR(*expressions)
 
 
-def escape_quotes(value: str):
+def escape_quotes(value: str) -> str:
     r"""
     Ensures any quotes are escaped. Already escaped quotes are ignored.
 
@@ -75,7 +78,7 @@ def escape_quotes(value: str):
     return escaped_value
 
 
-def to_airtable_value(value: Any):
+def to_airtable_value(value: Any) -> Any:
     """
     Cast value to appropriate airtable types and format.
     For example, to check ``bool`` values in formulas, you actually to compare
@@ -94,7 +97,7 @@ def to_airtable_value(value: Any):
         * - all others
           - unchanged
 
-    Arg:
+    Args:
         value: value to be cast.
 
     """
@@ -153,7 +156,7 @@ def STR_VALUE(value: str) -> str:
     return "'{}'".format(escape_quotes(str(value)))
 
 
-def IF(logical, value1, value2) -> str:
+def IF(logical: str, value1: str, value2: str) -> str:
     """
     Creates an IF statement
 
@@ -163,7 +166,7 @@ def IF(logical, value1, value2) -> str:
     return "IF({}, {}, {})".format(logical, value1, value2)
 
 
-def FIND(what: str, where: str, start_position=0) -> str:
+def FIND(what: str, where: str, start_position: int = 0) -> str:
     """
     Creates an FIND statement
 
@@ -182,7 +185,7 @@ def FIND(what: str, where: str, start_position=0) -> str:
         return "FIND({}, {})".format(what, where)
 
 
-def AND(*args) -> str:
+def AND(*args: str) -> str:
     """
     Creates an AND Statement
 
@@ -192,7 +195,7 @@ def AND(*args) -> str:
     return "AND({})".format(",".join(args))
 
 
-def OR(*args) -> str:
+def OR(*args: str) -> str:
     """
     .. versionadded:: 1.2.0
 
@@ -204,7 +207,7 @@ def OR(*args) -> str:
     return "OR({})".format(",".join(args))
 
 
-def LOWER(value) -> str:
+def LOWER(value: str) -> str:
     """
     .. versionadded:: 1.3.0
 

@@ -1,5 +1,9 @@
 from datetime import date, datetime
-from typing import Union
+from typing import Iterator, Sequence, TypeVar, Union
+
+from pyairtable.api.types import CreateAttachmentDict
+
+T = TypeVar("T")
 
 
 def datetime_to_iso_str(value: datetime) -> str:
@@ -46,9 +50,9 @@ def date_from_iso_str(value: str) -> date:
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
-def attachment(url: str, filename="") -> dict:
+def attachment(url: str, filename: str = "") -> CreateAttachmentDict:
     """
-    Returns a dictionary using the expected dicitonary format for attachments.
+    Returns a dictionary using the expected dictionary format for creating attachments.
 
     When creating an attachment, ``url`` is required, and ``filename`` is optional.
     Airtable will download the file at the given url and keep its own copy of it.
@@ -78,3 +82,11 @@ def attachment(url: str, filename="") -> dict:
 
     """
     return {"url": url} if not filename else {"url": url, "filename": filename}
+
+
+def chunked(iterable: Sequence[T], chunk_size: int) -> Iterator[Sequence[T]]:
+    """
+    Break a sequence into chunks
+    """
+    for i in range(0, len(iterable), chunk_size):
+        yield iterable[i : i + chunk_size]

@@ -1,5 +1,14 @@
-from typing import List, Optional
+from typing import Any, Iterator, List, Optional
 
+from pyairtable.api.types import (
+    Fields,
+    RecordDeletedDict,
+    RecordDict,
+    RecordId,
+    UpdateRecordDict,
+)
+
+from . import base, table
 from .abstract import ApiAbstract, TimeoutTuple
 from .retrying import Retry
 
@@ -33,9 +42,9 @@ class Api(ApiAbstract):
             api_key: |arg_api_key|
 
         Keyword Args:
-            timeout (``Tuple``): |arg_timeout|
-            retry_strategy (``Retry``): |arg_retry_strategy|
-            endpoint_url (``str``): |arg_endpoint_url|
+            timeout: |arg_timeout|
+            retry_strategy: |arg_retry_strategy|
+            endpoint_url: |arg_endpoint_url|
         """
         super().__init__(
             api_key,
@@ -44,12 +53,12 @@ class Api(ApiAbstract):
             endpoint_url=endpoint_url,
         )
 
-    def get_table(self, base_id: str, table_name: str) -> "Table":
+    def get_table(self, base_id: str, table_name: str) -> "table.Table":
         """
         Returns a new :class:`Table` instance using all shared
         attributes from :class:`Api`
         """
-        return Table(
+        return table.Table(
             self.api_key,
             base_id,
             table_name,
@@ -57,16 +66,16 @@ class Api(ApiAbstract):
             endpoint_url=self.endpoint_url,
         )
 
-    def get_base(self, base_id: str) -> "Base":
+    def get_base(self, base_id: str) -> "base.Base":
         """
         Returns a new :class:`Base` instance using all shared
         attributes from :class:`Api`
         """
-        return Base(
+        return base.Base(
             self.api_key, base_id, timeout=self.timeout, endpoint_url=self.endpoint_url
         )
 
-    def get_record_url(self, base_id: str, table_name: str, record_id: str):
+    def get_record_url(self, base_id: str, table_name: str, record_id: RecordId) -> str:
         """
         Returns a url for the provided record
 
@@ -77,7 +86,9 @@ class Api(ApiAbstract):
         """
         return super()._get_record_url(base_id, table_name, record_id)
 
-    def get(self, base_id: str, table_name: str, record_id: str, **options):
+    def get(
+        self, base_id: str, table_name: str, record_id: RecordId, **options: Any
+    ) -> RecordDict:
         """
         Retrieves a record by its id
 
@@ -87,16 +98,13 @@ class Api(ApiAbstract):
             base_id: |arg_base_id|
             table_name: |arg_table_name|
             record_id: |arg_record_id|
-
-        Keyword Args:
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-
-        Returns:
-            record: Record
         """
         return super()._get_record(base_id, table_name, record_id, **options)
 
-    def iterate(self, base_id: str, table_name: str, **options):
+    def iterate(
+        self, base_id: str, table_name: str, **options: Any
+    ) -> Iterator[List[RecordDict]]:
         """
         Record Retriever Iterator
 
@@ -126,14 +134,15 @@ class Api(ApiAbstract):
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            iterator: Record Iterator, grouped by page size
-
+            Iterator of pages of records, no greater than ``page_size``
         """
         gen = super()._iterate(base_id, table_name, **options)
         for i in gen:
             yield i
 
-    def first(self, base_id: str, table_name: str, **options):
+    def first(
+        self, base_id: str, table_name: str, **options: Any
+    ) -> Optional[RecordDict]:
         """
         Retrieves the first found record or ``None`` if no records are returned.
 
@@ -156,7 +165,7 @@ class Api(ApiAbstract):
         """
         return super()._first(base_id, table_name, **options)
 
-    def all(self, base_id: str, table_name: str, **options):
+    def all(self, base_id: str, table_name: str, **options: Any) -> List[RecordDict]:
         """
         Retrieves all records repetitively and returns a single list.
 
@@ -182,7 +191,7 @@ class Api(ApiAbstract):
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records (``list``): List of Records
+            List of records retrieved.
 
         >>> records = all(max_records=3, view='All')
 
@@ -193,10 +202,10 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        fields: dict,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        fields: Fields,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> RecordDict:
         """
         Creates a new record
 
@@ -206,16 +215,12 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            fields(``dict``): Fields to insert.
-                Must be dictionary with Column names as Key.
-
-        Keyword Args:
+            fields: Fields to insert.
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            record (``dict``): Inserted record
-
+            The created record.
         """
         return super()._create(
             base_id,
@@ -229,10 +234,10 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        records,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        records: List[Fields],
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         """
         Breaks records into chunks of 10 and inserts them in batches.
         Follows the set API rate.
@@ -245,15 +250,12 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            records(``List[dict]``): List of dictionaries representing
-                records to be created.
-
-        Keyword Args:
+            records: List of dicts representing records to be created.
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records (``list``): list of added records
+            List of created records.
         """
         return super()._batch_create(
             base_id,
@@ -267,11 +269,11 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        record_id: str,
-        fields: dict,
-        replace=False,
-        typecast=False,
-    ):
+        record_id: RecordId,
+        fields: Fields,
+        replace: bool = False,
+        typecast: bool = False,
+    ) -> RecordDict:
         """
         Updates a record by its record id.
         Only Fields passed are updated, the rest are left as is.
@@ -285,18 +287,12 @@ class Api(ApiAbstract):
             base_id: |arg_base_id|
             table_name: |arg_table_name|
             record_id: |arg_record_id|
-            fields(``dict``): Fields to update.
-                Must be a dict with column names or IDs as keys
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - eg. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            fields: Fields to update. Must be a dict with column names or IDs as keys.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
 
         Returns:
-            record (``dict``): Updated record
+            The updated record.
         """
 
         return super()._update(
@@ -312,29 +308,24 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        records: List[dict],
-        replace=False,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        records: List[UpdateRecordDict],
+        replace: bool = False,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         """
         Updates a records by their record id's in batch.
 
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            records(``list``): List of dict: [{"id": record_id, "fields": fields_to_update_dict}]
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - eg. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            records: List of dicts with ``"id"`` and ``"fields"`` as keys.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records(``list``): list of updated records
+            List of updated records.
         """
         return super()._batch_update(
             base_id,
@@ -349,12 +340,12 @@ class Api(ApiAbstract):
         self,
         base_id: str,
         table_name: str,
-        records: List[dict],
+        records: List[UpdateRecordDict],
         key_fields: List[str],
-        replace=False,
-        typecast=False,
-        return_fields_by_field_id=False,
-    ):
+        replace: bool = False,
+        typecast: bool = False,
+        return_fields_by_field_id: bool = False,
+    ) -> List[RecordDict]:
         """
         Updates or creates records in batches, either using ``id`` (if given) or using a set of
         fields (``key_fields``) to look for matches. For more information on how this operation
@@ -365,20 +356,15 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            records (``list``): List of dict: [{"id": record_id, "fields": fields_to_update_dict}]
-            key_fields (``list``): List of field names that Airtable should use to match
+            records: List of dicts with ``"id"`` and ``"fields"`` as keys.
+            key_fields: List of field names that Airtable should use to match
                 records in the input with existing records on the server.
-
-        Keyword Args:
-            replace (``bool``, optional): If ``True``, record is replaced in its entirety
-                by provided fields - e.g. if a field is not included its value will
-                bet set to null. If False, only provided fields are updated.
-                Default is ``False``.
+            replace: |kwarg_replace|
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            records (``list``): list of updated records
+            List of updated records.
         """
         return super()._batch_upsert(
             base_id=base_id,
@@ -390,7 +376,9 @@ class Api(ApiAbstract):
             return_fields_by_field_id=return_fields_by_field_id,
         )
 
-    def delete(self, base_id: str, table_name: str, record_id: str):
+    def delete(
+        self, base_id: str, table_name: str, record_id: RecordId
+    ) -> RecordDeletedDict:
         """
         Deletes a record by its id
 
@@ -403,11 +391,13 @@ class Api(ApiAbstract):
             record_id: |arg_record_id|
 
         Returns:
-            record (``dict``): Deleted Record
+            Confirmation of the deleted record.
         """
         return super()._delete(base_id, table_name, record_id)
 
-    def batch_delete(self, base_id: str, table_name: str, record_ids: List[str]):
+    def batch_delete(
+        self, base_id: str, table_name: str, record_ids: List[RecordId]
+    ) -> List[RecordDeletedDict]:
         """
         Breaks records into batches of 10 and deletes in batches, following set
         API Rate Limit (5/sec).
@@ -420,17 +410,12 @@ class Api(ApiAbstract):
         Args:
             base_id: |arg_base_id|
             table_name: |arg_table_name|
-            record_ids(``list``): Record Ids to delete
+            record_ids: Record IDs to delete
 
         Returns:
-            records(``list``): list of records deleted
-
+            Confirmation of each record deleted.
         """
         return super()._batch_delete(base_id, table_name, record_ids)
 
     def __repr__(self) -> str:
         return "<pyairtable.Api>"
-
-
-from pyairtable.api.base import Base  # noqa
-from pyairtable.api.table import Table  # noqa

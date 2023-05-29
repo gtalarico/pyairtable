@@ -1,17 +1,16 @@
-import warnings
-from collections import OrderedDict
 from typing import Any, Dict, List, Tuple
 
 
 class InvalidParamException(ValueError):
-    """Raise when invalid parameters are used"""
-
-    def __init__(self, message, *args):
-        self.message = message
-        super().__init__(message, *args)
+    """
+    Raised when invalid parameters are passed to ``all()``, ``first()``, etc.
+    """
 
 
-def dict_list_to_request_params(param_name: str, values: List[dict]) -> dict:
+def dict_list_to_request_params(
+    param_name: str,
+    values: List[Dict[str, str]],
+) -> Dict[str, str]:
     """
     Returns dict to be used by request params from dict list
 
@@ -29,16 +28,15 @@ def dict_list_to_request_params(param_name: str, values: List[dict]) -> dict:
         "sort[1][field]": "FieldTwo",
         "sort[1][direction]: "desc",
     }
-
     """
-    param_dict = {}
-    for index, dictionary in enumerate(values):
-        for key, value in dictionary.items():
-            field_name = "{param_name}[{index}][{key}]".format(
-                param_name=param_name, index=index, key=key
-            )
-            param_dict[field_name] = value
-    return OrderedDict(sorted(param_dict.items()))
+    return {
+        key: value
+        for (key, value) in sorted(
+            (f"{param_name}[{index}][{key}]", value)
+            for index, field_sort in enumerate(values)
+            for key, value in field_sort.items()
+        )
+    }
 
 
 def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
@@ -63,42 +61,6 @@ def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
         sort_param = {"field": field_name, "direction": direction}
         values.append(sort_param)
     return values
-
-
-def to_params_dict(param_name: str, value: Any):
-    """Returns a dictionary for use in Request 'params'"""
-    warnings.warn(
-        "to_params_dict will be removed in 2.0.0",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    if param_name == "max_records":
-        return {"maxRecords": value}
-    elif param_name == "view":
-        return {"view": value}
-    elif param_name == "page_size":
-        return {"pageSize": value}
-    elif param_name == "offset":
-        return {"offset": value}
-    elif param_name == "formula":
-        return {"filterByFormula": value}
-    elif param_name == "fields":
-        return {"fields[]": value}
-    elif param_name == "cell_format":
-        return {"cellFormat": value}
-    elif param_name == "time_zone":
-        return {"timeZone": value}
-    elif param_name == "user_locale":
-        return {"userLocale": value}
-    elif param_name == "return_fields_by_field_id":
-        return {"returnFieldsByFieldId": int(value)}
-    elif param_name == "sort":
-        sorting_dict_list = field_names_to_sorting_dict(value)
-        return dict_list_to_request_params("sort", sorting_dict_list)
-    else:
-        msg = "'{0}' is not a supported parameter".format(param_name)
-        raise InvalidParamException(msg)
 
 
 #: Mapping of pyairtable option names to Airtable parameter names

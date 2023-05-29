@@ -107,6 +107,29 @@ def test_model():
     assert record["fields"]["First Name"] == contact.first_name
 
 
+def test_first():
+    with mock.patch.object(Table, "first") as m_first:
+        m_first.return_value = {
+            "id": "recwnBLPIeQJoYVt4",
+            "createdTime": "",
+            "fields": {
+                "First Name": "X",
+                "Created At": "2014-09-05T12:34:56.000Z",
+            },
+        }
+        contact = Contact.first()
+
+    assert contact.first_name == "X"
+
+
+def test_first_none():
+    with mock.patch.object(Table, "first") as m_first:
+        m_first.return_value = None
+        contact = Contact.first()
+
+    assert contact is None
+
+
 def test_from_record():
     # Fetch = True
     with mock.patch.object(Table, "get") as m_get:
