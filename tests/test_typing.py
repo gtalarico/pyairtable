@@ -18,14 +18,18 @@ if TYPE_CHECKING:
 
     # Ensure the type signatures for pyairtable.api.Api don't change.
     api = pyairtable.api.Api(access_token)
+    assert_type(api.build_url("foo", "bar"), str)
     assert_type(api.base(base_id), pyairtable.api.Base)
+    assert_type(api.table(base_id, table_name), pyairtable.api.Table)
 
     # Ensure the type signatures for pyairtable.api.Base don't change.
     base = pyairtable.api.Base(api, base_id)
     assert_type(base.table(table_name), pyairtable.api.Table)
+    assert_type(base.url, str)
 
     # Ensure the type signatures for pyairtable.api.Table don't change.
-    table = pyairtable.api.Table(api, base, table_name)
+    table = pyairtable.api.Table(None, base, table_name)
+    assert_type(table, pyairtable.api.Table)
     assert_type(table.get(record_id), T.RecordDict)
     assert_type(table.iterate(), Iterator[List[T.RecordDict]])
     assert_type(table.all(), List[T.RecordDict])

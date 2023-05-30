@@ -23,9 +23,11 @@ Changes to Api, Base, and Table
 no longer inherit from the same base class. Each has its own scope of responsibility and has
 methods which refer to the other classes as needed. See :ref:`Getting Started`.
 
-If your code relies on calling :class:`~pyairtable.api.Base` with ``api_key=`` as a keyword arg,
-or calling :class:`~pyairtable.api.Table` with ``api_key=`` and ``base_id=`` as keyword args,
-you will need to change how you call the constructor. See below for (un)supported patterns:
+For a period of time, the constructor for :class:`~pyairtable.api.Base`, and :class:`~pyairtable.api.Table`
+will remain backwards-compatible with the previous approach (passing in ``str`` values),
+but doing so will produce deprecation warnings.
+
+See below for supported and unsupported patterns:
 
 .. code-block:: python
 
@@ -35,23 +37,19 @@ you will need to change how you call the constructor. See below for (un)supporte
     >>> base = Base(api, base_id)  # [Api, str]
     >>> table = base.table(table_name)  # [str]
     >>> table = api.table(base_id, table_name)  # [str, str]
-    >>> table = Table(api, base, table_name)  # [Api, Base, str]
+    >>> table = Table(None, base, table_name)  # [None, Base, str]
 
     # The following are still supported but will issue a DeprecationWarning:
     >>> base = Base(api_key, base_id)  # [str, str]
-    >>> table = Table(api, base_id, table_name)  # [Api, str, str]
-    >>> table = Table(api_key, base, table_name)  # [str, Base, str]
     >>> table = Table(api_key, base_id, table_name)  # [str, str, str]
 
-    # The following will raise a TypeError for unexpected keyword arguments
-    # because the names of these parameters have changed:
-    >>> base = Base(api_key=api_key, base_id=base_id)
-    >>> table = Table(api_key=api_key, base_id=base_id, table_name=table_name)
+    # The following will raise a TypeError for mixing str & instances:
+    >>> table = Table(api_key, base, table_name)  # [str, Base, str]
+    >>> table = Table(api, base_id, table_name)  # [Api, str, str]
 
-    # The following will raise a TypeError for unexpected keyword arguments
-    # because keyword parameters for Api are no longer supported:
-    >>> base = Base(api_key, base_id, timeout=...)
-    >>> table = Table(api_key, base_id, table_name, timeout=...)
+    # The following will raise a TypeError. We do this proactively
+    # to avoid situations where self.api and self.base don't align.
+    >>> table = Table(api, base_id, table_name)  # [Api, Base, str]
 
 Changes to the ORM
 ------------------

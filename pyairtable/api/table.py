@@ -4,6 +4,7 @@ from typing import Any, Iterator, List, Optional, Union, overload
 
 import pyairtable.api.api
 import pyairtable.api.base
+from pyairtable.api.retrying import Retry
 from pyairtable.api.types import (
     FieldName,
     Fields,
@@ -24,11 +25,6 @@ class Table:
 
         >>> api = Api(access_token)
         >>> table = api.table("base_id", "table_name")
-
-    The previous method of constructing Table instances (by directly providing ``api_key`` and ``base_id``)
-    will still function, but is deprecated. It is maintained as convenience and will be removed in the future.
-
-        >>> Table(access_token, "base_id", "table_name")
     """
 
     api: "pyairtable.api.api.Api"
@@ -36,25 +32,50 @@ class Table:
     name: str
 
     @overload
-    def __init__(self, api: str, base: str, table_name: str, /):
+    def __init__(
+        self,
+        api_key: str,
+        base_id: str,
+        table_name: str,
+        *,
+        timeout: Optional["pyairtable.api.api.TimeoutTuple"] = None,
+        retry_strategy: Optional[Retry] = None,
+        endpoint_url: str = "https://api.airtable.com",
+    ):
         ...
 
     @overload
     def __init__(
         self,
-        api: "pyairtable.api.api.Api",
-        base: "pyairtable.api.base.Base",
+        api_key: None,
+        base_id: "pyairtable.api.base.Base",
         table_name: str,
     ):
         ...
 
     def __init__(
         self,
-        api: Union["pyairtable.api.api.Api", str],
-        base: Union["pyairtable.api.base.Base", str],
+        api_key: Union[None, str],
+        base_id: Union["pyairtable.api.base.Base", str],
         table_name: str,
+        **kwargs: Any,
     ):
-        if isinstance(api, str) or isinstance(base, str):
+        """
+        Old style constructor takes ``str`` arguments, and will create its own
+        instance of :class:`Api`. This constructor can also be provided with
+        keyword arguments to the :class:`Api` class.
+
+        This approach is deprecated, and will likely be removed in the future.
+
+            >>> Table("api_key", "base_id", "table_name", timeout=(1, 1))
+
+        New style constructor has an odd signature to preserve backwards-compatibility
+        with the old style (above), requiring ``None`` as the first argument, followed by
+        an instance of :class:`Base`, followed by the table name.
+
+            >>> Table(None, base, "table_name")
+        """
+        if isinstance(api_key, str) and isinstance(base_id, str):
             warnings.warn(
                 "Passing API keys or base IDs to pyairtable.Table is deprecated;"
                 " use Api.table() or Base.table() instead."
@@ -62,14 +83,17 @@ class Table:
                 category=DeprecationWarning,
                 stacklevel=2,
             )
+            api = pyairtable.api.api.Api(api_key, **kwargs)
+            base = api.base(base_id)
+        elif api_key is None and isinstance(base_id, pyairtable.api.base.Base):
+            base = base_id
+        else:
+            raise TypeError(
+                "Table() expects either (str, str, str) or (None, Base, str);"
+                f" got ({type(api_key)}, {type(base_id)}, {type(table_name)})"
+            )
 
-        if isinstance(api, str):
-            api = pyairtable.api.api.Api(api)
-
-        if isinstance(base, str):
-            base = api.base(base)
-
-        self.api = api
+        self.api = base.api
         self.base = base
         self.name = table_name
 

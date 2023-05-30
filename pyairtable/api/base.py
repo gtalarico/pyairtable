@@ -8,12 +8,7 @@ import pyairtable.api.table
 
 class Base:
     """
-    Represents an Airtable base. Can be called with an access token
-    or with an instance of :class:`Api`.
-
-    Usage:
-        >>> base = Base("auth_token", "base_id")
-        >>> base.table("tblWhatever").all()
+    Represents an Airtable base.
     """
 
     api: "pyairtable.api.api.Api"
@@ -21,6 +16,17 @@ class Base:
 
     def __init__(self, api: Union["pyairtable.api.api.Api", str], base_id: str):
         """
+        Old style constructor takes ``str`` arguments, and will create its own
+        instance of :class:`Api`.
+
+        This approach is deprecated, and will likely be removed in the future.
+
+            >>> Base("access_token", "base_id")
+
+        New style constructor takes an instance of :class:`Api`:
+
+            >>> Base(api, "table_name")
+
         Args:
             api: An instance of :class:`Api` or an Airtable access token.
             base_id: |arg_base_id|
@@ -50,7 +56,7 @@ class Base:
             table_name: An Airtable table name. Table name should be unencoded,
                 as shown on browser.
         """
-        return pyairtable.api.table.Table(self.api, self, table_name)
+        return pyairtable.api.table.Table(None, self, table_name)
 
     @property
     def url(self) -> str:

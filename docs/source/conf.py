@@ -39,6 +39,7 @@ autodoc_default_options = {
     "exclude-members": "__new__",
 }
 
+
 # See https://github.com/tox-dev/sphinx-autodoc-typehints#options
 typehints_defaults = "comma"
 typehints_use_signature = True

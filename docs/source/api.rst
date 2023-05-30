@@ -8,7 +8,7 @@ Api
 *******
 
 .. autoclass:: pyairtable.api.Api
-  :members:
+    :members:
 
 
 Base
@@ -123,14 +123,14 @@ against a Python dictionary:
 
 .. code-block:: python
 
-  >>> from pyairtable import Table
+  >>> import pyairtable
   >>> from pyairtable.formulas import match
-  >>> table = Table("auth_token", "base_id", "Contact")
+  >>> table = pyairtable.Api("auth_token").table("base_id", "Contact")
   >>> formula = match({"First Name": "John", "Age": 21})
-  >>> table.first(formula=formula)
-  {"id": "recUwKa6lbNSMsetH", "fields": {"First Name": "John", "Age": 21}}
   >>> formula
   "AND({First Name}='John',{Age}=21)"
+  >>> table.first(formula=formula)
+  {"id": "recUwKa6lbNSMsetH", "fields": {"First Name": "John", "Age": 21}}
 
 .. autofunction:: pyairtable.formulas.match
 

@@ -8,40 +8,43 @@ from pyairtable import Api, Base, Table
 from pyairtable.utils import chunked
 
 
-def test_constructor(api: Api, base: Base):
+def test_constructor(base: Base):
     """
     Test the constructor.
     """
-    table = Table(api, base, "table_name")
-    assert table.api == api
+    table = Table(None, base, "table_name")
+    assert table.api == base.api
     assert table.base == base
     assert table.name == "table_name"
 
 
 def test_deprecated_constructor(api: Api, base: Base):
     """
-    Test that "legacy" constructors (passing strings instead of instances)
-    will throw deprecation warnings, but that they will work.
+    Test that "legacy" constructor (passing strings instead of instances)
+    will throw deprecation warning, but it _will_ work.
     """
-    for table_args in [
-        (api, base.id, "table_name"),
-        (api.api_key, base.id, "table_name"),
-        (api.api_key, base, "table_name"),
+    with pytest.warns(DeprecationWarning):
+        table = Table(api.api_key, base.id, "table_name", timeout=(1, 99))
+
+    assert table.api.api_key == api.api_key
+    assert table.api.timeout == (1, 99)
+    assert table.base.id == base.id
+    assert table.name == "table_name"
+
+
+def test_invalid_constructor(api, base):
+    """
+    Test that we get a TypeError if passing invalid args to Table.
+    """
+    for args in [
+        [api, "base_id", "table_name"],
+        ["api_key", base, "table_name"],
+        [api, base, "table_name"],
     ]:
-        with pytest.warns(DeprecationWarning):
-            table = Table(*table_args)
-
-        assert table.api.api_key == api.api_key
-        assert table.base.id == base.id
-        assert table.name == "table_name"
-
-
-def test_invalid_constructor():
-    """
-    Test that we get a TypeError if passing invalid kwargs to Table.
-    """
-    with pytest.raises(TypeError):
-        Table("api_key", "base_id", "table_name", timeout=(1, 1))
+        kwargs = args.pop() if isinstance(args[-1], dict) else {}
+        with pytest.raises(TypeError):
+            print(args, kwargs)
+            Table(*args, **kwargs)
 
 
 def test_repr(table: Table):
