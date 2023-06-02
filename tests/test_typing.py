@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Iterator, List, Optional
 
 from typing_extensions import assert_type
 
-import pyairtable.api
+import pyairtable
 import pyairtable.api.types as T
 
 if TYPE_CHECKING:
@@ -16,20 +16,20 @@ if TYPE_CHECKING:
     record_id = "recSomeFakeRecord"
     now = "2023-01-01T00:00:00.0000Z"
 
-    # Ensure the type signatures for pyairtable.api.Api don't change.
-    api = pyairtable.api.Api(access_token)
+    # Ensure the type signatures for pyairtable.Api don't change.
+    api = pyairtable.Api(access_token)
     assert_type(api.build_url("foo", "bar"), str)
-    assert_type(api.base(base_id), pyairtable.api.Base)
-    assert_type(api.table(base_id, table_name), pyairtable.api.Table)
+    assert_type(api.base(base_id), pyairtable.Base)
+    assert_type(api.table(base_id, table_name), pyairtable.Table)
 
-    # Ensure the type signatures for pyairtable.api.Base don't change.
-    base = pyairtable.api.Base(api, base_id)
-    assert_type(base.table(table_name), pyairtable.api.Table)
+    # Ensure the type signatures for pyairtable.Base don't change.
+    base = pyairtable.Base(api, base_id)
+    assert_type(base.table(table_name), pyairtable.Table)
     assert_type(base.url, str)
 
-    # Ensure the type signatures for pyairtable.api.Table don't change.
-    table = pyairtable.api.Table(None, base, table_name)
-    assert_type(table, pyairtable.api.Table)
+    # Ensure the type signatures for pyairtable.Table don't change.
+    table = pyairtable.Table(None, base, table_name)
+    assert_type(table, pyairtable.Table)
     assert_type(table.get(record_id), T.RecordDict)
     assert_type(table.iterate(), Iterator[List[T.RecordDict]])
     assert_type(table.all(), List[T.RecordDict])

@@ -13,17 +13,17 @@ ApiAbstract removed
 -----------------------
 
 We've removed the ``pyairtable.api.abstract`` module. If you had code which inherited from ``ApiAbstract``,
-you will need to refactor it. We recommend taking an instance of :class:`~pyairtable.api.Api` as a
-constructor parameter, and using that to construct :class:`~pyairtable.api.Table` instances as needed.
+you will need to refactor it. We recommend taking an instance of :class:`~pyairtable.Api` as a
+constructor parameter, and using that to construct :class:`~pyairtable.Table` instances as needed.
 
 Changes to Api, Base, and Table
 -----------------------------------
 
-:class:`~pyairtable.api.Api`, :class:`~pyairtable.api.Base`, and :class:`~pyairtable.api.Table`
+:class:`~pyairtable.Api`, :class:`~pyairtable.Base`, and :class:`~pyairtable.Table`
 no longer inherit from the same base class. Each has its own scope of responsibility and has
 methods which refer to the other classes as needed. See :ref:`Getting Started`.
 
-For a period of time, the constructor for :class:`~pyairtable.api.Base`, and :class:`~pyairtable.api.Table`
+For a period of time, the constructor for :class:`~pyairtable.Base`, and :class:`~pyairtable.Table`
 will remain backwards-compatible with the previous approach (passing in ``str`` values),
 but doing so will produce deprecation warnings.
 
@@ -88,7 +88,7 @@ API Changes in 1.0
 We used this new major release to make a few breaking changes:
 
 * Introduced a simpler api that's more closely aligned with Airtable Api's patterns.
-* Created more a flexible API (:class:`~pyairtable.api.Api`, :class:`~pyairtable.api.Base`, :class:`~pyairtable.api.Table`)
+* Created more a flexible API (:class:`~pyairtable.Api`, :class:`~pyairtable.Base`, :class:`~pyairtable.Table`)
 
 
 .. list-table:: Changes
@@ -98,7 +98,7 @@ We used this new major release to make a few breaking changes:
    * - 0.x (airtable-python-wrapper)
      - 1.0 (pyAirtable)
    * - ``Airtable()``
-     - :class:`~pyairtable.api.Api`, :class:`~pyairtable.api.Base`, :class:`~pyairtable.api.Table`
+     - :class:`~pyairtable.Api`, :class:`~pyairtable.Base`, :class:`~pyairtable.Table`
    * - ``get()``
      - ``get()``
    * - ``get_iter()``

@@ -20,13 +20,13 @@ See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
 
 * Add support for Airtable's upsert operation (see :ref:`Updating Records`).
   - `PR #255 <https://github.com/gtalarico/pyairtable/pull/255>`_.
-* Fix ``return_fields_by_field_id`` in :meth:`~pyairtable.api.Api.batch_create` and :meth:`~pyairtable.api.Api.batch_update`.
+* Fix ``return_fields_by_field_id`` in :meth:`~pyairtable.Api.batch_create` and :meth:`~pyairtable.Api.batch_update`.
   - `PR #252 <https://github.com/gtalarico/pyairtable/pull/252>`_.
 * Fix ORM crash when Airtable returned additional fields.
   - `PR #250 <https://github.com/gtalarico/pyairtable/pull/250>`_.
 * Use POST for URLs that are longer than the 16k character limit set by the Airtable API.
   - `PR #247 <https://github.com/gtalarico/pyairtable/pull/247>`_.
-* Added ``endpoint_url=`` param to :class:`~pyairtable.api.Table`, :class:`~pyairtable.api.Base`, :class:`~pyairtable.api.Api`.
+* Added ``endpoint_url=`` param to :class:`~pyairtable.Table`, :class:`~pyairtable.Base`, :class:`~pyairtable.Api`.
   - `PR #243 <https://github.com/gtalarico/pyairtable/pull/243>`_.
 * Added ORM :class:`~pyairtable.orm.fields.LookupField`.
   - `PR #182 <https://github.com/gtalarico/pyairtable/pull/182>`_.
@@ -44,12 +44,12 @@ See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
 
 * Added new ``LOWER`` formula - `PR #171 <https://github.com/gtalarico/pyairtable/pull/171>`_. See updated :ref:`Formulas`.
 * Added ``match(..., match_any=True)`` to :meth:`~pyairtable.formulas.match`
-* Added ``return_fields_by_field_id`` in :meth:`~pyairtable.api.Api.get`
+* Added ``return_fields_by_field_id`` in :meth:`~pyairtable.Api.get`
 
 1.2.0 (2022-07-09)
 -------------------------
 
-* Fixed missing rate limit in :meth:`~pyairtable.api.Api.batch_update` - `PR #162 <https://github.com/gtalarico/pyairtable/pull/162>`_.
+* Fixed missing rate limit in :meth:`~pyairtable.Api.batch_update` - `PR #162 <https://github.com/gtalarico/pyairtable/pull/162>`_.
 * Added support for new parameter `return_fields_by_field_id` - `PR #161 <https://github.com/gtalarico/pyairtable/pull/161>`_. See updated :ref:`Parameters`.
 * Added new ``OR`` formula - `PR #148 <https://github.com/gtalarico/pyairtable/pull/148>`_. See updated :ref:`Formulas`.
 

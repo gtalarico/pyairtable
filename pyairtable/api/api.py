@@ -54,7 +54,7 @@ class Api:
                 server read timeout. Default is ``None`` (no timeout).
             retry_strategy: An instance of
                 `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`__.
-                You can use :func:`~pyairtable.api.retrying.retry_strategy` to build one with reasonable
+                You can use :func:`~pyairtable.retry_strategy` to build one with reasonable
                 defaults, or provide your own custom instance of ``Retry``.
             endpoint_url: The API endpoint to use. Override this if you are using
                 a debugging or caching proxy.

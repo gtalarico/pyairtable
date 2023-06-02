@@ -76,8 +76,8 @@ class Table:
             >>> Table(None, base, "table_name")
 
         These signatures may change in the future. Developers using this library are
-        encouraged to not construct Table instances directly, and instead construct
-        an :class:`Api` instance and fetch tables via :meth:`Api.table() <pyairtable.api.Api.table>`.
+        encouraged to not construct Table instances directly, and instead fetch tables
+        via :meth:`Api.table() <pyairtable.Api.table>`.
         """
         if isinstance(api_key, str) and isinstance(base_id, str):
             warnings.warn(
@@ -209,7 +209,7 @@ class Table:
         Retrieves the first matching record.
         Returns ``None`` if no records are returned.
 
-        This is similar to :meth:`~pyairtable.api.Table.all`, except
+        This is similar to :meth:`~pyairtable.Table.all`, except
         it sets ``page_size`` and ``max_records`` to ``1``.
 
         Keyword Args:

@@ -7,21 +7,21 @@ API Reference
 Api
 *******
 
-.. autoclass:: pyairtable.api.Api
+.. autoclass:: pyairtable.Api
     :members:
 
 
 Base
 *******
 
-.. autoclass:: pyairtable.api.Base
+.. autoclass:: pyairtable.Base
     :members:
 
 
 Table
 *******
 
-.. autoclass:: pyairtable.api.Table
+.. autoclass:: pyairtable.Table
     :members:
 
 
@@ -31,13 +31,13 @@ Retrying
 .. versionadded:: 1.4.0
 
 You may provide an instance of ``urllib3.util.Retry`` to configure retrying behaviour,
-or you can use :func:`~pyairtable.api.retrying.retry_strategy` to quickly generate a
+or you can use :func:`~pyairtable.retry_strategy` to quickly generate a
 ``Retry`` instance with reasonable defaults (which you can adjust).
 
 .. note:: for backwards-compatibility, the default behavior is to not retry (`retry_strategy=None`).
   This may change in future releases.
 
-Out of the box, :func:`~pyairtable.api.retrying.retry_strategy` will retry a request several times
+Out of the box, :func:`~pyairtable.retry_strategy` will retry a request several times
 if it receives a 429 (which indicates you've exceeded Airtable's limit of 5 QPS per base) or
 if it receives a potentially transient server-side error (500, 502, 503, or 504).
 
@@ -47,7 +47,7 @@ if it receives a potentially transient server-side error (500, 502, 503, or 504)
   api = Api('auth_token', retry_strategy=retry_strategy())
 
 
-.. autofunction:: pyairtable.api.retrying.retry_strategy
+.. autofunction:: pyairtable.retry_strategy
 
 
 
@@ -58,7 +58,7 @@ Airtable offers a variety of options to control how you fetch data.
 
 Most options in the Airtable API (e.g. ``sort``, ``fields``, etc.)
 have a corresponding keyword argument that can be used with fetching methods
-like :meth:`~pyairtable.api.Table.iterate` or :meth:`~pyairtable.api.Table.all`.
+like :meth:`~pyairtable.Table.iterate` or :meth:`~pyairtable.Table.all`.
 
 
 .. list-table::

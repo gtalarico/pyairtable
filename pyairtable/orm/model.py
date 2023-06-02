@@ -251,7 +251,7 @@ class Model(metaclass=abc.ABCMeta):
     def all(cls, **kwargs: Any) -> List[SelfType]:
         """
         Returns all records for this model. For the full list of
-        keyword arguments, see :meth:`~pyairtable.api.Api.all`
+        keyword arguments, see :meth:`~pyairtable.Api.all`
         """
         table = cls.get_table()
         return [cls.from_record(record) for record in table.all(**kwargs)]
@@ -260,7 +260,7 @@ class Model(metaclass=abc.ABCMeta):
     def first(cls, **kwargs: Any) -> Optional[SelfType]:
         """
         Returns the first record for this model. For the full list of
-        keyword arguments, see :meth:`~pyairtable.api.Api.all`
+        keyword arguments, see :meth:`~pyairtable.Api.all`
         """
         table = cls.get_table()
         if record := table.first(**kwargs):

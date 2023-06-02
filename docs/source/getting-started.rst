@@ -28,8 +28,8 @@ This library will not persist your access token anywhere. Your access token shou
 A common method is to `store it as an environment variable <https://www.twilio.com/blog/2017/01/how-to-set-environment-variables.html>`_
 and load it using ``os.environ``.
 
-The :class:`~pyairtable.api.Api` class represents a connection to Airtable, while the
-:class:`~pyairtable.api.Table` class exposes methods for retrieving, creating, and modifying
+The :class:`~pyairtable.Api` class represents a connection to Airtable, while the
+:class:`~pyairtable.Table` class exposes methods for retrieving, creating, and modifying
 records in Airtable:
 
 .. code-block:: python
@@ -82,40 +82,40 @@ the official API equivalents.
      - pyAirtable
      - Airtable API
    * - `Get a record <https://airtable.com/developers/web/api/get-record>`_
-     - :meth:`~pyairtable.api.Table.get`
+     - :meth:`~pyairtable.Table.get`
      - ``GET baseId/tableId/recordId``
    * - `Get all records <https://airtable.com/developers/web/api/list-records>`_
-     - :meth:`~pyairtable.api.Table.all`
+     - :meth:`~pyairtable.Table.all`
      - ``GET baseId/tableId``
    * - `Get matching records <https://airtable.com/developers/web/api/list-records>`_
-     - :meth:`all(formula=...) <pyairtable.api.Table.all>`
+     - :meth:`all(formula=...) <pyairtable.Table.all>`
      - ``GET baseId/tableId?filterByFormula=...``
    * - `Get first match <https://airtable.com/developers/web/api/list-records>`_
-     - :meth:`~pyairtable.api.Table.first`
+     - :meth:`~pyairtable.Table.first`
      - ``GET baseId/tableId?maxRecords=1``
    * - `Create a record <https://airtable.com/developers/web/api/create-records>`_
-     - :meth:`~pyairtable.api.Table.create`
+     - :meth:`~pyairtable.Table.create`
      - ``POST baseId/tableId``
    * - `Update a record <https://airtable.com/developers/web/api/update-record>`_
-     - :meth:`~pyairtable.api.Table.update`
+     - :meth:`~pyairtable.Table.update`
      - ``PATCH baseId/tableId/recordId``
    * - `Replace a record <https://airtable.com/developers/web/api/update-record>`_
-     - :meth:`update(replace=True) <pyairtable.api.Table.update>`
+     - :meth:`update(replace=True) <pyairtable.Table.update>`
      - ``PUT baseId/tableId/recordId``
    * - `Delete a record <https://airtable.com/developers/web/api/delete-record>`_
-     - :meth:`~pyairtable.api.Table.delete`
+     - :meth:`~pyairtable.Table.delete`
      - ``DELETE baseId/tableId/recordId``
    * - `Create multiple records <https://airtable.com/developers/web/api/create-records>`_
-     - :meth:`~pyairtable.api.Table.batch_create`
+     - :meth:`~pyairtable.Table.batch_create`
      - ``POST baseId/tableId``
    * - `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records>`_
-     - :meth:`~pyairtable.api.Table.batch_update`
+     - :meth:`~pyairtable.Table.batch_update`
      - ``PATCH baseId/tableId``
    * - `Upsert multiple records <https://airtable.com/developers/web/api/update-multiple-records>`_
-     - :meth:`~pyairtable.api.Table.batch_upsert`
+     - :meth:`~pyairtable.Table.batch_upsert`
      - ``PATCH baseId/tableId``
    * - `Delete multiple records <https://airtable.com/developers/web/api/delete-multiple-records>`_
-     - :meth:`~pyairtable.api.Table.batch_delete`
+     - :meth:`~pyairtable.Table.batch_delete`
      - ``DELETE baseId/tableId``
 
 
@@ -124,7 +124,7 @@ Fetching Records
 
 .. warning:: |warn_rate_limit|
 
-:meth:`~pyairtable.api.Table.iterate`
+:meth:`~pyairtable.Table.iterate`
 
 Iterate over a set of records of size ``page_size``, up until ``max_records`` or end of table.
 
@@ -136,10 +136,10 @@ Iterate over a set of records of size ``page_size``, up until ``max_records`` or
   [{'id': 'rec123asa23', 'fields': {'Last Name': 'Alfred', 'Age': 84}, ...}, ...]
   [{'id': 'rec123asa23', 'fields': {'Last Name': 'Jameson', 'Age': 42}, ...}, ...]
 
-:meth:`~pyairtable.api.Table.all`
+:meth:`~pyairtable.Table.all`
 
 This method returns a single list with all records in a table. Note that under the
-hood it uses :meth:`~pyairtable.api.Table.iterate` to fetch records so it might make
+hood it uses :meth:`~pyairtable.Table.iterate` to fetch records so it might make
 multiple requests.
 
 .. code-block:: python
@@ -151,7 +151,7 @@ multiple requests.
 Creating Records
 -----------------
 
-:meth:`~pyairtable.api.Table.create`
+:meth:`~pyairtable.Table.create`
 
 Creates a single record from a dictionary representing the table's fields.
 
@@ -161,7 +161,7 @@ Creates a single record from a dictionary representing the table's fields.
   {'id': 'rec123asa23', 'fields': {'Name': 'John', ...}}
 
 
-:meth:`~pyairtable.api.Table.batch_create`
+:meth:`~pyairtable.Table.batch_create`
 
 Create multiple records from a list of :class:`~pyairtable.api.types.Fields` dicts.
 
@@ -174,7 +174,7 @@ Create multiple records from a list of :class:`~pyairtable.api.types.Fields` dic
 Updating Records
 -----------------
 
-:meth:`~pyairtable.api.Table.update`
+:meth:`~pyairtable.Table.update`
 
 Updates a single record for the provided ``record_id`` using a
 dictionary representing the table's fields.
@@ -185,7 +185,7 @@ dictionary representing the table's fields.
   [{'id': 'recwPQIfs4wKPyc9D', 'fields': {"Name": "John", "Age": 21}}, ...]
 
 
-:meth:`~pyairtable.api.Table.batch_update`
+:meth:`~pyairtable.Table.batch_update`
 
 Update multiple records from a list of :class:`~pyairtable.api.types.UpdateRecordDict`.
 
@@ -195,7 +195,7 @@ Update multiple records from a list of :class:`~pyairtable.api.types.UpdateRecor
   [{'id': 'recwPQIfs4wKPyc9D', 'fields': {"Name": "Matt", ...}}, ...]
 
 
-:meth:`~pyairtable.api.Table.batch_upsert`
+:meth:`~pyairtable.Table.batch_upsert`
 
 .. versionadded:: 1.5.0
 
@@ -214,7 +214,7 @@ of this Airtable API endpoint, see `Update multiple records`_.
 Deleting Records
 -----------------
 
-:meth:`~pyairtable.api.Table.delete`
+:meth:`~pyairtable.Table.delete`
 
 Deletes a single record using the provided ``record_id``.
 
@@ -223,7 +223,7 @@ Deletes a single record using the provided ``record_id``.
   >>> table.delete('recwPQIfs4wKPyc9D')
   {'deleted': True, 'id': 'recwPQIfs4wKPyc9D'}
 
-:meth:`~pyairtable.api.Table.batch_delete`
+:meth:`~pyairtable.Table.batch_delete`
 
 Batch delete records using a list of record ids.
 
