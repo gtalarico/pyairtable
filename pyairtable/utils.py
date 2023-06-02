@@ -86,7 +86,11 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentDict:
 
 def chunked(iterable: Sequence[T], chunk_size: int) -> Iterator[Sequence[T]]:
     """
-    Break a sequence into chunks
+    Break a sequence into chunks.
+
+    Args:
+        iterable: Any sequence.
+        chunk_size: Maximum items to yield per chunk.
     """
     for i in range(0, len(iterable), chunk_size):
         yield iterable[i : i + chunk_size]

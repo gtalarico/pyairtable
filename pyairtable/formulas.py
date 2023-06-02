@@ -136,7 +136,7 @@ def FIELD(name: str) -> str:
         >>> FIELD("First Name")
         '{First Name}'
         >>> FIELD("Guest's Name")
-        '{Guest\\' Names}'
+        "{Guest\\'s Name}"
     """
     return "{%s}" % escape_quotes(name)
 
@@ -168,10 +168,10 @@ def IF(logical: str, value1: str, value2: str) -> str:
 
 def FIND(what: str, where: str, start_position: int = 0) -> str:
     """
-    Creates an FIND statement
+    Creates a FIND statement
 
     >>> FIND(STR(2021), FIELD('DatetimeCol'))
-    'FIND('2021', {DatetimeCol})'
+    "FIND('2021', {DatetimeCol})"
 
     Args:
         what: String to search for

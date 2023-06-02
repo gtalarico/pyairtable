@@ -38,6 +38,7 @@ autodoc_class_signature = "separated"
 autodoc_default_options = {
     "exclude-members": "__new__",
 }
+autodoc_member_order = "bysource"
 
 
 # See https://github.com/tox-dev/sphinx-autodoc-typehints#options
@@ -54,9 +55,9 @@ def typehints_formatter(annotation, config):
         if annotation != value:
             continue
         if isinstance(value, type) and issubclass(value, dict):  # TypedDict
-            return f":data:`{name} <pyairtable.api.types.{name}>`"
+            return f":data:`~pyairtable.api.types.{name}`"
         if isinstance(value, typing._GenericAlias):  # Union, Dict, etc.
-            return f":data:`{name} <pyairtable.api.types.{name}>`"
+            return f":data:`~pyairtable.api.types.{name}`"
 
     return None
 

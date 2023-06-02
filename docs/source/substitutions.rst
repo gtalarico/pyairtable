@@ -36,7 +36,7 @@
     ``COLUMN_A`` isn't empty, pass in ``formula="{COLUMN_A}"``.
 
 .. |kwarg_typecast| replace:: The Airtable API will perform best-effort
-    automatic data conversion from string values. Default is False.
+    automatic data conversion from string values.
 
 .. |kwarg_cell_format| replace:: The cell format to request from the Airtable
     API. Supported options are `json` (the default) and `string`.

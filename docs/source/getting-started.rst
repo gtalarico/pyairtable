@@ -21,12 +21,10 @@ Connecting to Airtable
 
 To begin, you will need an API key or a personal access token. If you do not have one yet,
 see `the Airtable guide to personal access tokens <https://airtable.com/developers/web/guides/personal-access-tokens>`_.
-
-(You can also use legacy API keys with this library, but be aware that
 `Airtable has deprecated API keys <https://support.airtable.com/docs/airtable-api-key-deprecation-notice>`_
-and they will stop working in February 2024.)
+and they will stop working with the API in February 2024. Both can be used interchangeably with this library.
 
-Your access token should be securely stored. This library will not persist your access token anywhere.
+This library will not persist your access token anywhere. Your access token should be securely stored.
 A common method is to `store it as an environment variable <https://www.twilio.com/blog/2017/01/how-to-set-environment-variables.html>`_
 and load it using ``os.environ``.
 
@@ -117,7 +115,7 @@ the official API equivalents.
      - :meth:`~pyairtable.api.Table.batch_upsert`
      - ``PATCH baseId/tableId``
    * - `Delete multiple records <https://airtable.com/developers/web/api/delete-multiple-records>`_
-     - :meth:`~pyairtable.api.Table.batch_delete``
+     - :meth:`~pyairtable.api.Table.batch_delete`
      - ``DELETE baseId/tableId``
 
 
@@ -134,6 +132,7 @@ Iterate over a set of records of size ``page_size``, up until ``max_records`` or
 
   >>> for records in table.iterate(page_size=100, max_records=1000):
   ...     print(records)
+  ...
   [{'id': 'rec123asa23', 'fields': {'Last Name': 'Alfred', 'Age': 84}, ...}, ...]
   [{'id': 'rec123asa23', 'fields': {'Last Name': 'Jameson', 'Age': 42}, ...}, ...]
 
@@ -145,7 +144,7 @@ multiple requests.
 
 .. code-block:: python
 
-  >>> table.all(sort=["First Name", "-Age"]):
+  >>> table.all(sort=["Name", "-Age"])
   [{'id': 'rec123asa23', 'fields': {'Last Name': 'Alfred', 'Age': 84}, ...}, ...]
 
 
@@ -158,18 +157,18 @@ Creates a single record from a dictionary representing the table's fields.
 
 .. code-block:: python
 
-  >>> table.create({'First Name': 'John'})
-  {'id': 'rec123asa23', 'fields': {'First Name': 'John', ...}}
+  >>> table.create({'Name': 'John'})
+  {'id': 'rec123asa23', 'fields': {'Name': 'John', ...}}
 
 
 :meth:`~pyairtable.api.Table.batch_create`
 
-Batch create records from a list of dictionaries representing the table's fields.
+Create multiple records from a list of :class:`~pyairtable.api.types.Fields` dicts.
 
 .. code-block:: python
 
-  >>> table.batch_create([{'First Name': 'John'}, ...])
-  [{'id': 'rec123asa23', 'fields': {'First Name': 'John'}}, ...]
+  >>> table.batch_create([{'Name': 'John'}, ...])
+  [{'id': 'rec123asa23', 'fields': {'Name': 'John'}}, ...]
 
 
 Updating Records
@@ -183,17 +182,17 @@ dictionary representing the table's fields.
 .. code-block:: python
 
   >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21})
-  [{'id': 'recwPQIfs4wKPyc9D', 'fields': {"First Name": "John", "Age": 21}}, ...]
+  [{'id': 'recwPQIfs4wKPyc9D', 'fields': {"Name": "John", "Age": 21}}, ...]
 
 
 :meth:`~pyairtable.api.Table.batch_update`
 
-Batch update records from a list of records.
+Update multiple records from a list of :class:`~pyairtable.api.types.UpdateRecordDict`.
 
 .. code-block:: python
 
-  >>> table.batch_update([{"id": "recwPQIfs4wKPyc9D", "fields": {"First Name": "Matt"}}, ...])
-  [{'id': 'recwPQIfs4wKPyc9D', 'fields': {"First Name": "Matt", ...}}, ...]
+  >>> table.batch_update([{"id": "recwPQIfs4wKPyc9D", "fields": {"Name": "Matt"}}, ...])
+  [{'id': 'recwPQIfs4wKPyc9D', 'fields': {"Name": "Matt", ...}}, ...]
 
 
 :meth:`~pyairtable.api.Table.batch_upsert`
@@ -206,10 +205,10 @@ of this Airtable API endpoint, see `Update multiple records`_.
 .. code-block:: python
 
   >>> table.batch_upsert(
-  ...     [{"id": "recwPQIfs4wKPyc9D", "fields": {"First Name": "Matt"}}, ...],
-  ...     key_fields=["First Name"]
+  ...     [{"id": "recwPQIfs4wKPyc9D", "fields": {"Name": "Matt"}}, ...],
+  ...     key_fields=["Name"]
   ... )
-  [{'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'Matt', 'Age': 21, ...}}, ...]
+  [{'id': 'recwPQIfs4wKPyc9D', 'fields': {'Name': 'Matt', ...}}, ...]
 
 
 Deleting Records
@@ -238,38 +237,31 @@ Batch delete records using a list of record ids.
 Return Values
 -------------
 
-This library will return records as instances of ``dict`` that conform to the
-:class:`~pyairtable.api.types.RecordDict` interface.
+This library will return records as :class:`~pyairtable.api.types.RecordDict`.
 
 .. code-block:: python
 
   >>> table.all()
   [
       {
-          "records": [
-              {
-                  "id": "recwPQIfs4wKPyc9D",
-                  "fields": {
-                      "COLUMN_ID": "1",
-                  },
-                  "createdTime": "2017-03-14T22:04:31.000Z"
-              },
-              {
-                  "id": "rechOLltN9SpPHq5o",
-                  "fields": {
-                      "COLUMN_ID": "2",
-                  },
-                  "createdTime": "2017-03-20T15:21:50.000Z"
-              },
-              {
-                  "id": "rec5eR7IzKSAOBHCz",
-                  "fields": {
-                      "COLUMN_ID": "3",
-                  },
-                  "createdTime": "2017-08-05T21:47:52.000Z"
-              }
-          ],
-          "offset": "rec5eR7IzKSAOBHCz"
+          'id': 'recwPQIfs4wKPyc9D',
+          'createdTime': '2017-03-14T22:04:31.000Z'
+          'fields': {
+              'Name': 'Alice',
+          },
       },
-      ...
+      {
+          'id': 'rechOLltN9SpPHq5o',
+          'createdTime': '2017-03-20T15:21:50.000Z'
+          'fields': {
+              'Name': 'Bob',
+          },
+      },
+      {
+          'id': 'rec5eR7IzKSAOBHCz',
+          'createdTime': '2017-08-05T21:47:52.000Z'
+          'fields': {
+              'Name': 'Carol',
+          },
+      }
   ]

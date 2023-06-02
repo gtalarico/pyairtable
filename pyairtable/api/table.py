@@ -22,9 +22,9 @@ class Table:
     Represents an Airtable table.
 
     Usage:
-
         >>> api = Api(access_token)
         >>> table = api.table("base_id", "table_name")
+        >>> records = table.all()
     """
 
     api: "pyairtable.api.api.Api"
@@ -74,6 +74,10 @@ class Table:
         an instance of :class:`Base`, followed by the table name.
 
             >>> Table(None, base, "table_name")
+
+        These signatures may change in the future. Developers using this library are
+        encouraged to not construct Table instances directly, and instead construct
+        an :class:`Api` instance and fetch tables via :meth:`Api.table() <pyairtable.api.Api.table>`.
         """
         if isinstance(api_key, str) and isinstance(base_id, str):
             warnings.warn(
@@ -117,7 +121,8 @@ class Table:
         """
         Retrieves a record by its ID.
 
-        >>> record = api.get('base_id', 'table_name', 'recwPQIfs4wKPyc9D')
+        >>> table.get('recwPQIfs4wKPyc9D')
+        {'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
 
         Args:
             record_id: |arg_record_id|
@@ -133,13 +138,19 @@ class Table:
 
     def iterate(self, **options: Any) -> Iterator[List[RecordDict]]:
         """
-        Performs a records request and iterates through each apge of results.
-        To get all records at once use :meth:`all`.
+        Iterates through each page of results from `List records <https://airtable.com/developers/web/api/list-records>`_.
+        To get all records at once, use :meth:`all`.
 
-        >>> list(api.iterate('base_id', 'table_name'))
-        [[{"id": ...}, {"id": ...}, {"id": ...}, ...],
-         [{"id": ...}, {"id": ...}, {"id": ...}, ...],
-         [{"id": ...}]
+        >>> it = table.iterate()
+        >>> next(it)
+        [{"id": ...}, {"id": ...}, {"id": ...}, ...]
+        >>> next(it)
+        [{"id": ...}, {"id": ...}, {"id": ...}, ...]
+        >>> next(it)
+        [{"id": ...}]
+        >>> next(it)
+        Traceback (most recent call last):
+        StopIteration
 
         Keyword Args:
             view: |kwarg_view|
@@ -170,6 +181,29 @@ class Table:
                 break
             self.api.wait()
 
+    def all(self, **options: Any) -> List[RecordDict]:
+        """
+        Retrieves all matching records in a single list.
+
+        >>> api.all('base_id', 'table_name', view='MyView', fields=['ColA', '-ColB'])
+        [{'fields': ...}, ...]
+        >>> api.all('base_id', 'table_name', max_records=50)
+        [{'fields': ...}, ...]
+
+        Keyword Args:
+            view: |kwarg_view|
+            page_size: |kwarg_page_size|
+            max_records: |kwarg_max_records|
+            fields: |kwarg_fields|
+            sort: |kwarg_sort|
+            formula: |kwarg_formula|
+            cell_format: |kwarg_cell_format|
+            user_locale: |kwarg_user_locale|
+            time_zone: |kwarg_time_zone|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+        """
+        return [record for page in self.iterate(**options) for record in page]
+
     def first(self, **options: Any) -> Optional[RecordDict]:
         """
         Retrieves the first matching record.
@@ -193,29 +227,6 @@ class Table:
             for record in page:
                 return record
         return None
-
-    def all(self, **options: Any) -> List[RecordDict]:
-        """
-        Retrieves all matching records in a single list.
-
-        >>> api.all('base_id', 'table_name', view='MyView', fields=['ColA', '-ColB'])
-        [{'fields': ...}, ...]
-        >>> api.all('base_id', 'table_name', max_records=50)
-        [{'fields': ...}, ...]
-
-        Keyword Args:
-            view: |kwarg_view|
-            page_size: |kwarg_page_size|
-            max_records: |kwarg_max_records|
-            fields: |kwarg_fields|
-            sort: |kwarg_sort|
-            formula: |kwarg_formula|
-            cell_format: |kwarg_cell_format|
-            user_locale: |kwarg_user_locale|
-            time_zone: |kwarg_time_zone|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
-        """
-        return [record for page in self.iterate(**options) for record in page]
 
     def create(
         self,
@@ -252,10 +263,21 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> List[RecordDict]:
         """
-        Creates a number of new records in batches set by ``MAX_RECORDS_PER_REQUEST``.
+        Creats a number of new records in batches.
 
-        >>> records = [{'Name': 'John'}, {'Name': 'Marc'}]
-        >>> api.batch_create('base_id', 'table_name', records)
+        >>> table.batch_create([{'Name': 'John'}, {'Name': 'Marc'}])
+        [
+            {
+                'id': 'recW9e0c9w0er9gug',
+                'createdTime': '2017-03-14T22:04:31.000Z',
+                'fields': {'Name': 'John'}
+            },
+            {
+                'id': 'recW9e0c9w0er9guh',
+                'createdTime': '2017-03-14T22:04:31.000Z',
+                'fields': {'Name': 'Marc'}
+            }
+        ]
 
         Args:
             records: List of dicts representing records to be created.
@@ -288,13 +310,12 @@ class Table:
         typecast: bool = False,
     ) -> RecordDict:
         """
-        Updates a record by its record id.
-        Only Fields passed are updated, the rest are left as is.
+        Updates a particular record ID with the given fields.
 
         >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21})
-        {id: 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
+        {'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
         >>> table.update('recwPQIfs4wKPyc9D', {"Age": 22}, replace=True)
-        {id: 'recwPQIfs4wKPyc9D', 'fields': {'Age': 22}}
+        {'id': 'recwPQIfs4wKPyc9D', 'fields': {'Age': 22}}
 
         Args:
             record_id: |arg_record_id|
@@ -318,7 +339,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> List[RecordDict]:
         """
-        Updates a records by their record id's in batch.
+        Updates several records in batches.
 
         Args:
             records: Records to update.
@@ -409,16 +430,16 @@ class Table:
 
     def delete(self, record_id: RecordId) -> RecordDeletedDict:
         """
-        Deletes a record by its id
+        Deletes the given record.
 
-        >>> record = api.match('base_id', 'table_name', 'Employee Id', 'DD13332454')
-        >>> api.delete('base_id', 'table_name', record['id'])
+        >>> table.delete('recwPQIfs4wKPyc9D')
+        {'id': 'recwPQIfs4wKPyc9D', 'deleted': True}
 
         Args:
             record_id: |arg_record_id|
 
         Returns:
-            A dict containing the ID of the deleted record.
+            Confirmation that the record was deleted.
         """
         return assert_typed_dict(
             RecordDeletedDict,
@@ -427,19 +448,19 @@ class Table:
 
     def batch_delete(self, record_ids: List[RecordId]) -> List[RecordDeletedDict]:
         """
-        Breaks records into batches of 10 and deletes in batches, following set
-        API Rate Limit (5/sec).
-        To change the rate limit set value of ``API_LIMIT`` to
-        the time in seconds it should sleep before calling the function again.
+        Deletes the given records, operating in batches.
 
-        >>> record_ids = ['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F']
-        >>> api.batch_delete('base_id', 'table_name', records_ids)
+        >>> table.batch_delete(['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F'])
+        [
+            {'id': 'recwPQIfs4wKPyc9D', 'deleted': True},
+            {'id': 'recwDxIfs3wDPyc3F', 'deleted': True}
+        ]
 
         Args:
             record_ids: Record IDs to delete
 
         Returns:
-            List of dicts containing IDs of the deleted records.
+            Confirmation that the records were deleted.
         """
         deleted_records = []
 

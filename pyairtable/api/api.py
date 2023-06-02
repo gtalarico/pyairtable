@@ -30,7 +30,11 @@ class Api:
 
     VERSION = "v0"
     API_LIMIT = 1.0 / 5  # 5 per second
+
+    #: Airtable-imposed limit on number of records per batch create/update operation.
     MAX_RECORDS_PER_REQUEST = 10
+
+    #: Airtable-imposed limit on the length of a URL (including query parameters).
     MAX_URL_LENGTH = 16000
 
     def __init__(
@@ -52,9 +56,8 @@ class Api:
                 `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`__.
                 You can use :func:`~pyairtable.api.retrying.retry_strategy` to build one with reasonable
                 defaults, or provide your own custom instance of ``Retry``.
-                Default is ``None`` (no retry).
-            endpoint_url: The API endpoint to hit. You might want to override it if you are using
-                a proxy to debug your API calls. Default is ``https://api.airtable.com``.
+            endpoint_url: The API endpoint to use. Override this if you are using
+                a debugging or caching proxy.
         """
         if not retry_strategy:
             self.session = Session()
@@ -67,7 +70,9 @@ class Api:
 
     @property
     def api_key(self) -> str:
-        """Returns the Airtable API Key"""
+        """
+        Airtable API key or access token to use on all connections.
+        """
         return self._api_key
 
     @api_key.setter
@@ -77,13 +82,6 @@ class Api:
 
     def __repr__(self) -> str:
         return "<pyairtable.Api>"
-
-    def build_url(self, *components: str) -> str:
-        """
-        Returns a URL to the Airtable API endpoint with the given URL components,
-        including the API version number.
-        """
-        return posixpath.join(self.endpoint_url, self.VERSION, *components)
 
     @lru_cache
     def base(self, base_id: str) -> "pyairtable.api.base.Base":
@@ -97,6 +95,13 @@ class Api:
         Returns a new :class:`Table` instance that uses this instance of :class:`Api`.
         """
         return self.base(base_id).table(table_name)
+
+    def build_url(self, *components: str) -> str:
+        """
+        Returns a URL to the Airtable API endpoint with the given URL components,
+        including the API version number.
+        """
+        return posixpath.join(self.endpoint_url, self.VERSION, *components)
 
     def request(
         self,
@@ -186,5 +191,7 @@ class Api:
     def wait(self) -> None:
         """
         Sleep for 1/N seconds, where N is the maximum RPS allowed by the Airtable API.
+
+        :meta private: because we expect to remove this soon.
         """
         time.sleep(self.API_LIMIT)
