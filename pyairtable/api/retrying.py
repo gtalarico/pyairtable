@@ -5,7 +5,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 DEFAULT_RETRIABLE_STATUS_CODES = (429, 500, 502, 503, 504)
-DEFAULT_BACKOFF_FACTOR = 0.3
+DEFAULT_BACKOFF_FACTOR = 0.1  # retry after 0.1, 0.2, 0.4, 0.8, 1.6 seconds
 DEFAULT_MAX_RETRIES = 5
 
 
@@ -17,8 +17,8 @@ def retry_strategy(
     **kwargs: Any,
 ) -> Retry:
     """
-    Creates a ``Retry`` instance with optional default values.
-    See `urllib3.util.Retry`_ for more details.
+    Creates a `Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_
+    instance with adjustable default values.
 
     .. versionadded:: 1.4.0
 
@@ -31,7 +31,7 @@ def retry_strategy(
         total:
             Maximum number of retries. Note that ``0`` means no retries,
             whereas ``1`` will execute a total of two requests (original + 1 retry).
-        **kwargs: Any valid parameter to `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_.
+        **kwargs: Accepts any valid parameter to `Retry`_.
     """
     return Retry(
         total=total,
