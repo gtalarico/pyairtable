@@ -42,3 +42,18 @@ def test_update_api_key(api):
     """
     api.api_key = "123"
     assert "123" in api.session.headers["Authorization"]
+
+
+def test_whoami(api, requests_mock):
+    """
+    Test the /whoami endpoint gets passed straight through.
+    """
+    payload = {
+        "id": "usrFakeTestingUser",
+        "scopes": [
+            "data.records:read",
+            "data.records:write",
+        ],
+    }
+    requests_mock.get("https://api.airtable.com/v0/meta/whoami", json=payload)
+    assert api.whoami() == payload

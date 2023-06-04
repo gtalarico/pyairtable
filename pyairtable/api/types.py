@@ -259,6 +259,19 @@ class RecordDeletedDict(TypedDict):
     deleted: bool
 
 
+class UserAndScopesDict(TypedDict, total=False):
+    """
+    A ``dict`` representing the `Get user ID & scopes <https://airtable.com/developers/web/api/get-user-id-scopes>`_ endpoint.
+
+    Usage:
+        >>> api.whoami()
+        {'id': 'usrX9e810wHn3mMLz'}
+    """
+
+    id: Required[str]
+    scopes: List[str]
+
+
 @lru_cache
 def _create_model_from_typeddict(cls: Type[T]) -> Type[pydantic.BaseModel]:
     """

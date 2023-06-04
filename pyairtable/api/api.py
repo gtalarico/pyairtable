@@ -10,6 +10,7 @@ import pyairtable.api.base
 import pyairtable.api.table
 from pyairtable.api import retrying
 from pyairtable.api.params import options_to_json_and_params, options_to_params
+from pyairtable.api.types import UserAndScopesDict, assert_typed_dict
 from pyairtable.utils import chunked
 
 T = TypeVar("T")
@@ -188,3 +189,11 @@ class Api:
         to the maximum number of records per request allowed by the API.
         """
         return chunked(iterable, self.MAX_RECORDS_PER_REQUEST)
+
+    def whoami(self) -> UserAndScopesDict:
+        """
+        Return the current user ID and (if connected via OAuth) the list of scopes.
+        See `Get user ID & scopes <https://airtable.com/developers/web/api/get-user-id-scopes>`_ for more information.
+        """
+        data = self.request("GET", self.build_url("meta/whoami"))
+        return assert_typed_dict(UserAndScopesDict, data)

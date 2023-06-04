@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     assert_type(api.build_url("foo", "bar"), str)
     assert_type(api.base(base_id), pyairtable.Base)
     assert_type(api.table(base_id, table_name), pyairtable.Table)
+    assert_type(api.whoami(), T.UserAndScopesDict)
 
     # Ensure the type signatures for pyairtable.Base don't change.
     base = pyairtable.Base(api, base_id)
