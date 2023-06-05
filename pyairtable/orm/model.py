@@ -20,9 +20,9 @@ from pyairtable.orm.fields import AnyField, Field
 
 class Model:
     """
-    This class allows you create an orm-style class for your Airtable tables.
+    This class allows you create an ORM-style class for your Airtable tables.
 
-    This is a meta class and can only be used to define sub-classes.
+    This is a metaclass and can only be used to define sub-classes.
 
     The ``Meta`` is reuired and must specify all three attributes: ``base_id``,
     ``table_id``, and ``api_key``.
@@ -38,6 +38,22 @@ class Model:
     ...         api_key = "keyapikey"
     ...         timeout: Optional[Tuple[int, int]] = (5, 5)
     ...         typecast: bool = True
+
+    You can implement meta attributes as callables if certain values
+    need to be dynamically provided or are unavailable at import time:
+
+    >>> from pyairtable.orm import Model, fields
+    >>> class Contact(Model):
+    ...     first_name = fields.TextField("First Name")
+    ...     age = fields.IntegerField("Age")
+    ...
+    ...     class Meta:
+    ...         base_id = "appaPqizdsNHDvlEm"
+    ...         table_name = "Contact"
+    ...
+    ...         @staticmethod
+    ...         def api_key():
+    ...             return os.environ["AIRTABLE_API_KEY"]
     """
 
     id: str = ""
@@ -125,6 +141,8 @@ class Model:
         if required and not hasattr(cls.Meta, name):
             raise ValueError(f"{cls.__name__}.Meta.{name} must be defined")
         value = getattr(cls.Meta, name, default)
+        if callable(value):
+            value = value()
         if required and value is None:
             raise ValueError(f"{cls.__name__}.Meta.{name} cannot be None")
         return value

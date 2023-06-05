@@ -20,6 +20,8 @@ See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
   - `PR #273 <https://github.com/gtalarico/pyairtable/pull/273>`_.
 * pyAirtable will automatically retry requests when throttled by Airtable's QPS.
   - `PR #272 <https://github.com/gtalarico/pyairtable/pull/272>`_.
+* ORM Meta attributes can now be defined as callables.
+  - `PR #268 <https://github.com/gtalarico/pyairtable/pull/268>`_.
 * Removed ``ApiAbstract``.
   - `PR #267 <https://github.com/gtalarico/pyairtable/pull/267>`_.
 * Implemented strict type annotations on all functions and methods.
