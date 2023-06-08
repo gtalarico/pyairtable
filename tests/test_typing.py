@@ -60,3 +60,11 @@ if TYPE_CHECKING:
     assert_type(table.batch_update([]), List[T.RecordDict])
     assert_type(table.batch_upsert([], []), List[T.RecordDict])
     assert_type(table.batch_delete([]), List[T.RecordDeletedDict])
+
+    # Ensure we can set all kinds of field values
+    table.update(record_id, {"Field Name": "name"})
+    table.update(record_id, {"Field Name": 1})
+    table.update(record_id, {"Field Name": 1.0})
+    table.update(record_id, {"Field Name": True})
+    table.update(record_id, {"Field Name": None})
+    table.update(record_id, {"Field Name": {"id": "usrXXX"}})

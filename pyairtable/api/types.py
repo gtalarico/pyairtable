@@ -153,7 +153,7 @@ FieldValue: TypeAlias = Union[
 
 
 #: A mapping of field names to values.
-Fields: TypeAlias = Dict[FieldName, FieldValue]
+Fields: TypeAlias = Dict[FieldName, Optional[FieldValue]]
 
 
 class RecordDict(TypedDict):
