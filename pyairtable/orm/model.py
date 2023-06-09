@@ -68,7 +68,13 @@ from typing_extensions import Self as SelfType
 from pyairtable.api.api import Api
 from pyairtable.api.base import Base
 from pyairtable.api.table import Table
-from pyairtable.api.types import FieldName, RecordDict, RecordId
+from pyairtable.api.types import (
+    FieldName,
+    Fields,
+    RecordDict,
+    RecordId,
+    UpdateRecordDict,
+)
 from pyairtable.orm.fields import AnyField, Field
 
 
@@ -156,8 +162,6 @@ class Model(metaclass=abc.ABCMeta):
         return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
 
     def __init__(self, **fields: Any):
-        self._typecast = bool(self._get_meta("typecast", default=True))
-
         # To Store Fields
         self._fields = {}
 
@@ -203,14 +207,16 @@ class Model(metaclass=abc.ABCMeta):
         )
 
     @classmethod
-    @lru_cache
     def get_base(cls) -> Base:
         return cls.get_api().base(cls._get_meta("base_id"))
 
     @classmethod
-    @lru_cache
     def get_table(cls) -> Table:
         return cls.get_base().table(cls._get_meta("table_name"))
+
+    @classmethod
+    def _typecast(cls) -> bool:
+        return bool(cls._get_meta("typecast", default=True))
 
     def exists(self) -> bool:
         """Returns boolean indicating if instance exists (has 'id' attribute)"""
@@ -224,14 +230,13 @@ class Model(metaclass=abc.ABCMeta):
         Returns `True` if was created and `False` if it was updated
         """
         table = self.get_table()
-        record = self.to_record(only_writable=True)
-        fields = record["fields"]
+        fields = self.to_record(only_writable=True)["fields"]
 
         if not self.id:
-            record = table.create(fields, typecast=self._typecast)
+            record = table.create(fields, typecast=self._typecast())
             did_create = True
         else:
-            record = table.update(self.id, fields, typecast=self._typecast)
+            record = table.update(self.id, fields, typecast=self._typecast())
             did_create = False
 
         self.id = record["id"]
@@ -337,3 +342,39 @@ class Model(metaclass=abc.ABCMeta):
 
     def __repr__(self) -> str:
         return "<Model={} {}>".format(self.__class__.__name__, hex(id(self)))
+
+    @classmethod
+    def batch_save(cls, models: List[SelfType]) -> None:
+        """
+        Saves a list of model instances to the Airtable API with as few
+        network requests as possible. Can accept a mixture of new records
+        (which have not been saved yet) and existing records that have IDs.
+        """
+        create_models = [model for model in models if not model.id]
+        update_models = [model for model in models if model.id]
+        create_records: List[Fields] = [
+            record["fields"]
+            for model in create_models
+            if (record := model.to_record(only_writable=True))
+        ]
+        update_records: List[UpdateRecordDict] = [
+            {"id": record["id"], "fields": record["fields"]}
+            for model in update_models
+            if (record := model.to_record(only_writable=True))
+        ]
+        table = cls.get_table()
+        table.batch_update(update_records, typecast=cls._typecast())
+        created_records = table.batch_create(create_records, typecast=cls._typecast())
+        for model, created_record in zip(create_models, created_records):
+            model.id = created_record["id"]
+            model.created_time = created_record["createdTime"]
+
+    @classmethod
+    def batch_delete(cls, models: List[SelfType]) -> None:
+        """
+        Deletes a list of model instances from Airtable.
+        Raises ValueError if given a model which has not been saved.
+        """
+        if not all(model.id for model in models):
+            raise ValueError("cannot delete an unsaved model")
+        cls.get_table().batch_delete([model.id for model in models])
