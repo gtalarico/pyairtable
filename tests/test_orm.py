@@ -86,7 +86,7 @@ def test_model():
     assert contact.first_name == "Gui"
     assert not contact.id
 
-    # delete
+    # save
     with mock.patch.object(Table, "create") as m_save:
         m_save.return_value = {"id": "id", "createdTime": "time"}
         contact.save()
@@ -100,6 +100,10 @@ def test_model():
         contact.delete()
 
     assert m_delete.called
+
+    # cannot save a deleted record
+    with pytest.raises(RuntimeError):
+        contact.save()
 
     record = contact.to_record()
     assert record["id"] == contact.id

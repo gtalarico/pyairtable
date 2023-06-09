@@ -102,7 +102,7 @@ class Model(metaclass=abc.ABCMeta):
 
     id: str = ""
     created_time: str = ""
-    _table: Table
+    _deleted: bool = False
     _fields: Dict[FieldName, Any] = {}
     _linked_cache: Dict[RecordId, SelfType] = {}
 
@@ -229,6 +229,8 @@ class Model(metaclass=abc.ABCMeta):
 
         Returns `True` if was created and `False` if it was updated
         """
+        if self._deleted:
+            raise RuntimeError(f"{self.id} was deleted")
         table = self.get_table()
         fields = self.to_record(only_writable=True)["fields"]
 
@@ -249,6 +251,7 @@ class Model(metaclass=abc.ABCMeta):
             raise ValueError("cannot be deleted because it does not have id")
         table = self.get_table()
         result = table.delete(self.id)
+        self._deleted = True
         # Is it even possible to get "deleted" False?
         return bool(result["deleted"])
 
