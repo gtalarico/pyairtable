@@ -3,7 +3,7 @@ pyAirtable provides a number of type aliases and TypedDicts which are used as in
 and return values to various pyAirtable methods.
 """
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Type, TypeVar, Union, cast
 
 import pydantic
 from typing_extensions import Required, TypeAlias, TypedDict
@@ -159,6 +159,22 @@ class CollaboratorEmailDict(TypedDict):
     email: str
 
 
+class FormulaErrorDict(TypedDict):
+    """
+    The dict returned by Airtable to indicate a formula error.
+    """
+
+    error: str
+
+
+class FormulaNotANumberDict(TypedDict):
+    """
+    The dict returned by Airtable to indicate a NaN result.
+    """
+
+    specialValue: Literal["NaN"]
+
+
 #: Represents the types of values that an Airtable field could provide.
 #: For more information on Airtable field types, see
 #: `Field types and cell values <https://airtable.com/developers/web/api/field-model>`__.
@@ -178,6 +194,8 @@ FieldValue: TypeAlias = Union[
     List[AttachmentDict],
     List[CollaboratorDict],
     List[CollaboratorEmailDict],
+    FormulaErrorDict,
+    FormulaNotANumberDict,
 ]
 
 
@@ -297,3 +315,12 @@ def assert_typed_dicts(cls: Type[T], objects: Any) -> List[T]:
     if not isinstance(objects, list):
         raise TypeError(f"expected list, got {type(objects)}")
     return [assert_typed_dict(cls, obj) for obj in objects]
+
+
+def is_airtable_error(obj: Any) -> bool:
+    """
+    Returns whether the given object represents an Airtable error.
+    """
+    if isinstance(obj, dict):
+        return set(obj) in ({"error"}, {"specialValue"})
+    return False
