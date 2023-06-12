@@ -63,3 +63,18 @@ def test_assert_not_typed_dict(cls, value):
 def test_assert_typed_dicts__not_list():
     with pytest.raises(TypeError):
         T.assert_typed_dicts(T.RecordDict, object())
+
+
+@pytest.mark.parametrize(
+    "value,is_error",
+    [
+        (None, False),
+        (1, False),
+        ("str", False),
+        ({}, False),
+        ({"error": "#ERROR!"}, True),
+        ({"specialValue": "NaN"}, True),
+    ],
+)
+def test_is_airtable_error(value, is_error):
+    assert T.is_airtable_error(value) is is_error

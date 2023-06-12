@@ -68,3 +68,4 @@ if TYPE_CHECKING:
     table.update(record_id, {"Field Name": True})
     table.update(record_id, {"Field Name": None})
     table.update(record_id, {"Field Name": {"id": "usrXXX"}})
+    table.update(record_id, {"Field Name": {"email": "alice@example.com"}})

@@ -3,7 +3,7 @@ pyAirtable provides a number of type aliases and TypedDicts which are used as in
 and return values to various pyAirtable methods.
 """
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Type, TypeVar, Union, cast
 
 import pydantic
 from typing_extensions import Required, TypeAlias, TypedDict
@@ -100,7 +100,7 @@ class ButtonDict(TypedDict):
 
 class CollaboratorDict(TypedDict, total=False):
     """
-    A dict representing the value stored in a User field.
+    A dict representing the value stored in a User field returned from the API.
 
     >>> record = api.get('base_id', 'table_name', 'recW8eG2x0ew1Af')
     >>> record['fields']['Created By']
@@ -132,6 +132,49 @@ class CollaboratorDict(TypedDict, total=False):
     profilePicUrl: str
 
 
+class CollaboratorEmailDict(TypedDict):
+    """
+    A dict representing a collaborator identified by email, not by ID.
+    Often used when writing to the API, because the email of a collaborator
+    may be more easily accessible than their Airtable user ID.
+
+    >>> table = Table("access_token", "base_id", "api_key")
+    >>> record = table.update("recW8eG2x0ew1Af", {
+    ...     "Collaborator": {"email": "alice@example.com"}
+    ... })
+    >>> record
+    {
+        'id': 'recW8eG2x0ew1Af',
+        'createdTime': 2023-06-07T17:35:17Z',
+        'fields': {
+            'Collaborator': {
+                'id': 'usrAdw9EjV90xbW',
+                'email': 'alice@example.com',
+                'name': 'Alice Arnold'
+            }
+        }
+    }
+    """
+
+    email: str
+
+
+class FormulaErrorDict(TypedDict):
+    """
+    The dict returned by Airtable to indicate a formula error.
+    """
+
+    error: str
+
+
+class FormulaNotANumberDict(TypedDict):
+    """
+    The dict returned by Airtable to indicate a NaN result.
+    """
+
+    specialValue: Literal["NaN"]
+
+
 #: Represents the types of values that an Airtable field could provide.
 #: For more information on Airtable field types, see
 #: `Field types and cell values <https://airtable.com/developers/web/api/field-model>`__.
@@ -141,6 +184,7 @@ FieldValue: TypeAlias = Union[
     float,
     bool,
     CollaboratorDict,
+    CollaboratorEmailDict,
     BarcodeDict,
     ButtonDict,
     List[str],
@@ -149,6 +193,9 @@ FieldValue: TypeAlias = Union[
     List[bool],
     List[AttachmentDict],
     List[CollaboratorDict],
+    List[CollaboratorEmailDict],
+    FormulaErrorDict,
+    FormulaNotANumberDict,
 ]
 
 
@@ -268,3 +315,12 @@ def assert_typed_dicts(cls: Type[T], objects: Any) -> List[T]:
     if not isinstance(objects, list):
         raise TypeError(f"expected list, got {type(objects)}")
     return [assert_typed_dict(cls, obj) for obj in objects]
+
+
+def is_airtable_error(obj: Any) -> bool:
+    """
+    Returns whether the given object represents an Airtable error.
+    """
+    if isinstance(obj, dict):
+        return set(obj) in ({"error"}, {"specialValue"})
+    return False
