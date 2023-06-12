@@ -100,7 +100,7 @@ class ButtonDict(TypedDict):
 
 class CollaboratorDict(TypedDict, total=False):
     """
-    A dict representing the value stored in a User field.
+    A dict representing the value stored in a User field returned from the API.
 
     >>> record = api.get('base_id', 'table_name', 'recW8eG2x0ew1Af')
     >>> record['fields']['Created By']
@@ -132,6 +132,33 @@ class CollaboratorDict(TypedDict, total=False):
     profilePicUrl: str
 
 
+class CollaboratorEmailDict(TypedDict):
+    """
+    A dict representing a collaborator identified by email, not by ID.
+    Often used when writing to the API, because the email of a collaborator
+    may be more easily accessible than their Airtable user ID.
+
+    >>> table = Table("access_token", "base_id", "api_key")
+    >>> record = table.update("recW8eG2x0ew1Af", {
+    ...     "Collaborator": {"email": "alice@example.com"}
+    ... })
+    >>> record
+    {
+        'id': 'recW8eG2x0ew1Af',
+        'createdTime': 2023-06-07T17:35:17Z',
+        'fields': {
+            'Collaborator': {
+                'id': 'usrAdw9EjV90xbW',
+                'email': 'alice@example.com',
+                'name': 'Alice Arnold'
+            }
+        }
+    }
+    """
+
+    email: str
+
+
 #: Represents the types of values that an Airtable field could provide.
 #: For more information on Airtable field types, see
 #: `Field types and cell values <https://airtable.com/developers/web/api/field-model>`__.
@@ -141,6 +168,7 @@ FieldValue: TypeAlias = Union[
     float,
     bool,
     CollaboratorDict,
+    CollaboratorEmailDict,
     BarcodeDict,
     ButtonDict,
     List[str],
@@ -149,6 +177,7 @@ FieldValue: TypeAlias = Union[
     List[bool],
     List[AttachmentDict],
     List[CollaboratorDict],
+    List[CollaboratorEmailDict],
 ]
 
 
