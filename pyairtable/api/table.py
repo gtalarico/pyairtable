@@ -179,7 +179,6 @@ class Table:
             offset = data.get("offset")
             if not offset:
                 break
-            self.api.wait()
 
     def all(self, **options: Any) -> List[RecordDict]:
         """
@@ -298,7 +297,6 @@ class Table:
                 },
             )
             inserted_records += assert_typed_dicts(RecordDict, response["records"])
-            self.api.wait()
 
         return inserted_records
 
@@ -365,7 +363,6 @@ class Table:
                 },
             )
             updated_records += assert_typed_dicts(RecordDict, response["records"])
-            self.api.wait()
 
         return updated_records
 
@@ -424,7 +421,6 @@ class Table:
                 },
             )
             updated_records += assert_typed_dicts(RecordDict, response["records"])
-            self.api.wait()
 
         return updated_records
 
@@ -467,6 +463,5 @@ class Table:
         for chunk in self.api.chunked(record_ids):
             result = self.api.request("delete", self.url, params={"records[]": chunk})
             deleted_records += assert_typed_dicts(RecordDeletedDict, result["records"])
-            self.api.wait()
 
         return deleted_records

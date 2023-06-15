@@ -1,5 +1,4 @@
 import posixpath
-import time
 from functools import lru_cache
 from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
@@ -191,11 +190,3 @@ class Api:
         to the maximum number of records per request allowed by the API.
         """
         return chunked(iterable, self.MAX_RECORDS_PER_REQUEST)
-
-    def wait(self) -> None:
-        """
-        Sleep for 1/N seconds, where N is the maximum RPS allowed by the Airtable API.
-
-        :meta private: because we expect to remove this soon.
-        """
-        time.sleep(self.API_LIMIT)
