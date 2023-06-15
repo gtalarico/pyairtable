@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from pyairtable import Base, Table
+from pyairtable import Api, Base, Table
 
 BASE_ID = "appaPqizdsNHDvlEm"
 
@@ -33,20 +33,18 @@ def cols():
 
 
 @pytest.fixture
-def base():
-    base_id = BASE_ID
-    base = Base(os.environ["AIRTABLE_API_KEY"], base_id)
-    yield base
-    table_name = "TEST_TABLE"
-    records = base.all(table_name)
-    base.batch_delete(table_name, [r["id"] for r in records])
+def api() -> Api:
+    return Api(os.environ["AIRTABLE_API_KEY"])
 
 
 @pytest.fixture
-def table():
-    base_id = BASE_ID
-    table_name = "TEST_TABLE"
-    table = Table(os.environ["AIRTABLE_API_KEY"], base_id, table_name)
+def base(api: Api) -> Base:
+    return api.base(BASE_ID)
+
+
+@pytest.fixture
+def table(base: Base) -> Table:
+    table = base.table("TEST_TABLE")
     yield table
     records = table.all()
     table.batch_delete([r["id"] for r in records])

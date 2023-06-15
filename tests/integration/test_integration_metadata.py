@@ -20,4 +20,4 @@ def test_get_base_schema(base: Base):
 @pytest.mark.skip("metadata api returning 404 for base schema")
 def test_get_table_schema(table: Table):
     rv = get_table_schema(table)
-    assert rv and rv["name"] == table.table_name
+    assert rv and rv["name"] == table.name

@@ -1,27 +1,6 @@
-
-
-.. |arg_api_key| replace:: An Airtable API Key or An Airtable Authorization Token.
-
 .. |arg_base_id| replace:: An Airtable base id.
 
 .. |arg_record_id| replace:: An Airtable record id.
-
-.. |arg_table_name| replace:: An Airtable table name. Table name should be unencoded,
-    as shown on browser.
-
-.. |arg_timeout| replace:: A tuple indicating a connect and read timeout.
-    eg. ``timeout=(2,5)`` would configure a 2 second timeout for
-    the connection to be established  and 5 seconds for a
-    server read timeout. Default is ``None`` (no timeout).
-
-.. |arg_retry_strategy| replace:: An instance of
-    `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`__.
-    You can use :func:`~pyairtable.api.retrying.retry_strategy` to build one with reasonable
-    defaults, or provide your own custom instance of ``Retry``.
-    Default is ``None`` (no retry).
-
-.. |arg_endpoint_url| replace:: The API endpoint to hit. You might want to override it if you are using
-    a proxy to debug your API calls. Default is ``https://api.airtable.com``.
 
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.
@@ -29,10 +8,11 @@
 
 .. |kwarg_page_size| replace:: The number of records returned
     in each request. Must be less than or equal to 100.
-    Default is 100.
+    If no value given, `Airtable's default <https://airtable.com/developers/web/api/list-records>`__ is 100.
 
 .. |kwarg_max_records| replace:: The maximum total number of
-    records that will be returned. If this value is larger than `page_size` multiple requests will be needed
+    records that will be returned. If this value is larger than
+    ``page_size``, multiple requests will be needed
     to fetch all records.
 
 .. |kwarg_fields| replace:: Name of field or fields  to
@@ -50,13 +30,13 @@
     prefixing the column name with a minus sign ``-``.
 
 .. |kwarg_formula| replace:: An Airtable formula. The formula will be evaluated for each record, and if the result
-    is not 0, false, "", NaN, [], or #Error! the record will be included
+    is none of ``0``, ``false``, ``""``, ``NaN``, ``[]``, or ``#Error!`` the record will be included
     in the response. If combined with view, only records in that view which satisfy the
     formula will be returned. For example, to only include records where
-    ``COLUMN_A`` isn't empty, pass in: ``"NOT({COLUMN_A}='')"``.
+    ``COLUMN_A`` isn't empty, pass in ``formula="{COLUMN_A}"``.
 
 .. |kwarg_typecast| replace:: The Airtable API will perform best-effort
-    automatic data conversion from string values. Default is False.
+    automatic data conversion from string values.
 
 .. |kwarg_cell_format| replace:: The cell format to request from the Airtable
     API. Supported options are `json` (the default) and `string`.
@@ -80,3 +60,8 @@
 
 .. |kwarg_return_fields_by_field_id| replace:: An optional boolean value that lets you return field objects where the
     key is the field id. This defaults to `false`, which returns field objects where the key is the field name.
+
+.. |warn_rate_limit| replace::
+    Due to Airtable API limits, the library inserts a 0.2 second delay in between requests.
+    If you retrieve many pages of records, expect the library to take several seconds to return.
+    Read more: `Rate limits <https://airtable.com/developers/web/api/rate-limits>`__

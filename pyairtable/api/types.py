@@ -10,23 +10,23 @@ from typing_extensions import Required, TypeAlias, TypedDict
 
 T = TypeVar("T")
 
-#: Used internally to disambiguate different uses for ``str``.
+#: An alias for ``str`` used internally for disambiguation.
 #: Record IDs for Airtable look like ``"recAdw9EjV90xbZ"``.
 RecordId: TypeAlias = str
 
-#: Used internally to disambiguate different uses for ``str``.
+#: An alias for ``str`` used internally for disambiguation.
 #: Airtable returns timestamps as ISO 8601 UTC strings,
 #: e.g. ``"2023-05-22T21:24:15.333134Z"``
 Timestamp: TypeAlias = str
 
-#: Used internally to disambiguate different uses for ``str``.
+#: An alias for ``str`` used internally for disambiguation.
 #: Field names can be any valid string.
 FieldName: TypeAlias = str
 
 
 class AttachmentDict(TypedDict, total=False):
     """
-    A dict representing an attachment stored in an Attachments field.
+    A ``dict`` representing an attachment stored in an Attachments field.
 
     >>> record = table.get('recW8eG2x0ew1Af')
     >>> record['fields']['Attachments']
@@ -53,7 +53,7 @@ class AttachmentDict(TypedDict, total=False):
 
 class CreateAttachmentDict(TypedDict, total=False):
     """
-    A dict representing a new attachment to be written to the Airtable API.
+    A ``dict`` representing a new attachment to be written to the Airtable API.
 
     >>> new_attachment = {
     ...     "url": "https://example.com/image.jpg",
@@ -70,9 +70,9 @@ class CreateAttachmentDict(TypedDict, total=False):
 
 class BarcodeDict(TypedDict, total=False):
     """
-    A dict representing the value stored in a Barcode field.
+    A ``dict`` representing the value stored in a Barcode field.
 
-    >>> record = api.get('base_id', 'table_name', 'recW8eG2x0ew1Af')
+    >>> record = table.get('recW8eG2x0ew1Af')
     >>> record['fields']['Barcode']
     {'type': 'upce', 'text': '01234567'}
 
@@ -85,9 +85,9 @@ class BarcodeDict(TypedDict, total=False):
 
 class ButtonDict(TypedDict):
     """
-    A dict representing the value stored in a Button field.
+    A ``dict`` representing the value stored in a Button field.
 
-    >>> record = api.get('base_id', 'table_name', 'recW8eG2x0ew1Af')
+    >>> record = table.get('recW8eG2x0ew1Af')
     >>> record['fields']['Click Me']
     {'label': 'Click Me', 'url': 'http://example.com'}
 
@@ -102,7 +102,7 @@ class CollaboratorDict(TypedDict, total=False):
     """
     A dict representing the value stored in a User field returned from the API.
 
-    >>> record = api.get('base_id', 'table_name', 'recW8eG2x0ew1Af')
+    >>> record = table.get('recW8eG2x0ew1Af')
     >>> record['fields']['Created By']
     {
         'id': 'usrAdw9EjV90xbW',
@@ -205,15 +205,16 @@ Fields: TypeAlias = Dict[FieldName, Optional[FieldValue]]
 
 class RecordDict(TypedDict):
     """
-    Represents a record returned from the Airtable API.
+    A ``dict`` representing a record returned from the Airtable API.
     See `List records <https://airtable.com/developers/web/api/list-records>`__.
 
     Usage:
-        >>> record = table.first(formula="Name = 'Alice'")
-        >>> record
-        {"id": "recAdw9EjV90xbW",
-         "createdTime": "2023-05-22T21:24:15.333134Z",
-         "fields": {"Name": "Alice", "Department": "Engineering"}}
+        >>> table.first(formula="Name = 'Alice'")
+        {
+            'id': 'recAdw9EjV90xbW',
+            'createdTime': '2023-05-22T21:24:15.333134Z',
+            'fields': {'Name': 'Alice', 'Department': 'Engineering'}
+        }
     """
 
     id: RecordId
@@ -223,7 +224,7 @@ class RecordDict(TypedDict):
 
 class CreateRecordDict(TypedDict):
     """
-    Represents the payload passed to the Airtable API to create a record.
+    A ``dict`` representing the payload passed to the Airtable API to create a record.
     """
 
     fields: Fields
@@ -231,7 +232,7 @@ class CreateRecordDict(TypedDict):
 
 class UpdateRecordDict(TypedDict):
     """
-    Represents the payload passed to the Airtable API to update a record.
+    A ``dict`` representing the payload passed to the Airtable API to update a record.
 
     Usage:
         >>> update_records = [
@@ -247,11 +248,11 @@ class UpdateRecordDict(TypedDict):
 
 class RecordDeletedDict(TypedDict):
     """
-    Represents the payload returned by the Airtable API to confirm a deletion.
+    A ``dict`` representing the payload returned by the Airtable API to confirm a deletion.
 
     Usage:
         >>> table.delete("recAdw9EjV90xbZ")
-        {"id": "recAdw9EjV90xbZ", "deleted": True}
+        {'id': 'recAdw9EjV90xbZ', 'deleted': True}
     """
 
     id: RecordId
@@ -285,9 +286,11 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
         ...         "fields": {},
         ...     }
         ... )
-        {'id': 'recAdw9EjV90xbZ',
-        'createdTime': '2023-05-22T21:24:15.333134Z',
-        'fields': {}}
+        {
+            'id': 'recAdw9EjV90xbZ',
+            'createdTime': '2023-05-22T21:24:15.333134Z',
+            'fields': {}
+        }
 
         >>> assert_typed_dict(RecordDict, {"foo": "bar"})
         Traceback (most recent call last):

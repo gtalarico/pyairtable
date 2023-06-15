@@ -4,12 +4,51 @@ import pytest
 from requests import Request
 from requests_mock import Mocker
 
-from pyairtable import Table
+from pyairtable import Api, Base, Table
 from pyairtable.utils import chunked
 
 
-def test_repr(table):
-    assert "<Table" in table.__repr__()
+def test_constructor(base: Base):
+    """
+    Test the constructor.
+    """
+    table = Table(None, base, "table_name")
+    assert table.api == base.api
+    assert table.base == base
+    assert table.name == "table_name"
+
+
+def test_deprecated_constructor(api: Api, base: Base):
+    """
+    Test that "legacy" constructor (passing strings instead of instances)
+    will throw deprecation warning, but it _will_ work.
+    """
+    with pytest.warns(DeprecationWarning):
+        table = Table(api.api_key, base.id, "table_name", timeout=(1, 99))
+
+    assert table.api.api_key == api.api_key
+    assert table.api.timeout == (1, 99)
+    assert table.base.id == base.id
+    assert table.name == "table_name"
+
+
+def test_invalid_constructor(api, base):
+    """
+    Test that we get a TypeError if passing invalid args to Table.
+    """
+    for args in [
+        [api, "base_id", "table_name"],
+        ["api_key", base, "table_name"],
+        [api, base, "table_name"],
+    ]:
+        kwargs = args.pop() if isinstance(args[-1], dict) else {}
+        with pytest.raises(TypeError):
+            print(args, kwargs)
+            Table(*args, **kwargs)
+
+
+def test_repr(table: Table):
+    assert repr(table) == "<Table base_id='appJMY16gZDQrMWpA' table_name='Table Name'>"
 
 
 @pytest.mark.parametrize(
@@ -20,12 +59,12 @@ def test_repr(table):
         ("abc", "Table-fake", "abc/Table-fake"),
     ],
 )
-def test_url(base_id, table_name, table_url_suffix):
-    table = Table("apikey", base_id, table_name)
-    assert table.table_url == f"https://api.airtable.com/v0/{table_url_suffix}"
+def test_url(api: Api, base_id, table_name, table_url_suffix):
+    table = api.table(base_id, table_name)
+    assert table.url == f"https://api.airtable.com/v0/{table_url_suffix}"
 
 
-def test_chunk(table):
+def test_chunk(table: Table):
     chunks = [chunk for chunk in chunked([0, 0, 1, 1, 2, 2, 3], 2)]
     assert chunks[0] == [0, 0]
     assert chunks[1] == [1, 1]
@@ -33,14 +72,14 @@ def test_chunk(table):
     assert chunks[3] == [3]
 
 
-def test_record_url(table):
-    rv = table.get_record_url("xxx")
-    assert rv == urljoin(table.table_url, "xxx")
+def test_record_url(table: Table):
+    rv = table.record_url("xxx")
+    assert rv == urljoin(table.url, "xxx")
 
 
-def test_api_key(table, mock_response_single):
+def test_api_key(table: Table, mock_response_single):
     def match_auth_header(request):
-        expected_auth_header = "Bearer {}".format(table.api_key)
+        expected_auth_header = "Bearer {}".format(table.api.api_key)
         return (
             "Authorization" in request.headers
             and request.headers["Authorization"] == expected_auth_header
@@ -48,7 +87,7 @@ def test_api_key(table, mock_response_single):
 
     with Mocker() as m:
         m.get(
-            table.get_record_url("rec"),
+            table.record_url("rec"),
             status_code=200,
             json=mock_response_single,
             additional_matcher=match_auth_header,
@@ -57,28 +96,18 @@ def test_api_key(table, mock_response_single):
         table.get("rec")
 
 
-def test_update_api_key(table):
-    table.api_key = "123"
-    assert "123" in table.session.headers["Authorization"]
-
-
-def test_get_base(table):
-    base = table.get_base()
-    assert base.base_id == table.base_id and base.api_key == table.api_key
-
-
-def test_get(table, mock_response_single):
+def test_get(table: Table, mock_response_single):
     _id = mock_response_single["id"]
     with Mocker() as mock:
-        mock.get(table.get_record_url(_id), status_code=200, json=mock_response_single)
+        mock.get(table.record_url(_id), status_code=200, json=mock_response_single)
         resp = table.get(_id)
     assert dict_equals(resp, mock_response_single)
 
 
-def test_first(table, mock_response_single):
+def test_first(table: Table, mock_response_single):
     mock_response = {"records": [mock_response_single]}
     with Mocker() as mock:
-        url = Request("get", table.table_url, params={"maxRecords": 1}).prepare().url
+        url = Request("get", table.url, params={"maxRecords": 1}).prepare().url
         mock.get(
             url,
             status_code=200,
@@ -89,10 +118,10 @@ def test_first(table, mock_response_single):
     assert rv["id"] == mock_response_single["id"]
 
 
-def test_first_via_post(table, mock_response_single):
+def test_first_via_post(table: Table, mock_response_single):
     mock_response = {"records": [mock_response_single]}
     with Mocker() as mock:
-        url = table.table_url + "/listRecords"
+        url = table.url + "/listRecords"
         formula = f"RECORD_ID() != '{'x' * 17000}'"
         mock_endpoint = mock.post(url, status_code=200, json=mock_response)
         rv = table.first(formula=formula)
@@ -105,10 +134,10 @@ def test_first_via_post(table, mock_response_single):
     assert rv == mock_response_single
 
 
-def test_first_none(table, mock_response_single):
+def test_first_none(table: Table, mock_response_single):
     mock_response = {"records": []}
     with Mocker() as mock:
-        url = Request("get", table.table_url, params={"maxRecords": 1}).prepare().url
+        url = Request("get", table.url, params={"maxRecords": 1}).prepare().url
         mock.get(
             url,
             status_code=200,
@@ -118,10 +147,10 @@ def test_first_none(table, mock_response_single):
         assert rv is None
 
 
-def test_all(table, mock_response_list, mock_records):
+def test_all(table: Table, mock_response_list, mock_records):
     with Mocker() as mock:
         mock.get(
-            table.table_url,
+            table.url,
             status_code=200,
             json=mock_response_list[0],
             complete_qs=True,
@@ -130,7 +159,7 @@ def test_all(table, mock_response_list, mock_records):
             offset = resp.get("offset", None)
             if not offset:
                 continue
-            offset_url = table.table_url + "?offset={}".format(offset)
+            offset_url = table.url + "?offset={}".format(offset)
             mock.get(
                 offset_url,
                 status_code=200,
@@ -143,10 +172,10 @@ def test_all(table, mock_response_list, mock_records):
         assert dict_equals(resp, mock_records[n])
 
 
-def test_iterate(table, mock_response_list, mock_records):
+def test_iterate(table: Table, mock_response_list, mock_records):
     with Mocker() as mock:
         mock.get(
-            table.table_url,
+            table.url,
             status_code=200,
             json=mock_response_list[0],
             complete_qs=True,
@@ -156,7 +185,7 @@ def test_iterate(table, mock_response_list, mock_records):
             if not offset:
                 continue
             params = {"offset": offset}
-            offset_url = Request("get", table.table_url, params=params).prepare().url
+            offset_url = Request("get", table.url, params=params).prepare().url
             mock.get(
                 offset_url,
                 status_code=200,
@@ -172,11 +201,11 @@ def test_iterate(table, mock_response_list, mock_records):
         assert seq_equals(pages[n], response["records"])
 
 
-def test_create(table, mock_response_single):
+def test_create(table: Table, mock_response_single):
     with Mocker() as mock:
         post_data = mock_response_single["fields"]
         mock.post(
-            table.table_url,
+            table.url,
             status_code=201,
             json=mock_response_single,
             additional_matcher=match_request_data(post_data),
@@ -185,11 +214,11 @@ def test_create(table, mock_response_single):
     assert dict_equals(resp, mock_response_single)
 
 
-def test_batch_create(table, mock_records):
+def test_batch_create(table: Table, mock_records):
     with Mocker() as mock:
         for chunk in _chunk(mock_records, 10):
             mock.post(
-                table.table_url,
+                table.url,
                 status_code=201,
                 json={"records": chunk},
             )
@@ -199,13 +228,13 @@ def test_batch_create(table, mock_records):
 
 
 @pytest.mark.parametrize("replace,http_method", [(False, "PATCH"), (True, "PUT")])
-def test_update(table, mock_response_single, replace, http_method):
+def test_update(table: Table, mock_response_single, replace, http_method):
     id_ = mock_response_single["id"]
     post_data = mock_response_single["fields"]
     with Mocker() as mock:
         mock.register_uri(
             http_method,
-            urljoin(table.table_url, id_),
+            urljoin(table.url, id_),
             status_code=201,
             json=mock_response_single,
             additional_matcher=match_request_data(post_data),
@@ -215,7 +244,7 @@ def test_update(table, mock_response_single, replace, http_method):
 
 
 @pytest.mark.parametrize("replace,http_method", [(False, "PATCH"), (True, "PUT")])
-def test_batch_update(table, mock_response_batch, replace, http_method):
+def test_batch_update(table: Table, mock_response_batch, replace, http_method):
     records = [
         {"id": x["id"], "fields": x["fields"]} for x in mock_response_batch["records"]
     ]
@@ -223,7 +252,7 @@ def test_batch_update(table, mock_response_batch, replace, http_method):
         for chunk in _chunk(mock_response_batch["records"], 10):
             mock.register_uri(
                 http_method,
-                table.table_url,
+                table.url,
                 status_code=201,
                 json={"records": chunk},
             )
@@ -233,7 +262,7 @@ def test_batch_update(table, mock_response_batch, replace, http_method):
 
 
 @pytest.mark.parametrize("replace,http_method", [(False, "PATCH"), (True, "PUT")])
-def test_batch_upsert(table, mock_response_batch, replace, http_method):
+def test_batch_upsert(table: Table, mock_response_batch, replace, http_method):
     records = [
         {"id": x["id"], "fields": x["fields"]} for x in mock_response_batch["records"]
     ]
@@ -242,7 +271,7 @@ def test_batch_upsert(table, mock_response_batch, replace, http_method):
         for chunk in _chunk(mock_response_batch["records"], 10):
             mock.register_uri(
                 http_method,
-                table.table_url,
+                table.url,
                 status_code=201,
                 json={"records": chunk},
             )
@@ -251,7 +280,7 @@ def test_batch_upsert(table, mock_response_batch, replace, http_method):
     assert resp == mock_response_batch["records"]
 
 
-def test_batch_upsert__missing_field(table, requests_mock):
+def test_batch_upsert__missing_field(table: Table, requests_mock):
     """
     Test that batch_upsert raises an exception if a record in the input
     is missing one of the key_fields, since this will create an error
@@ -261,24 +290,22 @@ def test_batch_upsert__missing_field(table, requests_mock):
         table.batch_upsert([{"fields": {"Name": "Alice"}}], key_fields=["Email"])
 
 
-def test_delete(table, mock_response_single):
+def test_delete(table: Table, mock_response_single):
     id_ = mock_response_single["id"]
     expected = {"deleted": True, "id": id_}
     with Mocker() as mock:
-        mock.delete(urljoin(table.table_url, id_), status_code=201, json=expected)
+        mock.delete(urljoin(table.url, id_), status_code=201, json=expected)
         resp = table.delete(id_)
     assert resp == expected
 
 
-def test_batch_delete(table, mock_records):
+def test_batch_delete(table: Table, mock_records):
     ids = [i["id"] for i in mock_records]
     with Mocker() as mock:
         for chunk in _chunk(ids, 10):
             json_response = {"records": [{"deleted": True, "id": id_} for id_ in chunk]}
             url_match = (
-                Request("get", table.table_url, params={"records[]": chunk})
-                .prepare()
-                .url
+                Request("get", table.url, params={"records[]": chunk}).prepare().url
             )
             mock.delete(
                 url_match,

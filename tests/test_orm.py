@@ -189,7 +189,7 @@ def test_linked_record():
     assert not contact.address[0].street
 
     with Mocker() as mock:
-        url = address.get_table().get_record_url(address.id)
+        url = Address.get_table().record_url(address.id)
         mock.get(url, status_code=200, json=record)
         contact.address[0].fetch()
 
@@ -221,12 +221,12 @@ def test_undeclared_field(requests_mock, test_case):
     )
 
     requests_mock.get(
-        Address.get_table().table_url,
+        Address.get_table().url,
         status_code=200,
         json={"records": [record]},
     )
     requests_mock.get(
-        Address.get_table().get_record_url(record["id"]),
+        Address.get_table().record_url(record["id"]),
         status_code=200,
         json=record,
     )
