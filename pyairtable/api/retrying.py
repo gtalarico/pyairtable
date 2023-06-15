@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Union
+from typing import Any, Collection, Optional, Tuple, Union
 
 from requests import Session
 from requests.adapters import HTTPAdapter
@@ -14,6 +14,7 @@ def retry_strategy(
     status_forcelist: Tuple[int, ...] = DEFAULT_RETRIABLE_STATUS_CODES,
     backoff_factor: Union[int, float] = DEFAULT_BACKOFF_FACTOR,
     total: int = DEFAULT_MAX_RETRIES,
+    allowed_methods: Optional[Collection[str]] = None,
     **kwargs: Any,
 ) -> Retry:
     """
@@ -24,6 +25,8 @@ def retry_strategy(
 
     Args:
         status_forcelist: Status codes which should be retried.
+        allowed_methods: HTTP methods which can be retried.
+            If ``None``, then all HTTP methods will be retried.
         backoff_factor:
             A backoff factor to apply between attempts after the second try.
             Sleep time between each request will be calculated as
@@ -37,6 +40,7 @@ def retry_strategy(
         total=total,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
+        allowed_methods=allowed_methods,
         **kwargs,
     )
 
