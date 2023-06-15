@@ -55,9 +55,7 @@ Changes to Api
 --------------
 
 * By default, the library will retry requests up to five times if it receives
-  a 429 status code from Airtable (indicating the base has exceeded the
-  maximum QPS enforced by Airtable) or a 500/502/503/504 status code
-  (which is a potentially transient error).
+  a 429 status code from Airtable, indicating the base has exceeded its QPS limit.
 
 
 Changes to the ORM
