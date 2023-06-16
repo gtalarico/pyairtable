@@ -44,8 +44,6 @@ class Api:
         endpoint_url: str = "https://api.airtable.com",
     ):
         """
-
-
         Args:
             api_key: An Airtable API key or personal access token.
             timeout: A tuple indicating a connect and read timeout.
