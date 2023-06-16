@@ -368,21 +368,26 @@ def test_linked_field_must_link_to_model():
 
 
 def test_linked_field():
-    class T(Model):
+    class Book(Model):
         Meta = fake_meta()
 
-    class X(Model):
+    class Author(Model):
         Meta = fake_meta()
-        t = f.LinkField("Field Name", model=T)
+        books = f.LinkField("Books", model=Book)
 
-    x = X(t=[])
-    x.t = [T(), T(), T()]
+    collection = [Book(), Book(), Book()]
+    author = Author()
+    author.books = collection
+    assert author.books == collection
 
     with pytest.raises(TypeError):
-        x.t = [1, 2, 3]
+        author.books = Book()
 
     with pytest.raises(TypeError):
-        x.t = -1
+        author.books = [1, 2, 3]
+
+    with pytest.raises(TypeError):
+        author.books = -1
 
 
 def test_lookup_field():
