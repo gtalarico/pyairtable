@@ -68,7 +68,7 @@ Changes to types
 ----------------
 
 * All functions and methods in this library have full type annotations that will pass ``mypy --strict``.
-  See the :ref:`Types` section for more information on the types this library accepts and returns.
+  See the :ref:`types <Module: pyairtable.api.types>` module for more information on the types this library accepts and returns.
 
 
 Migrating from 0.x to 1.0

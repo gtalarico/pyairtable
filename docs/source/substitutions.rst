@@ -60,8 +60,3 @@
 
 .. |kwarg_return_fields_by_field_id| replace:: An optional boolean value that lets you return field objects where the
     key is the field id. This defaults to `false`, which returns field objects where the key is the field name.
-
-.. |warn_rate_limit| replace::
-    Due to Airtable API limits, the library inserts a 0.2 second delay in between requests.
-    If you retrieve many pages of records, expect the library to take several seconds to return.
-    Read more: `Rate limits <https://airtable.com/developers/web/api/rate-limits>`__
