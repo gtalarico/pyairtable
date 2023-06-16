@@ -54,10 +54,18 @@ You can read and modify attributes. If record already exists,
     }
 }
 
-Finally, you can use :meth:`~pyairtable.orm.model.Model.delete` to delete the record:
+You can use :meth:`~pyairtable.orm.model.Model.delete` to delete the record:
 
 >>> contact.delete()
 True
+
+You can also use :meth:`~pyairtable.orm.model.Model.batch_save` and
+:meth:`~pyairtable.orm.model.Model.batch_delete` on several records at once:
+
+>>> contacts = Contact.all()
+>>> contacts.append(Contact(first_name="Alice", email="alice@example.com"))
+>>> Contact.batch_save(contacts)
+>>> Contact.batch_delete(contacts)
 """
 import abc
 from functools import lru_cache
@@ -375,8 +383,8 @@ class Model(metaclass=abc.ABCMeta):
     @classmethod
     def batch_delete(cls, models: List[SelfType]) -> None:
         """
-        Deletes a list of model instances from Airtable.
-        Raises ValueError if given a model which has not been saved.
+        Deletes a list of model instances from Airtable. Raises ``ValueError`` if
+        given a model which has never been saved to Airtable.
         """
         if not all(model.id for model in models):
             raise ValueError("cannot delete an unsaved model")
