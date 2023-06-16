@@ -361,6 +361,9 @@ class Model(metaclass=abc.ABCMeta):
         network requests as possible. Can accept a mixture of new records
         (which have not been saved yet) and existing records that have IDs.
         """
+        if not all(isinstance(model, cls) for model in models):
+            raise TypeError(set(type(model) for model in models))
+
         create_models = [model for model in models if not model.id]
         update_models = [model for model in models if model.id]
         create_records: List[Fields] = [
@@ -373,6 +376,7 @@ class Model(metaclass=abc.ABCMeta):
             for model in update_models
             if (record := model.to_record(only_writable=True))
         ]
+
         table = cls.get_table()
         table.batch_update(update_records, typecast=cls._typecast())
         created_records = table.batch_create(create_records, typecast=cls._typecast())
@@ -388,4 +392,6 @@ class Model(metaclass=abc.ABCMeta):
         """
         if not all(model.id for model in models):
             raise ValueError("cannot delete an unsaved model")
+        if not all(isinstance(model, cls) for model in models):
+            raise TypeError(set(type(model) for model in models))
         cls.get_table().batch_delete([model.id for model in models])

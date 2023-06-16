@@ -286,6 +286,20 @@ def test_batch_save(mock_update, mock_create):
     )
 
 
+@mock.patch("pyairtable.Table.batch_create")
+@mock.patch("pyairtable.Table.batch_update")
+def test_batch_save__invalid_class(mock_update, mock_create):
+    """
+    Test that batch_save() raises TypeError if a model is given which is not an
+    instance of the model being called.
+    """
+    with pytest.raises(TypeError):
+        Address.batch_save([Contact()])
+
+    assert mock_update.call_count == 0
+    assert mock_create.call_count == 0
+
+
 @mock.patch("pyairtable.Table.batch_delete")
 def test_batch_delete(mock_delete):
     """
@@ -311,5 +325,17 @@ def test_batch_delete__unsaved_record(mock_delete):
     ]
     with pytest.raises(ValueError):
         Address.batch_delete(addresses)
+
+    assert mock_delete.call_count == 0
+
+
+@mock.patch("pyairtable.Table.batch_delete")
+def test_batch_delete__invalid_class(mock_delete):
+    """
+    Test that batch_delete() raises TypeError if a model is given which is not an
+    instance of the model being called.
+    """
+    with pytest.raises(TypeError):
+        Address.batch_delete([Contact.from_record(fake_record())])
 
     assert mock_delete.call_count == 0
