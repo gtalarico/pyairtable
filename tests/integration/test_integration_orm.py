@@ -1,24 +1,18 @@
-import os
 from datetime import datetime
 
 import pytest
 
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
-from tests.integration.conftest import BASE_ID
 
 pytestmark = [pytest.mark.integration]
 
 
 @pytest.fixture
-def Address():
+def Address(make_meta):
     class _Address(Model):
+        Meta = make_meta("Address")
         street = f.TextField("Street")
-
-        class Meta:
-            base_id = BASE_ID
-            api_key = os.environ["AIRTABLE_API_KEY"]
-            table_name = "Address"
 
     yield _Address
 
@@ -28,8 +22,9 @@ def Address():
 
 
 @pytest.fixture
-def Contact(Address):
+def Contact(Address, make_meta):
     class _Contact(Model):
+        Meta = make_meta("Contact")
         first_name = f.TextField("First Name")
         last_name = f.TextField("Last Name")
         email = f.EmailField("Email")
@@ -37,11 +32,6 @@ def Contact(Address):
         address = f.LinkField("Address", Address, lazy=True)
         birthday = f.DateField("Birthday")
         last_access = f.DatetimeField("Last Access")
-
-        class Meta:
-            base_id = BASE_ID
-            api_key = os.environ["AIRTABLE_API_KEY"]
-            table_name = "Contact"
 
     # HACK - back-ref test
     Address.contact = f.LinkField("Contact", _Contact, lazy=True)
@@ -90,20 +80,16 @@ def test_integration_orm(Contact, Address):
     assert rv_address_2.street == rv_address.street == STREET
 
 
-def test_undeclared_fields():
+def test_undeclared_fields(make_meta):
     """
     Test that if our ORM is missing some fields, it does not fail on retrieval
     and does not clobber their values on save.
     """
 
     class Contact(Model):
+        Meta = make_meta("Contact")
         first_name = f.TextField("First Name")
         last_name = f.TextField("Last Name")
-
-        class Meta:
-            base_id = BASE_ID
-            api_key = os.environ["AIRTABLE_API_KEY"]
-            table_name = "Contact"
 
     table = Contact.get_table()
     record = table.create(

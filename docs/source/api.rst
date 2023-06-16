@@ -30,22 +30,34 @@ Retrying
 
 .. versionadded:: 1.4.0
 
-You may provide an instance of ``urllib3.util.Retry`` to configure retrying behaviour,
-or you can use :func:`~pyairtable.retry_strategy` to quickly generate a
-``Retry`` instance with reasonable defaults (which you can adjust).
+:class:`~pyairtable.api.Api` accepts a ``retry_strategy=`` parameter that receives an instance of
+`urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_.
 
-.. note:: for backwards-compatibility, the default behavior is to not retry (`retry_strategy=None`).
-  This may change in future releases.
+As of 2.0.0, the default behavior is to retry requests up to five times if the Airtable API responds with
+a 429 status code, indicating you've exceeded their per-base QPS limit.
 
-Out of the box, :func:`~pyairtable.retry_strategy` will retry a request several times
-if it receives a 429 (which indicates you've exceeded Airtable's limit of 5 QPS per base) or
-if it receives a potentially transient server-side error (500, 502, 503, or 504).
+To adjust the default behavior, you can use the :func:`~pyairtable.retry_strategy` function.
+For example, to increase the total number of retries:
 
 .. code-block:: python
 
   from pyairtable import Api, retry_strategy
-  api = Api('auth_token', retry_strategy=retry_strategy())
+  api = Api('auth_token', retry_strategy=retry_strategy(total=10))
 
+Or to retry certain types of server errors in addition to rate limiting errors:
+
+.. code-block:: python
+
+  from pyairtable import Api, retry_strategy
+  retry = retry_strategy(status_forcelist=(429, 500, 502, 503, 504))
+  api = Api('auth_token', retry_strategy=retry)
+
+You can also disable retries entirely:
+
+.. code-block:: python
+
+  from pyairtable import Api
+  api = Api('auth_token', retry_strategy=None)
 
 .. autofunction:: pyairtable.retry_strategy
 

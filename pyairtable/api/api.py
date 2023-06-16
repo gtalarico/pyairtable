@@ -1,7 +1,6 @@
 import posixpath
-import time
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
 import requests
 from requests.sessions import Session
@@ -9,10 +8,9 @@ from typing_extensions import TypeAlias
 
 import pyairtable.api.base
 import pyairtable.api.table
+from pyairtable.api import retrying
 from pyairtable.api.params import options_to_json_and_params, options_to_params
 from pyairtable.utils import chunked
-
-from .retrying import Retry, _RetryingSession
 
 T = TypeVar("T")
 TimeoutTuple: TypeAlias = Tuple[int, int]
@@ -42,7 +40,7 @@ class Api:
         api_key: str,
         *,
         timeout: Optional[TimeoutTuple] = None,
-        retry_strategy: Optional[Retry] = None,
+        retry_strategy: Optional[Union[bool, retrying.Retry]] = True,
         endpoint_url: str = "https://api.airtable.com",
     ):
         """
@@ -53,16 +51,19 @@ class Api:
                 the connection to be established  and 5 seconds for a
                 server read timeout. Default is ``None`` (no timeout).
             retry_strategy: An instance of
-                `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`__.
-                You can use :func:`~pyairtable.retry_strategy` to build one with reasonable
-                defaults, or provide your own custom instance of ``Retry``.
+                `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_.
+                If ``None`` or ``False``, requests will not be retried.
+                If ``True``, the default strategy will be applied
+                (see :func:`~pyairtable.retry_strategy` for details).
             endpoint_url: The API endpoint to use. Override this if you are using
                 a debugging or caching proxy.
         """
+        if retry_strategy is True:
+            retry_strategy = retrying.retry_strategy()
         if not retry_strategy:
             self.session = Session()
         else:
-            self.session = _RetryingSession(retry_strategy)
+            self.session = retrying._RetryingSession(retry_strategy)
 
         self.endpoint_url = endpoint_url
         self.timeout = timeout
@@ -187,11 +188,3 @@ class Api:
         to the maximum number of records per request allowed by the API.
         """
         return chunked(iterable, self.MAX_RECORDS_PER_REQUEST)
-
-    def wait(self) -> None:
-        """
-        Sleep for 1/N seconds, where N is the maximum RPS allowed by the Airtable API.
-
-        :meta private: because we expect to remove this soon.
-        """
-        time.sleep(self.API_LIMIT)

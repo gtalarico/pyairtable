@@ -51,6 +51,13 @@ See below for supported and unsupported patterns:
     # to avoid situations where self.api and self.base don't align.
     >>> table = Table(api, base_id, table_name)  # [Api, Base, str]
 
+Retry by Default
+----------------
+
+* By default, the library will retry requests up to five times if it receives
+  a 429 status code from Airtable, indicating the base has exceeded its QPS limit.
+
+
 Changes to the ORM
 ------------------
 
