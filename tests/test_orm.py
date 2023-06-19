@@ -117,6 +117,24 @@ def test_model():
     assert record["fields"]["First Name"] == contact.first_name
 
 
+def test_unsupplied_fields():
+    """
+    Test that we can create a record without fields.
+    """
+    a = Address()
+    assert a.number is None
+    assert a.street is None
+
+
+def test_null_fields():
+    """
+    Test that we can create a record with null fields.
+    """
+    a = Address(number=None, street=None)
+    assert a.number is None
+    assert a.street is None
+
+
 def test_first():
     with mock.patch.object(Table, "first") as m_first:
         m_first.return_value = {

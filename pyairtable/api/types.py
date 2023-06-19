@@ -196,6 +196,8 @@ FieldValue: TypeAlias = Union[
     List[CollaboratorEmailDict],
     FormulaErrorDict,
     FormulaNotANumberDict,
+    List[FormulaErrorDict],
+    List[FormulaNotANumberDict],
 ]
 
 

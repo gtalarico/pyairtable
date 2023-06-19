@@ -12,6 +12,7 @@ pytestmark = [pytest.mark.integration]
 def Address(make_meta):
     class _Address(Model):
         Meta = make_meta("Address")
+        number = f.IntegerField("Number")
         street = f.TextField("Street")
 
     yield _Address
@@ -107,3 +108,100 @@ def test_undeclared_fields(make_meta):
     # This should not clobber the values in 'Email' or 'Birthday'
     contact.save()
     assert table.get(record["id"]) == record
+
+
+def test_every_field(Address, make_meta):
+    """
+    Integration test for the ORM that exercises every supported field type.
+    """
+
+    class HasEverything(Model):
+        Meta = make_meta("EVERYTHING")
+        name = f.TextField("Name")
+        notes = f.RichTextField("Notes")
+        assignee = f.CollaboratorField("Assignee")
+        watchers = f.MultipleCollaboratorsField("Watchers")
+        status = f.SelectField("Status")
+        attachments = f.MultipleAttachmentsField("Attachments")
+        done = f.CheckboxField("Done")
+        tags = f.MultipleSelectField("Tags")
+        date = f.DateField("Date")
+        datetime = f.DatetimeField("DateTime")
+        duration_hmm = f.DurationField("Duration (h:mm)")
+        duration_hmmsss = f.DurationField("Duration (h:mm:ss.s)")
+        phone = f.PhoneNumberField("Phone")
+        email = f.EmailField("Email")
+        url = f.UrlField("URL")
+        integer = f.IntegerField("Integer")
+        decimal = f.FloatField("Decimal 1")
+        number = f.NumberField("Decimal 2")
+        autonumber = f.AutoNumberField("Autonumber")
+        dollars = f.CurrencyField("Dollars")
+        percent = f.PercentField("Percent")
+        stars = f.RatingField("Stars")
+        barcode = f.BarcodeField("Barcode")
+        button = f.ButtonField("Open URL")
+        formula_integer = f.IntegerField("Formula Int", readonly=True)
+        formula_float = f.FloatField("Formula Float", readonly=True)
+        formula_text = f.TextField("Formula Text", readonly=True)
+        formula_error = f.TextField("Formula Error", readonly=True)
+        formula_nan = f.TextField("Formula NaN", readonly=True)
+        addresses = f.LinkField("Address", Address)
+        link_count = f.CountField("Link to Self (Count)")
+        rollup_integer = f.IntegerField("Rollup Int", readonly=True)
+        rollup_error = f.TextField("Rollup Error", readonly=True)
+        lookup_integer = f.LookupField("Lookup Int", readonly=True)
+        lookup_error = f.LookupField("Lookup Error", readonly=True)
+        created = f.CreatedTimeField("Created")
+        created_by = f.CreatedByField("Created By")
+        last_modified = f.LastModifiedTimeField("Last Modified")
+        last_modified_by = f.LastModifiedByField("Last Modified By")
+
+    HasEverything.link_self = f.LinkField("Link to Self", model=HasEverything)
+
+    # Validate there are no field types we skipped
+    classes_used = {
+        type(field)
+        for field in vars(HasEverything).values()
+        if isinstance(field, f.Field)
+    }
+    for field_class in f.ALL_FIELDS:
+        if field_class in {f.ExternalSyncSourceField}:
+            continue
+        assert field_class in classes_used
+
+    record = HasEverything(
+        name=None,
+        notes=None,
+        assignee=None,
+        status=None,
+        attachments=None,
+        done=None,
+        tags=None,
+        date=None,
+        datetime=None,
+        duration_hmm=None,
+        duration_hmmsss=None,
+        phone=None,
+        email=None,
+        url=None,
+        integer=None,
+        decimal=None,
+        number=None,
+        dollars=None,
+        percent=None,
+        stars=None,
+        barcode=None,
+        addresses=None,
+        link_self=None,
+    )
+    assert not record.id
+    record.save()
+    assert record.id
+    assert record.addresses == []
+    assert record.link_self == []
+
+    # Test that we can mutate existing lists for record links
+    record.link_self.append(record)
+    record.save()
+    assert record.link_self == [record]
