@@ -37,8 +37,7 @@ records in Airtable:
     >>> import os
     >>> from pyairtable import Api
     >>> api = Api(os.environ['AIRTABLE_API_KEY'])
-    >>> table = api.table('appExampleBaseId', 'tblExampleTableId')
-    >>> table.all()
+    >>> api.all('appExampleBaseId', 'tblExampleTableId')
     [
         {
             "id": "rec5eR7IzKSAOBHCz",
