@@ -376,17 +376,7 @@ class ListField(Generic[T], Field[List[RecordId], List[T]]):
     """
     Generic type for a field that stores a list of values. Can be used
     to refer to a lookup field that might return more than one value.
-
-    >>> from pyairtable.orm import fields as F
-    >>> class MyTable(Model):
-    ...     class Meta:
-    ...         ...
-    ...
-    ...     lookup = F.ListField[str]("My Lookup", readonly=True)
-    ...
-    >>> rec = MyTable.first()
-    >>> rec.lookup
-    ["First value", "Second value", ...]
+    Not for use via API; should be subclassed by concrete field types (below).
     """
 
     valid_types = list
@@ -422,6 +412,7 @@ class ListField(Generic[T], Field[List[RecordId], List[T]]):
 
     def get_value(self, model: "Model") -> List[T]:
         value = super().get_value(model)
+        # If Airtable returns no value, substitute an empty list.
         if value is None:
             value = []
             setattr(model, self._attribute_name, value)
@@ -615,15 +606,29 @@ class LastModifiedTimeField(DatetimeField):
     readonly = True
 
 
-# TODO: LookupField actually needs to support other types besides str.
-class LookupField(ListField[str]):
+class LookupField(Generic[T], ListField[T]):
     """
-    Equivalent to ``ListField[str]``.
+    Generic field class for a lookup, which returns a list of values.
+
+    pyAirtable does not inspect field configuration at runtime.
+    Implementers are expected to declare which type(s) the lookup
+    might return when constructing the field:
+
+    >>> from pyairtable.orm import fields as F
+    >>> class MyTable(Model):
+    ...     class Meta:
+    ...         ...
+    ...
+    ...     lookup = F.LookupField[str]("My Lookup")
+    ...
+    >>> rec = MyTable.first()
+    >>> rec.lookup
+    ["First value", "Second value", ...]
 
     See `Lookup <https://airtable.com/developers/web/api/field-model#lookup>`__.
     """
 
-    linked_model = str
+    readonly = True
 
 
 class MultipleAttachmentsField(ListField[AttachmentDict]):

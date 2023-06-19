@@ -97,6 +97,7 @@ TYPE_VALIDATION_TEST_VALUES = {
 @pytest.mark.parametrize(
     "test_case",
     [
+        (f.Field, tuple(TYPE_VALIDATION_TEST_VALUES)),
         (f.TextField, str),
         (f.IntegerField, int),
         (f.RichTextField, str),
@@ -110,7 +111,6 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.RatingField, int),
         (f.ListField, list),
         (f.UrlField, str),
-        (f.LookupField, list),
         (f.MultipleSelectField, list),
         (f.PercentField, (int, float)),
         (f.DateField, (datetime.date, datetime.datetime)),
@@ -118,6 +118,7 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.CollaboratorField, dict),
         (f.SelectField, str),
         (f.EmailField, str),
+        (f.MultipleAttachmentsField, list),
         (f.MultipleCollaboratorsField, list),
         (f.CurrencyField, (int, float)),
     ],
@@ -160,6 +161,7 @@ def test_type_validation(test_case):
         (f.CountField, 1),
         (f.ExternalSyncSourceField, "Source"),
         (f.ButtonField, {"label": "Click me!"}),
+        (f.LookupField, ["any", "values"]),
         # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.CreatedByField, fake_user()),
         (f.CreatedTimeField, DATETIME_S, DATETIME_V),
@@ -207,7 +209,6 @@ def test_readonly_fields(test_case):
         (f.CheckboxField, True),
         (f.CollaboratorField, {"id": "usrFakeUserId", "email": "x@y.com"}),
         (f.ListField, ["any", "values"]),
-        (f.LookupField, ["any", "values"]),
         (f.MultipleAttachmentsField, [fake_attachment(), fake_attachment()]),
         (f.MultipleSelectField, ["any", "values"]),
         (f.MultipleCollaboratorsField, [fake_user(), fake_user()]),
@@ -257,6 +258,9 @@ def test_completeness():
     Ensure that we test conversion of all readonly and writable fields.
     """
     assert_all_fields_tested_by(test_writable_fields, test_readonly_fields)
+    assert_all_fields_tested_by(
+        test_type_validation, exclude=f.READONLY_FIELDS | {f.LinkField}
+    )
 
 
 def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
@@ -273,11 +277,12 @@ def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
             pass
         elif isinstance(obj, dict):
             yield from extract_fields(list(obj.values()))
+        elif isinstance(obj, type):
+            if issubclass(obj, f.Field):
+                yield obj
         elif hasattr(obj, "__iter__"):
             for item in obj:
                 yield from extract_fields(item)
-        elif isinstance(obj, type) and issubclass(obj, f.Field):
-            yield obj
 
     tested_field_classes = {
         field_class
