@@ -147,8 +147,6 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Last modified time <https://airtable.com/developers/web/api/field-model#lastmodifiedtime>`__
    * - :class:`~pyairtable.orm.fields.LinkField`
      - `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__
-   * - :class:`~pyairtable.orm.fields.ListField`
-     - (see docs)
    * - :class:`~pyairtable.orm.fields.LookupField` 🔒
      - `Lookup <https://airtable.com/developers/web/api/field-model#lookup>`__
    * - :class:`~pyairtable.orm.fields.MultipleAttachmentsField`

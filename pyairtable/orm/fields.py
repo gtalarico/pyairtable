@@ -84,6 +84,12 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
     #: Whether to allow modification of the value in this field.
     readonly: bool = False
 
+    # Contains a reference to the Model class (if possible)
+    _model: Optional[Type["Model"]] = None
+
+    # The name of the attribute on the Model class (if possible)
+    _attribute_name: Optional[str] = None
+
     def __init__(
         self,
         field_name: str,
@@ -111,8 +117,26 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
             self.readonly = readonly
 
     def __set_name__(self, owner: Any, name: str) -> None:
+        """
+        Called when an instance of Field is created within a class.
+        """
         self._model = owner
         self._attribute_name = name
+
+    @property
+    def _description(self) -> str:
+        """
+        Describes the field for the purpose of logging an error message.
+        Handles an edge case where a field is created directly onto a class
+        that already exists; in those cases, __set_name__ is not called.
+        """
+        if self._model and self._attribute_name:
+            return f"{self._model.__name__}.{self._attribute_name}"
+        if self._model:
+            return f"{self._model.__name__}.{self.field_name}"
+        if self.field_name:
+            return f"{self.field_name!r} field"
+        return "Field"
 
     # __get__ and __set__ are called when accessing an instance of Field on an object.
     # Model.field should return the Field instance itself, whereas
@@ -150,14 +174,12 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
         self._raise_if_readonly()
         if not hasattr(instance, "_fields"):
             instance._fields = {}
-        if self.validate_type:
+        if self.validate_type and value is not None:
             self.valid_or_raise(value)
         instance._fields[self.field_name] = value
 
     def __delete__(self, instance: "Model") -> None:
-        raise AttributeError(
-            f"cannot delete {self._model.__name__}.{self._attribute_name}"
-        )
+        raise AttributeError(f"cannot delete {self._description}")
 
     def _missing_value(self) -> Optional[T_ORM]:
         return None
@@ -176,9 +198,7 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
 
     def _raise_if_readonly(self) -> None:
         if self.readonly:
-            raise AttributeError(
-                f"{self._model.__name__}.{self._attribute_name} is read-only"
-            )
+            raise AttributeError(f"{self._description} is read-only")
 
     def __repr__(self) -> str:
         args = [repr(self.field_name)]
@@ -372,7 +392,7 @@ class _DictField(Generic[T], BasicField[T]):
     valid_types = dict
 
 
-class ListField(Generic[T], Field[List[RecordId], List[T]]):
+class _ListField(Generic[T], Field[List[RecordId], List[T]]):
     """
     Generic type for a field that stores a list of values. Can be used
     to refer to a lookup field that might return more than one value.
@@ -415,7 +435,14 @@ class ListField(Generic[T], Field[List[RecordId], List[T]]):
         # If Airtable returns no value, substitute an empty list.
         if value is None:
             value = []
-            setattr(model, self._attribute_name, value)
+            # For implementers to be able to modify this list in place
+            # and persist it later when they call .save(), we need to
+            # set this empty list as the field's value. We do this via
+            # the private attribute _fields instead of setattr() because
+            # our current workaround for cyclical link fields doesn't set
+            # self._attribute_name.
+            if not self.readonly:
+                model._fields[self.field_name] = value
         return value
 
     def valid_or_raise(self, value: Any) -> None:
@@ -431,7 +458,7 @@ class ListField(Generic[T], Field[List[RecordId], List[T]]):
         return value
 
 
-class LinkField(ListField[T_Linked]):
+class LinkField(_ListField[T_Linked]):
     """
     Represents a MultipleRecordLinks field. Accepts lists of Model instances.
 
@@ -606,7 +633,7 @@ class LastModifiedTimeField(DatetimeField):
     readonly = True
 
 
-class LookupField(Generic[T], ListField[T]):
+class LookupField(Generic[T], _ListField[T]):
     """
     Generic field class for a lookup, which returns a list of values.
 
@@ -631,7 +658,7 @@ class LookupField(Generic[T], ListField[T]):
     readonly = True
 
 
-class MultipleAttachmentsField(ListField[AttachmentDict]):
+class MultipleAttachmentsField(_ListField[AttachmentDict]):
     """
     Accepts a list of dicts that should conform to the format detailed in the
     `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_
@@ -641,7 +668,7 @@ class MultipleAttachmentsField(ListField[AttachmentDict]):
     linked_model = cast(Type[AttachmentDict], dict)
 
 
-class MultipleCollaboratorsField(ListField[CollaboratorDict]):
+class MultipleCollaboratorsField(_ListField[CollaboratorDict]):
     """
     Accepts a list of dicts that should conform to the format detailed in the
     `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_
@@ -651,7 +678,7 @@ class MultipleCollaboratorsField(ListField[CollaboratorDict]):
     linked_model = cast(Type[CollaboratorDict], dict)
 
 
-class MultipleSelectField(ListField[str]):
+class MultipleSelectField(_ListField[str]):
     """
     Accepts a list of ``str``.
 

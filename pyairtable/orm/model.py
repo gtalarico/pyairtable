@@ -227,7 +227,7 @@ class Model(metaclass=abc.ABCMeta):
         """
         map_ = self._field_name_descriptor_map()
         fields = {
-            field: map_[field].to_record_value(value)
+            field: None if value is None else map_[field].to_record_value(value)
             for field, value in self._fields.items()
             if not (map_[field].readonly and only_writable)
         }

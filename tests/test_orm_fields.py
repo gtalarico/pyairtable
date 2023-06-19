@@ -46,8 +46,8 @@ def test_field():
             "LastModifiedByField('User', readonly=True, validate_type=True)",
         ),
         (
-            f.ListField("Items", dict, validate_type=False),
-            "ListField('Items', model=<class 'dict'>, readonly=False, validate_type=False)",
+            f.LookupField("Items", dict, validate_type=False),
+            "LookupField('Items', model=<class 'dict'>, readonly=True, validate_type=False)",
         ),
         (
             f.LinkField("Records", type("TestModel", (Model,), {"Meta": fake_meta()})),
@@ -64,7 +64,6 @@ def test_repr(instance, expected):
     argvalues=[
         (f.Field, None),
         (f.CheckboxField, False),
-        (f.ListField, []),
         (f.LookupField, []),
         (f.MultipleCollaboratorsField, []),
         (f.MultipleSelectField, []),
@@ -76,7 +75,8 @@ def test_orm_missing_values(field_type, default_value):
     when there is no field value provided from Airtable.
     """
 
-    class T:
+    class T(Model):
+        Meta = fake_meta()
         the_field = field_type("Field Name")
 
     t = T()
@@ -109,7 +109,6 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.PhoneNumberField, str),
         (f.DurationField, datetime.timedelta),
         (f.RatingField, int),
-        (f.ListField, list),
         (f.UrlField, str),
         (f.MultipleSelectField, list),
         (f.PercentField, (int, float)),
@@ -208,7 +207,6 @@ def test_readonly_fields(test_case):
         (f.CurrencyField, 1.05),
         (f.CheckboxField, True),
         (f.CollaboratorField, {"id": "usrFakeUserId", "email": "x@y.com"}),
-        (f.ListField, ["any", "values"]),
         (f.MultipleAttachmentsField, [fake_attachment(), fake_attachment()]),
         (f.MultipleSelectField, ["any", "values"]),
         (f.MultipleCollaboratorsField, [fake_user(), fake_user()]),
@@ -330,7 +328,7 @@ def test_list_field_with_none():
 
     class T(Model):
         Meta = fake_meta()
-        the_field = f.ListField("Fld")
+        the_field = f._ListField("Fld")
 
     assert T.from_record(fake_record()).the_field == []
     assert T.from_record(fake_record(Fld=None)).the_field == []
@@ -343,7 +341,7 @@ def test_list_field_with_invalid_type():
 
     class T(Model):
         Meta = fake_meta()
-        the_field = f.ListField("Field Name")
+        the_field = f._ListField("Field Name")
 
     obj = T.from_record(fake_record())
     with pytest.raises(TypeError):
@@ -357,7 +355,7 @@ def test_list_field_with_string():
     """
 
     class T:
-        items = f.ListField("Items")
+        items = f._ListField("Items")
 
     t = T()
     with pytest.raises(TypeError):
