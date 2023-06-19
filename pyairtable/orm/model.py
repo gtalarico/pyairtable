@@ -1,4 +1,3 @@
-import abc
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
@@ -17,7 +16,7 @@ from pyairtable.api.types import (
 from pyairtable.orm.fields import AnyField, Field
 
 
-class Model(metaclass=abc.ABCMeta):
+class Model:
     """
     This class allows you create an orm-style class for your Airtable tables.
 

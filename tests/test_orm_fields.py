@@ -51,7 +51,7 @@ def test_field():
         ),
         (
             f.LinkField("Records", type("TestModel", (Model,), {"Meta": fake_meta()})),
-            "LinkField('Records', model=<class 'abc.TestModel'>, lazy=True)",
+            "LinkField('Records', model=<class 'test_orm_fields.TestModel'>, lazy=True)",
         ),
     ],
 )
