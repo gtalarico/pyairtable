@@ -495,6 +495,15 @@ class LinkField(_ListField[T_Linked]):
             ("lazy", self._lazy),
         ]
 
+    def valid_or_raise(self, value: Any) -> None:
+        super().valid_or_raise(value)
+        if self.linked_model:
+            for record in value:
+                if not isinstance(record, self.linked_model):
+                    raise TypeError(
+                        f"{self._description} requires {self.linked_model}; got {type(record)}"
+                    )
+
     def to_internal_value(self, value: Any) -> List[T_Linked]:
         # If Lazy, create empty from model class and set id
         # If not Lazy, fetch record from pyairtable and create new model instance
@@ -510,6 +519,7 @@ class LinkField(_ListField[T_Linked]):
         return linked_models
 
     def to_record_value(self, value: Any) -> List[str]:
+        self.valid_or_raise(value)
         return [v.id for v in value]
 
 

@@ -152,6 +152,49 @@ def test_type_validation(test_case):
                 )
 
 
+def test_type_validation__link_field():
+    """
+    Test that a link field will reject models of the wrong class.
+    """
+
+    class A(Model):
+        Meta = fake_meta()
+
+    class B(Model):
+        Meta = fake_meta()
+
+    class Container(Model):
+        Meta = fake_meta()
+        linked = f.LinkField("Linked", model=A)
+
+    a1 = A.from_record(fake_record())
+    a2 = A.from_record(fake_record())
+    a3 = A.from_record(fake_record())
+    b1 = B.from_record(fake_record())
+    b2 = B.from_record(fake_record())
+    b3 = B.from_record(fake_record())
+
+    record = Container()
+    assert record.linked == []
+
+    record.linked.append(a1)
+    record.linked.append(a2)
+    assert record.to_record()["fields"]["Linked"] == [a1.id, a2.id]
+
+    record.linked = [a1, a2, a3]
+    assert record.to_record()["fields"]["Linked"] == [a1.id, a2.id, a3.id]
+
+    # We can validate the type of each object during assignment
+    with pytest.raises(TypeError):
+        record.linked = [b1, b2, b3]
+
+    # We can't (easily) stop an implementer from appending the wrong type
+    # to the end of the list, but we can catch it during to_record().
+    record.linked.append(b1)
+    with pytest.raises(TypeError):
+        record.to_record()
+
+
 @pytest.mark.parametrize(
     argnames="test_case",
     argvalues=[
@@ -371,6 +414,10 @@ def test_linked_field_must_link_to_model():
 
 
 def test_linked_field():
+    """
+    Test basic interactions and type checking for LinkField.
+    """
+
     class Book(Model):
         Meta = fake_meta()
 
