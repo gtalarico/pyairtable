@@ -49,6 +49,11 @@ class Model(metaclass=abc.ABCMeta):
         cls._validate_class()
         super().__init_subclass__(**kwargs)
 
+    def __repr__(self) -> str:
+        if not self.id:
+            return f"<unsaved {self.__class__.__name__}>"
+        return f"<{self.__class__.__name__} id={self.id!r}>"
+
     @classmethod
     def _attribute_descriptor_map(cls) -> Dict[str, AnyField]:
         """
@@ -281,9 +286,6 @@ class Model(metaclass=abc.ABCMeta):
         updated = self.from_id(self.id, fetch=True)
         self._fields = updated._fields
         self.created_time = updated.created_time
-
-    def __repr__(self) -> str:
-        return "<Model={} {}>".format(self.__class__.__name__, hex(id(self)))
 
     @classmethod
     def batch_save(cls, models: List[SelfType]) -> None:

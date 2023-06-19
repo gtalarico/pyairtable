@@ -73,6 +73,12 @@ class Contact(Model):
     created_at = f.CreatedTimeField("Created At")
 
 
+def test_repr():
+    record = fake_record()
+    assert repr(Contact.from_record(record)) == f"<Contact id='{record['id']}'>"
+    assert repr(Contact()) == "<unsaved Contact>"
+
+
 def test_model():
     contact = Contact(
         first_name="Gui",
