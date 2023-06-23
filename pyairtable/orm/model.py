@@ -6,13 +6,7 @@ from typing_extensions import Self as SelfType
 from pyairtable.api.api import Api
 from pyairtable.api.base import Base
 from pyairtable.api.table import Table
-from pyairtable.api.types import (
-    FieldName,
-    Fields,
-    RecordDict,
-    RecordId,
-    UpdateRecordDict,
-)
+from pyairtable.api.types import FieldName, Fields, RecordDict, UpdateRecordDict
 from pyairtable.orm.fields import AnyField, Field
 
 
@@ -41,8 +35,7 @@ class Model:
     id: str = ""
     created_time: str = ""
     _deleted: bool = False
-    _fields: Dict[FieldName, Any] = {}
-    _linked_cache: Dict[RecordId, SelfType] = {}
+    _fields: Dict[FieldName, Any]
 
     def __init_subclass__(cls, **kwargs: Any):
         cls._validate_class()
@@ -105,10 +98,13 @@ class Model:
         return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
 
     def __init__(self, **fields: Any):
-        # To Store Fields
+        if "id" in fields:
+            self.id = fields.pop("id")
+
+        # Field values in internal (not API) representation
         self._fields = {}
 
-        # Set descriptors
+        # Call __set__ on each field to set field values
         for key, value in fields.items():
             if key not in self._attribute_descriptor_map():
                 raise AttributeError(key)
@@ -239,7 +235,12 @@ class Model:
 
     @classmethod
     def from_record(cls, record: RecordDict) -> SelfType:
-        """Create instance from record dictionary"""
+        """
+        Create instance from record dict
+
+        Args:
+            record: The dict returned from the Airtable API.
+        """
         name_field_map = cls._field_name_descriptor_map()
         # Convert Column Names into model field names
         field_values = {
@@ -250,15 +251,18 @@ class Model:
             if field in name_field_map
         }
         # Since instance(**field_values) will perform validation and fail on
-        # any readonly fields, so instead we directly set instance._fields.
-        instance = cls()
+        # any readonly fields, instead we directly set instance._fields.
+        instance = cls(id=record["id"])
         instance._fields = field_values
         instance.created_time = record["createdTime"]
-        instance.id = record["id"]
         return instance
 
     @classmethod
-    def from_id(cls, record_id: str, fetch: bool = True) -> SelfType:
+    def from_id(
+        cls,
+        record_id: str,
+        fetch: bool = True,
+    ) -> SelfType:
         """
         Create an instance from a `record_id`
 
@@ -268,23 +272,20 @@ class Model:
                 updated. If `False`, a new instance is created with the provided `id`,
                 but field values are unset. Default is `True`.
         """
+        instance = cls(id=record_id)
         if fetch:
-            table = cls.get_table()
-            record = table.get(record_id)
-            return cls.from_record(record)
-        else:
-            instance = cls()
-            instance.id = record_id
-            return instance
+            instance.fetch()
+        return instance
 
     def fetch(self) -> None:
         """Fetches field and resets instance field values from the Airtable record"""
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
 
-        updated = self.from_id(self.id, fetch=True)
-        self._fields = updated._fields
-        self.created_time = updated.created_time
+        record = self.get_table().get(self.id)
+        unused = self.from_record(record)
+        self._fields = unused._fields
+        self.created_time = unused.created_time
 
     @classmethod
     def batch_save(cls, models: List[SelfType]) -> None:

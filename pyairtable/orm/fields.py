@@ -159,9 +159,9 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
         # allow calling Model.field to get the field object instead of a value
         if not instance:
             return self
-        return self.get_value(instance)
+        return self._get_value(instance)
 
-    def get_value(self, instance: "Model") -> Optional[T_ORM]:
+    def _get_value(self, instance: "Model") -> Optional[T_ORM]:
         """
         Given an instance of the Model, retrieve the field value from it.
         Easier for subclasses to override than __get__.
@@ -177,6 +177,13 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
             instance._fields = {}
         if self.validate_type and value is not None:
             self.valid_or_raise(value)
+        self._set_value(instance, value)
+
+    def _set_value(self, instance: "Model", value: Optional[T_ORM]) -> None:
+        """
+        Persist the given value onto the given model instance.
+        Easier for subclasses to override than __set__.
+        """
         instance._fields[self.field_name] = value
 
     def __delete__(self, instance: "Model") -> None:
@@ -214,16 +221,16 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
 
 
 #: A generic Field whose internal and API representations are the same type.
-BasicField: TypeAlias = Field[T, T]
+_BasicField: TypeAlias = Field[T, T]
 
 
 #: An alias for any type of Field.
-AnyField: TypeAlias = BasicField[Any]
+AnyField: TypeAlias = _BasicField[Any]
 
 
-class TextField(BasicField[str]):
+class TextField(_BasicField[str]):
     """
-    Used for all Airtable text fields. Accepts `str`.
+    Used for all Airtable text fields. Accepts ``str``.
 
     See `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
     and `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
@@ -235,7 +242,7 @@ class TextField(BasicField[str]):
         return str(value)
 
 
-class _NumericField(Generic[T], BasicField[T]):
+class _NumericField(Generic[T], _BasicField[T]):
     """
     Base class for Number, Float, and Integer. Shares a common validation rule.
     """
@@ -251,7 +258,7 @@ class _NumericField(Generic[T], BasicField[T]):
 
 class NumberField(_NumericField[Union[int, float]]):
     """
-    Number field with unspecified precision. Accepts either `int` or `float`.
+    Number field with unspecified precision. Accepts either ``int`` or ``float``.
 
     See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
     """
@@ -268,7 +275,7 @@ class NumberField(_NumericField[Union[int, float]]):
 # in the subclass than what is defined in the parent class.
 class IntegerField(_NumericField[int]):
     """
-    Number field with integer precision. Accepts only `int` values.
+    Number field with integer precision. Accepts only ``int`` values.
 
     See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
     """
@@ -283,7 +290,7 @@ class IntegerField(_NumericField[int]):
 # in the subclass than what is defined in the parent class.
 class FloatField(_NumericField[float]):
     """
-    Number field with decimal precision. Accepts only `float` values.
+    Number field with decimal precision. Accepts only ``float`` values.
 
     See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
     """
@@ -296,7 +303,7 @@ class FloatField(_NumericField[float]):
 
 class RatingField(IntegerField):
     """
-    Accepts `int` values that are 1 or greater.
+    Accepts ``int`` values that are greater than zero.
 
     See `Rating <https://airtable.com/developers/web/api/field-model#rating>`__.
     """
@@ -307,9 +314,9 @@ class RatingField(IntegerField):
             raise ValueError("rating cannot be below 1")
 
 
-class CheckboxField(BasicField[bool]):
+class CheckboxField(_BasicField[bool]):
     """
-    Returns `False` instead of `None` if the field is empty on the Airtable base.
+    Returns ``False`` instead of ``None`` if the field is empty on the Airtable base.
 
     See `Checkbox <https://airtable.com/developers/web/api/field-model#checkbox>`__.
     """
@@ -370,9 +377,9 @@ class DateField(Field[str, date]):
 class DurationField(Field[int, timedelta]):
     """
     Duration field. Accepts only `timedelta <https://docs.python.org/3/library/datetime.html#timedelta-objects>`_ values.
-    Airtable's API returns this as a number of seconds.
 
     See `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__.
+    Airtable's API returns this as a number of seconds.
     """
 
     valid_types = timedelta
@@ -384,7 +391,7 @@ class DurationField(Field[int, timedelta]):
         return timedelta(seconds=value)
 
 
-class _DictField(Generic[T], BasicField[T]):
+class _DictField(Generic[T], _BasicField[T]):
     """
     Generic field type that stores a single dict. Not for use via API;
     should be subclassed by concrete field types (below).
@@ -402,8 +409,8 @@ class _ListField(Generic[T], Field[List[RecordId], List[T]]):
 
     valid_types = list
 
-    def get_value(self, model: "Model") -> List[T]:
-        value = super().get_value(model)
+    def _get_value(self, model: "Model") -> List[T]:
+        value = super()._get_value(model)
         # If Airtable returns no value, substitute an empty list.
         if value is None:
             value = []
@@ -437,6 +444,9 @@ class LinkField(_ListField[T_Linked]):
     """
     Represents a MultipleRecordLinks field. Returns and accepts lists of Models.
 
+    Can also be used with a lookup field that pulls from a MultipleRecordLinks field,
+    provided the field is created with ``readonly=True``.
+
     See `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__.
     """
 
@@ -454,7 +464,7 @@ class LinkField(_ListField[T_Linked]):
         Args:
             field_name: Name of the Airtable field.
             model: Model class we expect to get from the API, or a fully qualified name
-                that can be used with ``importlib.import_module`` and ``getattr``
+                that ca(importlib be.import_module) <n b use>d and ``getattr``
                 to retrieve the class at runtime.
             validate_type: Whether to raise a TypeError if anything attempts to write
                 an object of an unsupported type as a field value. If ``False``, you
@@ -462,8 +472,9 @@ class LinkField(_ListField[T_Linked]):
             readonly: If ``True``, any attempt to write a value to this field will
                 raise an ``AttributeError``. This will not, however, prevent any
                 modification of the list object returned by this field.
-            lazy: Use ``True`` to load linked model when looking up attribute. `False`
-                will create empty object with only `id` but will not fetch fields.
+            lazy: Use ``False`` to load linked model when looking up attribute.
+                Defaults to ``True``, which returns empty objects with only IDs;
+                call :meth:`~pyairtable.orm.Model.fetch` to retrieve values.
         """
         from pyairtable.orm import Model  # noqa, avoid circular import
 
@@ -493,27 +504,46 @@ class LinkField(_ListField[T_Linked]):
             ("lazy", self._lazy),
         ]
 
-    def to_internal_value(self, value: Any) -> List[T_Linked]:
-        # If Lazy, create empty from model class and set id
-        # If not Lazy, fetch record from pyairtable and create new model instance
-        should_fetch = not self._lazy
-        linked_models = [
-            cast(T_Linked, self.linked_model._linked_cache.get(id_))
-            or self.linked_model.from_id(id_, fetch=should_fetch)
-            for id_ in value
-        ]
-        self.linked_model._linked_cache.update({m.id: m for m in linked_models})
-        return linked_models
-
-    def to_record_value(self, value: Any) -> List[str]:
-        self.valid_or_raise(value)
-        return [v.id for v in value]
+    def to_record_value(self, value: Union[List[str], List[T_Linked]]) -> List[str]:
+        if not value:
+            return []
+        # If the _fields value contains str, it means we loaded it from the API
+        # but we never actually accessed the value (see _get_value below).
+        # When persisting this model back to the API, we can just write those IDs.
+        if all(isinstance(v, str) for v in value):
+            return cast(List[str], value)
+        # From here on, we assume we're dealing with models, not record IDs.
+        records = cast(List[T_Linked], value)
+        self.valid_or_raise(records)
+        # We could *try* to recursively save models that don't have an ID yet,
+        # but that requires us to second-guess the implementers' intentions.
+        # Better to just raise an exception.
+        if not all(record.exists() for record in records):
+            raise ValueError(f"{self._description} contains an unsaved record")
+        return [record.id for record in records]
 
     def valid_or_raise(self, value: Any) -> None:
         super().valid_or_raise(value)
         for obj in value:
             if not isinstance(obj, self.linked_model):
                 raise TypeError(f"expected {self.linked_model}; got {type(obj)}")
+
+    # Unlike most other field classes, LinkField does not store its
+    # internal representation (T_ORM) in instance._fields at first;
+    # we defer object creation to the first time they're requested,
+    # so we can avoid infinite recursion on to_internal_value().
+    def _get_value(self, instance: "Model") -> List[T_Linked]:
+        if not (records := super()._get_value(instance)):
+            return records
+        # If the list contains record IDs, replace the contents with instances;
+        # other code may already have references to this specific list.
+        records[:] = [
+            self.linked_model.from_id(cast(RecordId, record), fetch=(not self._lazy))
+            if isinstance(record, RecordId)
+            else record
+            for record in records
+        ]
+        return records
 
 
 # Many of these are "passthrough" subclasses for now. E.g. there is no real
@@ -526,7 +556,7 @@ class LinkField(_ListField[T_Linked]):
 
 class AutoNumberField(IntegerField):
     """
-    Equivalent to ``IntegerField(readonly=True)``.
+    Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
 
     See `Auto number <https://airtable.com/developers/web/api/field-model#autonumber>`__.
     """
@@ -562,7 +592,7 @@ class CollaboratorField(_DictField[CollaboratorDict]):
 
 class CountField(IntegerField):
     """
-    Equivalent to ``IntegerField(readonly=True)``.
+    Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
 
     See `Count <https://airtable.com/developers/web/api/field-model#count>`__.
     """
@@ -572,7 +602,7 @@ class CountField(IntegerField):
 
 class CreatedByField(CollaboratorField):
     """
-    Equivalent to ``CollaboratorField(readonly=True)``.
+    Equivalent to :class:`CollaboratorField(readonly=True) <CollaboratorField>`.
 
     See `Created by <https://airtable.com/developers/web/api/field-model#createdby>`__.
     """
@@ -582,7 +612,7 @@ class CreatedByField(CollaboratorField):
 
 class CreatedTimeField(DatetimeField):
     """
-    Equivalent to ``DatetimeField(readonly=True)``.
+    Equivalent to :class:`DatetimeField(readonly=True) <DatetimeField>`.
 
     See `Created time <https://airtable.com/developers/web/api/field-model#createdtime>`__.
     """
@@ -592,7 +622,7 @@ class CreatedTimeField(DatetimeField):
 
 class CurrencyField(NumberField):
     """
-    Equivalent to ``NumberField``.
+    Equivalent to :class:`~NumberField`.
 
     See `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__.
     """
@@ -600,7 +630,7 @@ class CurrencyField(NumberField):
 
 class EmailField(TextField):
     """
-    Equivalent to ``TextField``.
+    Equivalent to :class:`~TextField`.
 
     See `Email <https://airtable.com/developers/web/api/field-model#email>`__.
     """
@@ -608,7 +638,7 @@ class EmailField(TextField):
 
 class ExternalSyncSourceField(TextField):
     """
-    Equivalent to ``TextField(readonly=True)``.
+    Equivalent to :class:`TextField(readonly=True) <TextField>`.
 
     See `Sync source <https://airtable.com/developers/web/api/field-model#syncsource>`__.
     """
@@ -618,7 +648,7 @@ class ExternalSyncSourceField(TextField):
 
 class LastModifiedByField(CollaboratorField):
     """
-    Equivalent to ``CollaboratorField(readonly=True)``.
+    Equivalent to :class:`CollaboratorField(readonly=True) <CollaboratorField>`.
 
     See `Last modified by <https://airtable.com/developers/web/api/field-model#lastmodifiedby>`__.
     """
@@ -628,7 +658,7 @@ class LastModifiedByField(CollaboratorField):
 
 class LastModifiedTimeField(DatetimeField):
     """
-    Equivalent to ``DatetimeField(readonly=True)``.
+    Equivalent to :class:`DatetimeField(readonly=True) <DatetimeField>`.
 
     See `Last modified time <https://airtable.com/developers/web/api/field-model#lastmodifiedtime>`__.
     """
@@ -640,9 +670,8 @@ class LookupField(Generic[T], _ListField[T]):
     """
     Generic field class for a lookup, which returns a list of values.
 
-    pyAirtable does not inspect field configuration at runtime.
-    Implementers are expected to declare which type(s) the lookup
-    might return when constructing the field:
+    pyAirtable does not inspect field configuration at runtime or during type checking.
+    If you use mypy, you can declare which type(s) the lookup returns:
 
     >>> from pyairtable.orm import fields as F
     >>> class MyTable(Model):
@@ -661,9 +690,8 @@ class LookupField(Generic[T], _ListField[T]):
 
 class MultipleAttachmentsField(_ValidatingListField[AttachmentDict]):
     """
-    Accepts a list of dicts that should conform to the format detailed in the
-    `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_
-    documentation.
+    Accepts a list of dicts in the format detailed in
+    `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_.
     """
 
     contains_type = cast(Type[AttachmentDict], dict)
@@ -671,9 +699,8 @@ class MultipleAttachmentsField(_ValidatingListField[AttachmentDict]):
 
 class MultipleCollaboratorsField(_ValidatingListField[CollaboratorDict]):
     """
-    Accepts a list of dicts that should conform to the format detailed in the
-    `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_
-    documentation.
+    Accepts a list of dicts in the format detailed in
+    `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_.
     """
 
     contains_type = cast(Type[CollaboratorDict], dict)
@@ -691,7 +718,7 @@ class MultipleSelectField(_ValidatingListField[str]):
 
 class PercentField(NumberField):
     """
-    Equivalent to ``NumberField``.
+    Equivalent to :class:`~NumberField`.
 
     See `Percent <https://airtable.com/developers/web/api/field-model#percentnumber>`__.
     """
@@ -699,7 +726,7 @@ class PercentField(NumberField):
 
 class PhoneNumberField(TextField):
     """
-    Equivalent to ``TextField``.
+    Equivalent to :class:`~TextField`.
 
     See `Phone <https://airtable.com/developers/web/api/field-model#phone>`__.
     """
@@ -707,7 +734,7 @@ class PhoneNumberField(TextField):
 
 class RichTextField(TextField):
     """
-    Equivalent to ``TextField``.
+    Equivalent to :class:`~TextField`.
 
     See `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__.
     """
@@ -715,15 +742,15 @@ class RichTextField(TextField):
 
 class SelectField(TextField):
     """
-    Equivalent to ``TextField``.
+    Equivalent to :class:`~TextField`.
 
-    See `Select <https://airtable.com/developers/web/api/field-model#select>`__.
+    See `Single select <https://airtable.com/developers/web/api/field-model#select>`__.
     """
 
 
 class UrlField(TextField):
     """
-    Equivalent to ``TextField``.
+    Equivalent to :class:`~TextField`.
 
     See `Url <https://airtable.com/developers/web/api/field-model#urltext>`__.
     """

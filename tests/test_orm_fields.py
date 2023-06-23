@@ -5,7 +5,13 @@ import pytest
 
 from pyairtable.orm import fields as f
 from pyairtable.orm.model import Model
-from pyairtable.testing import fake_attachment, fake_meta, fake_record, fake_user
+from pyairtable.testing import (
+    fake_attachment,
+    fake_id,
+    fake_meta,
+    fake_record,
+    fake_user,
+)
 
 DATE_S = "2023-01-01"
 DATE_V = datetime.date(2023, 1, 1)
@@ -406,7 +412,7 @@ def test_list_field_with_string():
         t.items = "hello!"
 
 
-def test_linked_field_must_link_to_model():
+def test_link_field_must_link_to_model():
     """
     Tests that a LinkField cannot link to an arbitrary type.
     """
@@ -414,7 +420,7 @@ def test_linked_field_must_link_to_model():
         f.LinkField("Field Name", model=dict)
 
 
-def test_linked_field():
+def test_link_field():
     """
     Test basic interactions and type checking for LinkField.
     """
@@ -439,6 +445,33 @@ def test_linked_field():
 
     with pytest.raises(TypeError):
         author.books = -1
+
+
+class Person(Model):
+    Meta = fake_meta()
+    friends = f.LinkField("Friends", "test_orm_fields.Person", lazy=False)
+
+
+def test_link_field_cycle(requests_mock):
+    """
+    Test that cyclical relationships like A -> B -> C -> A don't cause infinite recursion.
+    """
+    id_a = fake_id("rec", "A")
+    id_b = fake_id("rec", "B")
+    id_c = fake_id("rec", "C")
+    rec_a = {"id": id_a, "createdTime": DATETIME_S, "fields": {"Friends": [id_b]}}
+    rec_b = {"id": id_b, "createdTime": DATETIME_S, "fields": {"Friends": [id_c]}}
+    rec_c = {"id": id_c, "createdTime": DATETIME_S, "fields": {"Friends": [id_a]}}
+    url_a = Person.get_table().record_url(id_a)
+    url_b = Person.get_table().record_url(id_b)
+    url_c = Person.get_table().record_url(id_c)
+    requests_mock.get(url_a, json=rec_a)
+    requests_mock.get(url_b, json=rec_b)
+    requests_mock.get(url_c, json=rec_c)
+    a = Person.from_id(id_a)
+    assert a.friends[0].id == id_b
+    assert a.friends[0].friends[0].id == id_c
+    assert a.friends[0].friends[0].friends[0].id == id_a
 
 
 def test_lookup_field():

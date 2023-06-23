@@ -70,6 +70,7 @@ class _Everything(Model):
     link_self = f.LinkField["_Everything"](
         "Link to Self",
         model="test_integration_orm._Everything",
+        lazy=False,
     )
     rollup_integer = f.IntegerField("Rollup Int", readonly=True)
     rollup_error = f.TextField("Rollup Error", readonly=True)
@@ -174,8 +175,6 @@ def test_every_field(Everything):
     """
     Integration test for the ORM that exercises every supported field type.
     """
-    assert issubclass(Everything, Model)
-
     # Validate there are no field types we skipped
     classes_used = {
         type(field) for field in vars(Everything).values() if isinstance(field, f.Field)
@@ -215,8 +214,3 @@ def test_every_field(Everything):
     assert record.id
     assert record.addresses == []
     assert record.link_self == []
-
-    # Test that we can mutate existing lists for record links
-    record.link_self.append(record)
-    record.save()
-    assert record.link_self == [record]

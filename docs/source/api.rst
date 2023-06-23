@@ -38,10 +38,13 @@ Module: pyairtable.orm
 .. autoclass:: pyairtable.orm.Model
     :members:
 
+Module: pyairtable.orm.fields
+*******************************
+
 .. automodule:: pyairtable.orm.fields
     :members:
-    :member-order: groupwise
-    :exclude-members: valid_types
+    :member-order: bysource
+    :exclude-members: valid_types, contains_type
     :no-inherited-members:
 
 

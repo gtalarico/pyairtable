@@ -14,13 +14,13 @@ The :class:`~pyairtable.orm.Model` class allows you create ORM-style classes for
 
 .. code-block: python::
 
-    from pyairtable.orm import Model, fields
+    from pyairtable.orm import Model, fields as F
     class Contact(Model):
-        first_name = fields.TextField("First Name")
-        last_name = fields.TextField("Last Name")
-        email = fields.EmailField("Email")
-        is_registered = fields.CheckboxField("Registered")
-        company = fields.LinkField("Company", Company, lazy=False)
+        first_name = F.TextField("First Name")
+        last_name = F.TextField("Last Name")
+        email = F.EmailField("Email")
+        is_registered = F.CheckboxField("Registered")
+        company = F.LinkField("Company", Company, lazy=False)
 
         class Meta:
             base_id = "appaPqizdsNHDvlEm"
@@ -166,12 +166,33 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
    * - :class:`~pyairtable.orm.fields.RichTextField`
      - `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__
    * - :class:`~pyairtable.orm.fields.SelectField`
-     - `Select <https://airtable.com/developers/web/api/field-model#select>`__
+     - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
    * - :class:`~pyairtable.orm.fields.TextField`
      - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.UrlField`
      - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
 .. [[[end]]]
+
+
+Formulas, Rollups, and Lookups
+----------------------------------
+
+The data type of "formula", "rollup", and "lookup" fields will depend on the underlying fields
+they reference, and pyAirtable cannot easily guess at those fields' types.
+
+If you need to refer to one of these fields in the ORM, you need to know what type of value
+you expect it to contain. You can then declare that as a read-only field:
+
+.. code-block:: python
+
+    from pyairtable.orm import fields as F
+
+    class MyTable(Model):
+        class Meta: ...
+
+        formula_field = F.TextField("My Formula", readonly=True)
+        rollup_field = F.IntegerField("Row Count", readonly=True)
+        lookup_field = F.LookupField[str]("My Lookup", readonly=True)
 
 
 Linking Records
@@ -183,51 +204,88 @@ traverse between related records.
 
 .. code-block:: python
 
-    from pyairtable.orm import Model, fields
+    from pyairtable.orm import Model, fields as F as F
 
     class Company(Model):
-        class Meta:
-            ...
+        class Meta: ...
 
-        name = fields.TextField("Name")
+        name = F.TextField("Name")
 
     class Person(Model):
-        class Meta:
-            ...
+        class Meta: ...
 
-        name = fields.TextField("Name")
-        companies = fields.LinkField("Company", Company)
+        name = F.TextField("Name")
+        company = F.LinkField("Company", Company)
 
-    person = Person.from_id("recZ6qSLw0OCA61ul")
-    person.companies
-    #> [<Company id='recSLw0OCA61ulZ6q'>]
+.. code-block:: python
+
+    >>> person = Person.from_id("recZ6qSLw0OCA61ul")
+    >>> person.company
+    [<Company id='recqSk20OCrB13lZ7'>]
 
 .. note::
     Airtable's UI allows apps to restrict the user interface to choosing one record,
     rather than several; this appears as `prefersSingleRecordLink <https://airtable.com/developers/web/api/field-model#foreignkey-fieldtype-options-preferssinglerecordlink>`_
     in the `field configuration <https://airtable.com/developers/web/api/field-model>`__.
     However, the API will *always* return these fields as a list of record IDs, so
-    pyAirtable will always represent link fields as a list of models.
+    pyAirtable will *always* represent link fields as a list (never a single model).
 
 
-Formulas and Rollups
----------------------
+Cyclical links
+""""""""""""""
 
-The data type of "formula" and "rollup" fields will depend
-on the underlying fields they reference, so it is not practical
-for the ORM to know or detect those fields' types.
-
-If you need to refer to a formula or rollup field in the ORM,
-you need to know what type of value you expect it to contain.
-You can then declare that as a read-only field:
+If you need to model a link in two directions, or model a link to the same table,
+you'll be creating a field before the linked model is created. You can pass a
+fully qualified module and class name as a ``str`` instead:
 
 .. code-block:: python
 
-    from pyairtable.orm import fields as F
+    from pyairtable.orm import Model, fields as F as F
 
-    class MyTable(Model):
-        class Meta:
-            ...
+    class Company(Model):
+        class Meta: ...
 
-        formula_field = F.TextField("My Formula", readonly=True)
-        rollup_field = F.IntegerField("Row Count", readonly=True)
+        name = F.TextField("Name")
+        employees = F.LinkField["Person"]("Employees", "module.name.Person")
+
+    class Person(Model):
+        class Meta: ...
+
+        name = F.TextField("Name")
+        company = F.LinkField("Company", Company)
+        manager = F.LinkField["Person"]("Manager", "module.name.Person")
+
+.. code-block:: python
+
+    >>> person = Person.from_id("recZ6qSLw0OCA61ul")
+    >>> person.manager
+    [<Person id='recSLw0OCA61ulZ6q'>]
+    >>> person.company[0].employees
+    [<Person id='recZ6qSLw0OCA61ul'>, <Person id='recSLw0OCA61ulZ6q'>, ...]
+
+Breaking down the :class:`~pyairtable.orm.fields.LinkField` invocation above,
+there are four components:
+
+.. code-block:: python
+
+      manager = F.LinkField["Person"]("Manager", "module.name.Person")
+     #^^^^^^^               ^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
+     #  (1)                    (2)       (3)             (4)
+
+1. The name of the attribute on the model
+2. Type annotation (optional, for mypy users)
+3. Airtable's field name for the API
+4. The fully qualified module and class name of the linked model
+
+
+Limitations
+"""""""""""
+
+You cannot save a record via ORM unless you've first created all of its linked records:
+
+    >>> alice = Person.from_id("recWcnG8712AqNuHw")
+    >>> alice.manager = [Person()]
+    >>> alice.save()
+    Traceback (most recent call last):
+      ...
+    ValueError: Person.manager contains an unsaved record
