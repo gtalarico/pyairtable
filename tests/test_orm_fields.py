@@ -46,12 +46,12 @@ def test_field():
             "LastModifiedByField('User', readonly=True, validate_type=True)",
         ),
         (
-            f.LookupField("Items", dict, validate_type=False),
-            "LookupField('Items', model=<class 'dict'>, readonly=True, validate_type=False)",
+            f.LookupField[dict]("Items", validate_type=False),
+            "LookupField('Items', readonly=True, validate_type=False)",
         ),
         (
             f.LinkField("Records", type("TestModel", (Model,), {"Meta": fake_meta()})),
-            "LinkField('Records', model=<class 'test_orm_fields.TestModel'>, lazy=True)",
+            "LinkField('Records', model=<class 'test_orm_fields.TestModel'>, validate_type=True, readonly=False, lazy=True)",
         ),
     ],
 )
@@ -300,7 +300,8 @@ def test_completeness():
     """
     assert_all_fields_tested_by(test_writable_fields, test_readonly_fields)
     assert_all_fields_tested_by(
-        test_type_validation, exclude=f.READONLY_FIELDS | {f.LinkField}
+        test_type_validation,
+        exclude=f.READONLY_FIELDS | {f.LinkField},
     )
 
 
@@ -371,7 +372,7 @@ def test_list_field_with_none():
 
     class T(Model):
         Meta = fake_meta()
-        the_field = f._ListField("Fld")
+        the_field = f._ListField("Fld", str)
 
     assert T.from_record(fake_record()).the_field == []
     assert T.from_record(fake_record(Fld=None)).the_field == []
@@ -384,7 +385,7 @@ def test_list_field_with_invalid_type():
 
     class T(Model):
         Meta = fake_meta()
-        the_field = f._ListField("Field Name")
+        the_field = f._ListField("Field Name", str)
 
     obj = T.from_record(fake_record())
     with pytest.raises(TypeError):
@@ -398,7 +399,7 @@ def test_list_field_with_string():
     """
 
     class T:
-        items = f._ListField("Items")
+        items = f._ListField("Items", str)
 
     t = T()
     with pytest.raises(TypeError):
@@ -452,7 +453,7 @@ def test_lookup_field():
     assert rv_list[0] == "Item 1" and rv_list[1] == "Item 2" and rv_list[2] == "Item 3"
 
     class T:
-        events = f.LookupField("Event times", model=f.DatetimeField)
+        events = f.LookupField("Event times")
 
     lookup_from_airtable = [
         "2000-01-02T03:04:05.000Z",

@@ -25,6 +25,7 @@ while also providing a type-annotated interface.
 }
 """
 import abc
+import importlib
 from datetime import date, datetime, timedelta
 from typing import (
     TYPE_CHECKING,
@@ -400,35 +401,6 @@ class _ListField(Generic[T], Field[List[RecordId], List[T]]):
     """
 
     valid_types = list
-    linked_model: Optional[Type[T]] = None
-
-    def __init__(
-        self,
-        field_name: str,
-        model: Optional[Type[T]] = None,
-        validate_type: bool = True,
-        readonly: Optional[bool] = None,
-    ):
-        """
-        Args:
-            field_name: Name of the Airtable field.
-            model: Type we expect to get from the API.
-            validate_type: Whether to raise a TypeError if anything attempts to write
-                an object of an unsupported type as a field value. If ``False``, you
-                may encounter unpredictable behavior from the Airtable API.
-            readonly: If ``True``, any attempt to write a value to this field will
-                raise an ``AttributeError``. This will not, however, prevent any
-                modification of the list object returned by this field.
-        """
-        super().__init__(field_name, validate_type=validate_type, readonly=readonly)
-        if model is not None:
-            self.linked_model = model
-
-    def _repr_fields(self) -> List[Tuple[str, Any]]:
-        return [
-            ("model", self.linked_model),
-            *super()._repr_fields(),
-        ]
 
     def get_value(self, model: "Model") -> List[T]:
         value = super().get_value(model)
@@ -445,70 +417,85 @@ class _ListField(Generic[T], Field[List[RecordId], List[T]]):
                 model._fields[self.field_name] = value
         return value
 
-    def valid_or_raise(self, value: Any) -> None:
-        super().valid_or_raise(value)
-        if self.linked_model:
-            for obj in value:
-                if not isinstance(obj, self.linked_model):
-                    raise TypeError(f"expected {self.linked_model}; got {type(obj)}")
-
     def to_internal_value(self, value: Optional[List[T]]) -> List[T]:
         if value is None:
             value = []
         return value
 
 
+class _ValidatingListField(Generic[T], _ListField[T]):
+    contains_type: Type[T]
+
+    def valid_or_raise(self, value: Any) -> None:
+        super().valid_or_raise(value)
+        for obj in value:
+            if not isinstance(obj, self.contains_type):
+                raise TypeError(f"expected {self.contains_type}; got {type(obj)}")
+
+
 class LinkField(_ListField[T_Linked]):
     """
-    Represents a MultipleRecordLinks field. Accepts lists of Model instances.
+    Represents a MultipleRecordLinks field. Returns and accepts lists of Models.
 
     See `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__.
     """
+
+    _linked_model: Union[str, Type[T_Linked]]
 
     def __init__(
         self,
         field_name: str,
         model: Union[str, Type[T_Linked]],
+        validate_type: bool = True,
+        readonly: Optional[bool] = None,
         lazy: bool = True,
     ):
         """
         Args:
-            field_name: Name of Airtable Column
-            model: Model of Linked Type. Must be subtype of :class:`Model`
-            lazy: Use `True` to load linked model when looking up attribute. `False`
+            field_name: Name of the Airtable field.
+            model: Model class we expect to get from the API, or a fully qualified name
+                that can be used with ``importlib.import_module`` and ``getattr``
+                to retrieve the class at runtime.
+            validate_type: Whether to raise a TypeError if anything attempts to write
+                an object of an unsupported type as a field value. If ``False``, you
+                may encounter unpredictable behavior from the Airtable API.
+            readonly: If ``True``, any attempt to write a value to this field will
+                raise an ``AttributeError``. This will not, however, prevent any
+                modification of the list object returned by this field.
+            lazy: Use ``True`` to load linked model when looking up attribute. `False`
                 will create empty object with only `id` but will not fetch fields.
         """
-        if isinstance(model, str):
-            raise NotImplementedError("path import not implemented")
-            # https://github.com/FactoryBoy/factory_boy/blob/37f962720814dff42d7a6a848ccfd200fc7f5ae2/factory/declarations.py#L339
-            # model = cast(Type[T_Linked], locate(model))
+        from pyairtable.orm import Model  # noqa, avoid circular import
 
-        if not hasattr(model, "get_table"):
-            raise TypeError(f"{type(model)} does not appear to subclass orm.Model")
+        if not isinstance(model, str) and not issubclass(model, Model):
+            raise TypeError(f"expected str or orm.Model; got {type(model)}")
 
+        super().__init__(field_name, validate_type=validate_type, readonly=readonly)
+        self._linked_model = model
         self._lazy = lazy
-        super().__init__(field_name, model=model)
+
+    @property
+    def linked_model(self) -> Type[T_Linked]:
+        # This avoids resolving the model name into a class until we need it
+        if isinstance(self._linked_model, str):
+            modpath, _, clsname = self._linked_model.rpartition(".")
+            mod = importlib.import_module(modpath)
+            cls = getattr(mod, clsname)
+            self._linked_model = cast(Type[T_Linked], cls)
+
+        return self._linked_model
 
     def _repr_fields(self) -> List[Tuple[str, Any]]:
         return [
-            ("model", self.linked_model),
+            ("model", self._linked_model),
+            ("validate_type", self.validate_type),
+            ("readonly", self.readonly),
             ("lazy", self._lazy),
         ]
-
-    def valid_or_raise(self, value: Any) -> None:
-        super().valid_or_raise(value)
-        if self.linked_model:
-            for record in value:
-                if not isinstance(record, self.linked_model):
-                    raise TypeError(
-                        f"{self._description} requires {self.linked_model}; got {type(record)}"
-                    )
 
     def to_internal_value(self, value: Any) -> List[T_Linked]:
         # If Lazy, create empty from model class and set id
         # If not Lazy, fetch record from pyairtable and create new model instance
-        if not self.linked_model:
-            raise RuntimeError(f"{self.__class__.__name__} must be declared with model")
         should_fetch = not self._lazy
         linked_models = [
             cast(T_Linked, self.linked_model._linked_cache.get(id_))
@@ -521,6 +508,12 @@ class LinkField(_ListField[T_Linked]):
     def to_record_value(self, value: Any) -> List[str]:
         self.valid_or_raise(value)
         return [v.id for v in value]
+
+    def valid_or_raise(self, value: Any) -> None:
+        super().valid_or_raise(value)
+        for obj in value:
+            if not isinstance(obj, self.linked_model):
+                raise TypeError(f"expected {self.linked_model}; got {type(obj)}")
 
 
 # Many of these are "passthrough" subclasses for now. E.g. there is no real
@@ -653,9 +646,7 @@ class LookupField(Generic[T], _ListField[T]):
 
     >>> from pyairtable.orm import fields as F
     >>> class MyTable(Model):
-    ...     class Meta:
-    ...         ...
-    ...
+    ...     Meta = fake_meta()
     ...     lookup = F.LookupField[str]("My Lookup")
     ...
     >>> rec = MyTable.first()
@@ -668,34 +659,34 @@ class LookupField(Generic[T], _ListField[T]):
     readonly = True
 
 
-class MultipleAttachmentsField(_ListField[AttachmentDict]):
+class MultipleAttachmentsField(_ValidatingListField[AttachmentDict]):
     """
     Accepts a list of dicts that should conform to the format detailed in the
     `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_
     documentation.
     """
 
-    linked_model = cast(Type[AttachmentDict], dict)
+    contains_type = cast(Type[AttachmentDict], dict)
 
 
-class MultipleCollaboratorsField(_ListField[CollaboratorDict]):
+class MultipleCollaboratorsField(_ValidatingListField[CollaboratorDict]):
     """
     Accepts a list of dicts that should conform to the format detailed in the
     `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_
     documentation.
     """
 
-    linked_model = cast(Type[CollaboratorDict], dict)
+    contains_type = cast(Type[CollaboratorDict], dict)
 
 
-class MultipleSelectField(_ListField[str]):
+class MultipleSelectField(_ValidatingListField[str]):
     """
     Accepts a list of ``str``.
 
     See `Multiple select <https://airtable.com/developers/web/api/field-model#multiselect>`__.
     """
 
-    linked_model = str
+    contains_type = str
 
 
 class PercentField(NumberField):
