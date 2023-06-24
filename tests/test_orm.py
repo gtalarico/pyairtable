@@ -86,7 +86,7 @@ def test_model():
     assert contact.first_name == "Gui"
     assert not contact.id
 
-    # delete
+    # save
     with mock.patch.object(Table, "create") as m_save:
         m_save.return_value = {"id": "id", "createdTime": "time"}
         contact.save()
@@ -100,6 +100,10 @@ def test_model():
         contact.delete()
 
     assert m_delete.called
+
+    # cannot save a deleted record
+    with pytest.raises(RuntimeError):
+        contact.save()
 
     record = contact.to_record()
     assert record["id"] == contact.id
@@ -234,3 +238,104 @@ def test_undeclared_field(requests_mock, test_case):
     _, get_model_instance = test_case
     instance = get_model_instance(Address, record["id"])
     assert instance.to_record()["fields"] == {"Number": "123", "Street": "Fake St"}
+
+
+@mock.patch("pyairtable.Table.batch_create")
+@mock.patch("pyairtable.Table.batch_update")
+def test_batch_save(mock_update, mock_create):
+    """
+    Test that we can pass multiple unsaved Model instances (or dicts) to batch_save
+    and it will create or update them all in as few requests as possible.
+    """
+    addr1 = Address(number="123", street="Fake St")
+    addr2 = Address(number="456", street="Fake St")
+    addr3 = Address.from_record(
+        {
+            "id": "recExistingRecord",
+            "createdTime": datetime.utcnow().isoformat(),
+            "fields": {"Number": "789", "Street": "Fake St"},
+        }
+    )
+
+    mock_create.return_value = [
+        fake_record(id="abc", Number="123", Street="Fake St"),
+        fake_record(id="def", Number="456", Street="Fake St"),
+    ]
+
+    # Just like model.save(), Model.batch_save() will set IDs on new records.
+    Address.batch_save([addr1, addr2, addr3])
+    assert addr1.id == "rec00000000000abc"
+    assert addr2.id == "rec00000000000def"
+    assert addr3.id == "recExistingRecord"
+
+    mock_create.assert_called_once_with(
+        [
+            {"Number": "123", "Street": "Fake St"},
+            {"Number": "456", "Street": "Fake St"},
+        ],
+        typecast=True,
+    )
+    mock_update.assert_called_once_with(
+        [
+            {
+                "id": "recExistingRecord",
+                "fields": {"Number": "789", "Street": "Fake St"},
+            },
+        ],
+        typecast=True,
+    )
+
+
+@mock.patch("pyairtable.Table.batch_create")
+@mock.patch("pyairtable.Table.batch_update")
+def test_batch_save__invalid_class(mock_update, mock_create):
+    """
+    Test that batch_save() raises TypeError if a model is given which is not an
+    instance of the model being called.
+    """
+    with pytest.raises(TypeError):
+        Address.batch_save([Contact()])
+
+    assert mock_update.call_count == 0
+    assert mock_create.call_count == 0
+
+
+@mock.patch("pyairtable.Table.batch_delete")
+def test_batch_delete(mock_delete):
+    """
+    Test that we can pass a list of models to Model.batch_delete.
+    """
+    addresses = [
+        Address.from_record(fake_record(id=n, Number=str(n), Street="Fake St"))
+        for n in range(20)
+    ]
+    Address.batch_delete(addresses)
+    mock_delete.assert_called_once_with([record.id for record in addresses])
+
+
+@mock.patch("pyairtable.Table.batch_delete")
+def test_batch_delete__unsaved_record(mock_delete):
+    """
+    Test that we get a ValueError (and make no deletions) if Model.batch_delete
+    receives any models which have not been created yet.
+    """
+    addresses = [
+        Address.from_record(fake_record(Number="1", Street="Fake St")),
+        Address(number="2", street="Fake St"),
+    ]
+    with pytest.raises(ValueError):
+        Address.batch_delete(addresses)
+
+    assert mock_delete.call_count == 0
+
+
+@mock.patch("pyairtable.Table.batch_delete")
+def test_batch_delete__invalid_class(mock_delete):
+    """
+    Test that batch_delete() raises TypeError if a model is given which is not an
+    instance of the model being called.
+    """
+    with pytest.raises(TypeError):
+        Address.batch_delete([Contact.from_record(fake_record())])
+
+    assert mock_delete.call_count == 0
