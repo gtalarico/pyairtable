@@ -40,9 +40,7 @@ def dict_list_to_request_params(
 
 
 def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
-    # TODO edge case fields starting with '-'
     """
-
     >>> field_names_to_sorting_dict(["Name", "-Age"])
     [
         { "field": "FieldOne", "direction": "asc"},
