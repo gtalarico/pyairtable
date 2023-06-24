@@ -159,13 +159,6 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
         # allow calling Model.field to get the field object instead of a value
         if not instance:
             return self
-        return self._get_value(instance)
-
-    def _get_value(self, instance: "Model") -> Optional[T_ORM]:
-        """
-        Given an instance of the Model, retrieve the field value from it.
-        Easier for subclasses to override than __get__.
-        """
         try:
             return cast(T_ORM, instance._fields[self.field_name])
         except (KeyError, AttributeError):
@@ -177,13 +170,6 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
             instance._fields = {}
         if self.validate_type and value is not None:
             self.valid_or_raise(value)
-        self._set_value(instance, value)
-
-    def _set_value(self, instance: "Model", value: Optional[T_ORM]) -> None:
-        """
-        Persist the given value onto the given model instance.
-        Easier for subclasses to override than __set__.
-        """
         instance._fields[self.field_name] = value
 
     def __delete__(self, instance: "Model") -> None:
@@ -409,19 +395,34 @@ class _ListField(Generic[T], Field[List[RecordId], List[T]]):
 
     valid_types = list
 
-    def _get_value(self, model: "Model") -> List[T]:
-        value = super()._get_value(model)
+    # List fields will always return a list, never ``None``, so we
+    # have to overload the type annotations for __get__
+
+    @overload
+    def __get__(self, instance: None, owner: Type[Any]) -> SelfType:
+        ...
+
+    @overload
+    def __get__(self, instance: "Model", owner: Type[Any]) -> List[T]:
+        ...
+
+    def __get__(
+        self, instance: Optional["Model"], owner: Type[Any]
+    ) -> Union[SelfType, List[T]]:
+        if not instance:
+            return self
+        return self._get_list_value(instance)
+
+    def _get_list_value(self, instance: "Model") -> List[T]:
+        value = cast(List[T], instance._fields.get(self.field_name))
         # If Airtable returns no value, substitute an empty list.
         if value is None:
             value = []
             # For implementers to be able to modify this list in place
             # and persist it later when they call .save(), we need to
-            # set this empty list as the field's value. We do this via
-            # the private attribute _fields instead of setattr() because
-            # our current workaround for cyclical link fields doesn't set
-            # self._attribute_name.
+            # set this empty list as the field's value.
             if not self.readonly:
-                model._fields[self.field_name] = value
+                instance._fields[self.field_name] = value
         return value
 
     def to_internal_value(self, value: Optional[List[T]]) -> List[T]:
@@ -504,6 +505,23 @@ class LinkField(_ListField[T_Linked]):
             ("lazy", self._lazy),
         ]
 
+    # Unlike most other field classes, LinkField does not store its
+    # internal representation (T_ORM) in instance._fields at first;
+    # we defer object creation to the first time they're requested,
+    # so we can avoid infinite recursion on to_internal_value().
+    def _get_list_value(self, instance: "Model") -> List[T_Linked]:
+        if not (records := super()._get_list_value(instance)):
+            return records
+        # If the list contains record IDs, replace the contents with instances;
+        # other code may already have references to this specific list.
+        records[:] = [
+            self.linked_model.from_id(cast(RecordId, record), fetch=(not self._lazy))
+            if isinstance(record, RecordId)
+            else record
+            for record in records
+        ]
+        return records
+
     def to_record_value(self, value: Union[List[str], List[T_Linked]]) -> List[str]:
         if not value:
             return []
@@ -527,23 +545,6 @@ class LinkField(_ListField[T_Linked]):
         for obj in value:
             if not isinstance(obj, self.linked_model):
                 raise TypeError(f"expected {self.linked_model}; got {type(obj)}")
-
-    # Unlike most other field classes, LinkField does not store its
-    # internal representation (T_ORM) in instance._fields at first;
-    # we defer object creation to the first time they're requested,
-    # so we can avoid infinite recursion on to_internal_value().
-    def _get_value(self, instance: "Model") -> List[T_Linked]:
-        if not (records := super()._get_value(instance)):
-            return records
-        # If the list contains record IDs, replace the contents with instances;
-        # other code may already have references to this specific list.
-        records[:] = [
-            self.linked_model.from_id(cast(RecordId, record), fetch=(not self._lazy))
-            if isinstance(record, RecordId)
-            else record
-            for record in records
-        ]
-        return records
 
 
 # Many of these are "passthrough" subclasses for now. E.g. there is no real

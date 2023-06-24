@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     # Test type annotations for the ORM
     class Actor(orm.Model):
         name = orm.fields.TextField("Name")
+        logins = orm.fields.MultipleCollaboratorsField("Logins")
 
     class Movie(orm.Model):
         name = orm.fields.TextField("Name")
@@ -64,11 +65,11 @@ if TYPE_CHECKING:
         actors = orm.fields.LinkField("Actors", Actor)
 
     assert_type(Actor().name, Optional[str])
+    assert_type(Actor().logins, List[T.CollaboratorDict])
 
     movie = Movie()
     assert_type(movie.name, Optional[str])
     assert_type(movie.rating, Optional[int])
-    assert_type(movie.actors, Optional[List[Actor]])
-    assert_type(movie.prequels, Optional[List[Movie]])
-    if movie.actors:
-        assert_type(movie.actors[0].name, Optional[str])
+    assert_type(movie.actors, List[Actor])
+    assert_type(movie.prequels, List[Movie])
+    assert_type(movie.actors[0].name, Optional[str])

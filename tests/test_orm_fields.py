@@ -71,6 +71,7 @@ def test_repr(instance, expected):
         (f.Field, None),
         (f.CheckboxField, False),
         (f.LookupField, []),
+        (f.MultipleAttachmentsField, []),
         (f.MultipleCollaboratorsField, []),
         (f.MultipleSelectField, []),
     ],
