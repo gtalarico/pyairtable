@@ -3,9 +3,6 @@
 ORM
 ==============
 
-.. warning:: This feature is experimental. Feel free to submit suggestions or feedback in our
-    `Github repo <https://github.com/gtalarico/pyairtable>`_
-
 
 Defining Models
 ---------------
@@ -28,7 +25,7 @@ The :class:`~pyairtable.orm.Model` class allows you create ORM-style classes for
             api_key = "keyapikey"
 
 
-Once you have a class, you can create new objects to represent your
+Once you have a model, you can create new objects to represent your
 Airtable records. Call :meth:`~pyairtable.orm.Model.save` to save the
 newly created object to the Airtable API.
 
@@ -195,7 +192,12 @@ you expect it to contain. You can then declare that as a read-only field:
         lookup_field = F.LookupField[str]("My Lookup", readonly=True)
 
 
-Linking Records
+.. note::
+    :class:`~pyairtable.orm.fields.LookupField` will always return a list of values,
+    even if there is only a single value shown in the Airtable UI.
+
+
+Linked Records
 ----------------
 
 In addition to standard data type fields, the :class:`~pyairtable.orm.fields.LinkField`
@@ -222,13 +224,21 @@ traverse between related records.
     >>> person = Person.from_id("recZ6qSLw0OCA61ul")
     >>> person.company
     [<Company id='recqSk20OCrB13lZ7'>]
+    >>> person.company[0].name
+    'Acme Corp'
+
+pyAirtable will not retrieve field values for a model's linked records until the
+first time you access that field. So in the example above, the fields for Company
+were loaded when ``person.company`` was called for the first time. After that,
+the Company models are persisted, and won't be refreshed until you call
+:meth:`~pyairtable.orm.Model.fetch`.
 
 .. note::
-    Airtable's UI allows apps to restrict the user interface to choosing one record,
-    rather than several; this appears as `prefersSingleRecordLink <https://airtable.com/developers/web/api/field-model#foreignkey-fieldtype-options-preferssinglerecordlink>`_
-    in the `field configuration <https://airtable.com/developers/web/api/field-model>`__.
-    However, the API will *always* return these fields as a list of record IDs, so
-    pyAirtable will *always* represent link fields as a list (never a single model).
+    :class:`~pyairtable.orm.fields.LinkField` will always return a list of values,
+    even if there is only a single value shown in the Airtable UI. It will not
+    respect the `prefersSingleRecordLink <https://airtable.com/developers/web/api/field-model#foreignkey-fieldtype-options-preferssinglerecordlink>`_
+    field configuration option, because the API will *always* return linked fields
+    as a list of record IDs.
 
 
 Cyclical links
@@ -288,8 +298,11 @@ there are four components:
 4. The model class, the path to the model class, or :data:`~pyairtable.orm.fields.LinkSelf`
 
 
-Limitations
-"""""""""""
+ORM Limitations
+------------------
+
+Linked records don't get saved automatically
+""""""""""""""""""""""""""""""""""""""""""""
 
 pyAirtable will not attempt to recursively save any linked records. Because of this,
 you cannot save a record via ORM unless you've first created all of its linked records:
@@ -300,3 +313,36 @@ you cannot save a record via ORM unless you've first created all of its linked r
     Traceback (most recent call last):
       ...
     ValueError: Person.manager contains an unsaved record
+
+Field values don't get refreshed after saving a record
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+pyAirtable will not refresh models when calling :meth:`~pyairtable.orm.Model.save`,
+since certain field types (like :class:`~pyairtable.orm.fields.LinkField`) return
+lists of objects which you might not want pyAirtable to modify or discard. If you
+want to reload the values of all fields after saving (for example, to refresh the
+value of formula fields) then you need to call :meth:`~pyairtable.orm.Model.fetch`.
+
+For example:
+
+.. code-block:: python
+
+    class Person(Model):
+        class Meta: ...
+
+        name = F.TextField("Name")
+        manager = F.LinkField["Person"]("Manager", "Person")
+        # This field is a formula: {Manager} != BLANK()
+        has_manager = F.IntegerField("Has Manager?", readonly=True)
+
+
+    bob = Person.from_id("rec2AqNuHwWcnG871")
+    assert bob.manager == []
+    assert bob.has_manager == 0
+
+    bob.manager = [alice]
+    bob.save()
+    assert bob.has_manager == 0
+
+    bob.fetch()
+    assert bob.has_manager == 1
