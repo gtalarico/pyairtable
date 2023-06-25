@@ -6,7 +6,7 @@ pyAirtable
 
 .. container:: .large
 
-   Python Client for the `Airtable Api <https://airtable.com/api>`_
+   Python Client for the `Airtable API <https://airtable.com/api>`_
 
 .. container:: .buttons
 

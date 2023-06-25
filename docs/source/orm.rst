@@ -9,9 +9,10 @@ Defining Models
 
 The :class:`~pyairtable.orm.Model` class allows you create ORM-style classes for your Airtable tables.
 
-.. code-block: python::
+.. code-block:: python
 
     from pyairtable.orm import Model, fields as F
+
     class Contact(Model):
         first_name = F.TextField("First Name")
         last_name = F.TextField("Last Name")
@@ -231,7 +232,7 @@ traverse between related records.
 
 .. code-block:: python
 
-    from pyairtable.orm import Model, fields as F as F
+    from pyairtable.orm import Model, fields as F
 
     class Company(Model):
         class Meta: ...
@@ -282,7 +283,7 @@ address this:
 
 .. code-block:: python
 
-    from pyairtable.orm import Model, fields as F as F
+    from pyairtable.orm import Model, fields as F
 
     class Company(Model):
         class Meta: ...

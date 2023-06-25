@@ -1,16 +1,16 @@
 """
 Field are used to define the Airtable column type for your pyAirtable models.
 
-Internally these are implemented as descriptors, this allows us to proxy getting and settings values,
-while also providing a type-annotated interface.
+Internally these are implemented as `descriptors <https://docs.python.org/3/howto/descriptor.html>`_,
+which allows us to define methods and type annotations for getting and setting attribute values.
 
 >>> from pyairtable.orm import Model, fields
 >>> class Contact(Model):
+...     class Meta:
+...         ...
 ...     name = fields.TextField("Name")
 ...     is_registered = fields.CheckboxField("Registered")
 ...
-...     class Meta:
-...         ...
 >>> contact = Contact(name="George", is_registered=True)
 >>> assert contact.name == "George"
 >>> reveal_type(contact.name)  # -> str
@@ -181,12 +181,21 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
         return None
 
     def to_record_value(self, value: Any) -> Any:
+        """
+        Returns the value which should be persisted to the API.
+        """
         return value
 
     def to_internal_value(self, value: Any) -> Any:
+        """
+        Converts a value from the API into the value's internal representation.
+        """
         return value
 
     def valid_or_raise(self, value: Any) -> None:
+        """
+        Validate the type of the given value and raise TypeError if invalid.
+        """
         if self.valid_types and not isinstance(value, self.valid_types):
             raise TypeError(
                 f"{self.__class__.__name__} value must be {self.valid_types}; got {type(value)}"
@@ -356,9 +365,15 @@ class DurationField(Field[int, timedelta]):
     valid_types = timedelta
 
     def to_record_value(self, value: timedelta) -> float:
+        """
+        Converts a ``timedelta`` into a number of seconds.
+        """
         return value.total_seconds()
 
     def to_internal_value(self, value: Union[int, float]) -> timedelta:
+        """
+        Converts a number of seconds into a ``timedelta``.
+        """
         return timedelta(seconds=value)
 
 
@@ -491,7 +506,10 @@ class LinkField(_ListField[T_Linked]):
 
     @property
     def linked_model(self) -> Type[T_Linked]:
-        # This avoids resolving the model name into a class until we need it
+        """
+        Resolves a :class:`~pyairtable.orm.Model` class based on
+        the ``model=`` constructor parameter to this field instance.
+        """
         if isinstance(self._linked_model, str):
             modpath, _, clsname = self._linked_model.rpartition(".")
             if not modpath:
@@ -502,7 +520,7 @@ class LinkField(_ListField[T_Linked]):
             cls = getattr(mod, clsname)
             self._linked_model = cast(Type[T_Linked], cls)
 
-        if self._linked_model is _LinkFieldOptions.LinkSelf:
+        elif self._linked_model is _LinkFieldOptions.LinkSelf:
             if self._model is None:
                 raise RuntimeError(f"{self._description} not created on a Model")
             self._linked_model = cast(Type[T_Linked], self._model)
@@ -517,11 +535,13 @@ class LinkField(_ListField[T_Linked]):
             ("lazy", self._lazy),
         ]
 
-    # Unlike most other field classes, LinkField does not store its
-    # internal representation (T_ORM) in instance._fields at first;
-    # we defer object creation to the first time they're requested,
-    # so we can avoid infinite recursion during to_internal_value().
     def _get_list_value(self, instance: "Model") -> List[T_Linked]:
+        """
+        Unlike most other field classes, LinkField does not store its internal
+        representation (T_ORM) in instance._fields after Model.from_record().
+        Instead, we defer creating objects until they're requested for the first
+        time, so we can avoid infinite recursion during to_internal_value().
+        """
         if not (records := super()._get_list_value(instance)):
             return records
         # If there are any values which are IDs rather than instances,
@@ -545,10 +565,13 @@ class LinkField(_ListField[T_Linked]):
         return records
 
     def to_record_value(self, value: Union[List[str], List[T_Linked]]) -> List[str]:
+        """
+        Returns the list of record IDs which should be persisted to the API.
+        """
         if not value:
             return []
         # If the _fields value contains str, it means we loaded it from the API
-        # but we never actually accessed the value (see _get_value below).
+        # but we never actually accessed the value (see _get_list_value).
         # When persisting this model back to the API, we can just write those IDs.
         if all(isinstance(v, str) for v in value):
             return cast(List[str], value)

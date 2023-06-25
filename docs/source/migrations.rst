@@ -87,7 +87,7 @@ New Features in 1.0
 -------------------
 
 * Type Annotations
-* Simpler Api
+* Simpler API
 * Formulas
 * ORM Models
 
@@ -96,7 +96,7 @@ API Changes in 1.0
 
 We used this new major release to make a few breaking changes:
 
-* Introduced a simpler api that's more closely aligned with Airtable Api's patterns.
+* Introduced a simpler API that's more closely aligned with Airtable API's patterns.
 * Created more a flexible API (:class:`~pyairtable.Api`, :class:`~pyairtable.Base`, :class:`~pyairtable.Table`)
 
 

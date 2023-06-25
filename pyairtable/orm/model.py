@@ -173,7 +173,7 @@ class Model:
         Saves or updates a model.
         If instance has no 'id', it will be created, otherwise updated.
 
-        Returns `True` if was created and `False` if it was updated
+        Returns ``True`` if was created and `False` if it was updated
         """
         if self._deleted:
             raise RuntimeError(f"{self.id} was deleted")
@@ -204,8 +204,8 @@ class Model:
     @classmethod
     def all(cls, **kwargs: Any) -> List[SelfType]:
         """
-        Returns all records for this model. For the full list of
-        keyword arguments, see :meth:`~pyairtable.Api.all`
+        Returns all records for this model. For all supported
+        keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
         """
         table = cls.get_table()
         return [cls.from_record(record) for record in table.all(**kwargs)]
@@ -213,8 +213,8 @@ class Model:
     @classmethod
     def first(cls, **kwargs: Any) -> Optional[SelfType]:
         """
-        Returns the first record for this model. For the full list of
-        keyword arguments, see :meth:`~pyairtable.Api.all`
+        Returns the first record for this model. For all supported
+        keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
         """
         table = cls.get_table()
         if record := table.first(**kwargs):
@@ -225,8 +225,8 @@ class Model:
         """
         Returns a dictionary object as an Airtable record.
         This method converts internal field values into values expected by Airtable.
-        e.g. a ``datetime`` value from :class:``DateTimeField`` is converted into an
-        ISO 8601 string
+        For example, a ``datetime`` value from :class:`~pyairtable.orm.fields.DatetimeField`
+        is converted into an ISO 8601 string.
 
         Args:
             only_writable: If ``True``, the result will exclude any
@@ -243,10 +243,7 @@ class Model:
     @classmethod
     def from_record(cls, record: RecordDict) -> SelfType:
         """
-        Create instance from record dict
-
-        Args:
-            record: The dict returned from the Airtable API.
+        Create an instance from a record dict.
         """
         name_field_map = cls._field_name_descriptor_map()
         # Convert Column Names into model field names
@@ -271,7 +268,7 @@ class Model:
         fetch: bool = True,
     ) -> SelfType:
         """
-        Create an instance from a `record_id`
+        Create an instance from a record ID.
 
         Args:
             record_id: |arg_record_id|
@@ -285,7 +282,9 @@ class Model:
         return instance
 
     def fetch(self) -> None:
-        """Fetches field and resets instance field values from the Airtable record"""
+        """
+        Fetches field values from the API and resets instance field values.
+        """
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
 
