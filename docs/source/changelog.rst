@@ -7,13 +7,26 @@ Changelog
 
 See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
 
+* :ref:`ORM` module is no longer experimental and has a stable API.
+  - `PR #277 <https://github.com/gtalarico/pyairtable/pull/277>`_.
+* Added :meth:`Model.batch_save <pyairtable.orm.Model.batch_save>`
+  and :meth:`Model.batch_delete <pyairtable.orm.Model.batch_delete>`.
+  - `PR #274 <https://github.com/gtalarico/pyairtable/pull/277>`_.
+* Added :meth:`Api.whoami <pyairtable.Api.whoami>` method.
+  - `PR #273 <https://github.com/gtalarico/pyairtable/pull/273>`_.
+* pyAirtable will automatically retry requests when throttled by Airtable's QPS.
+  - `PR #272 <https://github.com/gtalarico/pyairtable/pull/272>`_.
 * Removed ``ApiAbstract``.
+  - `PR #267 <https://github.com/gtalarico/pyairtable/pull/267>`_.
 * Implemented strict type annotations on all functions and methods.
-* Added :ref:`ORM` support for all Airtable field types.
-  - `PR #260 <https://github.com/gtalarico/pyairtable/pull/260>`_.
+  - `PR #263 <https://github.com/gtalarico/pyairtable/pull/263>`_.
 * Return Model instances, not dicts, from
   :meth:`Model.all <pyairtable.orm.Model.all>` and :meth:`Model.first <pyairtable.orm.Model.first>`.
   - `PR #262 <https://github.com/gtalarico/pyairtable/pull/262>`_.
+* Dropped support for Python 3.7.
+  - `PR #261 <https://github.com/gtalarico/pyairtable/pull/261>`_.
+* :ref:`ORM` supports all Airtable field types.
+  - `PR #260 <https://github.com/gtalarico/pyairtable/pull/260>`_.
 
 1.5.0 (2023-05-15)
 -------------------------
