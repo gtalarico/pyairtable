@@ -226,9 +226,6 @@ class TextField(_BasicField[str]):
 
     valid_types = str
 
-    def to_internal_value(self, value: Any) -> str:
-        return str(value)
-
 
 class _NumericField(Generic[T], _BasicField[T]):
     """
@@ -253,11 +250,6 @@ class NumberField(_NumericField[Union[int, float]]):
 
     valid_types = (int, float)
 
-    def to_internal_value(self, value: Any) -> Any:
-        if not isinstance(value, (float, int)):
-            raise TypeError(type(value))
-        return value
-
 
 # This cannot inherit from NumberField because valid_types would be more restrictive
 # in the subclass than what is defined in the parent class.
@@ -270,9 +262,6 @@ class IntegerField(_NumericField[int]):
 
     valid_types = int
 
-    def to_internal_value(self, value: Any) -> int:
-        return int(value)
-
 
 # This cannot inherit from NumberField because valid_types would be more restrictive
 # in the subclass than what is defined in the parent class.
@@ -284,9 +273,6 @@ class FloatField(_NumericField[float]):
     """
 
     valid_types = float
-
-    def to_internal_value(self, value: Any) -> float:
-        return float(value)
 
 
 class RatingField(IntegerField):
@@ -313,9 +299,6 @@ class CheckboxField(_BasicField[bool]):
 
     def _missing_value(self) -> bool:
         return False
-
-    def to_internal_value(self, value: Any) -> bool:
-        return bool(value)
 
 
 class DatetimeField(Field[str, datetime]):

@@ -184,7 +184,7 @@ def test_every_field(Everything):
             continue
         assert field_class in classes_used
 
-    record = Everything(
+    record: _Everything = Everything(
         name=None,
         notes=None,
         assignee=None,
@@ -214,3 +214,18 @@ def test_every_field(Everything):
     assert record.id
     assert record.addresses == []
     assert record.link_self == []
+    record.link_self = [record]
+    record.save()
+
+    # The ORM won't refresh the model's field values after save()
+    assert record.formula_integer is None
+    assert record.formula_nan is None
+    assert record.link_count is None
+    assert record.lookup_error == []
+    assert record.lookup_integer == []
+    record.fetch()
+    assert record.formula_integer is not None
+    assert record.formula_nan == {"specialValue": "NaN"}
+    assert record.link_count == 1
+    assert record.lookup_error == [{"error": "#ERROR!"}]
+    assert record.lookup_integer == [record.formula_integer]
