@@ -6,6 +6,7 @@ import sys
 import typing
 
 import pyairtable.api.types
+import pyairtable.orm.fields
 from pyairtable import __version__ as version
 
 extensions = [
@@ -57,6 +58,11 @@ def typehints_formatter(annotation, config):
             return f":data:`~pyairtable.api.types.{name}`"
         if isinstance(value, typing._GenericAlias):  # Union, Dict, etc.
             return f":data:`~pyairtable.api.types.{name}`"
+
+    if annotation == typing.Literal[pyairtable.orm.fields._LinkFieldOptions.LinkSelf]:
+        return ":data:`~pyairtable.orm.fields.LinkSelf`"
+    if annotation == pyairtable.orm.fields.T_Linked:
+        return ":class:`~pyairtable.orm.Model`"
 
     return None
 

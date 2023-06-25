@@ -78,8 +78,8 @@ create, modify, or delete several records at once:
     >>> Contact.batch_delete(contacts)
 
 
-Supported Fields
-----------------
+Supported Field Types
+-----------------------------
 
 The following grid maps each of the supported field types in pyAirtable
 to the Airtable field type. Any field with a lock icon is read-only by default.
@@ -234,9 +234,16 @@ traverse between related records.
 Cyclical links
 """"""""""""""
 
-If you need to model a link in two directions, or model a link to the same table,
-you'll be creating a field before the linked model is created. You can pass a
-fully qualified module and class name as a ``str`` instead:
+If you need to model bidirectional links between two tables, you'll need to create one of
+the fields before the linked model is created. pyAirtable provides a few options to
+address this:
+
+1. You can provide a ``str`` that is the fully qualified module and class name.
+   For example, ``model="your.module.Model"`` will import the ``Model`` class from ``your.module``.
+2. You can provide a ``str`` that is *just* the class name, and it will be imported
+   from the same module as the model class.
+3. You can provide the sentinel value ``LinkSelf``, and the link field will point to
+   the same model where the link field is created.
 
 .. code-block:: python
 
@@ -246,20 +253,23 @@ fully qualified module and class name as a ``str`` instead:
         class Meta: ...
 
         name = F.TextField("Name")
-        employees = F.LinkField["Person"]("Employees", "module.name.Person")
+        employees = F.LinkField("Employees", "path.to.Person")  # option 1
 
     class Person(Model):
         class Meta: ...
 
         name = F.TextField("Name")
-        company = F.LinkField("Company", Company)
-        manager = F.LinkField["Person"]("Manager", "module.name.Person")
+        company = F.LinkField[Company]("Company", Company)
+        manager = F.LinkField["Person"]("Manager", "Person")  # option 2
+        reports = F.LinkField["Person"]("Reports", F.LinkSelf)  # option 3
 
 .. code-block:: python
 
     >>> person = Person.from_id("recZ6qSLw0OCA61ul")
     >>> person.manager
     [<Person id='recSLw0OCA61ulZ6q'>]
+    >>> person.manager[0].reports
+    [<Person id='recZ6qSLw0OCA61ul'>, ...]
     >>> person.company[0].employees
     [<Person id='recZ6qSLw0OCA61ul'>, <Person id='recSLw0OCA61ulZ6q'>, ...]
 
@@ -268,20 +278,21 @@ there are four components:
 
 .. code-block:: python
 
-      manager = F.LinkField["Person"]("Manager", "module.name.Person")
-     #^^^^^^^               ^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
-     #  (1)                    (2)       (3)             (4)
+      manager = F.LinkField["Person"]("Manager", "path.to.Person")
+     #^^^^^^^               ^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^^^^
+     #  (1)                    (2)       (3)           (4)
 
 1. The name of the attribute on the model
 2. Type annotation (optional, for mypy users)
 3. Airtable's field name for the API
-4. The fully qualified module and class name of the linked model
+4. The model class, the path to the model class, or :data:`~pyairtable.orm.fields.LinkSelf`
 
 
 Limitations
 """""""""""
 
-You cannot save a record via ORM unless you've first created all of its linked records:
+pyAirtable will not attempt to recursively save any linked records. Because of this,
+you cannot save a record via ORM unless you've first created all of its linked records:
 
     >>> alice = Person.from_id("recWcnG8712AqNuHw")
     >>> alice.manager = [Person()]

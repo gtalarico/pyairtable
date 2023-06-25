@@ -27,12 +27,14 @@ while also providing a type-annotated interface.
 import abc
 import importlib
 from datetime import date, datetime, timedelta
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     Generic,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
@@ -441,6 +443,14 @@ class _ValidatingListField(Generic[T], _ListField[T]):
                 raise TypeError(f"expected {self.contains_type}; got {type(obj)}")
 
 
+class _LinkFieldOptions(Enum):
+    LinkSelf = object()
+
+
+#: Sentinel option for the `model=` param to :class:`~LinkField`
+LinkSelf = _LinkFieldOptions.LinkSelf
+
+
 class LinkField(_ListField[T_Linked]):
     """
     Represents a MultipleRecordLinks field. Returns and accepts lists of Models.
@@ -451,12 +461,12 @@ class LinkField(_ListField[T_Linked]):
     See `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__.
     """
 
-    _linked_model: Union[str, Type[T_Linked]]
+    _linked_model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]]
 
     def __init__(
         self,
         field_name: str,
-        model: Union[str, Type[T_Linked]],
+        model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]],
         validate_type: bool = True,
         readonly: Optional[bool] = None,
         lazy: bool = True,
@@ -464,10 +474,17 @@ class LinkField(_ListField[T_Linked]):
         """
         Args:
             field_name: Name of the Airtable field.
-            model: Model class we expect to get from the API, or a fully qualified name
-                that can be used with ``importlib.import_module`` and ``getattr``
-                to retrieve the class at runtime.
-            validate_type: Whether to raise a TypeError if anything attempts to write
+            model:
+                Model class representing the linked table. There are a few options:
+
+                1. You can provide a ``str`` that is the fully qualified module and class name.
+                   For example, ``"your.module.Model"`` will import ``Model`` from ``your.module``.
+                2. You can provide a ``str`` that is *just* the class name, and it will be imported
+                   from the same module as the model class.
+                3. You can provide the sentinel value :data:`~LinkSelf`, and the link field
+                   will point to the same model where the link field is created.
+
+            validate_type: Whether to raise a TypeError if attempting to write
                 an object of an unsupported type as a field value. If ``False``, you
                 may encounter unpredictable behavior from the Airtable API.
             readonly: If ``True``, any attempt to write a value to this field will
@@ -479,8 +496,12 @@ class LinkField(_ListField[T_Linked]):
         """
         from pyairtable.orm import Model  # noqa, avoid circular import
 
-        if not isinstance(model, str) and not issubclass(model, Model):
-            raise TypeError(f"expected str or orm.Model; got {type(model)}")
+        if not (
+            model is _LinkFieldOptions.LinkSelf
+            or isinstance(model, str)
+            or (isinstance(model, type) and issubclass(model, Model))
+        ):
+            raise TypeError(f"expected str, Model, or LinkSelf; got {type(model)}")
 
         super().__init__(field_name, validate_type=validate_type, readonly=readonly)
         self._linked_model = model
@@ -491,9 +512,18 @@ class LinkField(_ListField[T_Linked]):
         # This avoids resolving the model name into a class until we need it
         if isinstance(self._linked_model, str):
             modpath, _, clsname = self._linked_model.rpartition(".")
+            if not modpath:
+                if self._model is None:
+                    raise RuntimeError(f"{self._description} not created on a Model")
+                modpath = self._model.__module__
             mod = importlib.import_module(modpath)
             cls = getattr(mod, clsname)
             self._linked_model = cast(Type[T_Linked], cls)
+
+        if self._linked_model is _LinkFieldOptions.LinkSelf:
+            if self._model is None:
+                raise RuntimeError(f"{self._description} not created on a Model")
+            self._linked_model = cast(Type[T_Linked], self._model)
 
         return self._linked_model
 
@@ -778,7 +808,7 @@ READONLY_FIELDS = {cls for cls in ALL_FIELDS if cls.readonly}
 
 #: Mapping of Airtable field type names to their ORM classes.
 #: See https://airtable.com/developers/web/api/field-model
-#: and :ref:`Formulas and Rollups`.
+#: and :ref:`Formulas, Rollups, and Lookups`.
 #:
 #: The data type of "formula" and "rollup" fields will depend
 #: on the underlying fields they reference, so it is not practical

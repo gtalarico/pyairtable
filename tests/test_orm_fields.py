@@ -159,7 +159,7 @@ def test_type_validation(test_case):
                 )
 
 
-def test_type_validation__link_field():
+def test_type_validation_LinkField():
     """
     Test that a link field will reject models of the wrong class.
     """
@@ -448,15 +448,54 @@ def test_link_field():
         author.books = -1
 
 
-class Person(Model):
+class Dummy(Model):
     Meta = fake_meta()
-    friends = f.LinkField("Friends", "test_orm_fields.Person", lazy=False)
 
 
-def test_link_field_cycle(requests_mock):
+def test_link_field__linked_model():
+    """
+    Test the various ways of specifying a linked model for the LinkField.
+    """
+
+    class HasLinks(Model):
+        Meta = fake_meta()
+        # If the other model class is available, you can link to it directly
+        explicit_link = f.LinkField("explicit", Dummy)
+        # You can pass a fully qualified path.to.module.Class
+        indirect_link = f.LinkField("indirect", "test_orm_fields.Dummy")
+        # If there's no module, just a class, we assume it's in the same module
+        neighbor_link = f.LinkField("neighbor", "Dummy")
+        # Sentinel value LinkSelf means "link to the same model"
+        circular_link = f.LinkField("circular", f.LinkSelf)
+
+    assert HasLinks.explicit_link.linked_model is Dummy
+    assert HasLinks.indirect_link.linked_model is Dummy
+    assert HasLinks.neighbor_link.linked_model is Dummy
+    assert HasLinks.circular_link.linked_model is HasLinks
+
+    # While it is technically possible to add fields to a Model class after creation,
+    # those fields won't get __set_name__ called, which means they won't have a
+    # reference to their own Model class. This means...
+
+    # ...that LinkField(model=f.LinkSelf) won't work:
+    HasLinks.invalid_circular_link = f.LinkField("Invalid", f.LinkSelf)
+    with pytest.raises(RuntimeError):
+        HasLinks.invalid_circular_link.linked_model
+
+    # ...and LinkField(model="Class") without the module path won't work:
+    HasLinks.invalid_neighbor_link = f.LinkField("Invalid", "Dummy")
+    with pytest.raises(RuntimeError):
+        HasLinks.invalid_neighbor_link.linked_model
+
+
+def test_link_field__cycle(requests_mock):
     """
     Test that cyclical relationships like A -> B -> C -> A don't cause infinite recursion.
     """
+
+    class Person(Model):
+        Meta = fake_meta()
+        friends = f.LinkField("Friends", f.LinkSelf, lazy=False)
 
     id_a = fake_id("rec", "A")
     id_b = fake_id("rec", "B")
