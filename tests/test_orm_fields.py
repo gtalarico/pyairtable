@@ -457,6 +457,7 @@ def test_link_field_cycle(requests_mock):
     """
     Test that cyclical relationships like A -> B -> C -> A don't cause infinite recursion.
     """
+
     id_a = fake_id("rec", "A")
     id_b = fake_id("rec", "B")
     id_c = fake_id("rec", "C")

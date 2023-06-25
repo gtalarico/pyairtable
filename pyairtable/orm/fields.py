@@ -465,7 +465,7 @@ class LinkField(_ListField[T_Linked]):
         Args:
             field_name: Name of the Airtable field.
             model: Model class we expect to get from the API, or a fully qualified name
-                that ca(importlib be.import_module) <n b use>d and ``getattr``
+                that can be used with ``importlib.import_module`` and ``getattr``
                 to retrieve the class at runtime.
             validate_type: Whether to raise a TypeError if anything attempts to write
                 an object of an unsupported type as a field value. If ``False``, you
