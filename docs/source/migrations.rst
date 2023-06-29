@@ -23,7 +23,7 @@ Changes to Api, Base, and Table
 no longer inherit from the same base class. Each has its own scope of responsibility and has
 methods which refer to the other classes as needed. See :ref:`Getting Started`.
 
-For a period of time, the constructor for :class:`~pyairtable.Base`, and :class:`~pyairtable.Table`
+For a period of time, the constructor for :class:`~pyairtable.Base` and :class:`~pyairtable.Table`
 will remain backwards-compatible with the previous approach (passing in ``str`` values),
 but doing so will produce deprecation warnings.
 
@@ -57,12 +57,14 @@ Retry by Default
 * By default, the library will retry requests up to five times if it receives
   a 429 status code from Airtable, indicating the base has exceeded its QPS limit.
 
-
 Changes to the ORM
 ------------------
 
 * :meth:`Model.all <pyairtable.orm.Model.all>` and :meth:`Model.first <pyairtable.orm.Model.first>`
   return instances of the model class instead of returning dicts.
+* :class:`~pyairtable.orm.fields.LinkField` now defaults to ``lazy=False``. The first time your code
+  accesses the field, it will perform one or more API calls to retrieve field data for linked records.
+  You can disable this by passing ``lazy=True`` when creating the field.
 
 Changes to types
 ----------------

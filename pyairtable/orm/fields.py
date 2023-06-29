@@ -452,7 +452,7 @@ class LinkField(_ListField[T_Linked]):
         model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]],
         validate_type: bool = True,
         readonly: Optional[bool] = None,
-        lazy: bool = True,
+        lazy: bool = False,
     ):
         """
         Args:
@@ -473,8 +473,7 @@ class LinkField(_ListField[T_Linked]):
             readonly: If ``True``, any attempt to write a value to this field will
                 raise an ``AttributeError``. This will not, however, prevent any
                 modification of the list object returned by this field.
-            lazy: Use ``False`` to load linked model when looking up attribute.
-                Defaults to ``True``, which returns empty objects with only IDs;
+            lazy: If ``True``, this field will return empty objects with oly IDs;
                 call :meth:`~pyairtable.orm.Model.fetch` to retrieve values.
         """
         from pyairtable.orm import Model  # noqa, avoid circular import
