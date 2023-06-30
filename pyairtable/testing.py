@@ -6,13 +6,7 @@ import random
 import string
 from typing import Any, Optional
 
-from pyairtable.api.types import (
-    AttachmentDict,
-    CollaboratorDict,
-    Fields,
-    FieldValue,
-    RecordDict,
-)
+from pyairtable.api.types import AttachmentDict, CollaboratorDict, Fields, RecordDict
 
 
 def fake_id(type: str = "rec", value: Any = None) -> str:
@@ -50,7 +44,7 @@ def fake_meta(
 def fake_record(
     fields: Optional[Fields] = None,
     id: Optional[str] = None,
-    **other_fields: FieldValue,
+    **other_fields: Any,
 ) -> RecordDict:
     """
     Returns a fake record dict with the given field values.

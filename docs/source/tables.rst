@@ -168,7 +168,7 @@ Creates a single record from a dictionary representing the table's fields.
 
 :meth:`~pyairtable.Table.batch_create`
 
-Create multiple records from a list of :class:`~pyairtable.api.types.Fields` dicts.
+Create multiple records from a list of :class:`~pyairtable.api.types.WritableFields` dicts.
 
 .. code-block:: python
 

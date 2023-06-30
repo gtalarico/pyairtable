@@ -3,7 +3,7 @@ pyAirtable provides a number of type aliases and TypedDicts which are used as in
 and return values to various pyAirtable methods.
 """
 from functools import lru_cache
-from typing import Any, Dict, List, Literal, Optional, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
 import pydantic
 from typing_extensions import Required, TypeAlias, TypedDict
@@ -159,26 +159,15 @@ class CollaboratorEmailDict(TypedDict):
     email: str
 
 
-class FormulaErrorDict(TypedDict):
-    """
-    The dict returned by Airtable to indicate a formula error.
-    """
-
-    error: str
+#: A mapping of field names to values. Does not enforce any type constraints
+#: because we want to be forward-compatible with any future changes or new
+#: field types that Airtable might introduce.
+Fields: TypeAlias = Dict[FieldName, Any]
 
 
-class FormulaNotANumberDict(TypedDict):
-    """
-    The dict returned by Airtable to indicate a NaN result.
-    """
-
-    specialValue: Literal["NaN"]
-
-
-#: Represents the types of values that an Airtable field could provide.
-#: For more information on Airtable field types, see
-#: `Field types and cell values <https://airtable.com/developers/web/api/field-model>`__.
-FieldValue: TypeAlias = Union[
+#: Represents the types of values that can be written to the Airtable API.
+WritableFieldValue: TypeAlias = Union[
+    None,
     str,
     int,
     float,
@@ -186,23 +175,15 @@ FieldValue: TypeAlias = Union[
     CollaboratorDict,
     CollaboratorEmailDict,
     BarcodeDict,
-    ButtonDict,
-    List[str],
-    List[int],
-    List[float],
-    List[bool],
     List[AttachmentDict],
+    List[CreateAttachmentDict],
     List[CollaboratorDict],
     List[CollaboratorEmailDict],
-    FormulaErrorDict,
-    FormulaNotANumberDict,
-    List[FormulaErrorDict],
-    List[FormulaNotANumberDict],
 ]
 
 
-#: A mapping of field names to values.
-Fields: TypeAlias = Dict[FieldName, Optional[FieldValue]]
+#: A mapping of field names to values which can be sent to the API.
+WritableFields: TypeAlias = Dict[FieldName, WritableFieldValue]
 
 
 class RecordDict(TypedDict):
@@ -229,7 +210,7 @@ class CreateRecordDict(TypedDict):
     A ``dict`` representing the payload passed to the Airtable API to create a record.
     """
 
-    fields: Fields
+    fields: WritableFields
 
 
 class UpdateRecordDict(TypedDict):
@@ -245,7 +226,7 @@ class UpdateRecordDict(TypedDict):
     """
 
     id: RecordId
-    fields: Fields
+    fields: WritableFields
 
 
 class RecordDeletedDict(TypedDict):
@@ -328,7 +309,7 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
 
 def assert_typed_dicts(cls: Type[T], objects: Any) -> List[T]:
     """
-    Like :func:`~pyairtable.api.types.assert_typed_dict` but for a list.
+    Like :func:`~pyairtable.api.types.assert_typed_dict` but for a list of dicts.
 
     Args:
         cls: The TypedDict class.

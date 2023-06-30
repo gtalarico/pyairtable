@@ -8,10 +8,10 @@ from pyairtable.api.base import Base
 from pyairtable.api.table import Table
 from pyairtable.api.types import (
     FieldName,
-    Fields,
     RecordDict,
     RecordId,
     UpdateRecordDict,
+    WritableFields,
 )
 from pyairtable.formulas import OR, STR_VALUE
 from pyairtable.orm.fields import AnyField, Field
@@ -73,7 +73,7 @@ class Model:
     @classmethod
     def _field_name_descriptor_map(cls) -> Dict[FieldName, AnyField]:
         """
-        Returns a dictionary that maps Fields 'Names' to descriptor fields
+        Returns a dictionary that maps field names to descriptor instances.
 
         >>> class Test(Model):
         ...     first_name = TextField("First Name")
@@ -90,7 +90,7 @@ class Model:
     @classmethod
     def _field_name_attribute_map(cls) -> Dict[FieldName, str]:
         """
-        Returns a dictionary that maps Fields 'Names' to the model attribute name:
+        Returns a dictionary that maps field names to attribute names.
 
         >>> class Test(Model):
         ...     first_name = TextField("First Name")
@@ -335,7 +335,7 @@ class Model:
 
         create_models = [model for model in models if not model.id]
         update_models = [model for model in models if model.id]
-        create_records: List[Fields] = [
+        create_records: List[WritableFields] = [
             record["fields"]
             for model in create_models
             if (record := model.to_record(only_writable=True))
