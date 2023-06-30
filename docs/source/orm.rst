@@ -197,6 +197,31 @@ you expect it to contain. You can then declare that as a read-only field:
     even if there is only a single value shown in the Airtable UI.
 
 
+Error Values
+------------
+
+Airtable will return special values to represent errors from invalid formulas,
+division by zero, or other sorts of issues. These will be returned by the ORM as-is.
+Read more at `Common formula errors and how to fix them <https://support.airtable.com/docs/common-formula-errors-and-how-to-fix-them>`_.
+
+You can check for errors using the :func:`~pyairtable.api.types.is_airtable_error` function:
+
+  >>> record = MyTable.from_id("recyhb9UNkEMaZtYA")
+  >>> record.formula_field
+  {'error': '#ERROR!'}
+  >>> record.rollup_field
+  {'specialValue': 'NaN'}
+  >>> record.lookup_field
+  [{'error': '#ERROR!'}]
+  >>> from pyairtable.api.types import is_airtable_error
+  >>> is_airtable_error(record.formula_field)
+  True
+  >>> is_airtable_error(record.rollup_field)
+  True
+  >>> is_airtable_error(record.lookup_field[0])
+  True
+
+
 Linked Records
 ----------------
 
@@ -346,3 +371,29 @@ For example:
 
     bob.fetch()
     assert bob.has_manager == 1
+
+Type annotations don't account for possible formula errors
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+The ORM module does its best to give meaningful type annotations for each field.
+However, it is not feasible for the ORM to determine which fields' underlying types
+might return an error code, and to annotate it accordingly.
+
+Taking the same example as above...
+
+.. code-block:: python
+
+    class Person(Model):
+        class Meta: ...
+
+        name = F.TextField("Name")
+        has_manager = F.IntegerField("Has Manager?", readonly=True)  # formula
+
+...the type annotation of ``Person().has_manager`` will appear as ``int`` to mypy
+and to most type-aware code editors. It is nonetheless possible that if the formula
+becomes invalid, ``person.has_manager`` will return ``{'error': '#ERROR!'}``
+(which is obviously not an ``int``).
+
+In most cases you probably want your code to fail quickly and loudly if there is an
+error value coming back from the Airtable API. In the unusual cases where you want
+to gracefully handle an error and move on, use :func:`~pyairtable.api.types.is_airtable_error`.
