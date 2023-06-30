@@ -1,5 +1,6 @@
 import datetime
 import operator
+import re
 
 import pytest
 
@@ -488,14 +489,15 @@ def test_link_field__linked_model():
         HasLinks.invalid_neighbor_link.linked_model
 
 
+class Person(Model):
+    Meta = fake_meta()
+    friends = f.LinkField("Friends", f.LinkSelf, lazy=False)
+
+
 def test_link_field__cycle(requests_mock):
     """
     Test that cyclical relationships like A -> B -> C -> A don't cause infinite recursion.
     """
-
-    class Person(Model):
-        Meta = fake_meta()
-        friends = f.LinkField("Friends", f.LinkSelf, lazy=False)
 
     id_a = fake_id("rec", "A")
     id_b = fake_id("rec", "B")
@@ -503,16 +505,67 @@ def test_link_field__cycle(requests_mock):
     rec_a = {"id": id_a, "createdTime": DATETIME_S, "fields": {"Friends": [id_b]}}
     rec_b = {"id": id_b, "createdTime": DATETIME_S, "fields": {"Friends": [id_c]}}
     rec_c = {"id": id_c, "createdTime": DATETIME_S, "fields": {"Friends": [id_a]}}
-    url_a = Person.get_table().record_url(id_a)
-    url_b = Person.get_table().record_url(id_b)
-    url_c = Person.get_table().record_url(id_c)
-    requests_mock.get(url_a, json=rec_a)
-    requests_mock.get(url_b, json=rec_b)
-    requests_mock.get(url_c, json=rec_c)
+
+    requests_mock.get(Person.get_table().record_url(id_a), json=rec_a)
     a = Person.from_id(id_a)
+
+    for record in (rec_a, rec_b, rec_c):
+        url_re = re.compile(
+            re.escape(Person.get_table().url + "?filterByFormula=")
+            + ".*"
+            + record["id"]
+        )
+        requests_mock.get(url_re, json={"records": [record]})
+
     assert a.friends[0].id == id_b
     assert a.friends[0].friends[0].id == id_c
     assert a.friends[0].friends[0].friends[0].id == id_a
+
+
+def test_link_field__load_many(requests_mock):
+    """
+    Tests that a LinkField which returns several IDs will minimize the number
+    of API calls it makes in order to fetch data.
+    """
+
+    person_id = fake_id("rec", "A")
+    person_url = Person.get_table().record_url(person_id)
+    friend_ids = [fake_id("rec", c) for c in "123456789ABCDEF"]
+
+    person_json = {
+        "id": person_id,
+        "createdTime": DATETIME_S,
+        "fields": {"Friends": friend_ids},
+    }
+    friends_json = [
+        {"id": record_id, "createdTime": DATETIME_S, "fields": {"Name": record_id[-1]}}
+        for record_id in friend_ids
+    ]
+
+    # This retrieves a record; we test this behavior elsewhere, no need to check values
+    requests_mock.get(person_url, json=person_json)
+    person = Person.from_id(person_id)
+
+    # Here we test that calling `person.friends` retrieves records in bulk,
+    # instead of calling `.fetch()` on every record individually.
+    # The mocked URL specifically includes every record ID in our test set,
+    # to ensure the library isn't somehow dropping records from its query.
+    url_regex = ".*".join(
+        [re.escape(Person.get_table().url + "?filterByFormula="), *friend_ids]
+    )
+    mock_list = requests_mock.get(
+        re.compile(url_regex),
+        [
+            {"json": {"records": friends_json[:10], "offset": "offset1"}},
+            {"json": {"records": friends_json[10:]}},
+        ],
+    )
+    assert person.friends
+    assert mock_list.call_count == 2
+    assert len(person.friends) == len(friend_ids)
+    assert [friend.id for friend in person.friends] == friend_ids
+    # Make sure we didn't keep calling the API on every `person.friends`
+    assert mock_list.call_count == 2
 
 
 def test_lookup_field():

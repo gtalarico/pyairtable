@@ -520,17 +520,27 @@ class LinkField(_ListField[T_Linked]):
     # Unlike most other field classes, LinkField does not store its
     # internal representation (T_ORM) in instance._fields at first;
     # we defer object creation to the first time they're requested,
-    # so we can avoid infinite recursion on to_internal_value().
+    # so we can avoid infinite recursion during to_internal_value().
     def _get_list_value(self, instance: "Model") -> List[T_Linked]:
         if not (records := super()._get_list_value(instance)):
             return records
-        # If the list contains record IDs, replace the contents with instances;
-        # other code may already have references to this specific list.
+        # If there are any values which are IDs rather than instances,
+        # retrieve their values in bulk, and store them keyed by ID
+        # so we can maintain the order we received from the API.
+        new_records = {}
+        if new_record_ids := [v for v in records if isinstance(v, RecordId)]:
+            new_records = {
+                record.id: record
+                for record in self.linked_model.from_ids(
+                    cast(List[RecordId], new_record_ids)
+                )
+            }
+        # If the list contains record IDs, replace the contents with instances.
+        # Other code may already have references to this specific list, so
+        # we replace the existing list's values.
         records[:] = [
-            self.linked_model.from_id(cast(RecordId, record), fetch=(not self._lazy))
-            if isinstance(record, RecordId)
-            else record
-            for record in records
+            new_records[cast(RecordId, value)] if isinstance(value, RecordId) else value
+            for value in records
         ]
         return records
 

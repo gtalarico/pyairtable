@@ -1,12 +1,19 @@
 from functools import lru_cache
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from typing_extensions import Self as SelfType
 
 from pyairtable.api.api import Api
 from pyairtable.api.base import Base
 from pyairtable.api.table import Table
-from pyairtable.api.types import FieldName, Fields, RecordDict, UpdateRecordDict
+from pyairtable.api.types import (
+    FieldName,
+    Fields,
+    RecordDict,
+    RecordId,
+    UpdateRecordDict,
+)
+from pyairtable.formulas import OR, STR_VALUE
 from pyairtable.orm.fields import AnyField, Field
 
 
@@ -260,7 +267,7 @@ class Model:
     @classmethod
     def from_id(
         cls,
-        record_id: str,
+        record_id: RecordId,
         fetch: bool = True,
     ) -> SelfType:
         """
@@ -268,9 +275,9 @@ class Model:
 
         Args:
             record_id: |arg_record_id|
-            fetch: If `True`, record will be fetched and fields will be
-                updated. If `False`, a new instance is created with the provided `id`,
-                but field values are unset. Default is `True`.
+            fetch: If ``True``, record will be fetched and field values will be
+                updated. If ``False``, a new instance is created with the provided ID,
+                but field values are unset.
         """
         instance = cls(id=record_id)
         if fetch:
@@ -286,6 +293,36 @@ class Model:
         unused = self.from_record(record)
         self._fields = unused._fields
         self.created_time = unused.created_time
+
+    @classmethod
+    def from_ids(
+        cls,
+        record_ids: Iterable[RecordId],
+        fetch: bool = True,
+    ) -> List[SelfType]:
+        """
+        Create a list of instances from record IDs. If any record IDs returned
+        are invalid this will raise a KeyError, but only *after* retrieving all
+        other valid records from the API.
+
+        Args:
+            record_ids: |arg_record_id|
+            fetch: If ``True``, records will be fetched and field values will be
+                updated. If ``False``, new instances are created with the provided IDs,
+                but field values are unset.
+        """
+        record_ids = list(record_ids)
+        if not fetch:
+            return [cls.from_id(record_id, fetch=False) for record_id in record_ids]
+        formula = OR(
+            *[f"RECORD_ID()={STR_VALUE(record_id)}" for record_id in record_ids]
+        )
+        records = [
+            cls.from_record(record) for record in cls.get_table().all(formula=formula)
+        ]
+        records_by_id = {record.id: record for record in records}
+        # Ensure we return records in the same order, and raise KeyError if any are missing
+        return [records_by_id[record_id] for record_id in record_ids]
 
     @classmethod
     def batch_save(cls, models: List[SelfType]) -> None:

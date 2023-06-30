@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from operator import itemgetter
 from unittest import mock
@@ -185,11 +186,13 @@ def test_linked_record_can_be_saved(requests_mock, access_linked_records):
     """
     address_json = fake_record(Number="123", Street="Fake St")
     address_id = address_json["id"]
-    address_url = Address.get_table().record_url(address_id)
+    address_url_re = re.escape(Address.get_table().url + "?filterByFormula=")
     contact_json = fake_record(Email="alice@example.com", Link=[address_id])
     contact_id = contact_json["id"]
     contact_url = Contact.get_table().record_url(contact_id)
-    requests_mock.get(address_url, json=address_json)
+    contact_url_re = re.escape(Contact.get_table().url + "?filterByFormula=")
+    requests_mock.get(re.compile(address_url_re), json={"records": [address_json]})
+    requests_mock.get(re.compile(contact_url_re), json={"records": [contact_json]})
     requests_mock.get(contact_url, json=contact_json)
     mock_save = requests_mock.patch(contact_url, json=contact_json)
 
