@@ -1,11 +1,18 @@
 import datetime
 import operator
+import re
 
 import pytest
 
 from pyairtable.orm import fields as f
 from pyairtable.orm.model import Model
-from pyairtable.testing import fake_attachment, fake_meta, fake_record, fake_user
+from pyairtable.testing import (
+    fake_attachment,
+    fake_id,
+    fake_meta,
+    fake_record,
+    fake_user,
+)
 
 DATE_S = "2023-01-01"
 DATE_V = datetime.date(2023, 1, 1)
@@ -46,12 +53,12 @@ def test_field():
             "LastModifiedByField('User', readonly=True, validate_type=True)",
         ),
         (
-            f.ListField("Items", dict, validate_type=False),
-            "ListField('Items', model=<class 'dict'>, readonly=False, validate_type=False)",
+            f.LookupField[dict]("Items", validate_type=False),
+            "LookupField('Items', readonly=True, validate_type=False)",
         ),
         (
             f.LinkField("Records", type("TestModel", (Model,), {"Meta": fake_meta()})),
-            "LinkField('Records', model=<class 'abc.TestModel'>, lazy=True)",
+            "LinkField('Records', model=<class 'test_orm_fields.TestModel'>, validate_type=True, readonly=False, lazy=False)",
         ),
     ],
 )
@@ -64,8 +71,8 @@ def test_repr(instance, expected):
     argvalues=[
         (f.Field, None),
         (f.CheckboxField, False),
-        (f.ListField, []),
         (f.LookupField, []),
+        (f.MultipleAttachmentsField, []),
         (f.MultipleCollaboratorsField, []),
         (f.MultipleSelectField, []),
     ],
@@ -76,7 +83,8 @@ def test_orm_missing_values(field_type, default_value):
     when there is no field value provided from Airtable.
     """
 
-    class T:
+    class T(Model):
+        Meta = fake_meta()
         the_field = field_type("Field Name")
 
     t = T()
@@ -97,6 +105,7 @@ TYPE_VALIDATION_TEST_VALUES = {
 @pytest.mark.parametrize(
     "test_case",
     [
+        (f.Field, tuple(TYPE_VALIDATION_TEST_VALUES)),
         (f.TextField, str),
         (f.IntegerField, int),
         (f.RichTextField, str),
@@ -108,9 +117,7 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.PhoneNumberField, str),
         (f.DurationField, datetime.timedelta),
         (f.RatingField, int),
-        (f.ListField, list),
         (f.UrlField, str),
-        (f.LookupField, list),
         (f.MultipleSelectField, list),
         (f.PercentField, (int, float)),
         (f.DateField, (datetime.date, datetime.datetime)),
@@ -118,6 +125,7 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.CollaboratorField, dict),
         (f.SelectField, str),
         (f.EmailField, str),
+        (f.MultipleAttachmentsField, list),
         (f.MultipleCollaboratorsField, list),
         (f.CurrencyField, (int, float)),
     ],
@@ -152,6 +160,49 @@ def test_type_validation(test_case):
                 )
 
 
+def test_type_validation_LinkField():
+    """
+    Test that a link field will reject models of the wrong class.
+    """
+
+    class A(Model):
+        Meta = fake_meta()
+
+    class B(Model):
+        Meta = fake_meta()
+
+    class Container(Model):
+        Meta = fake_meta()
+        linked = f.LinkField("Linked", model=A)
+
+    a1 = A.from_record(fake_record())
+    a2 = A.from_record(fake_record())
+    a3 = A.from_record(fake_record())
+    b1 = B.from_record(fake_record())
+    b2 = B.from_record(fake_record())
+    b3 = B.from_record(fake_record())
+
+    record = Container()
+    assert record.linked == []
+
+    record.linked.append(a1)
+    record.linked.append(a2)
+    assert record.to_record()["fields"]["Linked"] == [a1.id, a2.id]
+
+    record.linked = [a1, a2, a3]
+    assert record.to_record()["fields"]["Linked"] == [a1.id, a2.id, a3.id]
+
+    # We can validate the type of each object during assignment
+    with pytest.raises(TypeError):
+        record.linked = [b1, b2, b3]
+
+    # We can't (easily) stop an implementer from appending the wrong type
+    # to the end of the list, but we can catch it during to_record().
+    record.linked.append(b1)
+    with pytest.raises(TypeError):
+        record.to_record()
+
+
 @pytest.mark.parametrize(
     argnames="test_case",
     argvalues=[
@@ -160,6 +211,7 @@ def test_type_validation(test_case):
         (f.CountField, 1),
         (f.ExternalSyncSourceField, "Source"),
         (f.ButtonField, {"label": "Click me!"}),
+        (f.LookupField, ["any", "values"]),
         # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.CreatedByField, fake_user()),
         (f.CreatedTimeField, DATETIME_S, DATETIME_V),
@@ -206,8 +258,6 @@ def test_readonly_fields(test_case):
         (f.CurrencyField, 1.05),
         (f.CheckboxField, True),
         (f.CollaboratorField, {"id": "usrFakeUserId", "email": "x@y.com"}),
-        (f.ListField, ["any", "values"]),
-        (f.LookupField, ["any", "values"]),
         (f.MultipleAttachmentsField, [fake_attachment(), fake_attachment()]),
         (f.MultipleSelectField, ["any", "values"]),
         (f.MultipleCollaboratorsField, [fake_user(), fake_user()]),
@@ -257,6 +307,10 @@ def test_completeness():
     Ensure that we test conversion of all readonly and writable fields.
     """
     assert_all_fields_tested_by(test_writable_fields, test_readonly_fields)
+    assert_all_fields_tested_by(
+        test_type_validation,
+        exclude=f.READONLY_FIELDS | {f.LinkField},
+    )
 
 
 def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
@@ -273,11 +327,12 @@ def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
             pass
         elif isinstance(obj, dict):
             yield from extract_fields(list(obj.values()))
+        elif isinstance(obj, type):
+            if issubclass(obj, f.Field):
+                yield obj
         elif hasattr(obj, "__iter__"):
             for item in obj:
                 yield from extract_fields(item)
-        elif isinstance(obj, type) and issubclass(obj, f.Field):
-            yield obj
 
     tested_field_classes = {
         field_class
@@ -325,7 +380,7 @@ def test_list_field_with_none():
 
     class T(Model):
         Meta = fake_meta()
-        the_field = f.ListField("Fld")
+        the_field = f._ListField("Fld", str)
 
     assert T.from_record(fake_record()).the_field == []
     assert T.from_record(fake_record(Fld=None)).the_field == []
@@ -338,7 +393,7 @@ def test_list_field_with_invalid_type():
 
     class T(Model):
         Meta = fake_meta()
-        the_field = f.ListField("Field Name")
+        the_field = f._ListField("Field Name", str)
 
     obj = T.from_record(fake_record())
     with pytest.raises(TypeError):
@@ -352,14 +407,14 @@ def test_list_field_with_string():
     """
 
     class T:
-        items = f.ListField("Items")
+        items = f._ListField("Items", str)
 
     t = T()
     with pytest.raises(TypeError):
         t.items = "hello!"
 
 
-def test_linked_field_must_link_to_model():
+def test_link_field_must_link_to_model():
     """
     Tests that a LinkField cannot link to an arbitrary type.
     """
@@ -367,22 +422,150 @@ def test_linked_field_must_link_to_model():
         f.LinkField("Field Name", model=dict)
 
 
-def test_linked_field():
-    class T(Model):
+def test_link_field():
+    """
+    Test basic interactions and type checking for LinkField.
+    """
+
+    class Book(Model):
         Meta = fake_meta()
 
-    class X(Model):
+    class Author(Model):
         Meta = fake_meta()
-        t = f.LinkField("Field Name", model=T)
+        books = f.LinkField("Books", model=Book)
 
-    x = X(t=[])
-    x.t = [T(), T(), T()]
+    collection = [Book(), Book(), Book()]
+    author = Author()
+    author.books = collection
+    assert author.books == collection
 
     with pytest.raises(TypeError):
-        x.t = [1, 2, 3]
+        author.books = Book()
 
     with pytest.raises(TypeError):
-        x.t = -1
+        author.books = [1, 2, 3]
+
+    with pytest.raises(TypeError):
+        author.books = -1
+
+
+class Dummy(Model):
+    Meta = fake_meta()
+
+
+def test_link_field__linked_model():
+    """
+    Test the various ways of specifying a linked model for the LinkField.
+    """
+
+    class HasLinks(Model):
+        Meta = fake_meta()
+        # If the other model class is available, you can link to it directly
+        explicit_link = f.LinkField("explicit", Dummy)
+        # You can pass a fully qualified path.to.module.Class
+        indirect_link = f.LinkField("indirect", "test_orm_fields.Dummy")
+        # If there's no module, just a class, we assume it's in the same module
+        neighbor_link = f.LinkField("neighbor", "Dummy")
+        # Sentinel value LinkSelf means "link to the same model"
+        circular_link = f.LinkField("circular", f.LinkSelf)
+
+    assert HasLinks.explicit_link.linked_model is Dummy
+    assert HasLinks.indirect_link.linked_model is Dummy
+    assert HasLinks.neighbor_link.linked_model is Dummy
+    assert HasLinks.circular_link.linked_model is HasLinks
+
+    # While it is technically possible to add fields to a Model class after creation,
+    # those fields won't get __set_name__ called, which means they won't have a
+    # reference to their own Model class. This means...
+
+    # ...that LinkField(model=f.LinkSelf) won't work:
+    HasLinks.invalid_circular_link = f.LinkField("Invalid", f.LinkSelf)
+    with pytest.raises(RuntimeError):
+        HasLinks.invalid_circular_link.linked_model
+
+    # ...and LinkField(model="Class") without the module path won't work:
+    HasLinks.invalid_neighbor_link = f.LinkField("Invalid", "Dummy")
+    with pytest.raises(RuntimeError):
+        HasLinks.invalid_neighbor_link.linked_model
+
+
+class Person(Model):
+    Meta = fake_meta()
+    friends = f.LinkField("Friends", f.LinkSelf, lazy=False)
+
+
+def test_link_field__cycle(requests_mock):
+    """
+    Test that cyclical relationships like A -> B -> C -> A don't cause infinite recursion.
+    """
+
+    id_a = fake_id("rec", "A")
+    id_b = fake_id("rec", "B")
+    id_c = fake_id("rec", "C")
+    rec_a = {"id": id_a, "createdTime": DATETIME_S, "fields": {"Friends": [id_b]}}
+    rec_b = {"id": id_b, "createdTime": DATETIME_S, "fields": {"Friends": [id_c]}}
+    rec_c = {"id": id_c, "createdTime": DATETIME_S, "fields": {"Friends": [id_a]}}
+
+    requests_mock.get(Person.get_table().record_url(id_a), json=rec_a)
+    a = Person.from_id(id_a)
+
+    for record in (rec_a, rec_b, rec_c):
+        url_re = re.compile(
+            re.escape(Person.get_table().url + "?filterByFormula=")
+            + ".*"
+            + record["id"]
+        )
+        requests_mock.get(url_re, json={"records": [record]})
+
+    assert a.friends[0].id == id_b
+    assert a.friends[0].friends[0].id == id_c
+    assert a.friends[0].friends[0].friends[0].id == id_a
+
+
+def test_link_field__load_many(requests_mock):
+    """
+    Tests that a LinkField which returns several IDs will minimize the number
+    of API calls it makes in order to fetch data.
+    """
+
+    person_id = fake_id("rec", "A")
+    person_url = Person.get_table().record_url(person_id)
+    friend_ids = [fake_id("rec", c) for c in "123456789ABCDEF"]
+
+    person_json = {
+        "id": person_id,
+        "createdTime": DATETIME_S,
+        "fields": {"Friends": friend_ids},
+    }
+    friends_json = [
+        {"id": record_id, "createdTime": DATETIME_S, "fields": {"Name": record_id[-1]}}
+        for record_id in friend_ids
+    ]
+
+    # This retrieves a record; we test this behavior elsewhere, no need to check values
+    requests_mock.get(person_url, json=person_json)
+    person = Person.from_id(person_id)
+
+    # Here we test that calling `person.friends` retrieves records in bulk,
+    # instead of calling `.fetch()` on every record individually.
+    # The mocked URL specifically includes every record ID in our test set,
+    # to ensure the library isn't somehow dropping records from its query.
+    url_regex = ".*".join(
+        [re.escape(Person.get_table().url + "?filterByFormula="), *friend_ids]
+    )
+    mock_list = requests_mock.get(
+        re.compile(url_regex),
+        [
+            {"json": {"records": friends_json[:10], "offset": "offset1"}},
+            {"json": {"records": friends_json[10:]}},
+        ],
+    )
+    assert person.friends
+    assert mock_list.call_count == 2
+    assert len(person.friends) == len(friend_ids)
+    assert [friend.id for friend in person.friends] == friend_ids
+    # Make sure we didn't keep calling the API on every `person.friends`
+    assert mock_list.call_count == 2
 
 
 def test_lookup_field():
@@ -397,7 +580,7 @@ def test_lookup_field():
     assert rv_list[0] == "Item 1" and rv_list[1] == "Item 2" and rv_list[2] == "Item 3"
 
     class T:
-        events = f.LookupField("Event times", model=f.DatetimeField)
+        events = f.LookupField("Event times")
 
     lookup_from_airtable = [
         "2000-01-02T03:04:05.000Z",

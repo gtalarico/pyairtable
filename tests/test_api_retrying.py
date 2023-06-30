@@ -220,7 +220,6 @@ def test_retry_during_iterate(table_with_retry_strategy, mock_endpoint):
     Test that our default retry logic will be enough to get through several pages of data.
     Relies on ``mock_endpoint`` to return 429s whenever QPS goes over the limit.
     """
-    # TODO: remove `time.sleep` everywhere and make retry_strategy() the default.
     table = table_with_retry_strategy(retry_strategy())
 
     page_count = 10

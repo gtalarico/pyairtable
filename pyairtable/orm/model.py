@@ -1,75 +1,5 @@
-"""
-The :class:`Model` class allows you create an orm-style class for your
-Airtable tables.
-
->>> from pyairtable.orm import Model, fields
->>> class Contact(Model):
-...     first_name = fields.TextField("First Name")
-...     last_name = fields.TextField("Last Name")
-...     email = fields.EmailField("Email")
-...     is_registered = fields.CheckboxField("Registered")
-...     company = fields.LinkField("Company", Company, lazy=False)
-...
-...     class Meta:
-...         base_id = "appaPqizdsNHDvlEm"
-...         table_name = "Contact"
-...         api_key = "keyapikey"
-
-
-Once you have a class, you can create new objects to represent your
-Airtable records. Call :meth:`~pyairtable.orm.model.Model.save` to create a new record.
-
->>> contact = Contact(
-...     first_name="Mike",
-...     last_name="McDonalds",
-...     email="mike@mcd.com",
-...     is_registered=False
-... )
-...
->>> assert contact.id is None
->>> contact.exists()
-False
->>> assert contact.save()
->>> contact.exists()
-True
->>> contact.id
-'rec123asa23'
-
-
-You can read and modify attributes. If record already exists,
-:meth:`~pyairtable.orm.model.Model.save` will update the record:
-
->>> assert contact.is_registered is False
->>> contact.save()
->>> assert contact.is_registered is True
->>> contact.to_record()
-{
-    "id": "recS6qSLw0OCA6Xul",
-    "createdTime": "2021-07-14T06:42:37.000Z",
-    "fields": {
-        "First Name": "Mike",
-        "Last Name": "McDonalds",
-        "Email": "mike@mcd.com",
-        "Registered": True
-    }
-}
-
-You can use :meth:`~pyairtable.orm.model.Model.delete` to delete the record:
-
->>> contact.delete()
-True
-
-You can also use :meth:`~pyairtable.orm.model.Model.batch_save` and
-:meth:`~pyairtable.orm.model.Model.batch_delete` on several records at once:
-
->>> contacts = Contact.all()
->>> contacts.append(Contact(first_name="Alice", email="alice@example.com"))
->>> Contact.batch_save(contacts)
->>> Contact.batch_delete(contacts)
-"""
-import abc
 from functools import lru_cache
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from typing_extensions import Self as SelfType
 
@@ -83,10 +13,11 @@ from pyairtable.api.types import (
     RecordId,
     UpdateRecordDict,
 )
+from pyairtable.formulas import OR, STR_VALUE
 from pyairtable.orm.fields import AnyField, Field
 
 
-class Model(metaclass=abc.ABCMeta):
+class Model:
     """
     This class allows you create an orm-style class for your Airtable tables.
 
@@ -111,12 +42,16 @@ class Model(metaclass=abc.ABCMeta):
     id: str = ""
     created_time: str = ""
     _deleted: bool = False
-    _fields: Dict[FieldName, Any] = {}
-    _linked_cache: Dict[RecordId, SelfType] = {}
+    _fields: Dict[FieldName, Any]
 
     def __init_subclass__(cls, **kwargs: Any):
         cls._validate_class()
         super().__init_subclass__(**kwargs)
+
+    def __repr__(self) -> str:
+        if not self.id:
+            return f"<unsaved {self.__class__.__name__}>"
+        return f"<{self.__class__.__name__} id={self.id!r}>"
 
     @classmethod
     def _attribute_descriptor_map(cls) -> Dict[str, AnyField]:
@@ -170,10 +105,13 @@ class Model(metaclass=abc.ABCMeta):
         return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
 
     def __init__(self, **fields: Any):
-        # To Store Fields
+        if "id" in fields:
+            self.id = fields.pop("id")
+
+        # Field values in internal (not API) representation
         self._fields = {}
 
-        # Set descriptors
+        # Call __set__ on each field to set field values
         for key, value in fields.items():
             if key not in self._attribute_descriptor_map():
                 raise AttributeError(key)
@@ -296,7 +234,7 @@ class Model(metaclass=abc.ABCMeta):
         """
         map_ = self._field_name_descriptor_map()
         fields = {
-            field: map_[field].to_record_value(value)
+            field: None if value is None else map_[field].to_record_value(value)
             for field, value in self._fields.items()
             if not (map_[field].readonly and only_writable)
         }
@@ -304,7 +242,12 @@ class Model(metaclass=abc.ABCMeta):
 
     @classmethod
     def from_record(cls, record: RecordDict) -> SelfType:
-        """Create instance from record dictionary"""
+        """
+        Create instance from record dict
+
+        Args:
+            record: The dict returned from the Airtable API.
+        """
         name_field_map = cls._field_name_descriptor_map()
         # Convert Column Names into model field names
         field_values = {
@@ -315,44 +258,71 @@ class Model(metaclass=abc.ABCMeta):
             if field in name_field_map
         }
         # Since instance(**field_values) will perform validation and fail on
-        # any readonly fields, so instead we directly set instance._fields.
-        instance = cls()
+        # any readonly fields, instead we directly set instance._fields.
+        instance = cls(id=record["id"])
         instance._fields = field_values
         instance.created_time = record["createdTime"]
-        instance.id = record["id"]
         return instance
 
     @classmethod
-    def from_id(cls, record_id: str, fetch: bool = True) -> SelfType:
+    def from_id(
+        cls,
+        record_id: RecordId,
+        fetch: bool = True,
+    ) -> SelfType:
         """
         Create an instance from a `record_id`
 
         Args:
             record_id: |arg_record_id|
-            fetch: If `True`, record will be fetched and fields will be
-                updated. If `False`, a new instance is created with the provided `id`,
-                but field values are unset. Default is `True`.
+            fetch: If ``True``, record will be fetched and field values will be
+                updated. If ``False``, a new instance is created with the provided ID,
+                but field values are unset.
         """
+        instance = cls(id=record_id)
         if fetch:
-            table = cls.get_table()
-            record = table.get(record_id)
-            return cls.from_record(record)
-        else:
-            instance = cls()
-            instance.id = record_id
-            return instance
+            instance.fetch()
+        return instance
 
     def fetch(self) -> None:
         """Fetches field and resets instance field values from the Airtable record"""
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
 
-        updated = self.from_id(self.id, fetch=True)
-        self._fields = updated._fields
-        self.created_time = updated.created_time
+        record = self.get_table().get(self.id)
+        unused = self.from_record(record)
+        self._fields = unused._fields
+        self.created_time = unused.created_time
 
-    def __repr__(self) -> str:
-        return "<Model={} {}>".format(self.__class__.__name__, hex(id(self)))
+    @classmethod
+    def from_ids(
+        cls,
+        record_ids: Iterable[RecordId],
+        fetch: bool = True,
+    ) -> List[SelfType]:
+        """
+        Create a list of instances from record IDs. If any record IDs returned
+        are invalid this will raise a KeyError, but only *after* retrieving all
+        other valid records from the API.
+
+        Args:
+            record_ids: |arg_record_id|
+            fetch: If ``True``, records will be fetched and field values will be
+                updated. If ``False``, new instances are created with the provided IDs,
+                but field values are unset.
+        """
+        record_ids = list(record_ids)
+        if not fetch:
+            return [cls.from_id(record_id, fetch=False) for record_id in record_ids]
+        formula = OR(
+            *[f"RECORD_ID()={STR_VALUE(record_id)}" for record_id in record_ids]
+        )
+        records = [
+            cls.from_record(record) for record in cls.get_table().all(formula=formula)
+        ]
+        records_by_id = {record.id: record for record in records}
+        # Ensure we return records in the same order, and raise KeyError if any are missing
+        return [records_by_id[record_id] for record_id in record_ids]
 
     @classmethod
     def batch_save(cls, models: List[SelfType]) -> None:

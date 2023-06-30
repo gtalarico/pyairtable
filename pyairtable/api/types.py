@@ -196,6 +196,8 @@ FieldValue: TypeAlias = Union[
     List[CollaboratorEmailDict],
     FormulaErrorDict,
     FormulaNotANumberDict,
+    List[FormulaErrorDict],
+    List[FormulaNotANumberDict],
 ]
 
 
@@ -283,7 +285,8 @@ def _create_model_from_typeddict(cls: Type[T]) -> Type[pydantic.BaseModel]:
 
 def assert_typed_dict(cls: Type[T], obj: Any) -> T:
     """
-    Raises a TypeError if the given object is not a dict which conforms
+    Raises a TypeError if the given object is not a dict, or raises
+    pydantic.ValidationError if the given object does not conform
     to the interface declared by the given TypedDict.
 
     Args:
@@ -307,16 +310,19 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
 
         >>> assert_typed_dict(RecordDict, {"foo": "bar"})
         Traceback (most recent call last):
-        TypeError: dict with keys ['foo'] is not RecordDict
+        pydantic.error_wrappers.ValidationError: 3 validation errors for RecordDict
+        id
+          field required (type=value_error.missing)
+        createdTime
+          field required (type=value_error.missing)
+        fields
+          field required (type=value_error.missing)
     """
     if not isinstance(obj, dict):
         raise TypeError(f"expected dict, got {type(obj)}")
     # mypy complains cls isn't Hashable, but it is; see https://github.com/python/mypy/issues/2412
     model = _create_model_from_typeddict(cls)  # type: ignore
-    try:
-        model(**obj)
-    except pydantic.ValidationError:
-        raise TypeError(f"dict with keys {sorted(obj)} is not {cls.__name__}")
+    model(**obj)
     return cast(T, obj)
 
 

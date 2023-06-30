@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from operator import itemgetter
 from unittest import mock
@@ -9,51 +10,6 @@ from pyairtable import Table
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
 from pyairtable.testing import fake_meta, fake_record
-
-
-def test_model_missing_meta():
-    """
-    Test that we throw an exception if Meta is missing.
-    """
-    with pytest.raises(AttributeError):
-
-        class Address(Model):
-            street = f.TextField("Street")
-
-
-def test_model_missing_meta_attribute():
-    """
-    Test that we throw an exception if Meta is missing a required attribute.
-    """
-    with pytest.raises(ValueError):
-
-        class Address(Model):
-            street = f.TextField("Street")
-
-            class Meta:
-                base_id = "required"
-                table_name = "required"
-                # api_key = "required"
-
-
-def test_model_empty_meta():
-    """
-    Test that we throw an exception when a required Meta attribute is None.
-    """
-    with pytest.raises(ValueError):
-
-        class Address(Model):
-            Meta = fake_meta(api_key=None)
-            street = f.TextField("Street")
-
-
-def test_model_overlapping():
-    # Should raise error because conflicts with .exists()
-    with pytest.raises(ValueError):
-
-        class Address(Model):
-            Meta = fake_meta()
-            exists = f.TextField("Exists")  # clases with Model.exists()
 
 
 class Address(Model):
@@ -68,12 +24,12 @@ class Contact(Model):
     last_name = f.TextField("Last Name")
     email = f.EmailField("Email")
     is_registered = f.CheckboxField("Registered")
-    address = f.LinkField("Link", Address, lazy=True)
+    address = f.LinkField("Link", Address, lazy=False)
     birthday = f.DateField("Birthday")
     created_at = f.CreatedTimeField("Created At")
 
 
-def test_model():
+def test_model_basics():
     contact = Contact(
         first_name="Gui",
         last_name="Talarico",
@@ -109,6 +65,24 @@ def test_model():
     assert record["id"] == contact.id
     assert record["createdTime"] == contact.created_time
     assert record["fields"]["First Name"] == contact.first_name
+
+
+def test_unsupplied_fields():
+    """
+    Test that we can create a record without fields.
+    """
+    a = Address()
+    assert a.number is None
+    assert a.street is None
+
+
+def test_null_fields():
+    """
+    Test that we can create a record with null fields.
+    """
+    a = Address(number=None, street=None)
+    assert a.number is None
+    assert a.street is None
 
 
 def test_first():
@@ -198,6 +172,55 @@ def test_linked_record():
         contact.address[0].fetch()
 
     assert contact.address[0].street == "A"
+
+
+@pytest.mark.parametrize("access_linked_records", (True, False))
+def test_linked_record_can_be_saved(requests_mock, access_linked_records):
+    """
+    Test that we can call Model.save() on a model with a non-lazy linked field,
+    whether we've already accessed the field contents or not.
+
+    Accessing the linked field converts its internal representation from
+    record IDs into instances of the model. This could interfere with save(),
+    so this test ensures we don't regress the capability.
+    """
+    address_json = fake_record(Number="123", Street="Fake St")
+    address_id = address_json["id"]
+    address_url_re = re.escape(Address.get_table().url + "?filterByFormula=")
+    contact_json = fake_record(Email="alice@example.com", Link=[address_id])
+    contact_id = contact_json["id"]
+    contact_url = Contact.get_table().record_url(contact_id)
+    contact_url_re = re.escape(Contact.get_table().url + "?filterByFormula=")
+    requests_mock.get(re.compile(address_url_re), json={"records": [address_json]})
+    requests_mock.get(re.compile(contact_url_re), json={"records": [contact_json]})
+    requests_mock.get(contact_url, json=contact_json)
+    mock_save = requests_mock.patch(contact_url, json=contact_json)
+
+    contact = Contact.from_id(contact_id)
+
+    if access_linked_records:
+        assert contact.address[0].id == address_id
+
+    contact.save()
+    assert mock_save.last_request.json() == {
+        "fields": {
+            "Email": "alice@example.com",
+            "Link": [address_id],
+        },
+        "typecast": True,
+    }
+
+
+def test_save__raise_on_unsaved_link(requests_mock):
+    """
+    Test that Model.save() raises an exception if called before saving all linked records.
+    """
+    contact = Contact(address=[Address()])
+
+    with pytest.raises(ValueError) as ctx:
+        contact.save()
+
+    assert "Contact.address contains an unsaved record" in ctx.exconly()
 
 
 @pytest.mark.parametrize(
@@ -296,6 +319,24 @@ def test_batch_save__invalid_class(mock_update, mock_create):
     with pytest.raises(TypeError):
         Address.batch_save([Contact()])
 
+    assert mock_update.call_count == 0
+    assert mock_create.call_count == 0
+
+
+@mock.patch("pyairtable.Table.batch_create")
+@mock.patch("pyairtable.Table.batch_update")
+def test_batch_save__raise_on_unsaved_link(mock_update, mock_create):
+    """
+    Test that Model.batch_save() raises ValueError if called before
+    all linked records have been saved.
+    """
+    contacts = [Contact() for _ in range(20)]
+    contacts[14].address = [Address()]
+
+    with pytest.raises(ValueError) as ctx:
+        Contact.batch_save(contacts)
+
+    assert "Contact.address contains an unsaved record" in ctx.exconly()
     assert mock_update.call_count == 0
     assert mock_create.call_count == 0
 

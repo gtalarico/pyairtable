@@ -19,7 +19,24 @@ def retry_strategy(
 ) -> Retry:
     """
     Creates a `Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_
-    instance with adjustable default values.
+    instance with adjustable default values. :class:`~pyairtable.Api` accepts this via the
+    ``retry_strategy=`` parameter.
+
+    For example, to increase the total number of retries:
+
+        >>> from pyairtable import Api, retry_strategy
+        >>> api = Api('auth_token', retry_strategy=retry_strategy(total=10))
+
+    Or to retry certain types of server errors in addition to rate limiting errors:
+
+        >>> from pyairtable import Api, retry_strategy
+        >>> retry = retry_strategy(status_forcelist=(429, 500, 502, 503, 504))
+        >>> api = Api('auth_token', retry_strategy=retry)
+
+    You can also disable retries entirely:
+
+        >>> from pyairtable import Api
+        >>> api = Api('auth_token', retry_strategy=None)
 
     .. versionadded:: 1.4.0
 

@@ -23,9 +23,11 @@ pyAirtable
    :hidden:
 
    getting-started
-   api
-   experimental
+   tables
+   orm
+   metadata
    migrations
+   api
 
 
 .. toctree::
@@ -34,6 +36,6 @@ pyAirtable
 
    about
    changelog
-   Airtable Api Docs <https://airtable.com/api>
+   Airtable API Docs <https://airtable.com/api>
    GitHub <https://github.com/gtalarico/pyairtable>
    PyPI <https://pypi.org/project/pyairtable/>

@@ -7,6 +7,7 @@ from typing_extensions import assert_type
 
 import pyairtable
 import pyairtable.api.types as T
+from pyairtable import orm
 
 if TYPE_CHECKING:
     # This section does not actually get executed; it is only parsed by mypy.
@@ -51,3 +52,24 @@ if TYPE_CHECKING:
     table.update(record_id, {"Field Name": None})
     table.update(record_id, {"Field Name": {"id": "usrXXX"}})
     table.update(record_id, {"Field Name": {"email": "alice@example.com"}})
+
+    # Test type annotations for the ORM
+    class Actor(orm.Model):
+        name = orm.fields.TextField("Name")
+        logins = orm.fields.MultipleCollaboratorsField("Logins")
+
+    class Movie(orm.Model):
+        name = orm.fields.TextField("Name")
+        rating = orm.fields.RatingField("Star Rating")
+        prequels = orm.fields.LinkField["Movie"]("Prequels", "path.to.Movie")
+        actors = orm.fields.LinkField("Actors", Actor)
+
+    assert_type(Actor().name, Optional[str])
+    assert_type(Actor().logins, List[T.CollaboratorDict])
+
+    movie = Movie()
+    assert_type(movie.name, Optional[str])
+    assert_type(movie.rating, Optional[int])
+    assert_type(movie.actors, List[Actor])
+    assert_type(movie.prequels, List[Movie])
+    assert_type(movie.actors[0].name, Optional[str])

@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 
 from pyairtable.api import types as T
 from pyairtable.testing import fake_attachment, fake_id, fake_record, fake_user
@@ -29,7 +30,7 @@ def test_assert_typed_dict(cls, value):
     """
     T.assert_typed_dict(cls, value)
     T.assert_typed_dicts(cls, [value])
-    # Test that a mix of valid and invalid values still raises TypeError
+    # Test that a mix of valid and invalid values still raises an exception
     with pytest.raises(TypeError):
         T.assert_typed_dicts(cls, [value, -1])
 
@@ -46,21 +47,26 @@ def test_assert_typed_dict(cls, value):
         (T.RecordDeletedDict, {}),
         (T.RecordDict, {}),
         (T.UpdateRecordDict, {}),
-        # test failure for other data types
-        (T.RecordDict, -1),
     ],
 )
 def test_assert_not_typed_dict(cls, value):
     """
     Test that we can assert that a dict does *not* conform to a TypedDict.
     """
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         T.assert_typed_dict(cls, value)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         T.assert_typed_dicts(cls, [value])
 
 
-def test_assert_typed_dicts__not_list():
+def test_assert_typed_dict__wrong_type():
+    # assert_typed_dict() with a non-dict
+    with pytest.raises(TypeError):
+        T.assert_typed_dict(T.RecordDict, -1)
+    # assert_typed_dicts() with a list of non-dict objects
+    with pytest.raises(TypeError):
+        T.assert_typed_dicts(T.RecordDict, [-1])
+    # assert_typed_dicts() with a non-list
     with pytest.raises(TypeError):
         T.assert_typed_dicts(T.RecordDict, object())
 

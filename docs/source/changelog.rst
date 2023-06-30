@@ -36,13 +36,13 @@ See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
 1.4.0 (2022-12-14)
 -------------------------
 
-* Added :ref:`Retrying` ()
+* Added :func:`pyairtable.retry_strategy`.
 * Misc fix in sleep for batch requests `PR #180 <https://github.com/gtalarico/pyairtable/pull/180>`_.
 
 1.3.0 (2022-08-23)
 -------------------------
 
-* Added new ``LOWER`` formula - `PR #171 <https://github.com/gtalarico/pyairtable/pull/171>`_. See updated :ref:`Formulas`.
+* Added new ``LOWER`` formula - `PR #171 <https://github.com/gtalarico/pyairtable/pull/171>`_. See :mod:`pyairtable.formulas`.
 * Added ``match(..., match_any=True)`` to :meth:`~pyairtable.formulas.match`
 * Added ``return_fields_by_field_id`` in :meth:`~pyairtable.Api.get`
 
@@ -51,7 +51,7 @@ See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
 
 * Fixed missing rate limit in :meth:`~pyairtable.Api.batch_update` - `PR #162 <https://github.com/gtalarico/pyairtable/pull/162>`_.
 * Added support for new parameter `return_fields_by_field_id` - `PR #161 <https://github.com/gtalarico/pyairtable/pull/161>`_. See updated :ref:`Parameters`.
-* Added new ``OR`` formula - `PR #148 <https://github.com/gtalarico/pyairtable/pull/148>`_. See updated :ref:`Formulas`.
+* Added new ``OR`` formula - `PR #148 <https://github.com/gtalarico/pyairtable/pull/148>`_. See :mod:`pyairtable.formulas`.
 
 1.1.0 (2022-02-21)
 -------------------------
