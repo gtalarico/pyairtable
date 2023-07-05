@@ -386,11 +386,11 @@ class _DictField(Generic[T], _BasicField[T]):
     valid_types = dict
 
 
-class _ListField(Generic[T], Field[List[RecordId], List[T]]):
+class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM]]):
     """
     Generic type for a field that stores a list of values. Can be used
     to refer to a lookup field that might return more than one value.
-    Not for use via API; should be subclassed by concrete field types (below).
+    Not for direct use; should be subclassed by concrete field types (below).
     """
 
     valid_types = list
@@ -403,18 +403,18 @@ class _ListField(Generic[T], Field[List[RecordId], List[T]]):
         ...
 
     @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> List[T]:
+    def __get__(self, instance: "Model", owner: Type[Any]) -> List[T_ORM]:
         ...
 
     def __get__(
         self, instance: Optional["Model"], owner: Type[Any]
-    ) -> Union[SelfType, List[T]]:
+    ) -> Union[SelfType, List[T_ORM]]:
         if not instance:
             return self
         return self._get_list_value(instance)
 
-    def _get_list_value(self, instance: "Model") -> List[T]:
-        value = cast(List[T], instance._fields.get(self.field_name))
+    def _get_list_value(self, instance: "Model") -> List[T_ORM]:
+        value = cast(List[T_ORM], instance._fields.get(self.field_name))
         # If Airtable returns no value, substitute an empty list.
         if value is None:
             value = []
@@ -425,13 +425,13 @@ class _ListField(Generic[T], Field[List[RecordId], List[T]]):
                 instance._fields[self.field_name] = value
         return value
 
-    def to_internal_value(self, value: Optional[List[T]]) -> List[T]:
+    def to_internal_value(self, value: Optional[List[T_ORM]]) -> List[T_ORM]:
         if value is None:
             value = []
         return value
 
 
-class _ValidatingListField(Generic[T], _ListField[T]):
+class _ValidatingListField(Generic[T], _ListField[T, T]):
     contains_type: Type[T]
 
     def valid_or_raise(self, value: Any) -> None:
@@ -449,7 +449,7 @@ class _LinkFieldOptions(Enum):
 LinkSelf = _LinkFieldOptions.LinkSelf
 
 
-class LinkField(_ListField[T_Linked]):
+class LinkField(_ListField[RecordId, T_Linked]):
     """
     Represents a MultipleRecordLinks field. Returns and accepts lists of Models.
 
@@ -600,6 +600,15 @@ class LinkField(_ListField[T_Linked]):
 # get some extra functionality for free in the future.
 
 
+class AttachmentsField(_ValidatingListField[AttachmentDict]):
+    """
+    Accepts a list of dicts in the format detailed in
+    `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_.
+    """
+
+    contains_type = cast(Type[AttachmentDict], dict)
+
+
 class AutoNumberField(IntegerField):
     """
     Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
@@ -712,7 +721,7 @@ class LastModifiedTimeField(DatetimeField):
     readonly = True
 
 
-class LookupField(Generic[T], _ListField[T]):
+class LookupField(Generic[T], _ListField[T, T]):
     """
     Generic field class for a lookup, which returns a list of values.
 
@@ -732,15 +741,6 @@ class LookupField(Generic[T], _ListField[T]):
     """
 
     readonly = True
-
-
-class MultipleAttachmentsField(_ValidatingListField[AttachmentDict]):
-    """
-    Accepts a list of dicts in the format detailed in
-    `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_.
-    """
-
-    contains_type = cast(Type[AttachmentDict], dict)
 
 
 class MultipleCollaboratorsField(_ValidatingListField[CollaboratorDict]):
@@ -850,7 +850,7 @@ FIELD_TYPES_TO_CLASSES = {
     "lastModifiedTime": LastModifiedTimeField,
     "lookup": LookupField,
     "multilineText": TextField,
-    "multipleAttachments": MultipleAttachmentsField,
+    "multipleAttachments": AttachmentsField,
     "multipleCollaborators": MultipleCollaboratorsField,
     "multipleRecordLinks": LinkField,
     "multipleSelects": MultipleSelectField,

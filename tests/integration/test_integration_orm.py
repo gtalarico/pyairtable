@@ -41,7 +41,7 @@ class _Everything(Model):
     assignee = f.CollaboratorField("Assignee")
     watchers = f.MultipleCollaboratorsField("Watchers")
     status = f.SelectField("Status")
-    attachments = f.MultipleAttachmentsField("Attachments")
+    attachments = f.AttachmentsField("Attachments")
     done = f.CheckboxField("Done")
     tags = f.MultipleSelectField("Tags")
     date = f.DateField("Date")

@@ -107,6 +107,8 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
 
    * - ORM field class
      - Airtable field type(s)
+   * - :class:`~pyairtable.orm.fields.AttachmentsField`
+     - `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__
    * - :class:`~pyairtable.orm.fields.AutoNumberField` 🔒
      - `Auto number <https://airtable.com/developers/web/api/field-model#autonumber>`__
    * - :class:`~pyairtable.orm.fields.BarcodeField`
@@ -147,8 +149,6 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__
    * - :class:`~pyairtable.orm.fields.LookupField` 🔒
      - `Lookup <https://airtable.com/developers/web/api/field-model#lookup>`__
-   * - :class:`~pyairtable.orm.fields.MultipleAttachmentsField`
-     - `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__
    * - :class:`~pyairtable.orm.fields.MultipleCollaboratorsField`
      - `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__
    * - :class:`~pyairtable.orm.fields.MultipleSelectField`

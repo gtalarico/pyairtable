@@ -1,7 +1,8 @@
 """
 Tests that pyairtable.api functions/methods return appropriately typed responses.
 """
-from typing import TYPE_CHECKING, Iterator, List, Optional
+import datetime
+from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
 from typing_extensions import assert_type
 
@@ -58,14 +59,14 @@ if TYPE_CHECKING:
         name = orm.fields.TextField("Name")
         logins = orm.fields.MultipleCollaboratorsField("Logins")
 
+    assert_type(Actor().name, Optional[str])
+    assert_type(Actor().logins, List[T.CollaboratorDict])
+
     class Movie(orm.Model):
         name = orm.fields.TextField("Name")
         rating = orm.fields.RatingField("Star Rating")
         prequels = orm.fields.LinkField["Movie"]("Prequels", "path.to.Movie")
         actors = orm.fields.LinkField("Actors", Actor)
-
-    assert_type(Actor().name, Optional[str])
-    assert_type(Actor().logins, List[T.CollaboratorDict])
 
     movie = Movie()
     assert_type(movie.name, Optional[str])
@@ -73,3 +74,61 @@ if TYPE_CHECKING:
     assert_type(movie.actors, List[Actor])
     assert_type(movie.prequels, List[Movie])
     assert_type(movie.actors[0].name, Optional[str])
+
+    class EveryField(orm.Model):
+        attachments = orm.fields.AttachmentsField("Attachments")
+        autonumber = orm.fields.AutoNumberField("Autonumber")
+        barcode = orm.fields.BarcodeField("Barcode")
+        button = orm.fields.ButtonField("Open URL")
+        checkbox = orm.fields.CheckboxField("Done")
+        collaborator = orm.fields.CollaboratorField("Assignee")
+        count = orm.fields.CountField("Count")
+        created_by = orm.fields.CreatedByField("Created By")
+        created = orm.fields.CreatedTimeField("Created")
+        currency = orm.fields.CurrencyField("Dollars")
+        date = orm.fields.DateField("Date")
+        datetime = orm.fields.DatetimeField("DateTime")
+        duration = orm.fields.DurationField("Duration (h:mm)")
+        email = orm.fields.EmailField("Email")
+        float = orm.fields.FloatField("Decimal 1")
+        integer = orm.fields.IntegerField("Integer")
+        last_modified_by = orm.fields.LastModifiedByField("Last Modified By")
+        last_modified = orm.fields.LastModifiedTimeField("Last Modified")
+        multi_user = orm.fields.MultipleCollaboratorsField("Watchers")
+        multi_select = orm.fields.MultipleSelectField("Tags")
+        number = orm.fields.NumberField("Number")
+        percent = orm.fields.PercentField("Percent")
+        phone = orm.fields.PhoneNumberField("Phone")
+        rating = orm.fields.RatingField("Stars")
+        rich_text = orm.fields.RichTextField("Notes")
+        select = orm.fields.SelectField("Status")
+        url = orm.fields.UrlField("URL")
+
+    record = EveryField()
+    assert_type(record.attachments, List[T.AttachmentDict])
+    assert_type(record.autonumber, Optional[int])
+    assert_type(record.barcode, Optional[T.BarcodeDict])
+    assert_type(record.button, Optional[T.ButtonDict])
+    assert_type(record.checkbox, Optional[bool])
+    assert_type(record.collaborator, Optional[T.CollaboratorDict])
+    assert_type(record.count, Optional[int])
+    assert_type(record.created_by, Optional[T.CollaboratorDict])
+    assert_type(record.created, Optional[datetime.datetime])
+    assert_type(record.currency, Optional[Union[int, float]])
+    assert_type(record.date, Optional[datetime.date])
+    assert_type(record.datetime, Optional[datetime.datetime])
+    assert_type(record.duration, Optional[datetime.timedelta])
+    assert_type(record.email, Optional[str])
+    assert_type(record.float, Optional[float])
+    assert_type(record.integer, Optional[int])
+    assert_type(record.last_modified_by, Optional[T.CollaboratorDict])
+    assert_type(record.last_modified, Optional[datetime.datetime])
+    assert_type(record.multi_user, List[T.CollaboratorDict])
+    assert_type(record.multi_select, List[str])
+    assert_type(record.number, Optional[Union[int, float]])
+    assert_type(record.percent, Optional[Union[int, float]])
+    assert_type(record.phone, Optional[str])
+    assert_type(record.rating, Optional[int])
+    assert_type(record.rich_text, Optional[str])
+    assert_type(record.select, Optional[str])
+    assert_type(record.url, Optional[str])
