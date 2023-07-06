@@ -159,10 +159,14 @@ class CollaboratorEmailDict(TypedDict):
     email: str
 
 
-#: A mapping of field names to values. Does not enforce any type constraints
-#: because we want to be forward-compatible with any future changes or new
-#: field types that Airtable might introduce.
-Fields: TypeAlias = Dict[FieldName, Any]
+#: Represents the types of values that we might receive from the API.
+#: At present, is an alias for ``Any`` because we don't want to lose
+#: forward compatibility with any changes Airtable makes in the future.
+FieldValue: TypeAlias = Any
+
+
+#: A mapping of field names to values that we might receive from the API.
+Fields: TypeAlias = Dict[FieldName, FieldValue]
 
 
 #: Represents the types of values that can be written to the Airtable API.
@@ -175,6 +179,7 @@ WritableFieldValue: TypeAlias = Union[
     CollaboratorDict,
     CollaboratorEmailDict,
     BarcodeDict,
+    List[str],
     List[AttachmentDict],
     List[CreateAttachmentDict],
     List[CollaboratorDict],

@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     table.update(record_id, {"Field Name": None})
     table.update(record_id, {"Field Name": {"id": "usrXXX"}})
     table.update(record_id, {"Field Name": {"email": "alice@example.com"}})
+    table.update(record_id, {"Field Name": ["rec1", "rec2", "rec3"]})
 
     # Test type annotations for the ORM
     class Actor(orm.Model):
