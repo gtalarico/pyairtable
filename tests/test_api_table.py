@@ -5,6 +5,7 @@ from requests import Request
 from requests_mock import Mocker
 
 from pyairtable import Api, Base, Table
+from pyairtable.testing import fake_record
 from pyairtable.utils import chunked
 
 
@@ -244,40 +245,51 @@ def test_update(table: Table, mock_response_single, replace, http_method):
 
 
 @pytest.mark.parametrize("replace,http_method", [(False, "PATCH"), (True, "PUT")])
-def test_batch_update(table: Table, mock_response_batch, replace, http_method):
-    records = [
-        {"id": x["id"], "fields": x["fields"]} for x in mock_response_batch["records"]
-    ]
+def test_batch_update(table: Table, replace, http_method):
+    records = [fake_record(fieldvalue=index) for index in range(50)]
     with Mocker() as mock:
-        for chunk in _chunk(mock_response_batch["records"], 10):
-            mock.register_uri(
-                http_method,
-                table.url,
-                status_code=201,
-                json={"records": chunk},
-            )
+        mock.register_uri(
+            http_method,
+            table.url,
+            response_list=[
+                {"json": {"records": chunk}} for chunk in table.api.chunked(records)
+            ],
+        )
         resp = table.batch_update(records, replace=replace)
 
-    assert resp == mock_response_batch["records"]
+    assert resp == records
 
 
 @pytest.mark.parametrize("replace,http_method", [(False, "PATCH"), (True, "PUT")])
-def test_batch_upsert(table: Table, mock_response_batch, replace, http_method):
-    records = [
-        {"id": x["id"], "fields": x["fields"]} for x in mock_response_batch["records"]
+def test_batch_upsert(table: Table, replace, http_method, monkeypatch):
+    field_name = "Name"
+    exists1 = fake_record({field_name: "Exists 1"})
+    exists2 = fake_record({field_name: "Exists 2"})
+    created = fake_record({field_name: "Does not exist"})
+    payload = [
+        {"id": exists1["id"], "fields": {field_name: "Exists 1"}},
+        {"fields": {field_name: "Exists 2"}},
+        {"fields": {field_name: "Does not exist"}},
     ]
-    fields = ["Name"]
+    responses = [
+        {"createdRecords": [], "updatedRecords": [exists1["id"]], "records": [exists1]},
+        {"createdRecords": [], "updatedRecords": [exists2["id"]], "records": [exists2]},
+        {"createdRecords": [created["id"]], "updatedRecords": [], "records": [created]},
+    ]
     with Mocker() as mock:
-        for chunk in _chunk(mock_response_batch["records"], 10):
-            mock.register_uri(
-                http_method,
-                table.url,
-                status_code=201,
-                json={"records": chunk},
-            )
-        resp = table.batch_upsert(records, key_fields=fields, replace=replace)
+        mock.register_uri(
+            http_method,
+            table.url,
+            response_list=[{"json": response} for response in responses],
+        )
+        monkeypatch.setattr(table.api, "MAX_RECORDS_PER_REQUEST", 1)
+        resp = table.batch_upsert(payload, key_fields=[field_name], replace=replace)
 
-    assert resp == mock_response_batch["records"]
+    assert resp == {
+        "createdRecords": [created["id"]],
+        "updatedRecords": [exists1["id"], exists2["id"]],
+        "records": [exists1, exists2, created],
+    }
 
 
 def test_batch_upsert__missing_field(table: Table, requests_mock):

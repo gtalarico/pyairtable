@@ -12,6 +12,7 @@ from pyairtable.api.types import (
     RecordDict,
     RecordId,
     UpdateRecordDict,
+    UpsertResultDict,
     assert_typed_dict,
     assert_typed_dicts,
 )
@@ -373,7 +374,7 @@ class Table:
         replace: bool = False,
         typecast: bool = False,
         return_fields_by_field_id: bool = False,
-    ) -> List[RecordDict]:
+    ) -> UpsertResultDict:
         """
         Updates or creates records in batches, either using ``id`` (if given) or using a set of
         fields (``key_fields``) to look for matches. For more information on how this operation
@@ -390,7 +391,7 @@ class Table:
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
 
         Returns:
-            The list of updated records.
+            Lists of created/updated record IDs, along with the list of all records affected.
         """
         # The API will reject a request where a record is missing any of fieldsToMergeOn,
         # but we might not reach that error until we've done several batch operations.
@@ -403,8 +404,13 @@ class Table:
             if missing:
                 raise ValueError(f"missing {missing!r} in {record['fields'].keys()!r}")
 
-        updated_records = []
         method = "put" if replace else "patch"
+        result: UpsertResultDict = {
+            "updatedRecords": [],
+            "createdRecords": [],
+            "records": [],
+        }
+
         for chunk in self.api.chunked(records):
             formatted_records = [
                 {k: v for (k, v) in record.items() if k in ("id", "fields")}
@@ -420,9 +426,13 @@ class Table:
                     "performUpsert": {"fieldsToMergeOn": key_fields},
                 },
             )
-            updated_records += assert_typed_dicts(RecordDict, response["records"])
+            result["updatedRecords"].extend(response["updatedRecords"])
+            result["createdRecords"].extend(response["createdRecords"])
+            result["records"].extend(
+                assert_typed_dicts(RecordDict, response["records"])
+            )
 
-        return updated_records
+        return result
 
     def delete(self, record_id: RecordId) -> RecordDeletedDict:
         """

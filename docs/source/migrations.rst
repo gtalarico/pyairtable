@@ -72,6 +72,13 @@ Changes to types
 * All functions and methods in this library have full type annotations that will pass ``mypy --strict``.
   See the :ref:`types <Module: pyairtable.api.types>` module for more information on the types this library accepts and returns.
 
+batch_upsert has a different return type
+--------------------------------------------
+
+* :meth:`~pyairtable.Table.batch_upsert` now returns the full payload from the Airtable API,
+  as opposed to just the list of records (with no indication of which were created or updated).
+  See :class:`~pyairtable.api.types.UpsertResultDict` for more details.
+
 
 Migrating from 0.x to 1.0
 ============================
