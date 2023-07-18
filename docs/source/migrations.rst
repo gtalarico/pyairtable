@@ -7,7 +7,7 @@ Migrating from 1.x to 2.0
 
 With the 2.0 release, we've made some breaking changes to the pyAirtable API. These are summarized below.
 You can read more about the rationale behind these changes in `#257 <https://github.com/gtalarico/pyairtable/issues/257>`_,
-or you can read more about new library features in the :ref:`Changelog`.
+and you see a list of changes and new features in the :ref:`Changelog`.
 
 ApiAbstract removed
 -----------------------
@@ -87,7 +87,7 @@ New Features in 1.0
 -------------------
 
 * Type Annotations
-* Simpler Api
+* Simpler API
 * Formulas
 * ORM Models
 
@@ -96,7 +96,7 @@ API Changes in 1.0
 
 We used this new major release to make a few breaking changes:
 
-* Introduced a simpler api that's more closely aligned with Airtable Api's patterns.
+* Introduced a simpler API that's more closely aligned with Airtable API's patterns.
 * Created more a flexible API (:class:`~pyairtable.Api`, :class:`~pyairtable.Base`, :class:`~pyairtable.Table`)
 
 

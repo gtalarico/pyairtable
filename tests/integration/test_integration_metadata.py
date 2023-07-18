@@ -11,13 +11,21 @@ def test_get_api_bases(base: Base, base_name: str):
     assert base_name in [b["name"] for b in rv["bases"]]
 
 
-@pytest.mark.skip("metadata api returning 404 for base schema")
 def test_get_base_schema(base: Base):
     rv = get_base_schema(base)
-    assert len(rv["tables"]) == 3
+    assert sorted(table["name"] for table in rv["tables"]) == [
+        "Address",
+        "Contact",
+        "EVERYTHING",
+        "TEST_TABLE",
+    ]
 
 
-@pytest.mark.skip("metadata api returning 404 for base schema")
 def test_get_table_schema(table: Table):
     rv = get_table_schema(table)
     assert rv and rv["name"] == table.name
+
+
+def test_get_table_schema__invalid_table(table, monkeypatch):
+    monkeypatch.setattr(table, "name", "DoesNotExist")
+    assert get_table_schema(table) is None

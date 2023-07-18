@@ -4,7 +4,7 @@ Working with Tables
 .. include:: substitutions.rst
 
 
-.. warning::
+.. note::
     Airtable imposes a `rate limit <https://airtable.com/developers/web/api/rate-limits>`__
     of 5 QPS per base. If you exceed that limit, their API will return 429 errors for a moment.
     By default, pyAirtable will retry 429 errors up to five times, but retrieving many pages
@@ -168,7 +168,7 @@ Creates a single record from a dictionary representing the table's fields.
 
 :meth:`~pyairtable.Table.batch_create`
 
-Create multiple records from a list of :class:`~pyairtable.api.types.Fields` dicts.
+Create multiple records from a list of :class:`~pyairtable.api.types.WritableFields` dicts.
 
 .. code-block:: python
 

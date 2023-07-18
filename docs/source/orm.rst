@@ -9,9 +9,10 @@ Defining Models
 
 The :class:`~pyairtable.orm.Model` class allows you create ORM-style classes for your Airtable tables.
 
-.. code-block: python::
+.. code-block:: python
 
     from pyairtable.orm import Model, fields as F
+
     class Contact(Model):
         first_name = F.TextField("First Name")
         last_name = F.TextField("Last Name")
@@ -106,6 +107,8 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
 
    * - ORM field class
      - Airtable field type(s)
+   * - :class:`~pyairtable.orm.fields.AttachmentsField`
+     - `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__
    * - :class:`~pyairtable.orm.fields.AutoNumberField` 🔒
      - `Auto number <https://airtable.com/developers/web/api/field-model#autonumber>`__
    * - :class:`~pyairtable.orm.fields.BarcodeField`
@@ -146,8 +149,6 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__
    * - :class:`~pyairtable.orm.fields.LookupField` 🔒
      - `Lookup <https://airtable.com/developers/web/api/field-model#lookup>`__
-   * - :class:`~pyairtable.orm.fields.MultipleAttachmentsField`
-     - `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__
    * - :class:`~pyairtable.orm.fields.MultipleCollaboratorsField`
      - `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__
    * - :class:`~pyairtable.orm.fields.MultipleSelectField`
@@ -231,7 +232,7 @@ traverse between related records.
 
 .. code-block:: python
 
-    from pyairtable.orm import Model, fields as F as F
+    from pyairtable.orm import Model, fields as F
 
     class Company(Model):
         class Meta: ...
@@ -282,7 +283,7 @@ address this:
 
 .. code-block:: python
 
-    from pyairtable.orm import Model, fields as F as F
+    from pyairtable.orm import Model, fields as F
 
     class Company(Model):
         class Meta: ...
