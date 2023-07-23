@@ -247,6 +247,27 @@ class RecordDeletedDict(TypedDict):
     deleted: bool
 
 
+class UpsertResultDict(TypedDict):
+    """
+    A ``dict`` representing the payload returned by the Airtable API after an upsert.
+    For more details on this data structure, see the
+    `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records>`__
+    API documentation.
+
+    Usage:
+        >>> table.batch_upsert(records, key_fields=["Name"])
+        {
+            'createdRecords': [...],
+            'updatedRecords': [...],
+            'records': [...]
+        }
+    """
+
+    createdRecords: List[RecordId]
+    updatedRecords: List[RecordId]
+    records: List[RecordDict]
+
+
 class UserAndScopesDict(TypedDict, total=False):
     """
     A ``dict`` representing the `Get user ID & scopes <https://airtable.com/developers/web/api/get-user-id-scopes>`_ endpoint.

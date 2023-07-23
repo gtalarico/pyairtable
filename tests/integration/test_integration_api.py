@@ -176,7 +176,7 @@ def test_batch_upsert(table: Table, cols):
     )
 
     # Test batch_upsert where replace=False
-    results = table.batch_upsert(
+    result = table.batch_upsert(
         [
             {"id": one["id"], "fields": {cols.NUM: 3}},  # use id
             {"fields": {cols.TEXT: "Two", cols.NUM: 4}},  # use key_fields
@@ -184,15 +184,17 @@ def test_batch_upsert(table: Table, cols):
         ],
         key_fields=[cols.TEXT],
     )
-    assert len(results) == 3
-    assert results[0]["id"] == one["id"]
-    assert results[0]["fields"] == {cols.TEXT: "One", cols.NUM: 3}
-    assert results[1]["id"] == two["id"]
-    assert results[1]["fields"] == {cols.TEXT: "Two", cols.NUM: 4}
-    assert results[2]["fields"] == {cols.TEXT: "Three", cols.NUM: 5}
+    assert set(result["updatedRecords"]) == {one["id"], two["id"]}
+    assert len(result["createdRecords"]) == 1
+    assert len(result["records"]) == 3
+    assert result["records"][0]["id"] == one["id"]
+    assert result["records"][0]["fields"] == {cols.TEXT: "One", cols.NUM: 3}
+    assert result["records"][1]["id"] == two["id"]
+    assert result["records"][1]["fields"] == {cols.TEXT: "Two", cols.NUM: 4}
+    assert result["records"][2]["fields"] == {cols.TEXT: "Three", cols.NUM: 5}
 
     # Test batch_upsert where replace=True
-    results = table.batch_upsert(
+    result = table.batch_upsert(
         [
             {"id": one["id"], "fields": {cols.NUM: 3}},  # removes cols.TEXT
             {"fields": {cols.TEXT: "Two"}},  # removes cols.NUM
@@ -202,21 +204,21 @@ def test_batch_upsert(table: Table, cols):
         key_fields=[cols.TEXT],
         replace=True,
     )
-    assert len(results) == 4
-    assert results[0]["id"] == one["id"]
-    assert results[0]["fields"] == {cols.NUM: 3}
-    assert results[1]["id"] == two["id"]
-    assert results[1]["fields"] == {cols.TEXT: "Two"}
-    assert results[2]["fields"] == {cols.TEXT: "Three", cols.NUM: 6}
-    assert results[3]["fields"] == {cols.NUM: 7}
+    assert len(result["records"]) == 4
+    assert result["records"][0]["id"] == one["id"]
+    assert result["records"][0]["fields"] == {cols.NUM: 3}
+    assert result["records"][1]["id"] == two["id"]
+    assert result["records"][1]["fields"] == {cols.TEXT: "Two"}
+    assert result["records"][2]["fields"] == {cols.TEXT: "Three", cols.NUM: 6}
+    assert result["records"][3]["fields"] == {cols.NUM: 7}
 
     # Test that batch_upsert passes along return_fields_by_field_id
-    results = table.batch_upsert(
+    result = table.batch_upsert(
         [{"fields": {cols.TEXT: "Two", cols.NUM: 8}}],
         key_fields=[cols.TEXT],
         return_fields_by_field_id=True,
     )
-    assert results == [
+    assert result["records"] == [
         {
             "id": two["id"],
             "createdTime": two["createdTime"],

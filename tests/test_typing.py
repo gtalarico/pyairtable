@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     assert_type(table.delete(record_id), T.RecordDeletedDict)
     assert_type(table.batch_create([]), List[T.RecordDict])
     assert_type(table.batch_update([]), List[T.RecordDict])
-    assert_type(table.batch_upsert([], []), List[T.RecordDict])
+    assert_type(table.batch_upsert([], []), T.UpsertResultDict)
     assert_type(table.batch_delete([]), List[T.RecordDeletedDict])
 
     # Ensure we can set all kinds of field values

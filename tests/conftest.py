@@ -73,11 +73,6 @@ def mock_response_single(mock_records):
 
 
 @pytest.fixture
-def mock_response_batch(mock_records):
-    return {"records": mock_records * 2}
-
-
-@pytest.fixture
 def mock_response_list(mock_records):
     return [
         {"records": mock_records[0:2], "offset": "recuOeLpF6TQpArJi"},
