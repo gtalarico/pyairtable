@@ -51,13 +51,21 @@ def test_model_empty_meta():
             street = f.TextField("Street")
 
 
-def test_model_overlapping():
-    # Should raise error because conflicts with .exists()
+@pytest.mark.parametrize("name", ("exists", "id"))
+def test_model_overlapping(name):
+    """
+    Test that we raise ValueError when a subclass of Model defines
+    a field with the same name as one of Model's properties or methods.
+    """
     with pytest.raises(ValueError):
-
-        class Address(Model):
-            Meta = fake_meta()
-            exists = f.TextField("Exists")  # clases with Model.exists()
+        type(
+            "Address",
+            (Model,),
+            {
+                "Meta": fake_meta(),
+                name: f.TextField(name),
+            },
+        )
 
 
 class FakeModel(Model):
