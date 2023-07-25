@@ -114,6 +114,39 @@ like :meth:`~pyairtable.Table.iterate` or :meth:`~pyairtable.Table.all`.
      - |kwarg_return_fields_by_field_id|
 
 
+Return Values
+*************
+
+This library will return records as :class:`~pyairtable.api.types.RecordDict`.
+
+.. code-block:: python
+
+  >>> table.all()
+  [
+      {
+          'id': 'recwPQIfs4wKPyc9D',
+          'createdTime': '2017-03-14T22:04:31.000Z'
+          'fields': {
+              'Name': 'Alice',
+          },
+      },
+      {
+          'id': 'rechOLltN9SpPHq5o',
+          'createdTime': '2017-03-20T15:21:50.000Z'
+          'fields': {
+              'Name': 'Bob',
+          },
+      },
+      {
+          'id': 'rec5eR7IzKSAOBHCz',
+          'createdTime': '2017-08-05T21:47:52.000Z'
+          'fields': {
+              'Name': 'Carol',
+          },
+      }
+  ]
+
+
 Formulas
 ********
 
@@ -239,34 +272,40 @@ Batch delete records using a list of record ids.
    {'deleted': True, 'id': 'recwAcQdqwe21asdf'}]
 
 
-Return Values
--------------
+Commenting on Records
+---------------------
 
-This library will return records as :class:`~pyairtable.api.types.RecordDict`.
+pyAirtable allows you to access, create, and modify comments on records through
+the :class:`~pyairtable.Table` class. Both the :meth:`~pyairtable.Table.comments`
+and :meth:`~pyairtable.Table.add_comment` methods will return instances of
+:class:`~pyairtable.models.Comment`, which can be modified, saved, or deleted.
 
-.. code-block:: python
-
-  >>> table.all()
-  [
-      {
-          'id': 'recwPQIfs4wKPyc9D',
-          'createdTime': '2017-03-14T22:04:31.000Z'
-          'fields': {
-              'Name': 'Alice',
-          },
-      },
-      {
-          'id': 'rechOLltN9SpPHq5o',
-          'createdTime': '2017-03-20T15:21:50.000Z'
-          'fields': {
-              'Name': 'Bob',
-          },
-      },
-      {
-          'id': 'rec5eR7IzKSAOBHCz',
-          'createdTime': '2017-08-05T21:47:52.000Z'
-          'fields': {
-              'Name': 'Carol',
-          },
-      }
-  ]
+    >>> table = Api.table("appNxslc6jG0XedVM", "tblslc6jG0XedVMNx")
+    >>> comment = table.add_comment("recMNxslc6jG0XedV", "Hello, @[usrVMNxslc6jG0Xed]!")
+    >>> table.comments("recMNxslc6jG0XedV")
+    [
+        Comment(
+            id='comdVMNxslc6jG0Xe',
+            text='Hello, @[usrVMNxslc6jG0Xed]!',
+            created_time='2023-06-07T17:46:24.435891',
+            last_updated_time=None,
+            mentioned={
+                'usrVMNxslc6jG0Xed': Mentioned(
+                    display_name='Alice',
+                    email='alice@example.com',
+                    id='usrVMNxslc6jG0Xed',
+                    type='user'
+                )
+            },
+            author={
+                'id': 'usr0000pyairtable',
+                'email': 'pyairtable@example.com',
+                'name': 'Your pyairtable access token'
+            }
+        )
+    ]
+    >>> comment.text = "Never mind!"
+    >>> comment.save()
+    >>> table.comments("recMNxslc6jG0XedV")[0].text
+    'Never mind!'
+    >>> comment.delete()

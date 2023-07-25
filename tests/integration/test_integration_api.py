@@ -299,3 +299,26 @@ def test_integration_attachment_multiple(table, cols, valid_img_url):
     rv_get = table.get(rec["id"])
     assert rv_get["fields"]["attachment"][0]["filename"] == "a.jpg"
     assert rv_get["fields"]["attachment"][1]["filename"] == "b.jpg"
+
+
+def test_integration_comments(api, table: Table, cols):
+    # Test that we can create a comment
+    record = table.create({cols.TEXT: "Text"})
+    whoami = api.whoami()["id"]
+    table.add_comment(record["id"], f"A comment from @[{whoami}]")
+
+    # Retrieve the comment we just created, make some assertions about its state
+    comments = table.comments(record["id"])
+    assert len(comments) == 1
+    assert whoami in comments[0].text
+    assert comments[0].author
+    assert comments[0].mentioned[whoami].id == whoami
+
+    # Test that we can modify the comment and examine its updated state
+    comments[0].text = "Never mind!"
+    comments[0].save()
+    assert whoami not in comments[0].text
+    assert comments[0].mentioned is None
+
+    # Test that we can delete the comment
+    comments[0].delete()

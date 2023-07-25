@@ -20,6 +20,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     # "autoapi.extension",
     "sphinx_autodoc_typehints",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -40,6 +41,14 @@ autodoc_default_options = {
     "exclude-members": "__new__",
 }
 autodoc_member_order = "bysource"
+autoclass_content = "class"
+
+# See https://autodoc-pydantic.readthedocs.io/en/stable/users/configuration.html
+autodoc_pydantic_field_show_alias = False
+autodoc_pydantic_model_member_order = "bysource"
+autodoc_pydantic_model_show_config_summary = False
+autodoc_pydantic_model_show_field_summary = False
+autodoc_pydantic_model_show_json = False
 
 # See https://github.com/tox-dev/sphinx-autodoc-typehints#options
 typehints_defaults = "comma"

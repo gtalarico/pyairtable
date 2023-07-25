@@ -67,7 +67,7 @@ def fake_record(
 
 def fake_user(value: Any = None) -> CollaboratorDict:
     id = fake_id("usr", value)
-    return {"id": id, "email": f"{value or id}@example.com"}
+    return {"id": id, "email": f"{value or id}@example.com", "name": "Fake User"}
 
 
 def fake_attachment() -> AttachmentDict:

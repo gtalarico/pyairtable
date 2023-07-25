@@ -1,9 +1,10 @@
-import mock
+from unittest import mock
+
 import pytest
 
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
-from pyairtable.testing import fake_meta, fake_record
+from pyairtable.testing import fake_id, fake_meta, fake_record
 
 
 @pytest.fixture(autouse=True)
@@ -58,13 +59,34 @@ def test_model_overlapping():
             exists = f.TextField("Exists")  # clases with Model.exists()
 
 
-def test_repr():
-    class Contact(Model):
-        Meta = fake_meta()
+class FakeModel(Model):
+    Meta = fake_meta()
 
+
+def test_repr():
     record = fake_record()
-    assert repr(Contact.from_record(record)) == f"<Contact id='{record['id']}'>"
-    assert repr(Contact()) == "<unsaved Contact>"
+    assert repr(FakeModel.from_record(record)) == f"<FakeModel id='{record['id']}'>"
+    assert repr(FakeModel()) == "<unsaved FakeModel>"
+
+
+@pytest.mark.parametrize(
+    "method,args",
+    [
+        ("comments", []),
+        ("add_comment", ["Hello!"]),
+    ],
+)
+def test_model_comment_method(method, args):
+    """
+    Test that comments() and add_comment() are passthroughs to Table.
+    """
+    record_id = fake_id()
+    instance = FakeModel.from_id(record_id, fetch=False)
+    with mock.patch(f"pyairtable.Table.{method}") as mock_method:
+        result = getattr(instance, method)(*args)
+
+    assert result == mock_method.return_value
+    mock_method.assert_called_once_with(record_id, *args)
 
 
 @mock.patch("pyairtable.Table.get")
@@ -82,14 +104,11 @@ def test_from_id(mock_get):
 
 @mock.patch("pyairtable.Table.all")
 def test_from_ids(mock_all):
-    class Contact(Model):
-        Meta = fake_meta()
-
     fake_records = [fake_record() for _ in range(10)]
     mock_all.return_value = fake_records
 
     fake_ids = [record["id"] for record in fake_records]
-    contacts = Contact.from_ids(fake_ids)
+    contacts = FakeModel.from_ids(fake_ids)
     mock_all.assert_called_once()
     assert len(contacts) == len(fake_records)
     assert {c.id for c in contacts} == {r["id"] for r in fake_records}
@@ -97,5 +116,5 @@ def test_from_ids(mock_all):
     # Should raise KeyError because of the invalid ID
     mock_all.reset_mock()
     with pytest.raises(KeyError):
-        Contact.from_ids(fake_ids + ["recDefinitelyNotValid"])
+        FakeModel.from_ids(fake_ids + ["recDefinitelyNotValid"])
     mock_all.assert_called_once()
