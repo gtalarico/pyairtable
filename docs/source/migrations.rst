@@ -51,7 +51,7 @@ See below for supported and unsupported patterns:
     # to avoid situations where self.api and self.base don't align.
     >>> table = Table(api, base_id, table_name)  # [Api, Base, str]
 
-Retry by Default
+Retry by default
 ----------------
 
 * By default, the library will retry requests up to five times if it receives

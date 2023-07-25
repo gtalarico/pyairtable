@@ -2,7 +2,7 @@
 Changelog
 =========
 
-2.0.0 (TBD)
+2.0.0 (2023-07-31)
 ------------------------
 
 See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
