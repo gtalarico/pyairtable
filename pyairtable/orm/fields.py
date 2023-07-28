@@ -552,7 +552,8 @@ class LinkField(_ListField[RecordId, T_Linked]):
             new_records = {
                 record.id: record
                 for record in self.linked_model.from_ids(
-                    cast(List[RecordId], new_record_ids)
+                    cast(List[RecordId], new_record_ids),
+                    fetch=(not self._lazy),
                 )
             }
         # If the list contains record IDs, replace the contents with instances.
