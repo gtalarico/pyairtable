@@ -52,8 +52,6 @@ Anyone who uses this library is welcome to [submit a pull request](https://githu
 2. New functionality is accompanied by clear, descriptive unit tests.
 3. You can run `make test && make docs` successfully.
 
-If you have an enterprise API key that can run end-to-end tests, please also run `env AIRTABLE_API_KEY=... make test-e2e`.
-
 If you want to discuss an idea you're working on but haven't yet finished all of the above, please [open a draft pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests#draft-pull-requests). That will be a clear signal that you're not asking to merge your code (yet) and are just looking for discussion or feedback.
 
 Thanks in advance for sharing your ideas!

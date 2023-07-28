@@ -24,14 +24,12 @@ release-test:
 bump:
 	@bash -c "./scripts/bump.sh"
 
-.PHONY: test test-e2e tox coverage lint format docs clean
+.PHONY: test test-e2e coverage lint format docs clean
 test:
-	tox -e py
+	tox -- -m 'not integration'
 
 test-e2e:
-	tox -e py -- ""
-
-tox: test
+	tox
 
 coverage:
 	tox -e coverage

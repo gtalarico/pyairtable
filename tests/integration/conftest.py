@@ -30,7 +30,7 @@ def api_key():
     try:
         return os.environ["AIRTABLE_API_KEY"]
     except KeyError:
-        pytest.skip("integration test requires AIRTABLE_API_KEY env variable")
+        pytest.skip("integration test requires AIRTABLE_API_KEY")
 
 
 @pytest.fixture
