@@ -324,6 +324,44 @@ there are four components:
 4. The model class, the path to the model class, or :data:`~pyairtable.orm.fields.LinkSelf`
 
 
+Comments
+----------
+
+You can use :meth:`Model.comments <pyairtable.orm.Model.comments>` and
+:meth:`Model.add_comment <pyairtable.orm.Model.add_comment>` to interact with
+comments on a particular record, just like their :class:`~pyairtable.Table` equivalents:
+
+    >>> record = YourModel.from_id("recMNxslc6jG0XedV")
+    >>> comment = record.add_comment("Hello, @[usrVMNxslc6jG0Xed]!")
+    >>> record.comments()
+    [
+        Comment(
+            id='comdVMNxslc6jG0Xe',
+            text='Hello, @[usrVMNxslc6jG0Xed]!',
+            created_time='2023-06-07T17:46:24.435891',
+            last_updated_time=None,
+            mentioned={
+                'usrVMNxslc6jG0Xed': Mentioned(
+                    display_name='Alice',
+                    email='alice@example.com',
+                    id='usrVMNxslc6jG0Xed',
+                    type='user'
+                )
+            },
+            author={
+                'id': 'usr0000pyairtable',
+                'email': 'pyairtable@example.com',
+                'name': 'Your pyairtable access token'
+            }
+        )
+    ]
+    >>> comment.text = "Never mind!"
+    >>> comment.save()
+    >>> record.comments()[0].text
+    'Never mind!'
+    >>> comment.delete()
+
+
 ORM Limitations
 ------------------
 

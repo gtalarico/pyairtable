@@ -30,8 +30,13 @@ def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:
     """
     api = api.api if isinstance(api, Base) else api
     base_list_url = api.build_url("meta", "bases")
-    assert isinstance(response := api.request("get", base_list_url), dict)
-    return response
+    return {
+        "bases": [
+            base
+            for page in api.iterate_requests("get", base_list_url)
+            for base in page.get("bases", [])
+        ]
+    }
 
 
 def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:

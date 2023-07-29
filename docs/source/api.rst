@@ -18,6 +18,7 @@ Module: pyairtable
 
 .. autofunction:: pyairtable.retry_strategy
 
+
 Module: pyairtable.api.types
 *******************************
 
@@ -31,6 +32,12 @@ Module: pyairtable.formulas
 .. automodule:: pyairtable.formulas
     :members:
 
+
+Module: pyairtable.models
+*******************************
+
+.. autoclass:: pyairtable.models.Comment
+    :members:
 
 Module: pyairtable.orm
 *******************************

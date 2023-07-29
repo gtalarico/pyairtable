@@ -7,6 +7,8 @@ Changelog
 
 See :ref:`Migrating from 1.x to 2.0` for detailed migration notes.
 
+* Added :class:`~pyairtable.models.Comment` class; see :ref:`Commenting on Records`.
+  - `PR #282 <https://github.com/gtalarico/pyairtable/pull/282>`_.
 * :meth:`~pyairtable.Table.batch_upsert` now returns the full payload from the Airtable API.
   - `PR #281 <https://github.com/gtalarico/pyairtable/pull/281>`_.
 * :ref:`ORM` module is no longer experimental and has a stable API.

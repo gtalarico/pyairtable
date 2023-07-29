@@ -14,6 +14,7 @@ from pyairtable.api.types import (
     WritableFields,
 )
 from pyairtable.formulas import OR, STR_VALUE
+from pyairtable.models import Comment
 from pyairtable.orm.fields import AnyField, Field
 
 
@@ -364,3 +365,17 @@ class Model:
         if not all(isinstance(model, cls) for model in models):
             raise TypeError(set(type(model) for model in models))
         cls.get_table().batch_delete([model.id for model in models])
+
+    def comments(self) -> List[Comment]:
+        """
+        Return a list of comments on this record.
+        See :meth:`Table.comments <pyairtable.Table.comments>`.
+        """
+        return self.get_table().comments(self.id)
+
+    def add_comment(self, text: str) -> Comment:
+        """
+        Add a comment to this record.
+        See :meth:`Table.add_comment <pyairtable.Table.add_comment>`.
+        """
+        return self.get_table().add_comment(self.id, text)
