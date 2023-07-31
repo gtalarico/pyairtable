@@ -240,7 +240,10 @@ class Model:
 
     def delete(self) -> bool:
         """
-        Deletes the record. Raises ``ValueError`` if the record does not exist.
+        Deletes the record.
+
+        Raises:
+            ValueError: if the record does not exist.
         """
         if not self.id:
             raise ValueError("cannot be deleted because it does not have id")
@@ -405,8 +408,10 @@ class Model:
     @classmethod
     def batch_delete(cls, models: List[SelfType]) -> None:
         """
-        Deletes a list of model instances from Airtable. Raises ``ValueError`` if
-        given a model which has never been saved to Airtable.
+        Deletes a list of model instances from Airtable.
+
+        Raises:
+            ValueError: if the model has not been saved to Airtable.
         """
         if not all(model.id for model in models):
             raise ValueError("cannot delete an unsaved model")

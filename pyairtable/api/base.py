@@ -77,8 +77,24 @@ class Base:
 
     def webhooks(self) -> List[Webhook]:
         """
-        Retrieves all the base's webhooks from the API.
-        See `List webhooks <https://airtable.com/developers/web/api/list-webhooks>`_.
+        Retrieves all the base's webhooks from the API
+        (see: `List webhooks <https://airtable.com/developers/web/api/list-webhooks>`_).
+
+        Usage:
+            >>> base.webhooks()
+            [
+                Webhook(
+                    id='ach00000000000001',
+                    are_notifications_enabled=True,
+                    cursor_for_next_payload=1,
+                    is_hook_enabled=True,
+                    last_successful_notification_time=None,
+                    notification_url="https://example.com",
+                    last_notification_result=None,
+                    expiration_time="2023-07-01T00:00:00.000Z",
+                    specification: WebhookSpecification(...)
+                )
+            ]
         """
         response = self.api.request("GET", self.webhooks_url)
         return [
@@ -116,6 +132,9 @@ class Base:
         endpoint. If you do not save this, you will have no way of confirming
         that payloads you receive did, in fact, come from Airtable.
 
+        For more on how to validate notifications to your webhook, see
+        :meth:`WebhookNotification.from_request() <pyairtable.models.WebhookNotification.from_request>`.
+
         Usage:
             >>> base.add_webhook(
             ...     "https://example.com",
@@ -133,12 +152,14 @@ class Base:
                 expiration_time='2023-07-01T00:00:00.000Z'
             )
 
+        Raises:
+            pydantic.ValidationError: If the dict provided is invalid.
+
         Args:
             notify_url: The URL where Airtable will POST all event notifications.
             spec: The configuration for the webhook. It is easiest to pass a dict
                 that conforms to the `webhooks specification`_ but you
                 can also provide :class:`~pyairtable.models.webhook.WebhookSpecification`.
-                If the dict provided is invalid, it will raise ``pydantic.ValidationError``.
         """
         if isinstance(spec, dict):
             spec = WebhookSpecification.parse_obj(spec)

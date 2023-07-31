@@ -90,6 +90,7 @@ class Webhook(SerializableModel, allow_update=False):
     def payloads(self, cursor: int = 1) -> Iterator["WebhookPayload"]:
         """
         Iterate through all payloads on or after the given cursor.
+        See :class:`~pyairtable.models.WebhookPayload`.
 
         For more details on the mechanisms of retrieving webhook payloads,
         or to find more information about the data structures you'll get back,
@@ -138,7 +139,39 @@ class WebhookNotification(AirtableModel):
     """
     Represents the value that Airtable will POST to the webhook's notification URL.
 
-    See `Webhook notification delivery <https://airtable.com/developers/web/api/webhooks-overview#webhook-notification-delivery>`_.
+    This will not contain the full webhook payload; it will only contain the IDs
+    of the base and the webhook which triggered the notification. You will need to
+    use :meth:`Webhook.payloads <pyairtable.models.Webhook.payloads>` to retrieve
+    the actual payloads describing the change(s) which triggered the webhook.
+
+    You will also need some way to persist the ``cursor`` of the webhook payload,
+    so that on subsequent calls you do not retrieve the same payloads again.
+
+    Usage:
+        .. code-block:: python
+
+            from flask import Flask, request
+            from pyairtable import Api
+            from pyairtable.models import WebhookNotification
+
+            app = Flask(__name__)
+
+            @app.route("/airtable-webhook", methods=["POST"])
+            def airtable_webhook():
+                body = request.data
+                header = request.headers["X-Airtable-Content-MAC"]
+                secret = app.config["AIRTABLE_WEBHOOK_SECRET"]
+                event = WebhookNotification.from_request(body, header, secret)
+                airtable = Api(app.config["AIRTABLE_API_KEY"])
+                webhook = airtable.base(event.base).webhook(event.webhook)
+                cursor = int(your_db.get(f"cursor_{event.webhook}", 0)) + 1
+                for payload in webhook.payloads(cursor=cursor):
+                    # ...do stuff...
+                    your_db.set(f"cursor_{event.webhook}", payload.cursor)
+                return ("", 204)  # intentionally empty response
+
+    See `Webhook notification delivery <https://airtable.com/developers/web/api/webhooks-overview#webhook-notification-delivery>`_
+    for more information on how these payloads are structured.
     """
 
     base: Dict[Literal["id"], str]
@@ -156,9 +189,6 @@ class WebhookNotification(AirtableModel):
         Validates a request body and X-Airtable-Content-MAC header
         using the secret returned when the webhook was created.
 
-        If validation succeeds, returns a :class:`~WebhookNotification`.
-        Otherwise, raises ``ValueError``.
-
         Args:
             body: The full request body sent over the wire.
             header: The request's X-Airtable-Content-MAC header.
@@ -169,21 +199,8 @@ class WebhookNotification(AirtableModel):
         Returns:
             :class:`~WebhookNotification`: An instance parsed from the provided request body.
 
-        Usage:
-            .. code-block:: python
-
-                from flask import Flask, request
-                from pyairtable.models import WebhookNotification
-
-                app = Flask(__name__)
-
-                @app.route("/airtable-webhook", methods=["POST"])
-                def airtable_webhook():
-                    body = request.data
-                    header = request.headers["X-Airtable-Content-MAC"]
-                    secret = app.config["AIRTABLE_WEBHOOK_SECRET"]
-                    event = WebhookNotification.from_request(body, header, secret)
-                    # ...do stuff...
+        Raises:
+            ValueError: if the header and body do not match the secret.
         """
         if isinstance(secret, str):
             secret = base64.decodebytes(secret.encode("ascii"))
@@ -259,6 +276,11 @@ class CreateWebhookResponse(AirtableModel):
 
 
 class WebhookPayload(AirtableModel):
+    """
+    Payload returned by :meth:`Webhook.payloads`. See API docs:
+    `Webhooks payload <https://airtable.com/developers/web/api/model/webhooks-payload>`_.
+    """
+
     timestamp: str
     base_transaction_number: int
     payload_format: str
