@@ -1,3 +1,4 @@
+from functools import partial
 from unittest import mock
 
 import pytest
@@ -118,3 +119,29 @@ def test_from_ids(mock_all):
     with pytest.raises(KeyError):
         FakeModel.from_ids(fake_ids + ["recDefinitelyNotValid"])
     mock_all.assert_called_once()
+
+
+def test_dynamic_model_meta():
+    """
+    Test that we can provide callables in our Meta class to provide
+    the access token, base ID, and table name at runtime.
+    """
+    data = {
+        "api_key": "FakeApiKey",
+        "base_id": "appFakeBaseId",
+        "table_name": "tblFakeTableName",
+    }
+
+    class Fake(Model):
+        class Meta:
+            api_key = lambda: data["api_key"]  # noqa
+            base_id = partial(data.get, "base_id")
+
+            @staticmethod
+            def table_name():
+                return data["table_name"]
+
+    f = Fake()
+    assert f._get_meta("api_key") == data["api_key"]
+    assert f._get_meta("base_id") == data["base_id"]
+    assert f._get_meta("table_name") == data["table_name"]
