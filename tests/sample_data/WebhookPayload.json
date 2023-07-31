@@ -1,0 +1,16 @@
+{
+    "timestamp": "2022-02-01T21:25:05.663Z",
+    "baseTransactionNumber": 4,
+    "actionMetadata": {
+        "source": "client",
+        "sourceMetadata": {
+            "user": {
+                "id": "usr00000000000000",
+                "email": "foo@bar.com",
+                "permissionLevel": "create"
+            }
+        }
+    },
+    "destroyedTableIds": ["tbl20000000000000", "tbl20000000000001"],
+    "payloadFormat": "v0"
+}

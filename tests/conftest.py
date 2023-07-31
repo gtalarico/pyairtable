@@ -1,5 +1,8 @@
+import json
 from collections import OrderedDict
+from pathlib import Path
 from posixpath import join as urljoin
+from typing import Callable
 from urllib.parse import quote, urlencode
 
 import pytest
@@ -116,3 +119,18 @@ def response():
     response.raise_for_status.side_effect = http_error
     response.url = "page%20url"
     return response
+
+
+@pytest.fixture
+def sample_data():
+    return Path(__file__).parent / "sample_data"
+
+
+@pytest.fixture
+def sample_json(sample_data: Path) -> Callable:
+    def _get_sample_json(name):
+        location = sample_data / f"{name}.json"
+        with location.open() as fp:
+            return json.load(fp)
+
+    return _get_sample_json

@@ -1,0 +1,27 @@
+{
+    "areNotificationsEnabled": true,
+    "cursorForNextPayload": 1,
+    "expirationTime": "2023-01-25T00:00:00.000Z",
+    "id": "ach00000000000001",
+    "isHookEnabled": true,
+    "lastNotificationResult": {
+        "completionTimestamp": "2022-02-01T21:25:05.663Z",
+        "durationMs": 2.603,
+        "error": {
+            "message": "The HTTP request returned a 503 status code instead of 200 or 204"
+        },
+        "retryNumber": 0,
+        "success": false,
+        "willBeRetried": true
+    },
+    "lastSuccessfulNotificationTime": null,
+    "notificationUrl": "https://example.com/receive-ping",
+    "specification": {
+        "options": {
+            "filters": {
+                "dataTypes": ["tableData"],
+                "recordChangeScope": "tbltp8DGLhqbUmjK1"
+            }
+        }
+    }
+}
