@@ -36,6 +36,7 @@ pyAirtable
 
    about
    changelog
-   Airtable API Docs <https://airtable.com/api>
+   contributing
    GitHub <https://github.com/gtalarico/pyairtable>
    PyPI <https://pypi.org/project/pyairtable/>
+   Airtable API <https://airtable.com/api>

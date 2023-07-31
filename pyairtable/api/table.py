@@ -28,8 +28,10 @@ class Table:
         >>> records = table.all()
     """
 
-    api: "pyairtable.api.api.Api"
+    #: The base that this table belongs to.
     base: "pyairtable.api.base.Base"
+
+    #: Can be either the table name or the table ID (``tblXXXXXXXXXXXXXX``).
     name: str
 
     @overload
@@ -98,7 +100,6 @@ class Table:
                 f" got ({type(api_key)}, {type(base_id)}, {type(table_name)})"
             )
 
-        self.api = base.api
         self.base = base
         self.name = table_name
 
@@ -108,15 +109,22 @@ class Table:
     @property
     def url(self) -> str:
         """
-        Return the URL for this table.
+        Returns the URL for this table.
         """
         return self.api.build_url(self.base.id, urllib.parse.quote(self.name, safe=""))
 
     def record_url(self, record_id: RecordId, *components: str) -> str:
         """
-        Return the URL for the given record ID, with optional trailing components.
+        Returns the URL for the given record ID, with optional trailing components.
         """
         return posixpath.join(self.url, record_id, *components)
+
+    @property
+    def api(self) -> "pyairtable.api.api.Api":
+        """
+        Returns the same API connection as table's :class:`~pyairtable.Base`.
+        """
+        return self.base.api
 
     def get(self, record_id: RecordId, **options: Any) -> RecordDict:
         """

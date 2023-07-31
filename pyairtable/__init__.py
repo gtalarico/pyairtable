@@ -1,4 +1,4 @@
-__version__ = "2.0.0rc1"
+__version__ = "2.0.0"
 
 from .api import Api, Base, Table
 from .api.retrying import retry_strategy

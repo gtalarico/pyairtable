@@ -51,7 +51,30 @@ See below for supported and unsupported patterns:
     # to avoid situations where self.api and self.base don't align.
     >>> table = Table(api, base_id, table_name)  # [Api, Base, str]
 
-Retry by Default
+You may need to change how your code looks up some pieces of connection metadata; for example:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Method/attribute in 1.5
+      - Method/attribute in 2.0
+    * - ``base.base_id``
+      - :data:`base.id <pyairtable.Base.id>`
+    * - ``table.table_name``
+      - :data:`table.name <pyairtable.Table.name>`
+    * - ``table.get_base()``
+      - :data:`table.base <pyairtable.Table.base>`
+    * - ``table.base_id``
+      - :data:`table.base.id <pyairtable.Base.id>`
+    * - ``table.table_url``
+      - :meth:`table.url <pyairtable.Table.url>`
+    * - ``table.get_record_url()``
+      - :meth:`table.record_url() <pyairtable.Table.record_url>`
+
+There is no fully exhaustive list of changes; please refer to
+:ref:`the API documentation <Module: pyairtable>` for a list of available methods and attributes.
+
+Retry by default
 ----------------
 
 * By default, the library will retry requests up to five times if it receives
@@ -80,6 +103,16 @@ batch_upsert has a different return type
   See :class:`~pyairtable.api.types.UpsertResultDict` for more details.
 
 
+Found a problem?
+--------------------
+
+While these breaking changes were intentional, it is very possible that the 2.0 release has bugs.
+Please take a moment to :ref:`read our contribution guidelines <contributing>` before submitting an issue.
+
+
+------
+
+
 Migrating from 0.x to 1.0
 ============================
 
@@ -89,6 +122,7 @@ the source code on `this branch <https://github.com/gtalarico/airtable-python-wr
 The last ``0.x`` release will remain available on `PyPI <https://pypi.org/project/airtable-python-wrapper/>`__.
 
 You can read about the reasons behind the renaming `here <https://github.com/gtalarico/airtable-python-wrapper/issues/125#issuecomment-891439661>`__.
+
 
 New Features in 1.0
 -------------------
