@@ -45,6 +45,16 @@ def test_parse(comment_json):
     Comment.parse_obj(comment_json)
 
 
+@pytest.mark.parametrize("attr", ["mentioned", "last_updated_time"])
+def test_missing_attributes(comment_json, attr):
+    """
+    Test that we can parse the payload when missing optional values.
+    """
+    del comment_json[Comment.__fields__[attr].alias]
+    comment = Comment.parse_obj(comment_json)
+    assert getattr(comment, attr) is None
+
+
 @pytest.mark.parametrize(
     "attr,value",
     [
@@ -82,6 +92,7 @@ def test_save(comment, requests_mock):
 
     # ...but our model loaded whatever values the API sent back.
     assert comment.text == new_text
+    assert comment.author.email == "author@example.com"
     assert not comment.mentioned
 
 

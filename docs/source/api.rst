@@ -38,6 +38,8 @@ Module: pyairtable.models
 
 .. autoclass:: pyairtable.models.Comment
     :members:
+.. autoclass:: pyairtable.models.Collaborator
+    :members:
 
 Module: pyairtable.orm
 *******************************

@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 
-from pyairtable.api.types import CollaboratorDict
-from pyairtable.models._base import AirtableModel, SerializableModel
+from ._base import AirtableModel, SerializableModel
+from .collaborator import Collaborator
 
 
 class Comment(SerializableModel):
@@ -24,11 +24,11 @@ class Comment(SerializableModel):
                     type='user'
                 )
             },
-            author={
-                'id': 'usrL2xZC5xoH4luAi',
-                'email': 'pyairtable@example.com',
-                'name': 'Your pyairtable access token'
-            }
+            author=Collaborator(
+                id='usr0000pyairtable',
+                email='pyairtable@example.com',
+                name='Your pyairtable access token'
+            )
         )
     ]
     >>> comment.text = "Never mind!"
@@ -51,7 +51,7 @@ class Comment(SerializableModel):
     last_updated_time: Optional[str]
 
     #: The account which created the comment.
-    author: CollaboratorDict
+    author: Collaborator
 
     #: Users or groups that were mentioned in the text.
     mentioned: Optional[Dict[str, "Comment.Mentioned"]]

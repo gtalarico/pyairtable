@@ -489,11 +489,11 @@ class Table:
                             type='user'
                         )
                     },
-                    author={
-                        'id': 'usr0000pyairtable',
-                        'email': 'pyairtable@example.com',
-                        'name': 'Your pyairtable access token'
-                    }
+                    author=Collaborator(
+                        id='usr0000pyairtable',
+                        email='pyairtable@example.com',
+                        name='Your pyairtable access token'
+                    )
                 )
             ]
 
