@@ -20,6 +20,9 @@ class AirtableModel(pydantic.BaseModel):
         # Convert e.g. "base_invite_links" to "baseInviteLinks" for (de)serialization
         alias_generator = partial(inflection.camelize, uppercase_first_letter=False)
 
+        # Allow both base_invite_links= and baseInviteLinks= in constructor
+        allow_population_by_field_name = True
+
         # We'll assume this in a couple different places
         underscore_attrs_are_private = True
 
@@ -27,13 +30,26 @@ class AirtableModel(pydantic.BaseModel):
 class SerializableModel(AirtableModel):
     """
     Base model for any data structures that can be saved back to the API.
+
+    Subclasses can pass a number of keyword arguments to control serialization behavior:
+
+        * ``writable=``: field names that should be written to API on ``save()``.
+        * ``readonly=``: field names that should not be written to API on ``save()``.
+        * ``allow_update=``: boolean indicating whether to allow ``save()`` (default: true)
+        * ``allow_delete=``: boolean indicating whether to allow ``delete()`` (default: true)
     """
 
-    #: Subclasses can set ``__writable__`` to define specific fields to write to the API.
-    __writable__: ClassVar[Optional[Iterable[str]]] = None
+    __writable: ClassVar[Optional[Iterable[str]]]
+    __readonly: ClassVar[Optional[Iterable[str]]]
+    __allow_update: ClassVar[bool]
+    __allow_delete: ClassVar[bool]
 
-    #: Subclasses can set ``__readonly__`` to define certain fields that should not be written to API.
-    __readonly__: ClassVar[Optional[Iterable[str]]] = None
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        # These are private to SerializableModel
+        cls.__writable = kwargs.get("writable")
+        cls.__readonly = kwargs.get("readonly")
+        cls.__allow_update = bool(kwargs.get("allow_update", True))
+        cls.__allow_delete = bool(kwargs.get("allow_delete", True))
 
     _api: "pyairtable.api.api.Api"
     _url: str
@@ -62,10 +78,12 @@ class SerializableModel(AirtableModel):
 
         Will raise ``RuntimeError`` if the record has been deleted.
         """
+        if not self.__allow_update:
+            raise NotImplementedError(f"{self.__class__.__name__}.save() not allowed")
         if self._deleted:
             raise RuntimeError("save() called after delete()")
-        include = set(self.__writable__) if self.__writable__ else None
-        exclude = set(self.__readonly__) if self.__readonly__ else None
+        include = set(self.__writable) if self.__writable else None
+        exclude = set(self.__readonly) if self.__readonly else None
         data = self.dict(by_alias=True, include=include, exclude=exclude)
         response = self._api.request("PATCH", self._url, json=data)
         copyable = self.parse_obj(response)
@@ -75,8 +93,10 @@ class SerializableModel(AirtableModel):
         """
         Delete the record on the server and marks this instance as deleted.
         """
-        response = self._api.request("DELETE", self._url)
-        self._deleted = bool(response["deleted"])
+        if not self.__allow_delete:
+            raise NotImplementedError(f"{self.__class__.__name__}.delete() not allowed")
+        self._api.request("DELETE", self._url)
+        self._deleted = True
 
     @property
     def deleted(self) -> bool:
@@ -89,9 +109,9 @@ class SerializableModel(AirtableModel):
         # Prevents implementers from changing values on readonly or non-writable fields.
         # Mypy can't tell that we are using pydantic v1.
         if name in self.__class__.__fields__:  # type: ignore[operator, unused-ignore]
-            if self.__readonly__ and name in self.__readonly__:
+            if self.__readonly and name in self.__readonly:
                 raise AttributeError(name)
-            if self.__writable__ is not None and name not in self.__writable__:
+            if self.__writable is not None and name not in self.__writable:
                 raise AttributeError(name)
 
         super().__setattr__(name, value)

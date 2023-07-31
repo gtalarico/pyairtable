@@ -4,7 +4,7 @@ from ._base import AirtableModel, SerializableModel
 from .collaborator import Collaborator
 
 
-class Comment(SerializableModel):
+class Comment(SerializableModel, writable=["text"]):
     """
     A record comment that has been retrieved from the Airtable API.
 
@@ -35,8 +35,6 @@ class Comment(SerializableModel):
     >>> comment.save()
     >>> comment.delete()
     """
-
-    __writable__ = ["text"]
 
     #: The unique ID of the comment.
     id: str
