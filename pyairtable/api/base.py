@@ -1,9 +1,15 @@
 import warnings
 from functools import lru_cache
-from typing import Union
+from typing import Any, Dict, List, Union
 
 import pyairtable.api.api
 import pyairtable.api.table
+from pyairtable.models.webhook import (
+    CreateWebhook,
+    CreateWebhookResponse,
+    Webhook,
+    WebhookSpecification,
+)
 
 
 class Base:
@@ -64,3 +70,80 @@ class Base:
     @property
     def url(self) -> str:
         return self.api.build_url(self.id)
+
+    @property
+    def webhooks_url(self) -> str:
+        return self.api.build_url("bases", self.id, "webhooks")
+
+    def webhooks(self) -> List[Webhook]:
+        """
+        Retrieves all the base's webhooks from the API.
+        See `List webhooks <https://airtable.com/developers/web/api/list-webhooks>`_.
+        """
+        response = self.api.request("GET", self.webhooks_url)
+        return [
+            Webhook.from_api(
+                api=self.api,
+                url=f"{self.webhooks_url}/{data['id']}",
+                obj=data,
+            )
+            for data in response["webhooks"]
+        ]
+
+    def webhook(self, webhook_id: str) -> Webhook:
+        """
+        Returns a single webhook or raises ``KeyError`` if the given ID is invalid.
+
+        Airtable's API does not permit retrieving a single webhook, so this function
+        will call :meth:`~webhooks` and simply return one item from the list.
+        """
+        for webhook in self.webhooks():
+            if webhook.id == webhook_id:
+                return webhook
+        raise KeyError(f"webhook not found: {webhook_id!r}")
+
+    def add_webhook(
+        self,
+        notify_url: str,
+        spec: Union[WebhookSpecification, Dict[Any, Any]],
+    ) -> CreateWebhookResponse:
+        """
+        Creates a webhook on the base with the given
+        `webhooks specification <https://airtable.com/developers/web/api/model/webhooks-specification>`_.
+
+        The return value will contain a unique secret that must be saved
+        in order to validate payloads as they are sent to your notification
+        endpoint. If you do not save this, you will have no way of confirming
+        that payloads you receive did, in fact, come from Airtable.
+
+        Usage:
+            >>> base.add_webhook(
+            ...     "https://example.com",
+            ...     {
+            ...         "options": {
+            ...             "filters": {
+            ...                 "dataTypes": ["tableData"],
+            ...             }
+            ...         }
+            ...     }
+            ... )
+            CreateWebhookResponse(
+                id='ach00000000000001',
+                mac_secret_base64='c3VwZXIgZHVwZXIgc2VjcmV0',
+                expiration_time='2023-07-01T00:00:00.000Z'
+            )
+
+        Args:
+            notify_url: The URL where Airtable will POST all event notifications.
+            spec: The configuration for the webhook. It is easiest to pass a dict
+                that conforms to the `webhooks specification`_ but you
+                can also provide :class:`~pyairtable.models.webhook.WebhookSpecification`.
+                If the dict provided is invalid, it will raise ``pydantic.ValidationError``.
+        """
+        if isinstance(spec, dict):
+            spec = WebhookSpecification.parse_obj(spec)
+
+        create = CreateWebhook(notification_url=notify_url, specification=spec)
+        request = create.dict(by_alias=True, exclude_unset=True)
+        response = self.api.request("POST", self.webhooks_url, json=request)
+        return CreateWebhookResponse.parse_obj(response)
