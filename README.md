@@ -30,7 +30,7 @@ If it's your first time working on this library, clone the repo, set up pre-comm
 
 ```sh
 % make setup
-% tox
+% make test
 ```
 
 ### Reporting a bug
