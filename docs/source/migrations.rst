@@ -51,6 +51,29 @@ See below for supported and unsupported patterns:
     # to avoid situations where self.api and self.base don't align.
     >>> table = Table(api, base_id, table_name)  # [Api, Base, str]
 
+You may need to change how your code looks up some pieces of connection metadata; for example:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Method/attribute in 1.5
+      - Method/attribute in 2.0
+    * - ``base.base_id``
+      - :data:`base.id <pyairtable.Base.id>`
+    * - ``table.table_name``
+      - :data:`table.name <pyairtable.Table.name>`
+    * - ``table.get_base()``
+      - :data:`table.base <pyairtable.Table.base>`
+    * - ``table.base_id``
+      - :data:`table.base.id <pyairtable.Base.id>`
+    * - ``table.table_url``
+      - :meth:`table.url <pyairtable.Table.url>`
+    * - ``table.get_record_url()``
+      - :meth:`table.record_url() <pyairtable.Table.record_url>`
+
+There is no fully exhaustive list of changes; please refer to
+:ref:`the API documentation <Module: pyairtable>` for a list of available methods and attributes.
+
 Retry by default
 ----------------
 

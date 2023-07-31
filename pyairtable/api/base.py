@@ -11,7 +11,10 @@ class Base:
     Represents an Airtable base.
     """
 
+    #: The connection to the Airtable API.
     api: "pyairtable.api.api.Api"
+
+    #: The base ID, in the format ``appXXXXXXXXXXXXXX``
     id: str
 
     def __init__(self, api: Union["pyairtable.api.api.Api", str], base_id: str):
