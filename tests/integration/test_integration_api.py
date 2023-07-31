@@ -311,7 +311,7 @@ def test_integration_comments(api, table: Table, cols):
     comments = table.comments(record["id"])
     assert len(comments) == 1
     assert whoami in comments[0].text
-    assert comments[0].author
+    assert comments[0].author.id == whoami
     assert comments[0].mentioned[whoami].id == whoami
 
     # Test that we can modify the comment and examine its updated state

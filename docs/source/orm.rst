@@ -348,11 +348,11 @@ comments on a particular record, just like their :class:`~pyairtable.Table` equi
                     type='user'
                 )
             },
-            author={
-                'id': 'usr0000pyairtable',
-                'email': 'pyairtable@example.com',
-                'name': 'Your pyairtable access token'
-            }
+            author=Collaborator(
+                id='usr0000pyairtable',
+                email='pyairtable@example.com',
+                name='Your pyairtable access token'
+            )
         )
     ]
     >>> comment.text = "Never mind!"
