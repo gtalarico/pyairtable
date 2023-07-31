@@ -20,40 +20,52 @@ from pyairtable.orm.fields import AnyField, Field
 
 class Model:
     """
-    This class allows you create an ORM-style class for your Airtable tables.
+    Supports creating ORM-style classes representing Airtable tables.
+    For more details, see :ref:`orm`.
 
-    This is a metaclass and can only be used to define sub-classes.
+    A nested class called ``Meta`` is required and can specify
+    the following attributes:
 
-    The ``Meta`` is reuired and must specify all three attributes: ``base_id``,
-    ``table_id``, and ``api_key``.
+        * ``api_key`` (required) - API key or personal access token.
+        * ``base_id`` (required) - Base ID (not name).
+        * ``table_name`` (required) - Table ID or name.
+        * ``timeout`` - A tuple indicating a connect and read timeout. Defaults to no timeout.
+        * ``typecast`` - |kwarg_typecast| Defaults to ``True``.
 
-    >>> from pyairtable.orm import Model, fields
-    >>> class Contact(Model):
-    ...     first_name = fields.TextField("First Name")
-    ...     age = fields.IntegerField("Age")
-    ...
-    ...     class Meta:
-    ...         base_id = "appaPqizdsNHDvlEm"
-    ...         table_name = "Contact"
-    ...         api_key = "keyapikey"
-    ...         timeout: Optional[Tuple[int, int]] = (5, 5)
-    ...         typecast: bool = True
+    .. code-block:: python
+
+        from pyairtable.orm import Model, fields
+
+        class Contact(Model):
+            first_name = fields.TextField("First Name")
+            age = fields.IntegerField("Age")
+
+            class Meta:
+                base_id = "appaPqizdsNHDvlEm"
+                table_name = "Contact"
+                api_key = "keyapikey"
+                timeout = (5, 5)
+                typecast = True
 
     You can implement meta attributes as callables if certain values
     need to be dynamically provided or are unavailable at import time:
 
-    >>> from pyairtable.orm import Model, fields
-    >>> class Contact(Model):
-    ...     first_name = fields.TextField("First Name")
-    ...     age = fields.IntegerField("Age")
-    ...
-    ...     class Meta:
-    ...         base_id = "appaPqizdsNHDvlEm"
-    ...         table_name = "Contact"
-    ...
-    ...         @staticmethod
-    ...         def api_key():
-    ...             return os.environ["AIRTABLE_API_KEY"]
+    .. code-block:: python
+
+        from pyairtable.orm import Model, fields
+        from your_app.config import get_secret
+
+        class Contact(Model):
+            first_name = fields.TextField("First Name")
+            age = fields.IntegerField("Age")
+
+            class Meta:
+                base_id = "appaPqizdsNHDvlEm"
+                table_name = "Contact"
+
+                @staticmethod
+                def api_key():
+                    return get_secret("AIRTABLE_API_KEY")
     """
 
     id: str = ""
@@ -122,6 +134,18 @@ class Model:
         return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
 
     def __init__(self, **fields: Any):
+        """
+        Constructs a model instance with field values based on the given keyword args.
+
+        >>> Contact(name="Alice", birthday=date(1980, 1, 1))
+        <unsaved Contact>
+
+        The keyword argument ``id=`` special-cased and sets the record ID, not a field value.
+
+        >>> Contact(id="recWPqD9izdsNvlE", name="Bob")
+        <Contact id='recWPqD9izdsNvlE'>
+        """
+
         if "id" in fields:
             self.id = fields.pop("id")
 
@@ -184,15 +208,19 @@ class Model:
         return bool(cls._get_meta("typecast", default=True))
 
     def exists(self) -> bool:
-        """Returns boolean indicating if instance exists (has 'id' attribute)"""
+        """
+        Whether the instance has been saved to Airtable already.
+        """
         return bool(self.id)
 
     def save(self) -> bool:
         """
         Saves or updates a model.
-        If instance has no 'id', it will be created, otherwise updated.
 
-        Returns ``True`` if was created and `False` if it was updated
+        If the instance does not exist already, it will be created;
+        otherwise, the existing record will be updated.
+
+        Returns ``True`` if a record was created and ``False`` if it was updated.
         """
         if self._deleted:
             raise RuntimeError(f"{self.id} was deleted")
@@ -211,7 +239,9 @@ class Model:
         return did_create
 
     def delete(self) -> bool:
-        """Deletes record. Must have 'id' field"""
+        """
+        Deletes the record. Raises ``ValueError`` if the record does not exist.
+        """
         if not self.id:
             raise ValueError("cannot be deleted because it does not have id")
         table = self.get_table()
