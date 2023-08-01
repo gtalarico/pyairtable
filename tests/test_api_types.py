@@ -1,5 +1,15 @@
+from typing import TYPE_CHECKING
+
 import pytest
-from pydantic import ValidationError
+
+if TYPE_CHECKING:  # mypy really does not like this conditional import.
+    import pydantic
+else:
+    # Pydantic v2 broke a bunch of stuff. Luckily they provide a built-in v1.
+    try:
+        import pydantic.v1 as pydantic
+    except ImportError:
+        import pydantic
 
 from pyairtable.api import types as T
 from pyairtable.testing import fake_attachment, fake_id, fake_record, fake_user
@@ -53,9 +63,9 @@ def test_assert_not_typed_dict(cls, value):
     """
     Test that we can assert that a dict does *not* conform to a TypedDict.
     """
-    with pytest.raises(ValidationError):
+    with pytest.raises(pydantic.ValidationError):
         T.assert_typed_dict(cls, value)
-    with pytest.raises(ValidationError):
+    with pytest.raises(pydantic.ValidationError):
         T.assert_typed_dicts(cls, [value])
 
 

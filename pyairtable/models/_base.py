@@ -1,8 +1,17 @@
 from functools import partial
-from typing import Any, ClassVar, Iterable, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Optional
 
 import inflection
-import pydantic
+
+if TYPE_CHECKING:  # mypy really does not like this conditional import.
+    import pydantic
+else:
+    # Pydantic v2 broke a bunch of stuff. Luckily they provide a built-in v1.
+    try:
+        import pydantic.v1 as pydantic
+    except ImportError:
+        import pydantic
+
 from typing_extensions import Self as SelfType
 
 
@@ -86,7 +95,8 @@ class SerializableModel(AirtableModel):
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Prevents implementers from changing values on readonly or non-writable fields.
-        if name in self.__class__.__fields__:
+        # Mypy can't tell that we are using pydantic v1.
+        if name in self.__class__.__fields__:  # type: ignore[operator, unused-ignore]
             if self.__readonly__ and name in self.__readonly__:
                 raise AttributeError(name)
             if self.__writable__ is not None and name not in self.__writable__:
