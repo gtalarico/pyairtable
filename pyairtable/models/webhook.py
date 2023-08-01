@@ -118,7 +118,8 @@ class Webhook(SerializableModel, allow_update=False):
                 created_tables_by_id={},
                 destroyed_table_ids=["tbl20000000000000", "tbl20000000000001"],
                 error=None,
-                error_code=None
+                error_code=None,
+                cursor=1
             )
         """
         url = f"{self._url}/payloads"
@@ -129,10 +130,11 @@ class Webhook(SerializableModel, allow_update=False):
             options=options,
             offset_field="cursor",
         ):
-            for payload_data in page["payloads"]:
-                yield WebhookPayload.parse_obj(payload_data)
-            if not page.get("mightHaveMore"):
+            for payload in (payloads := page["payloads"]):
+                yield WebhookPayload.parse_obj({**payload, "cursor": cursor})
+            if not (payloads and page.get("mightHaveMore")):
                 return
+            cursor = page["cursor"]
 
 
 class WebhookNotification(AirtableModel):
@@ -290,6 +292,10 @@ class WebhookPayload(AirtableModel):
     destroyed_table_ids: List[str] = FL()
     error: Optional[bool]
     error_code: Optional[str] = pydantic.Field(alias="code")
+
+    #: This is not a part of Airtable's webhook payload specification.
+    #: This indicates the cursor field in the response which provided this payload.
+    cursor: Optional[int]
 
     class ActionMetadata(AirtableModel):
         source: str

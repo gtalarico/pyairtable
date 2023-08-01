@@ -80,7 +80,7 @@ def test_payloads(webhook: Webhook, requests_mock, sample_json):
         {**sample_json("WebhookPayload"), "baseTransactionNumber": n}
         for n in range(count + extra)
     ]
-    requests_mock.get(
+    mock_endpoint = requests_mock.get(
         webhook._url + "/payloads",
         response_list=[
             {
@@ -93,9 +93,13 @@ def test_payloads(webhook: Webhook, requests_mock, sample_json):
             for index, payload in enumerate(payloads_json, 1)
         ],
     )
+    # Ensure we got the right transactions in the right order.
     payloads = list(webhook.payloads())
     assert len(payloads) == count
     assert [p.base_transaction_number for p in payloads] == [0, 1, 2, 3, 4]
+    # Ensure we sent the correct cursors, since requests_mock doesn't validate them.
+    request_cursors = [req.qs["cursor"] for req in mock_endpoint.request_history]
+    assert request_cursors == [[str(n + 1)] for n in range(count)]
 
 
 def test_payloads__stop_on_empty_list(webhook: Webhook, requests_mock, sample_json):
