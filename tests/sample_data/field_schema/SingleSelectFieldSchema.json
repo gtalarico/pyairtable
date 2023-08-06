@@ -1,0 +1,24 @@
+{
+  "type": "singleSelect",
+  "options": {
+    "choices": [
+      {
+        "id": "selSwz6Sw0qCkFTll",
+        "name": "Todo",
+        "color": "redLight2"
+      },
+      {
+        "id": "selTYUU62nFD9JX50",
+        "name": "In progress",
+        "color": "yellowLight2"
+      },
+      {
+        "id": "selvoFITCGqwGxYtB",
+        "name": "Done",
+        "color": "greenLight2"
+      }
+    ]
+  },
+  "id": "fldqCjrs1UhXgHUIc",
+  "name": "Status"
+}

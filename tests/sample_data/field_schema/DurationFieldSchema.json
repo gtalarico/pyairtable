@@ -1,0 +1,8 @@
+{
+  "type": "duration",
+  "options": {
+    "durationFormat": "h:mm:ss.S"
+  },
+  "id": "fldiHUj34Rtni86oW",
+  "name": "Duration (h:mm:ss.s)"
+}

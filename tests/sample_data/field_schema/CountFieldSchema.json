@@ -1,0 +1,9 @@
+{
+  "type": "count",
+  "options": {
+    "isValid": true,
+    "recordLinkFieldId": "fldNvFMYxBnf35WkO"
+  },
+  "id": "fldVCMT5NmDVX2IyW",
+  "name": "Link to Self (Count)"
+}

@@ -1,0 +1,17 @@
+{
+  "type": "formula",
+  "options": {
+    "isValid": true,
+    "referencedFieldIds": [
+      "fldgstMCbpPNgbXBN"
+    ],
+    "result": {
+      "type": "number",
+      "options": {
+        "precision": 0
+      }
+    }
+  },
+  "id": "fldBeqw3negrW9MMK",
+  "name": "Formula NaN"
+}

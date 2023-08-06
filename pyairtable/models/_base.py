@@ -147,7 +147,6 @@ def update_forward_refs(
         ...     class B_Two(AirtableModel): ...
         >>> update_forward_refs(vars())
     """
-    # Avoid infinite circular loops
     memo = set() if memo is None else memo
     # If it's a type, update its refs, then do the same for any nested classes.
     # This will raise AttributeError if given a non-AirtableModel type.
