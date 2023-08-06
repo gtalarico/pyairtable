@@ -17,6 +17,11 @@ def webhook(sample_json, base, api):
     )
 
 
+@pytest.fixture
+def payload_json(sample_json):
+    return sample_json("WebhookPayload")
+
+
 @pytest.mark.parametrize(
     "clsname",
     [
@@ -62,23 +67,21 @@ def test_delete(webhook: Webhook, requests_mock):
     assert m.call_count == 1
 
 
-def test_error_payload(sample_json):
-    payload_json = sample_json("WebhookPayload")
+def test_error_payload(payload_json):
     payload_json.update({"error": True, "code": "INVALID_HOOK"})
     payload = WebhookPayload.parse_obj(payload_json)
     assert payload.error is True
     assert payload.error_code == "INVALID_HOOK"
 
 
-def test_payloads(webhook: Webhook, requests_mock, sample_json):
+def test_payloads(webhook: Webhook, requests_mock, payload_json):
     """
     Test that Webhook.payloads() continues to iterate payloads from the API
     until it reaches the point where mightHaveMore is false.
     """
     count = extra = 5
     payloads_json = [
-        {**sample_json("WebhookPayload"), "baseTransactionNumber": n}
-        for n in range(count + extra)
+        {**payload_json, "baseTransactionNumber": n} for n in range(count + extra)
     ]
     mock_endpoint = requests_mock.get(
         webhook._url + "/payloads",
@@ -102,11 +105,10 @@ def test_payloads(webhook: Webhook, requests_mock, sample_json):
     assert request_cursors == [[str(n + 1)] for n in range(count)]
 
 
-def test_payloads__stop_on_empty_list(webhook: Webhook, requests_mock, sample_json):
+def test_payloads__stop_on_empty_list(webhook: Webhook, requests_mock, payload_json):
     """
     Test that an empty list causes us to not query for more, even if mightHaveMore is true.
     """
-    payload_json = sample_json("WebhookPayload")
     requests_mock.get(
         webhook._url + "/payloads",
         response_list=[

@@ -26,6 +26,14 @@ class AirtableModel(pydantic.BaseModel):
         # We'll assume this in a couple different places
         underscore_attrs_are_private = True
 
+    _raw: Any = pydantic.PrivateAttr()
+
+    @classmethod
+    def parse_obj(cls, obj: Any) -> SelfType:
+        instance = super().parse_obj(obj)
+        instance._raw = obj
+        return instance
+
 
 class SerializableModel(AirtableModel):
     """
@@ -46,14 +54,16 @@ class SerializableModel(AirtableModel):
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         # These are private to SerializableModel
+        if "writable" in kwargs and "readonly" in kwargs:
+            raise ValueError("incompatible kwargs 'writable' and 'readonly'")
         cls.__writable = kwargs.get("writable")
         cls.__readonly = kwargs.get("readonly")
         cls.__allow_update = bool(kwargs.get("allow_update", True))
         cls.__allow_delete = bool(kwargs.get("allow_delete", True))
 
-    _api: "pyairtable.api.api.Api"
-    _url: str
-    _deleted: bool = False
+    _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
+    _url: str = pydantic.PrivateAttr()
+    _deleted: bool = pydantic.PrivateAttr(default=False)
 
     @classmethod
     def from_api(cls, api: "pyairtable.api.api.Api", url: str, obj: Any) -> SelfType:
