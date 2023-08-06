@@ -1,5 +1,7 @@
+.. include:: _warn_latest.rst
+.. include:: _substitutions.rst
+
 .. image:: _static/logo.svg
-.. include:: substitutions.rst
 
 pyAirtable
 ==========
@@ -14,7 +16,7 @@ pyAirtable
    `GitHub <https://github.com/gtalarico/pyairtable>`_
 
 
-   Latest Release: |version|
+   Version: |version|
 
 
 .. toctree::

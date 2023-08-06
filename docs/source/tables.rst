@@ -1,7 +1,9 @@
+.. include:: _warn_latest.rst
+.. include:: _substitutions.rst
+
+
 Working with Tables
 ==============================
-
-.. include:: substitutions.rst
 
 
 .. note::

@@ -1,9 +1,9 @@
+.. include:: _warn_latest.rst
+.. include:: _substitutions.rst
+
 
 Getting Started
 ======================================
-
-
-.. include:: substitutions.rst
 
 
 Installation
