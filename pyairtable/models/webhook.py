@@ -130,8 +130,11 @@ class Webhook(SerializableModel, allow_update=False):
             options=options,
             offset_field="cursor",
         ):
-            for payload in (payloads := page["payloads"]):
-                yield WebhookPayload.parse_obj({**payload, "cursor": cursor})
+            payloads = page["payloads"]
+            for index, payload in enumerate(payloads):
+                payload = WebhookPayload.parse_obj(payload)
+                payload.cursor = cursor + index
+                yield payload
             if not (payloads and page.get("mightHaveMore")):
                 return
             cursor = page["cursor"]

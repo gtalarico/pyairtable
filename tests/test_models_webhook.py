@@ -1,4 +1,5 @@
 import datetime
+import math
 from operator import attrgetter
 
 import pytest
@@ -79,30 +80,37 @@ def test_payloads(webhook: Webhook, requests_mock, payload_json):
     Test that Webhook.payloads() continues to iterate payloads from the API
     until it reaches the point where mightHaveMore is false.
     """
-    count = extra = 5
-    payloads_json = [
-        {**payload_json, "baseTransactionNumber": n} for n in range(count + extra)
+    count = 8
+    chunksize = 2
+    pagecount = math.ceil(count / chunksize) + 1  # one extra page, to be ignored
+    payload_pages = [
+        [
+            {**payload_json, "baseTransactionNumber": (m * chunksize) + n + 1}
+            for n in range(chunksize)
+        ]
+        for m in range(pagecount)
     ]
     mock_endpoint = requests_mock.get(
         webhook._url + "/payloads",
         response_list=[
             {
                 "json": {
-                    "cursor": index + 1,
-                    "mightHaveMore": index < count,  # extras should be ignored
-                    "payloads": [payload],
+                    "cursor": page[-1]["baseTransactionNumber"] + 1,
+                    "mightHaveMore": index < pagecount - 1,  # extras should be ignored
+                    "payloads": page,
                 }
             }
-            for index, payload in enumerate(payloads_json, 1)
+            for index, page in enumerate(payload_pages, 1)
         ],
     )
     # Ensure we got the right transactions in the right order.
     payloads = list(webhook.payloads())
     assert len(payloads) == count
-    assert [p.base_transaction_number for p in payloads] == [0, 1, 2, 3, 4]
+    assert [p.base_transaction_number for p in payloads] == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert [p.cursor for p in payloads] == [1, 2, 3, 4, 5, 6, 7, 8]
     # Ensure we sent the correct cursors, since requests_mock doesn't validate them.
     request_cursors = [req.qs["cursor"] for req in mock_endpoint.request_history]
-    assert request_cursors == [[str(n + 1)] for n in range(count)]
+    assert request_cursors == [["1"], ["3"], ["5"], ["7"]]
 
 
 def test_payloads__stop_on_empty_list(webhook: Webhook, requests_mock, payload_json):
