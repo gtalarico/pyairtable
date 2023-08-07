@@ -1,0 +1,93 @@
+{
+  "collaborators": {
+    "baseCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "email": "foo@bam.com",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "permissionLevel": "create",
+        "userId": "usrsOEchC9xuwRgKk"
+      }
+    ],
+    "workspaceCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "email": "foo@bar.com",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "permissionLevel": "owner",
+        "userId": "usrL2PNC5o3H4lBEi"
+      }
+    ]
+  },
+  "createdTime": "2019-01-03T12:33:12.421Z",
+  "groupCollaborators": {
+    "baseCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "groupId": "ugpR8ZT9KtIgp8Bh3",
+        "name": "group 2",
+        "permissionLevel": "create"
+      }
+    ],
+    "workspaceCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "groupId": "ugp1mKGb3KXUyQfOZ",
+        "name": "group 1",
+        "permissionLevel": "edit"
+      }
+    ]
+  },
+  "id": "appLkNDICXNqxSDhG",
+  "individualCollaborators": {
+    "baseCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "email": "foo@bam.com",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "permissionLevel": "create",
+        "userId": "usrsOEchC9xuwRgKk"
+      }
+    ],
+    "workspaceCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "email": "foo@bar.com",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "permissionLevel": "owner",
+        "userId": "usrL2PNC5o3H4lBEi"
+      }
+    ]
+  },
+  "inviteLinks": {
+    "baseInviteLinks": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "id": "invJiqaXmPqq6Ec87",
+        "invitedEmail": null,
+        "permissionLevel": "read",
+        "referredByUserId": "usrsOEchC9xuwRgKk",
+        "restrictedToEmailDomains": [
+          "bam.com"
+        ],
+        "type": "multiUse"
+      }
+    ],
+    "workspaceInviteLinks": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "id": "invJiqaXmPqq6Ec87",
+        "invitedEmail": "bam@bam.com",
+        "permissionLevel": "edit",
+        "referredByUserId": "usrL2PNC5o3H4lBEi",
+        "restrictedToEmailDomains": [],
+        "type": "singleUse"
+      }
+    ]
+  },
+  "name": "my first base",
+  "permissionLevel": "none",
+  "workspaceId": "wspmhESAta6clCCwF"
+}

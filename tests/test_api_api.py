@@ -57,3 +57,38 @@ def test_whoami(api, requests_mock):
     }
     requests_mock.get("https://api.airtable.com/v0/meta/whoami", json=payload)
     assert api.whoami() == payload
+
+
+def test_bases(api, requests_mock, sample_json):
+    m = requests_mock.get(api.build_url("meta/bases"), json=sample_json("Bases"))
+    bases = api.bases()
+    assert m.call_count == 1
+    assert set(bases) == {"appLkNDICXNqxSDhG", "appSW9R5uCNmRmfl6"}
+    assert bases["appLkNDICXNqxSDhG"].id == "appLkNDICXNqxSDhG"
+
+    # Should not make a second API call...
+    assert api.bases() == bases
+    assert m.call_count == 1
+    # ....unless we force it:
+    reloaded = api.bases(force=True)
+    assert set(reloaded) == set(bases)
+    assert reloaded != bases
+    assert m.call_count == 2
+
+
+def test_iterate_requests(api: Api, requests_mock):
+    url = "https://example.com"
+    response_list = [{"json": {"page": n, "offset": n + 1}} for n in range(1, 3)]
+    response_list[-1]["json"]["offset"] = None
+    requests_mock.get(url, response_list=response_list)
+    responses = list(api.iterate_requests("GET", url))
+    assert responses == [response["json"] for response in response_list]
+
+
+def test_iterate_requests__invalid_type(api: Api, requests_mock):
+    url = "https://example.com"
+    response_list = [{"json": {"page": n, "offset": n + 1}} for n in range(1, 3)]
+    response_list.append({"json": "anything but a dict, and we stop immediately"})
+    requests_mock.get(url, response_list=response_list)
+    responses = list(api.iterate_requests("GET", url))
+    assert responses == [response["json"] for response in response_list]

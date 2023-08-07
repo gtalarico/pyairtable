@@ -136,11 +136,7 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
         """
         if self._model and self._attribute_name:
             return f"{self._model.__name__}.{self._attribute_name}"
-        if self._model:
-            return f"{self._model.__name__}.{self.field_name}"
-        if self.field_name:
-            return f"{self.field_name!r} field"
-        return "Field"
+        return f"{self.field_name!r} field"
 
     # __get__ and __set__ are called when accessing an instance of Field on an object.
     # Model.field should return the Field instance itself, whereas
@@ -570,8 +566,6 @@ class LinkField(_ListField[RecordId, T_Linked]):
         """
         Returns the list of record IDs which should be persisted to the API.
         """
-        if not value:
-            return []
         # If the _fields value contains str, it means we loaded it from the API
         # but we never actually accessed the value (see _get_list_value).
         # When persisting this model back to the API, we can just write those IDs.

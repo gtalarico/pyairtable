@@ -1,5 +1,4 @@
 import posixpath
-from functools import lru_cache
 from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar, Union
 
 import requests
@@ -71,6 +70,8 @@ class Api:
         self.timeout = timeout
         self.api_key = api_key
 
+        self._bases: Dict[str, "pyairtable.api.base.Base"] = {}
+
     @property
     def api_key(self) -> str:
         """
@@ -86,12 +87,31 @@ class Api:
     def __repr__(self) -> str:
         return "<pyairtable.Api>"
 
-    @lru_cache
     def base(self, base_id: str) -> "pyairtable.api.base.Base":
         """
         Returns a new :class:`Base` instance that uses this instance of :class:`Api`.
         """
-        return pyairtable.api.base.Base(self, base_id)
+        if base_id not in self._bases:
+            self._bases[base_id] = pyairtable.api.base.Base(self, base_id)
+        return self._bases[base_id]
+
+    def bases(self, /, force: bool = False) -> Dict[str, "pyairtable.api.base.Base"]:
+        """
+        Returns a mapping of IDs to :class:`Base` instances.
+
+        Args:
+            force: |kwarg_force_metadata|
+        """
+        url = self.build_url("meta/bases")
+        if force or not self._bases:
+            self._bases = {
+                data["id"]: pyairtable.api.base.Base(
+                    self, data["id"], name=data["name"]
+                )
+                for page in self.iterate_requests("GET", url)
+                for data in page["bases"]
+            }
+        return dict(self._bases)
 
     def table(self, base_id: str, table_name: str) -> "pyairtable.api.table.Table":
         """

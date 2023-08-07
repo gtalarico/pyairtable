@@ -1,9 +1,10 @@
+import warnings
 from typing import Any, Dict, Optional, Union
 
 from pyairtable.api import Api, Base, Table
 
 
-def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:
+def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:  # pragma: no cover
     """
     Return list of Bases from an Api or Base instance.
     For More Details `Metadata Api Documentation <https://airtable.com/api/meta>`_
@@ -12,7 +13,7 @@ def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:
         api: :class:`Api` or :class:`Base` instance
 
     Usage:
-        >>> table.get_bases()
+        >>> get_api_bases(api)
         {
             "bases": [
                 {
@@ -28,6 +29,11 @@ def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:
             ]
         }
     """
+    warnings.warn(
+        "get_api_bases is deprecated; use Api().bases() instead.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
     api = api.api if isinstance(api, Base) else api
     base_list_url = api.build_url("meta", "bases")
     return {
@@ -39,7 +45,7 @@ def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:
     }
 
 
-def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:
+def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:  # pragma: no cover
     """
     Returns Schema of a Base
     For More Details `Metadata Api Documentation <https://airtable.com/api/meta>`_
@@ -83,13 +89,18 @@ def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:
             ]
         }
     """
+    warnings.warn(
+        "get_base_schema is deprecated; use Base().schema() instead.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
     base = base.base if isinstance(base, Table) else base
     base_schema_url = base.api.build_url("meta", "bases", base.id, "tables")
     assert isinstance(response := base.api.request("get", base_schema_url), dict)
     return response
 
 
-def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:
+def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:  # pragma: no cover
     """
     Returns the specific table schema record provided by base schema list
 
@@ -118,6 +129,11 @@ def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:
             ]
         }
     """
+    warnings.warn(
+        "get_table_schema is deprecated; use Table().schema() instead.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
     base_schema = get_base_schema(table)
     for table_record in base_schema.get("tables", {}):
         assert isinstance(table_record, dict)

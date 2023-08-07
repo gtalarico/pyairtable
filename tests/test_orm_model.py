@@ -70,12 +70,47 @@ def test_model_overlapping(name):
 
 class FakeModel(Model):
     Meta = fake_meta()
+    one = f.TextField("one")
+    two = f.TextField("two")
 
 
 def test_repr():
     record = fake_record()
     assert repr(FakeModel.from_record(record)) == f"<FakeModel id='{record['id']}'>"
     assert repr(FakeModel()) == "<unsaved FakeModel>"
+
+
+def test_delete():
+    obj = FakeModel.from_record(record := fake_record())
+    with mock.patch("pyairtable.Table.delete") as mock_delete:
+        obj.delete()
+
+    mock_delete.assert_called_once_with(record["id"])
+
+
+def test_delete__unsaved():
+    obj = FakeModel()
+    with pytest.raises(ValueError):
+        obj.delete()
+
+
+def test_fetch():
+    obj = FakeModel(id=fake_id())
+    assert not obj.one
+    assert not obj.two
+
+    with mock.patch("pyairtable.Table.get") as mock_get:
+        mock_get.return_value = fake_record(one=1, two=2)
+        obj.fetch()
+
+    assert obj.one == 1
+    assert obj.two == 2
+
+
+def test_fetch__unsaved():
+    obj = FakeModel()
+    with pytest.raises(ValueError):
+        obj.fetch()
 
 
 @pytest.mark.parametrize(
@@ -127,6 +162,15 @@ def test_from_ids(mock_all):
     with pytest.raises(KeyError):
         FakeModel.from_ids(fake_ids + ["recDefinitelyNotValid"])
     mock_all.assert_called_once()
+
+
+@mock.patch("pyairtable.Table.all")
+def test_from_ids__no_fetch(mock_all):
+    fake_ids = [fake_id() for _ in range(10)]
+    contacts = FakeModel.from_ids(fake_ids, fetch=False)
+    assert mock_all.call_count == 0
+    assert len(contacts) == 10
+    assert set(contact.id for contact in contacts) == set(fake_ids)
 
 
 def test_dynamic_model_meta():

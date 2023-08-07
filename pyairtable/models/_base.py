@@ -56,10 +56,11 @@ class SerializableModel(AirtableModel):
         # These are private to SerializableModel
         if "writable" in kwargs and "readonly" in kwargs:
             raise ValueError("incompatible kwargs 'writable' and 'readonly'")
-        cls.__writable = kwargs.get("writable")
-        cls.__readonly = kwargs.get("readonly")
-        cls.__allow_update = bool(kwargs.get("allow_update", True))
-        cls.__allow_delete = bool(kwargs.get("allow_delete", True))
+        cls.__writable = kwargs.pop("writable", None)
+        cls.__readonly = kwargs.pop("readonly", None)
+        cls.__allow_update = bool(kwargs.pop("allow_update", True))
+        cls.__allow_delete = bool(kwargs.pop("allow_delete", True))
+        super().__init_subclass__(**kwargs)
 
     _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
     _url: str = pydantic.PrivateAttr()

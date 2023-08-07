@@ -16,6 +16,7 @@ from pyairtable.api.types import (
     assert_typed_dict,
     assert_typed_dicts,
 )
+from pyairtable.models.schema import TableSchema
 
 
 class Table:
@@ -560,6 +561,27 @@ class Table:
             url=self.record_url(record_id, "comments", response["id"]),
             obj=response,
         )
+
+    def schema(self) -> TableSchema:
+        """
+        Retrieves the schema of the current table. The return value
+        will be cached on the :class:`~pyairtable.Base` instance
+        using `lru_cache <https://docs.python.org/3/library/functools.html#functools.lru_cache>`_;
+        to clear the cache, call ``table.base.schema.cache_clear()``.
+
+        Usage:
+            >>> table.schema()
+            TableSchema(
+                id='tblslc6jG0XedVMNx',
+                name='My Table',
+                primary_field_id='fld6jG0XedVMNxFQW',
+                fields=[...],
+                views=[...]
+            )
+            >>> table.schema().field("fld6jG0XedVMNxFQW")
+            SingleLineTextFieldSchema(id='fld6jG0XedVMNxFQW', name='Name', type='singleLineText')
+        """
+        return self.base.schema().table(self.name)
 
 
 # These are at the bottom of the module to avoid circular imports

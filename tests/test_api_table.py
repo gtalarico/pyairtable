@@ -52,6 +52,13 @@ def test_repr(table: Table):
     assert repr(table) == "<Table base_id='appJMY16gZDQrMWpA' table_name='Table Name'>"
 
 
+def test_schema(requests_mock, sample_json):
+    schema_json = sample_json("BaseSchema")
+    table = Table("api_key", "base_id", "Apartments")
+    requests_mock.get(table.base.meta_url("tables"), json=schema_json)
+    assert table.schema().id == "tbltp8DGLhqbUmjK1"
+
+
 @pytest.mark.parametrize(
     "base_id,table_name,table_url_suffix",
     [

@@ -1,9 +1,9 @@
 import warnings
-from functools import lru_cache
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pyairtable.api.api
 import pyairtable.api.table
+from pyairtable.models import schema
 from pyairtable.models.webhook import (
     CreateWebhook,
     CreateWebhookResponse,
@@ -23,7 +23,16 @@ class Base:
     #: The base ID, in the format ``appXXXXXXXXXXXXXX``
     id: str
 
-    def __init__(self, api: Union["pyairtable.api.api.Api", str], base_id: str):
+    _name: Optional[str]
+    _info: Optional[schema.BaseInfo]
+
+    def __init__(
+        self,
+        api: Union["pyairtable.api.api.Api", str],
+        base_id: str,
+        /,
+        name: Optional[str] = None,
+    ):
         """
         Old style constructor takes ``str`` arguments, and will create its own
         instance of :class:`Api`.
@@ -52,24 +61,113 @@ class Base:
         self.api = api
         self.id = base_id
 
+        self._name = name
+        self._info: Optional[schema.BaseInfo] = None
+        self._schema: Optional[schema.BaseSchema] = None
+        self._tables: Dict[str, "pyairtable.api.table.Table"] = {}
+
     def __repr__(self) -> str:
         return f"<pyairtable.Base base_id={self.id!r}>"
 
-    @lru_cache
-    def table(self, table_name: str) -> "pyairtable.api.table.Table":
+    def table(self, id_or_name: str) -> "pyairtable.api.table.Table":
         """
-        Returns a new :class:`Table` instance using all shared
-        attributes from :class:`Base`.
+        Returns a new :class:`Table` instance using this instance of :class:`Base`.
 
         Args:
-            table_name: An Airtable table name. Table name should be unencoded,
+            id_or_name: An Airtable table ID or name. Table name should be unencoded,
                 as shown on browser.
         """
-        return pyairtable.api.table.Table(None, self, table_name)
+        # If we've got the schema already, we can validate the ID or name exists.
+        if self._schema:
+            try:
+                return self.tables()[id_or_name]
+            except KeyError:
+                # This will raise KeyError (again) if the name/ID really doesn't exist
+                info = self._schema.table(id_or_name)
+                return self._tables[info.id]
+
+        # If the schema is not cached, we're not going to perform network
+        # traffic just to look it up, so we assume it's a valid name/ID.
+        return pyairtable.api.table.Table(None, self, id_or_name)
+
+    def tables(self, *, force: bool = False) -> Dict[str, "pyairtable.api.table.Table"]:
+        """
+        Retrieves the base's table schema from the metadata API
+        and returns a mapping of IDs to :class:`Table` instances.
+
+        Args:
+            force: |kwarg_force_metadata|
+        """
+        if force or not self._tables:
+            self._tables = {
+                table_info.id: pyairtable.api.table.Table(None, self, table_info.id)
+                for table_info in self.schema().tables
+            }
+        return dict(self._tables)
+
+    @property
+    def name(self) -> Optional[str]:
+        """
+        Returns the name of the base, if known.
+
+        pyAirtable will not perform network traffic as a result of property calls,
+        so this property only returns a value if one of these conditions are met:
+
+            1. The Base was initialized with the ``name=`` keyword parameter,
+               usually because it was created by :meth:`Api.bases <pyairtable.Api.bases>`.
+            2. The :meth:`~pyairtable.Base.info` method has already been called.
+        """
+        if self._name:
+            return self._name
+        if self._info:
+            return self._info.name
+        return None
 
     @property
     def url(self) -> str:
         return self.api.build_url(self.id)
+
+    def meta_url(self, *components: Any) -> str:
+        """
+        Builds a URL to a metadata endpoint for this base.
+        """
+        return self.api.build_url("meta/bases", self.id, *components)
+
+    def info(self, /, force: bool = False) -> schema.BaseInfo:
+        """
+        Retrieves `base information <https://airtable.com/developers/web/api/get-base-collaborators>`__
+        from the API and caches it locally.
+
+        Args:
+            force: |kwarg_force_metadata|
+        """
+        if force or not self._info:
+            params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
+            result = self.api.request("GET", self.meta_url(), params=params)
+            self._info = schema.BaseInfo.parse_obj(result)
+        return self._info
+
+    def schema(self, /, force: bool = False) -> schema.BaseSchema:
+        """
+        Retrieves the schema of all tables in the base.
+
+        Args:
+            force: |kwarg_force_metadata|
+
+        Usage:
+            >>> base.schema().tables
+            [TableSchema(...), TableSchema(...), ...]
+            >>> base.schema().table("tblXXXXXXXXXXXXXX")
+            TableSchema(id="tblXXXXXXXXXXXXXX", ...)
+            >>> base.schema().table("My Table")
+            TableSchema(id="...", name="My Table", ...)
+        """
+        if force or not self._schema:
+            url = self.meta_url("tables")
+            params = {"include": ["visibleFieldIds"]}
+            data = self.api.request("GET", url, params=params)
+            self._schema = schema.BaseSchema.parse_obj(data)
+        return self._schema
 
     @property
     def webhooks_url(self) -> str:

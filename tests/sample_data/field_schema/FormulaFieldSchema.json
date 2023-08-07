@@ -1,6 +1,7 @@
 {
   "type": "formula",
   "options": {
+    "formula": "{fldgstMCbpPNgbXBN} + \"FOO\"",
     "isValid": true,
     "referencedFieldIds": [
       "fldgstMCbpPNgbXBN"

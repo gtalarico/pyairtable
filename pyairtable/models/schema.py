@@ -15,7 +15,7 @@ FL = partial(pydantic.Field, default_factory=list)
 FD = partial(pydantic.Field, default_factory=dict)
 
 
-def _find(collection: List[T], id_or_name: str, by_name: bool = True) -> T:
+def _find(collection: List[T], id_or_name: str) -> T:
     """
     For use on a collection model to find objects by either id or name.
     """
@@ -25,9 +25,6 @@ def _find(collection: List[T], id_or_name: str, by_name: bool = True) -> T:
         if item.id == id_or_name:
             return item
         items_by_name[item.name] = item
-
-    if not by_name:
-        raise KeyError(id_or_name)
 
     return items_by_name[id_or_name]
 
@@ -41,6 +38,7 @@ class BaseInfo(AirtableModel):
     id: str
     name: str
     permission_level: PermissionLevel
+    workspace_id: str
     interfaces: Dict[str, "BaseInfo.InterfaceCollaborators"] = FD()
     group_collaborators: Optional["BaseInfo.GroupCollaborators"]
     individual_collaborators: Optional["BaseInfo.IndividualCollaborators"]
@@ -245,6 +243,7 @@ class FormulaFieldConfig(AirtableModel):
     options: Optional["FormulaFieldConfig.Options"]
 
     class Options(AirtableModel):
+        formula: str
         is_valid: bool
         referenced_field_ids: Optional[List[str]]
         result: Optional["FieldConfig"]

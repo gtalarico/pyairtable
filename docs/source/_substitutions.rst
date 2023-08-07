@@ -60,3 +60,7 @@
 
 .. |kwarg_return_fields_by_field_id| replace:: An optional boolean value that lets you return field objects where the
     key is the field id. This defaults to `false`, which returns field objects where the key is the field name.
+
+.. |kwarg_force_metadata| replace::
+    If ``False``, will not fetch information from the API if it has already been retrieved.
+    If ``True``, will fetch base information from the API, overwriting any cached values.

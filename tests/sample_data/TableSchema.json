@@ -1,0 +1,37 @@
+{
+  "description": "Apartments to track.",
+  "fields": [
+    {
+      "description": "Name of the apartment",
+      "id": "fld1VnoyuotSTyxW1",
+      "name": "Name",
+      "type": "singleLineText"
+    },
+    {
+      "id": "fldoaIqdn5szURHpw",
+      "name": "Pictures",
+      "type": "multipleAttachments"
+    },
+    {
+      "id": "fldumZe00w09RYTW6",
+      "name": "District",
+      "options": {
+        "inverseLinkFieldId": "fldWnCJlo2z6ttT8Y",
+        "isReversed": false,
+        "linkedTableId": "tblK6MZHez0ZvBChZ",
+        "prefersSingleRecordLink": true
+      },
+      "type": "multipleRecordLinks"
+    }
+  ],
+  "id": "tbltp8DGLhqbUmjK1",
+  "name": "Apartments",
+  "primaryFieldId": "fld1VnoyuotSTyxW1",
+  "views": [
+    {
+      "id": "viwQpsuEDqHFqegkp",
+      "name": "Grid view",
+      "type": "grid"
+    }
+  ]
+}

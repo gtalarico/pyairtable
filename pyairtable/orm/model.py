@@ -116,23 +116,6 @@ class Model:
         """
         return {f.field_name: f for f in cls._attribute_descriptor_map().values()}
 
-    @classmethod
-    def _field_name_attribute_map(cls) -> Dict[FieldName, str]:
-        """
-        Returns a dictionary that maps field names to attribute names.
-
-        >>> class Test(Model):
-        ...     first_name = TextField("First Name")
-        ...     age = NumberField("Age")
-        ...
-        >>> Test._field_name_attribute_map()
-        >>> {
-        ...     "First Name": "first_name"
-        ...     "Age": "age"
-        ... }
-        """
-        return {v.field_name: k for k, v in cls._attribute_descriptor_map().items()}
-
     def __init__(self, **fields: Any):
         """
         Constructs a model instance with field values based on the given keyword args.
