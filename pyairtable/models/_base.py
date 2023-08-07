@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, ClassVar, Iterable, Optional
+from typing import Any, ClassVar, Iterable, Mapping, Optional, Type, Union
 
 import inflection
 from typing_extensions import Self as SelfType
@@ -125,6 +125,31 @@ class SerializableModel(AirtableModel):
                 raise AttributeError(name)
 
         super().__setattr__(name, value)
+
+
+def update_forward_refs(obj: Union[Type[AirtableModel], Mapping[str, Any]]) -> None:
+    """
+    Convenience method to ensure we update forward references for all nested models.
+
+    Any time a type annotation refers to a nested class that isn't present
+    at the time the attribute is created, we need to tell pydantic to
+    update forward references after all the referenced models exist.
+
+    Only intended for use within pyAirtable, like:
+
+        >>> from pyairtable.models._base import AirtableModel, update_forward_refs
+        >>> class A(AirtableModel): ...
+        >>> class B(AirtableModel): ...
+        ...     class B_One(AirtableModel): ...
+        ...     class B_Two(AirtableModel): ...
+        >>> update_forward_refs(vars())
+    """
+    if isinstance(obj, type):
+        obj.update_forward_refs()
+        return update_forward_refs(vars(obj))
+    for value in obj.values():
+        if isinstance(value, type) and issubclass(value, AirtableModel):
+            update_forward_refs(value)
 
 
 import pyairtable.api.api  # noqa

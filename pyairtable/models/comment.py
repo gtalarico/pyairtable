@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from ._base import AirtableModel, SerializableModel
+from ._base import AirtableModel, SerializableModel, update_forward_refs
 from .collaborator import Collaborator
 
 
@@ -79,4 +79,4 @@ class Comment(SerializableModel, writable=["text"]):
         email: Optional[str] = None
 
 
-Comment.update_forward_refs()
+update_forward_refs(vars())

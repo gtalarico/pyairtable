@@ -8,7 +8,7 @@ from typing_extensions import Self as SelfType
 from pyairtable._compat import pydantic
 from pyairtable.api.types import RecordId
 
-from ._base import AirtableModel, SerializableModel
+from ._base import AirtableModel, SerializableModel, update_forward_refs
 
 # Shortcuts to avoid lots of line wrapping
 FD: Callable[[], Any] = partial(pydantic.Field, default_factory=dict)
@@ -356,17 +356,4 @@ class WebhookPayloads(AirtableModel):
     payloads: List[WebhookPayload]
 
 
-# Any time a type annotation refers to a nested class that isn't present
-# at the time the attribute is created, we need to tell pydantic to
-# update forward references after all the referenced models exist.
-Webhook.update_forward_refs()
-WebhookNotification.update_forward_refs()
-WebhookNotificationResult.update_forward_refs()
-WebhookPayload.update_forward_refs()
-WebhookPayload.FieldChanged.update_forward_refs()
-WebhookPayload.RecordChanged.update_forward_refs()
-WebhookPayload.TableChanged.update_forward_refs()
-WebhookPayload.TableChanged.ChangedMetadata.update_forward_refs()
-WebhookPayload.ViewChanged.update_forward_refs()
-WebhookSpecification.update_forward_refs()
-WebhookSpecification.Options.update_forward_refs()
+update_forward_refs(vars())
