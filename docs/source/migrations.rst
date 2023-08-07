@@ -1,3 +1,7 @@
+.. include:: _warn_latest.rst
+.. include:: _substitutions.rst
+
+
 Migration Guide
 *****************
 

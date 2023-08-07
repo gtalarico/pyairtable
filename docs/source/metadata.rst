@@ -1,4 +1,6 @@
-.. include:: substitutions.rst
+.. include:: _warn_latest.rst
+.. include:: _substitutions.rst
+
 
 Metadata
 ==============

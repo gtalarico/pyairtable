@@ -9,6 +9,10 @@ import pyairtable.api.types
 import pyairtable.orm.fields
 from pyairtable import __version__ as version
 
+if typing.TYPE_CHECKING:
+    import sphinx.util.tags
+
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.todo",
@@ -78,6 +82,14 @@ def typehints_formatter(annotation, config):
 
 # Needed for autoapi to not choke on retrying.Retry
 suppress_warnings = ["autoapi.python_import_resolution"]
+
+
+# This allows us to insert a warning on the 'latest' build; see _warn_latest.rst
+# and https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags
+# and https://docs.readthedocs.io/en/stable/reference/environment-variables.html
+if _rtfd_version := os.environ.get("READTHEDOCS_VERSION"):
+    tags: "sphinx.util.tags.Tags"  # this is just to help type-checking IDEs
+    tags.add(f"readthedocs_{_rtfd_version}")  # noqa
 
 
 ################################
