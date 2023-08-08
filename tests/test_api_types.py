@@ -1,16 +1,6 @@
-from typing import TYPE_CHECKING
-
 import pytest
 
-if TYPE_CHECKING:  # mypy really does not like this conditional import.
-    import pydantic
-else:
-    # Pydantic v2 broke a bunch of stuff. Luckily they provide a built-in v1.
-    try:
-        import pydantic.v1 as pydantic
-    except ImportError:
-        import pydantic
-
+from pyairtable._compat import pydantic
 from pyairtable.api import types as T
 from pyairtable.testing import fake_attachment, fake_id, fake_record, fake_user
 

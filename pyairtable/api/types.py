@@ -3,18 +3,11 @@ pyAirtable provides a number of type aliases and TypedDicts which are used as in
 and return values to various pyAirtable methods.
 """
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, TypeVar, Union, cast
-
-if TYPE_CHECKING:  # mypy really does not like this conditional import.
-    import pydantic
-else:
-    # Pydantic v2 broke a bunch of stuff. Luckily they provide a built-in v1.
-    try:
-        import pydantic.v1 as pydantic
-    except ImportError:
-        import pydantic
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
 from typing_extensions import Required, TypeAlias, TypedDict
+
+from pyairtable._compat import pydantic
 
 T = TypeVar("T")
 

@@ -1,18 +1,10 @@
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Optional
+from typing import Any, ClassVar, Iterable, Optional
 
 import inflection
-
-if TYPE_CHECKING:  # mypy really does not like this conditional import.
-    import pydantic
-else:
-    # Pydantic v2 broke a bunch of stuff. Luckily they provide a built-in v1.
-    try:
-        import pydantic.v1 as pydantic
-    except ImportError:
-        import pydantic
-
 from typing_extensions import Self as SelfType
+
+from pyairtable._compat import pydantic
 
 
 class AirtableModel(pydantic.BaseModel):
