@@ -76,7 +76,7 @@ You may need to change how your code looks up some pieces of connection metadata
       - :meth:`table.record_url() <pyairtable.Table.record_url>`
 
 There is no fully exhaustive list of changes; please refer to
-:ref:`the API documentation <Module: pyairtable>` for a list of available methods and attributes.
+:ref:`the API documentation <API: pyairtable>` for a list of available methods and attributes.
 
 Retry by default
 ----------------
@@ -97,7 +97,7 @@ Changes to types
 ----------------
 
 * All functions and methods in this library have full type annotations that will pass ``mypy --strict``.
-  See the :ref:`types <Module: pyairtable.api.types>` module for more information on the types this library accepts and returns.
+  See the :mod:`pyairtable.api.types` module for more information on the types this library accepts and returns.
 
 batch_upsert has a different return type
 --------------------------------------------

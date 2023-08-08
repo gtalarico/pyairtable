@@ -565,9 +565,8 @@ class Table:
     def schema(self) -> TableSchema:
         """
         Retrieves the schema of the current table. The return value
-        will be cached on the :class:`~pyairtable.Base` instance
-        using `lru_cache <https://docs.python.org/3/library/functools.html#functools.lru_cache>`_;
-        to clear the cache, call ``table.base.schema.cache_clear()``.
+        will be cached on the :class:`~pyairtable.Base` instance;
+        to clear the cache, call ``table.base.schema(force=True)``.
 
         Usage:
             >>> table.schema()

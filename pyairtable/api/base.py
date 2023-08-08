@@ -90,9 +90,9 @@ class Base:
         # traffic just to look it up, so we assume it's a valid name/ID.
         return pyairtable.api.table.Table(None, self, id_or_name)
 
-    def tables(self, *, force: bool = False) -> Dict[str, "pyairtable.api.table.Table"]:
+    def tables(self, /, force: bool = False) -> Dict[str, "pyairtable.api.table.Table"]:
         """
-        Retrieves the base's table schema from the metadata API
+        Retrieves the base's schema from the API
         and returns a mapping of IDs to :class:`Table` instances.
 
         Args:
@@ -136,7 +136,7 @@ class Base:
     def info(self, /, force: bool = False) -> schema.BaseInfo:
         """
         Retrieves `base information <https://airtable.com/developers/web/api/get-base-collaborators>`__
-        from the API and caches it locally.
+        from the API and caches it.
 
         Args:
             force: |kwarg_force_metadata|
@@ -149,7 +149,7 @@ class Base:
 
     def schema(self, /, force: bool = False) -> schema.BaseSchema:
         """
-        Retrieves the schema of all tables in the base.
+        Retrieves the schema of all tables in the base and caches it.
 
         Args:
             force: |kwarg_force_metadata|

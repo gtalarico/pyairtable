@@ -10,16 +10,17 @@ from ._base import AirtableModel, update_forward_refs
 PermissionLevel: TypeAlias = Literal[
     "none", "read", "comment", "edit", "create", "owner"
 ]
-T = TypeVar("T", bound=Any)
-FL = partial(pydantic.Field, default_factory=list)
-FD = partial(pydantic.Field, default_factory=dict)
+
+_T = TypeVar("_T", bound=Any)
+_FL = partial(pydantic.Field, default_factory=list)
+_FD = partial(pydantic.Field, default_factory=dict)
 
 
-def _find(collection: List[T], id_or_name: str) -> T:
+def _find(collection: List[_T], id_or_name: str) -> _T:
     """
     For use on a collection model to find objects by either id or name.
     """
-    items_by_name: Dict[str, T] = {}
+    items_by_name: Dict[str, _T] = {}
 
     for item in collection:
         if item.id == id_or_name:
@@ -39,28 +40,28 @@ class BaseInfo(AirtableModel):
     name: str
     permission_level: PermissionLevel
     workspace_id: str
-    interfaces: Dict[str, "BaseInfo.InterfaceCollaborators"] = FD()
+    interfaces: Dict[str, "BaseInfo.InterfaceCollaborators"] = _FD()
     group_collaborators: Optional["BaseInfo.GroupCollaborators"]
     individual_collaborators: Optional["BaseInfo.IndividualCollaborators"]
     invite_links: Optional["BaseInfo.InviteLinks"]
 
     class InterfaceCollaborators(AirtableModel):
         created_time: str
-        group_collaborators: List["GroupCollaborator"] = FL()
-        individual_collaborators: List["IndividualCollaborator"] = FL()
-        invite_links: List["InviteLink"] = FL()
+        group_collaborators: List["GroupCollaborator"] = _FL()
+        individual_collaborators: List["IndividualCollaborator"] = _FL()
+        invite_links: List["InviteLink"] = _FL()
 
     class GroupCollaborators(AirtableModel):
-        base_collaborators: List["GroupCollaborator"] = FL()
-        workspace_collaborators: List["GroupCollaborator"] = FL()
+        base_collaborators: List["GroupCollaborator"] = _FL()
+        workspace_collaborators: List["GroupCollaborator"] = _FL()
 
     class IndividualCollaborators(AirtableModel):
-        base_collaborators: List["IndividualCollaborator"] = FL()
-        workspace_collaborators: List["IndividualCollaborator"] = FL()
+        base_collaborators: List["IndividualCollaborator"] = _FL()
+        workspace_collaborators: List["IndividualCollaborator"] = _FL()
 
     class InviteLinks(AirtableModel):
-        base_invite_links: List["InviteLink"] = FL()
-        workspace_invite_links: List["InviteLink"] = FL()
+        base_invite_links: List["InviteLink"] = _FL()
+        workspace_invite_links: List["InviteLink"] = _FL()
 
 
 class BaseSchema(AirtableModel):
@@ -137,7 +138,7 @@ class InviteLink(AirtableModel):
     invited_email: Optional[str]
     referred_by_user_id: str
     permission_level: PermissionLevel
-    restricted_to_email_domains: List[str] = FL()
+    restricted_to_email_domains: List[str] = _FL()
 
 
 # The data model is a bit confusing here, but it's designed for maximum reuse.
