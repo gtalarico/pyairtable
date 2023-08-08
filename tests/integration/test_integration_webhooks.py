@@ -2,6 +2,8 @@ import pytest
 
 from pyairtable import Base, Table
 
+pytestmark = [pytest.mark.integration]
+
 
 @pytest.fixture(autouse=True)
 def delete_webhooks_after_itest(base):
