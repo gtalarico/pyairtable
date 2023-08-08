@@ -1,7 +1,7 @@
 import base64
 from functools import partial
 from hmac import HMAC
-from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 from typing_extensions import Self as SelfType
 
@@ -140,6 +140,10 @@ class Webhook(SerializableModel, allow_update=False):
             cursor = page["cursor"]
 
 
+class _NestedId(AirtableModel):
+    id: str
+
+
 class WebhookNotification(AirtableModel):
     """
     Represents the value that Airtable will POST to the webhook's notification URL.
@@ -168,7 +172,7 @@ class WebhookNotification(AirtableModel):
                 secret = app.config["AIRTABLE_WEBHOOK_SECRET"]
                 event = WebhookNotification.from_request(body, header, secret)
                 airtable = Api(app.config["AIRTABLE_API_KEY"])
-                webhook = airtable.base(event.base).webhook(event.webhook)
+                webhook = airtable.base(event.base.id).webhook(event.webhook.id)
                 cursor = int(your_db.get(f"cursor_{event.webhook}", 0)) + 1
                 for payload in webhook.payloads(cursor=cursor):
                     # ...do stuff...
@@ -179,8 +183,8 @@ class WebhookNotification(AirtableModel):
     for more information on how these payloads are structured.
     """
 
-    base: Dict[Literal["id"], str]
-    webhook: Dict[Literal["id"], str]
+    base: _NestedId
+    webhook: _NestedId
     timestamp: str
 
     @classmethod

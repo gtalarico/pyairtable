@@ -1,11 +1,12 @@
 import datetime
+import json
 import math
 from operator import attrgetter
 
 import pytest
 
 import pyairtable.models.webhook
-from pyairtable.models.webhook import Webhook, WebhookPayload
+from pyairtable.models.webhook import Webhook, WebhookNotification, WebhookPayload
 
 
 @pytest.fixture
@@ -129,3 +130,30 @@ def test_payloads__stop_on_empty_list(webhook: Webhook, requests_mock, payload_j
     # this will cause an infinite loop if we don't check whether payloads is empty
     payloads = list(webhook.payloads())
     assert len(payloads) == 1
+
+
+@pytest.mark.parametrize("secret", [b"secret-key", "c2VjcmV0LWtleQ=="])
+def test_notification_from_request(secret):
+    notification_json = {
+        "base": {"id": "app00000000000000"},
+        "webhook": {"id": "ach00000000000000"},
+        "timestamp": "2022-02-01T21:25:05.663Z",
+    }
+    header = (
+        "hmac-sha256-e26da696a90933647bddc83995c3e1e3bb1c3d8ce1ff61cb7469767d50b2b2d4"
+    )
+
+    body = json.dumps(notification_json)
+    notification = WebhookNotification.from_request(body, header, secret)
+    assert notification.base.id == "app00000000000000"
+    assert notification.webhook.id == "ach00000000000000"
+    assert notification.timestamp == "2022-02-01T21:25:05.663Z"
+
+    with pytest.raises(ValueError):
+        WebhookNotification.from_request("[1,2,3]", header, secret)
+    with pytest.raises(ValueError):
+        WebhookNotification.from_request(body, "bad-header", secret)
+    with pytest.raises(ValueError):
+        WebhookNotification.from_request(body, header, b"bad-secret")
+    with pytest.raises(ValueError):
+        WebhookNotification.from_request(body, header, "bad-secret")
