@@ -1,6 +1,10 @@
 import pytest
 
-from pyairtable.models._base import AirtableModel, SerializableModel
+from pyairtable.models._base import (
+    AirtableModel,
+    SerializableModel,
+    update_forward_refs,
+)
 
 
 @pytest.fixture
@@ -105,3 +109,22 @@ def test_readonly(create_instance):
 def test_writable_and_readonly(create_instance):
     with pytest.raises(ValueError):
         create_instance(writable=["foo"], readonly=["bar"])
+
+
+@pytest.mark.timeout(1)
+def test_update_forward_refs():
+    """
+    Test that update_forward_refs does not get caught in an infinite loop.
+    """
+
+    class Outer(AirtableModel):
+        forward_ref: "Outer.Inner"
+
+        class Inner(AirtableModel):
+            pass
+
+    # create an infinite loop
+    Outer.Inner.Outer = Outer
+
+    # This will cause RecursionError if we're not careful
+    update_forward_refs(Outer)

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, ClassVar, Iterable, Mapping, Optional, Type, Union
+from typing import Any, ClassVar, Iterable, Mapping, Optional, Set, Type, Union
 
 import inflection
 from typing_extensions import Self as SelfType
@@ -127,7 +127,10 @@ class SerializableModel(AirtableModel):
         super().__setattr__(name, value)
 
 
-def update_forward_refs(obj: Union[Type[AirtableModel], Mapping[str, Any]]) -> None:
+def update_forward_refs(
+    obj: Union[Type[AirtableModel], Mapping[str, Any]],
+    memo: Optional[Set[int]] = None,
+) -> None:
     """
     Convenience method to ensure we update forward references for all nested models.
 
@@ -144,12 +147,20 @@ def update_forward_refs(obj: Union[Type[AirtableModel], Mapping[str, Any]]) -> N
         ...     class B_Two(AirtableModel): ...
         >>> update_forward_refs(vars())
     """
+    # Avoid infinite circular loops
+    memo = set() if memo is None else memo
+    # If it's a type, update its refs, then do the same for any nested classes.
+    # This will raise AttributeError if given a non-AirtableModel type.
     if isinstance(obj, type):
+        if id(obj) in memo:
+            return
+        memo.add(id(obj))
         obj.update_forward_refs()
-        return update_forward_refs(vars(obj))
+        return update_forward_refs(vars(obj), memo=memo)
+    # If it's a mapping, update refs for any AirtableModel instances.
     for value in obj.values():
         if isinstance(value, type) and issubclass(value, AirtableModel):
-            update_forward_refs(value)
+            update_forward_refs(value, memo=memo)
 
 
 import pyairtable.api.api  # noqa
