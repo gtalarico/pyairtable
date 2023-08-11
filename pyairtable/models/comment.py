@@ -1,10 +1,10 @@
 from typing import Dict, Optional
 
-from ._base import AirtableModel, SerializableModel
+from ._base import AirtableModel, SerializableModel, update_forward_refs
 from .collaborator import Collaborator
 
 
-class Comment(SerializableModel):
+class Comment(SerializableModel, writable=["text"]):
     """
     A record comment that has been retrieved from the Airtable API.
 
@@ -35,8 +35,6 @@ class Comment(SerializableModel):
     >>> comment.save()
     >>> comment.delete()
     """
-
-    __writable__ = ["text"]
 
     #: The unique ID of the comment.
     id: str
@@ -81,4 +79,4 @@ class Comment(SerializableModel):
         email: Optional[str] = None
 
 
-Comment.update_forward_refs()
+update_forward_refs(vars())

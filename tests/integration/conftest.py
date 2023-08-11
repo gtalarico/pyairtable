@@ -59,6 +59,11 @@ def table_name():
 
 
 @pytest.fixture
+def table_id():
+    return "tblfbOcVkVnnKxurq"
+
+
+@pytest.fixture
 def table(base: Base, table_name) -> Table:
     table = base.table(table_name)
     yield table

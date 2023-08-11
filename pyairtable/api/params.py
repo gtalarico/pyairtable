@@ -63,6 +63,7 @@ def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
 
 #: Mapping of pyairtable option names to Airtable parameter names
 OPTIONS_TO_PARAMETERS = {
+    # list records
     "cell_format": "cellFormat",
     "fields": "fields",
     "formula": "filterByFormula",
@@ -74,6 +75,9 @@ OPTIONS_TO_PARAMETERS = {
     "time_zone": "timeZone",
     "user_locale": "userLocale",
     "view": "view",
+    # get webhook payloads
+    "limit": "limit",
+    "cursor": "cursor",
 }
 
 

@@ -180,8 +180,11 @@ class Api:
                     err_msg += " [Error: {}]".format(error_dict["error"])
             exc.args = (*exc.args, err_msg)
             raise exc
-        else:
-            return response.json()
+
+        # Some Airtable endpoints will respond with an empty body and a 200.
+        if not response.text:
+            return None
+        return response.json()
 
     def iterate_requests(
         self,
@@ -189,6 +192,7 @@ class Api:
         url: str,
         fallback: Optional[Tuple[str, str]] = None,
         options: Optional[Dict[str, Any]] = None,
+        offset_field: str = "offset",
     ) -> Iterator[Any]:
         """
         Makes one or more requests and iterates through each result.
@@ -206,6 +210,8 @@ class Api:
             fallback: The method and URL to use if we have to convert a GET to a POST.
             options: Airtable-specific query params to use while fetching records.
                 See :ref:`Parameters` for valid options.
+            offset_field: The key to use in the API response to determine whether
+                there are additional pages to retrieve.
         """
         options = options or {}
         while True:
@@ -213,9 +219,9 @@ class Api:
             yield response
             if not isinstance(response, dict):
                 return
-            if not (offset := response.get("offset")):
+            if not (offset := response.get(offset_field)):
                 return
-            options = {**options, "offset": offset}
+            options = {**options, offset_field: offset}
 
     def chunked(self, iterable: Sequence[T]) -> Iterator[Sequence[T]]:
         """

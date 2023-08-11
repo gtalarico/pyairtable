@@ -1,0 +1,103 @@
+{
+    "changedMetadata": {
+        "current": {
+            "name": "table name",
+            "description": "table description"
+        },
+        "previous": {
+            "name": "previous name",
+            "description": "previous name"
+        }
+    },
+    "createdFieldsById": {
+        "fld10000000000000": {
+            "name": "new name",
+            "type": "number"
+        }
+    },
+    "changedFieldsById": {
+        "fld10000000000001": {
+            "current": {
+                "name": "new name"
+            },
+            "previous": {
+                "name": "previous name"
+            }
+        },
+        "fld10000000000002": {
+            "current": {
+                "type": "number"
+            },
+            "previous": {
+                "type": "rating"
+            }
+        }
+    },
+    "destroyedFieldIds": [
+        "fld10000000000003"
+    ],
+    "createdRecordsById": {
+        "rec00000000000000": {
+            "cellValuesByFieldId": {
+                "fld0000000000000": 0
+            },
+            "createdTime": "2022-02-01T21:25:05.663Z"
+        }
+    },
+    "changedRecordsById": {
+        "rec00000000000001": {
+            "current": {
+                "cellValuesByFieldId": {
+                    "fld00000000000001": "hello world"
+                }
+            },
+            "previous": {
+                "cellValuesByFieldId": {
+                    "fld0000000000001": "hello"
+                }
+            },
+            "unchanged": {
+                "cellValuesByFieldId": {
+                    "fld0000000000000": 1
+                }
+            }
+        }
+    },
+    "destroyedRecordIds": [
+        "rec00000000000002"
+    ],
+    "changedViewsById": {
+        "viw00000000000000": {
+            "createdRecordsById": {
+                "rec00000000000000": {
+                    "cellValuesByFieldId": {
+                        "fld00000000000000": 0
+                    },
+                    "createdTime": "2022-02-01T21:25:05.663Z"
+                }
+            },
+            "changedRecordsById": {
+                "rec00000000000001": {
+                    "current": {
+                        "cellValuesByFieldId": {
+                            "fld00000000000001": "hello world"
+                        }
+                    },
+                    "previous": {
+                        "cellValuesByFieldId": {
+                            "fld0000000000001": "hello"
+                        }
+                    },
+                    "unchanged": {
+                        "cellValuesByFieldId": {
+                            "fld0000000000000": 1
+                        }
+                    }
+                }
+            },
+            "destroyedRecordIds": [
+                "rec00000000000002"
+            ]
+        }
+    }
+}
