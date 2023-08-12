@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.1.0 (2023-08-18)
+------------------------
+
+* Added classes and methods for managing :ref:`webhooks`.
+  - `PR #291 <https://github.com/gtalarico/pyairtable/pull/291>`_.
+* Added compatibility with Pydantic 2.0.
+  - `PR #288 <https://github.com/gtalarico/pyairtable/pull/288>`_.
+
 2.0.0 (2023-07-31)
 ------------------------
 
