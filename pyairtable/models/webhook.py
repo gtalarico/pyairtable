@@ -87,14 +87,23 @@ class Webhook(SerializableModel, allow_update=False):
         response = self._api.request("POST", f"{self._url}/refresh")
         self.expiration_time = response.get("expirationTime")
 
-    def payloads(self, cursor: int = 1) -> Iterator["WebhookPayload"]:
+    def payloads(
+        self, cursor: int = 1, *, limit: Optional[int] = None
+    ) -> Iterator["WebhookPayload"]:
         """
         Iterate through all payloads on or after the given cursor.
-        See :class:`~pyairtable.models.WebhookPayload`.
+        See :class:`~pyairtable.models.WebhookPayload`. Each payload will
+        contain an extra attribute, ``cursor``, which you will need to store
+        if you want to later resume retrieving payloads after that point.
 
         For more details on the mechanisms of retrieving webhook payloads,
         or to find more information about the data structures you'll get back,
         see `List webhook payloads <https://airtable.com/developers/web/api/list-webhook-payloads>`_.
+
+        Args:
+            cursor: The cursor of the first webhook payload to retrieve.
+            limit: The number of payloads to yield before stopping.
+                If not provided, will retrieve all remaining payloads.
 
         Usage:
             >>> webhook = Base.webhook("ach00000000000001")
@@ -122,8 +131,14 @@ class Webhook(SerializableModel, allow_update=False):
                 cursor=1
             )
         """
+        if cursor < 1:
+            raise ValueError("cursor must be non-zero")
+        if limit is not None and limit < 1:
+            raise ValueError("limit must be non-zero")
+
         url = f"{self._url}/payloads"
         options = {"cursor": cursor}
+        count = 0
         for page in self._api.iterate_requests(
             method="GET",
             url=url,
@@ -135,6 +150,10 @@ class Webhook(SerializableModel, allow_update=False):
                 payload = WebhookPayload.parse_obj(payload)
                 payload.cursor = cursor + index
                 yield payload
+                count += 1
+                if limit is not None and count >= limit:
+                    return
+
             if not (payloads and page.get("mightHaveMore")):
                 return
             cursor = page["cursor"]

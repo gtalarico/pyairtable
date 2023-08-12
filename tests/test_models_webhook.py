@@ -76,20 +76,59 @@ def test_error_payload(payload_json):
     assert payload.error_code == "INVALID_HOOK"
 
 
-def test_payloads(webhook: Webhook, requests_mock, payload_json):
+@pytest.mark.parametrize(
+    "test_case",
+    [
+        # Basic test case for .payloads()
+        {
+            "count": 5,
+            "chunksize": 5,
+            "expect_numbers": [1, 2, 3, 4, 5],
+            "expect_cursors": [1],
+        },
+        # Prevent regression of bug where payload.cursor always starts from 1
+        {
+            "count": 5,
+            "chunksize": 5,
+            "start_from": 20,
+            "expect_numbers": [20, 21, 22, 23, 24],
+            "expect_cursors": [20],
+        },
+        # Test that mightHaveMore controls when we stop iteration
+        {
+            "count": 8,
+            "chunksize": 2,
+            "extra_pages": 3,
+            "expect_numbers": [1, 2, 3, 4, 5, 6, 7, 8],
+            "expect_cursors": [1, 3, 5, 7],
+        },
+        # Test that .payloads(limit=n) stops iteration after n results.
+        {
+            "count": 5,
+            "chunksize": 5,
+            "start_from": 2,
+            "payload_kwargs": {"limit": 3},
+            "expect_numbers": [2, 3, 4],
+            "expect_cursors": [2],
+        },
+    ],
+)
+def test_payloads(webhook: Webhook, requests_mock, payload_json, test_case):
     """
     Test that Webhook.payloads() continues to iterate payloads from the API
     until it reaches the point where mightHaveMore is false.
     """
-    count = 8
-    chunksize = 2
-    pagecount = math.ceil(count / chunksize) + 1  # one extra page, to be ignored
+    count = test_case["count"]
+    chunksize = test_case["chunksize"]
+    start = test_case.get("start_from", 1)
+    extra_pages = test_case.get("extra_pages", 0)
+    pagecount = math.ceil(count / chunksize)
     payload_pages = [
         [
-            {**payload_json, "baseTransactionNumber": (m * chunksize) + n + 1}
+            {**payload_json, "baseTransactionNumber": (m * chunksize) + n + start}
             for n in range(chunksize)
         ]
-        for m in range(pagecount)
+        for m in range(pagecount + extra_pages)
     ]
     mock_endpoint = requests_mock.get(
         webhook._url + "/payloads",
@@ -97,21 +136,28 @@ def test_payloads(webhook: Webhook, requests_mock, payload_json):
             {
                 "json": {
                     "cursor": page[-1]["baseTransactionNumber"] + 1,
-                    "mightHaveMore": index < pagecount - 1,  # extras should be ignored
+                    "mightHaveMore": index < pagecount,  # extras should be ignored
                     "payloads": page,
                 }
             }
             for index, page in enumerate(payload_pages, 1)
         ],
     )
+    payload_kwargs = {"cursor": start, **test_case.get("payload_kwargs", {})}
+    payloads = list(webhook.payloads(**payload_kwargs))
     # Ensure we got the right transactions in the right order.
-    payloads = list(webhook.payloads())
-    assert len(payloads) == count
-    assert [p.base_transaction_number for p in payloads] == [1, 2, 3, 4, 5, 6, 7, 8]
-    assert [p.cursor for p in payloads] == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert len(payloads) == len(test_case["expect_numbers"])
+    assert [p.base_transaction_number for p in payloads] == test_case["expect_numbers"]
+    assert [p.cursor for p in payloads] == test_case["expect_numbers"]
     # Ensure we sent the correct cursors, since requests_mock doesn't validate them.
     request_cursors = [req.qs["cursor"] for req in mock_endpoint.request_history]
-    assert request_cursors == [["1"], ["3"], ["5"], ["7"]]
+    assert request_cursors == [[str(n)] for n in test_case["expect_cursors"]]
+
+
+@pytest.mark.parametrize("argname", ["cursor", "limit"])
+def test_payloads__invalid_args(webhook: Webhook, requests_mock, argname):
+    with pytest.raises(ValueError):
+        next(webhook.payloads(**{argname: 0}))
 
 
 def test_payloads__stop_on_empty_list(webhook: Webhook, requests_mock, payload_json):
