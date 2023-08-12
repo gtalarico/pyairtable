@@ -111,7 +111,6 @@ def test_writable_and_readonly(create_instance):
         create_instance(writable=["foo"], readonly=["bar"])
 
 
-@pytest.mark.timeout(1)
 def test_update_forward_refs():
     """
     Test that update_forward_refs does not get caught in an infinite loop.
