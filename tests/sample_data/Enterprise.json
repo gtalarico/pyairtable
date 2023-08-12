@@ -1,0 +1,23 @@
+{
+  "createdTime": "2019-01-03T12:33:12.421Z",
+  "emailDomains": [
+    {
+      "emailDomain": "foobar.com",
+      "isSsoRequired": true
+    }
+  ],
+  "groupIds": [
+    "ugp1mKGb3KXUyQfOZ",
+    "ugpR8ZT9KtIgp8Bh3"
+  ],
+  "id": "entUBq2RGdihxl3vU",
+  "userIds": [
+    "usrL2PNC5o3H4lBEi",
+    "usrsOEchC9xuwRgKk",
+    "usrGcrteE5fUMqq0R"
+  ],
+  "workspaceIds": [
+    "wspmhESAta6clCCwF",
+    "wspHvvm4dAktsStZH"
+  ]
+}

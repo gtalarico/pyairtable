@@ -8,6 +8,7 @@ import pyairtable.models.schema
 @pytest.mark.parametrize(
     "clsname",
     [
+        "Bases",
         "BaseInfo",
         "BaseSchema",
         "TableSchema",

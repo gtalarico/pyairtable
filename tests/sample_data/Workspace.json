@@ -1,0 +1,103 @@
+{
+  "baseIds": [
+    "appLkNDICXNqxSDhG",
+    "appSW9R5uCNmRmfl6"
+  ],
+  "collaborators": {
+    "baseCollaborators": [
+      {
+        "baseId": "appLkNDICXNqxSDhG",
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "email": "foo@bam.com",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "permissionLevel": "create",
+        "userId": "usrsOEchC9xuwRgKk"
+      }
+    ],
+    "workspaceCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "email": "foo@bar.com",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "permissionLevel": "owner",
+        "userId": "usrL2PNC5o3H4lBEi"
+      }
+    ]
+  },
+  "createdTime": "2019-01-03T12:33:12.421Z",
+  "groupCollaborators": {
+    "baseCollaborators": [
+      {
+        "baseId": "appLkNDICXNqxSDhG",
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "groupId": "ugpR8ZT9KtIgp8Bh3",
+        "name": "group 2",
+        "permissionLevel": "create"
+      }
+    ],
+    "workspaceCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "groupId": "ugp1mKGb3KXUyQfOZ",
+        "name": "group 1",
+        "permissionLevel": "edit"
+      }
+    ]
+  },
+  "id": "wspmhESAta6clCCwF",
+  "individualCollaborators": {
+    "baseCollaborators": [
+      {
+        "baseId": "appLkNDICXNqxSDhG",
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "email": "foo@bam.com",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "permissionLevel": "create",
+        "userId": "usrsOEchC9xuwRgKk"
+      }
+    ],
+    "workspaceCollaborators": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "email": "foo@bar.com",
+        "grantedByUserId": "usrL2PNC5o3H4lBEi",
+        "permissionLevel": "owner",
+        "userId": "usrL2PNC5o3H4lBEi"
+      }
+    ]
+  },
+  "inviteLinks": {
+    "baseInviteLinks": [
+      {
+        "baseId": "appSW9R5uCNmRmfl6",
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "id": "invJiqaXmPqq6Ec87",
+        "invitedEmail": null,
+        "permissionLevel": "read",
+        "referredByUserId": "usrsOEchC9xuwRgKk",
+        "restrictedToEmailDomains": [],
+        "type": "multiUse"
+      }
+    ],
+    "workspaceInviteLinks": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "id": "invJiqaXmPqq6Ec87",
+        "invitedEmail": "bam@bam.com",
+        "permissionLevel": "owner",
+        "referredByUserId": "usrL2PNC5o3H4lBEi",
+        "restrictedToEmailDomains": [
+          "foobar.com"
+        ],
+        "type": "singleUse"
+      }
+    ]
+  },
+  "name": "my first workspace",
+  "workspaceRestrictions": {
+    "inviteCreationRestriction": "onlyOwners",
+    "shareCreationRestriction": "unrestricted"
+  }
+}

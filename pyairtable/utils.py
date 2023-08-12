@@ -1,8 +1,16 @@
+import inspect
+import re
+import textwrap
 from datetime import date, datetime
-from typing import Iterator, Sequence, TypeVar, Union
+from functools import wraps
+from typing import Any, Callable, Iterator, Sequence, TypeVar, Union, cast
+
+import requests
+from typing_extensions import ParamSpec
 
 from pyairtable.api.types import CreateAttachmentDict
 
+P = ParamSpec("P")
 T = TypeVar("T")
 
 
@@ -94,3 +102,44 @@ def chunked(iterable: Sequence[T], chunk_size: int) -> Iterator[Sequence[T]]:
     """
     for i in range(0, len(iterable), chunk_size):
         yield iterable[i : i + chunk_size]
+
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
+    """
+    Wraps a function or method so that if Airtable returns a 404,
+    we will annotate the error with a helpful note to the user.
+    """
+
+    if modify_docstring and (doc := wrapped.__doc__):
+        wrapped.__doc__ = _prepend_docstring_text(doc, "|enterprise_only|")
+
+    # Allow putting the decorator on a class
+    if inspect.isclass(wrapped):
+        for name, obj in vars(wrapped).items():
+            if inspect.isfunction(obj):
+                setattr(wrapped, name, enterprise_only(obj, modify_docstring=False))
+        return cast(F, wrapped)
+
+    @wraps(wrapped)
+    def _decorated(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return wrapped(*args, **kwargs)
+        except requests.exceptions.HTTPError as exc:
+            if exc.response.status_code == 404:
+                exc.args = (
+                    *exc.args,
+                    f"NOTE: {wrapped.__name__}() requires an enterprise billing plan.",
+                )
+            raise exc
+
+    return _decorated  # type: ignore[return-value]
+
+
+def _prepend_docstring_text(doc: str, text: str) -> str:
+    doc = doc.lstrip("\n")
+    if has_leading_spaces := re.match(r"^\s+", doc):
+        text = textwrap.indent(text, has_leading_spaces[0])
+    return f"{text}\n\n{doc}"

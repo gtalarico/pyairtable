@@ -72,7 +72,6 @@ def test_bases(api, requests_mock, sample_json):
     # ....unless we force it:
     reloaded = api.bases(force=True)
     assert set(reloaded) == set(bases)
-    assert reloaded != bases
     assert m.call_count == 2
 
 
@@ -92,3 +91,10 @@ def test_iterate_requests__invalid_type(api: Api, requests_mock):
     requests_mock.get(url, response_list=response_list)
     responses = list(api.iterate_requests("GET", url))
     assert responses == [response["json"] for response in response_list]
+
+
+def test_enterprise(api: Api, requests_mock, sample_json):
+    url = api.build_url("meta/enterpriseAccount/entUBq2RGdihxl3vU")
+    requests_mock.get(url, json=sample_json("Enterprise"))
+    enterprise = api.enterprise("entUBq2RGdihxl3vU")
+    assert enterprise.id == "entUBq2RGdihxl3vU"

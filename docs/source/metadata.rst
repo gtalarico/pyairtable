@@ -6,17 +6,18 @@ Metadata
 ==============
 
 The Airtable API gives you the ability to list all of your bases, tables, fields, and views.
-pyAirtable allows you to inspect and interact with this metadata through the following methods:
+pyAirtable allows you to inspect and interact with the metadata in your bases.
 
-All of the methods above return complex nested data structures, some of which
+
+Reading schemas
+-----------------------------
+
+All of the methods below return complex nested data structures, some of which
 have their own convenience methods for searching their contents, such as
 :meth:`TableSchema.field() <pyairtable.models.schema.TableSchema.field>`.
 You'll find more detail in the API reference for :mod:`pyairtable.models.schema`.
 
 .. automethod:: pyairtable.Api.bases
-    :noindex:
-
-.. automethod:: pyairtable.Base.info
     :noindex:
 
 .. automethod:: pyairtable.Base.schema
@@ -26,4 +27,52 @@ You'll find more detail in the API reference for :mod:`pyairtable.models.schema`
     :noindex:
 
 .. automethod:: pyairtable.Table.schema
+    :noindex:
+
+
+Modifying schemas
+-----------------------------
+
+The following methods allow you to modify parts of the Airtable schema.
+There may be parts of the pyAirtable API which are not supported below;
+you can always use :meth:`Api.request <pyairtable.Api.request>` to
+call them directly.
+
+.. automethod:: pyairtable.Workspace.create_base
+    :noindex:
+
+.. automethod:: pyairtable.Base.create_table
+    :noindex:
+
+.. .. automethod:: pyairtable.Base.delete
+..     :noindex:
+
+.. .. automethod:: pyairtable.Table.create_field
+..     :noindex:
+
+.. .. automethod:: pyairtable.Table.delete_field
+..     :noindex:
+
+.. .. automethod:: pyairtable.Table.delete
+..     :noindex:
+
+
+Enterprise information
+-----------------------------
+
+pyAirtable exposes a number of classes and methods for interacting with enterprise organizations.
+The following methods are only available on an `Enterprise plan <https://airtable.com/pricing>`__.
+If you call one of them against a base that is not part of an enterprise workspace, Airtable will
+return a 404 error, and pyAirtable will add a reminder to the exception to check your billing plan.
+
+.. automethod:: pyairtable.Api.enterprise
+    :noindex:
+
+.. automethod:: pyairtable.Base.info
+    :noindex:
+
+.. automethod:: pyairtable.Workspace.info
+    :noindex:
+
+.. automethod:: pyairtable.Enterprise.info
     :noindex:

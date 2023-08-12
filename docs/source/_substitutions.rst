@@ -62,5 +62,13 @@
     key is the field id. This defaults to `false`, which returns field objects where the key is the field name.
 
 .. |kwarg_force_metadata| replace::
-    If ``False``, will not fetch information from the API if it has already been retrieved.
-    If ``True``, will fetch base information from the API, overwriting any cached values.
+    If ``False``, will only fetch information from the API if it has not been cached.
+    If ``True``, will always fetch information from the API, overwriting any cached values.
+
+.. |kwarg_validate_metadata| replace::
+    If ``False``, will create an object without validating the ID/name provided.
+    If ``True``, will fetch information from the metadata API and validate the ID/name exists.
+
+.. |warn| unicode:: U+26A0 .. WARNING SIGN
+
+.. |enterprise_only| replace:: |warn| This feature is only available on Enterprise billing plans.

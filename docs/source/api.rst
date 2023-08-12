@@ -18,6 +18,12 @@ API: pyairtable
 .. autoclass:: pyairtable.Table
     :members:
 
+.. autoclass:: pyairtable.Workspace
+    :members:
+
+.. autoclass:: pyairtable.Enterprise
+    :members:
+
 .. autofunction:: pyairtable.retry_strategy
 
 

@@ -8,9 +8,12 @@ from typing_extensions import TypeAlias
 import pyairtable.api.base
 import pyairtable.api.table
 from pyairtable.api import retrying
+from pyairtable.api.enterprise import Enterprise
 from pyairtable.api.params import options_to_json_and_params, options_to_params
 from pyairtable.api.types import UserAndScopesDict, assert_typed_dict
-from pyairtable.utils import chunked
+from pyairtable.api.workspace import Workspace
+from pyairtable.models.schema import Bases
+from pyairtable.utils import chunked, enterprise_only
 
 T = TypeVar("T")
 TimeoutTuple: TypeAlias = Tuple[int, int]
@@ -71,6 +74,7 @@ class Api:
         self.api_key = api_key
 
         self._bases: Dict[str, "pyairtable.api.base.Base"] = {}
+        self._base_info: Optional[Bases] = None
 
     @property
     def api_key(self) -> str:
@@ -87,29 +91,75 @@ class Api:
     def __repr__(self) -> str:
         return "<pyairtable.Api>"
 
-    def base(self, base_id: str) -> "pyairtable.api.base.Base":
+    def whoami(self) -> UserAndScopesDict:
+        """
+        Return the current user ID and (if connected via OAuth) the list of scopes.
+        See `Get user ID & scopes <https://airtable.com/developers/web/api/get-user-id-scopes>`_ for more information.
+        """
+        data = self.request("GET", self.build_url("meta/whoami"))
+        return assert_typed_dict(UserAndScopesDict, data)
+
+    @enterprise_only
+    def enterprise(self, enterprise_account_id: str) -> Enterprise:
+        return Enterprise(self, enterprise_account_id)
+
+    def workspace(self, workspace_id: str) -> Workspace:
+        return Workspace(self, workspace_id)
+
+    def base(
+        self,
+        base_id: str,
+        *,
+        validate: bool = False,
+    ) -> "pyairtable.api.base.Base":
         """
         Returns a new :class:`Base` instance that uses this instance of :class:`Api`.
-        """
-        if base_id not in self._bases:
-            self._bases[base_id] = pyairtable.api.base.Base(self, base_id)
-        return self._bases[base_id]
 
-    def bases(self, /, force: bool = False) -> Dict[str, "pyairtable.api.base.Base"]:
+        Args:
+            base_id: |arg_base_id|
+            validate: |kwarg_validate_metadata|
+
+        Raises:
+            KeyError: if ``fetch=True`` and the given base ID does not exist.
         """
-        Returns a mapping of IDs to :class:`Base` instances.
+        if validate:
+            return self.bases(force=True)[base_id]
+        return pyairtable.api.base.Base(self, base_id)
+
+    def bases(self, *, force: bool = False) -> Dict[str, "pyairtable.api.base.Base"]:
+        """
+        Retrieves a list of all bases from the API and caches it,
+        returning a mapping of IDs to :class:`Base` instances.
 
         Args:
             force: |kwarg_force_metadata|
+
+        Usage:
+            >>> api.bases()
+            {
+                'appSW9R5uCNmRmfl6': <pyairtable.Base base_id='appSW9R5uCNmRmfl6'>,
+                'appLkNDICXNqxSDhG': <pyairtable.Base base_id='appLkNDICXNqxSDhG'>
+            }
         """
-        url = self.build_url("meta/bases")
         if force or not self._bases:
+            url = self.build_url("meta/bases")
+            self._base_info = Bases.parse_obj(
+                {
+                    "bases": [
+                        base_info
+                        for page in self.iterate_requests("GET", url)
+                        for base_info in page["bases"]
+                    ]
+                }
+            )
             self._bases = {
-                data["id"]: pyairtable.api.base.Base(
-                    self, data["id"], name=data["name"]
+                info.id: pyairtable.api.base.Base(
+                    self,
+                    info.id,
+                    name=info.name,
+                    permission_level=info.permission_level,
                 )
-                for page in self.iterate_requests("GET", url)
-                for data in page["bases"]
+                for info in self._base_info.bases
             }
         return dict(self._bases)
 
@@ -189,8 +239,6 @@ class Api:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as exc:
-            err_msg = str(exc)
-
             # Attempt to get Error message from response, Issue #16
             try:
                 error_dict = response.json()
@@ -198,8 +246,7 @@ class Api:
                 pass
             else:
                 if "error" in error_dict:
-                    err_msg += " [Error: {}]".format(error_dict["error"])
-            exc.args = (*exc.args, err_msg)
+                    exc.args = (*exc.args, repr(error_dict["error"]))
             raise exc
 
         # Some Airtable endpoints will respond with an empty body and a 200.
@@ -250,11 +297,3 @@ class Api:
         to the maximum number of records per request allowed by the API.
         """
         return chunked(iterable, self.MAX_RECORDS_PER_REQUEST)
-
-    def whoami(self) -> UserAndScopesDict:
-        """
-        Return the current user ID and (if connected via OAuth) the list of scopes.
-        See `Get user ID & scopes <https://airtable.com/developers/web/api/get-user-id-scopes>`_ for more information.
-        """
-        data = self.request("GET", self.build_url("meta/whoami"))
-        return assert_typed_dict(UserAndScopesDict, data)

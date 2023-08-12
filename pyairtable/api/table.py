@@ -35,6 +35,9 @@ class Table:
     #: Can be either the table name or the table ID (``tblXXXXXXXXXXXXXX``).
     name: str
 
+    # Cached schema information to reduce API calls
+    _schema: Optional[TableSchema] = None
+
     @overload
     def __init__(
         self,
@@ -57,11 +60,20 @@ class Table:
     ):
         ...
 
+    @overload
+    def __init__(
+        self,
+        api_key: None,
+        base_id: "pyairtable.api.base.Base",
+        table_name: TableSchema,
+    ):
+        ...
+
     def __init__(
         self,
         api_key: Union[None, str],
         base_id: Union["pyairtable.api.base.Base", str],
-        table_name: str,
+        table_name: Union[str, TableSchema],
         **kwargs: Any,
     ):
         """
@@ -92,27 +104,38 @@ class Table:
                 stacklevel=2,
             )
             api = pyairtable.api.api.Api(api_key, **kwargs)
-            base = api.base(base_id)
-        elif api_key is None and isinstance(base_id, pyairtable.api.base.Base):
-            base = base_id
+            self.base = api.base(base_id)
+        elif api_key is None and isinstance(base := base_id, pyairtable.api.base.Base):
+            self.base = base
         else:
             raise TypeError(
-                "Table() expects either (str, str, str) or (None, Base, str);"
+                "Table() expects (None, Base, str | TableSchema);"
                 f" got ({type(api_key)}, {type(base_id)}, {type(table_name)})"
             )
 
-        self.base = base
-        self.name = table_name
+        if isinstance(table_name, str):
+            self.name = table_name
+        elif isinstance(schema := table_name, TableSchema):
+            self._schema = schema
+            self.name = schema.name
+        else:
+            raise TypeError(
+                "Table() expects (None, Base, str | TableSchema);"
+                f" got ({type(api_key)}, {type(base_id)}, {type(table_name)})"
+            )
 
     def __repr__(self) -> str:
-        return f"<Table base_id={self.base.id!r} table_name={self.name!r}>"
+        if self._schema:
+            return f"<Table base={self.base.id!r} id={self._schema.id!r} name={self._schema.name!r}>"
+        return f"<Table base={self.base.id!r} name={self.name!r}>"
 
     @property
     def url(self) -> str:
         """
         Returns the URL for this table.
         """
-        return self.api.build_url(self.base.id, urllib.parse.quote(self.name, safe=""))
+        token = self._schema.id if self._schema else self.name
+        return self.api.build_url(self.base.id, urllib.parse.quote(token, safe=""))
 
     def record_url(self, record_id: RecordId, *components: str) -> str:
         """
@@ -562,11 +585,11 @@ class Table:
             obj=response,
         )
 
-    def schema(self) -> TableSchema:
+    def schema(self, *, force: bool = False) -> TableSchema:
         """
         Retrieves the schema of the current table. The return value
         will be cached on the :class:`~pyairtable.Base` instance;
-        to clear the cache, call ``table.base.schema(force=True)``.
+        to refresh the cache, call `table.base.schema(force=True) <pyairtable.Base.schema>`.
 
         Usage:
             >>> table.schema()
@@ -578,9 +601,18 @@ class Table:
                 views=[...]
             )
             >>> table.schema().field("fld6jG0XedVMNxFQW")
-            SingleLineTextFieldSchema(id='fld6jG0XedVMNxFQW', name='Name', type='singleLineText')
+            SingleLineTextFieldSchema(
+                id='fld6jG0XedVMNxFQW',
+                name='Name',
+                type='singleLineText'
+            )
+
+        Args:
+            force: |kwarg_force_metadata|
         """
-        return self.base.schema().table(self.name)
+        if force or not self._schema:
+            self._schema = self.base.schema(force=force).table(self.name)
+        return self._schema
 
 
 # These are at the bottom of the module to avoid circular imports

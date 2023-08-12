@@ -5,8 +5,14 @@ from requests import Request
 from requests_mock import Mocker
 
 from pyairtable import Api, Base, Table
+from pyairtable.models.schema import TableSchema
 from pyairtable.testing import fake_record
 from pyairtable.utils import chunked
+
+
+@pytest.fixture()
+def table_schema(sample_json) -> TableSchema:
+    return TableSchema.parse_obj(sample_json("TableSchema"))
 
 
 def test_constructor(base: Base):
@@ -17,6 +23,18 @@ def test_constructor(base: Base):
     assert table.api == base.api
     assert table.base == base
     assert table.name == "table_name"
+
+
+def test_constructor_with_schema(base: Base, table_schema: TableSchema):
+    table = Table(None, base, table_schema)
+    assert table.api == base.api
+    assert table.base == base
+    assert table.name == table_schema.name
+    assert table.url == f"https://api.airtable.com/v0/{base.id}/{table_schema.id}"
+    assert (
+        repr(table)
+        == f"<Table base='{base.id}' id='{table_schema.id}' name='{table_schema.name}'>"
+    )
 
 
 def test_deprecated_constructor(api: Api, base: Base):
@@ -41,6 +59,7 @@ def test_invalid_constructor(api, base):
         [api, "base_id", "table_name"],
         ["api_key", base, "table_name"],
         [api, base, "table_name"],
+        [None, base, -1],
     ]:
         kwargs = args.pop() if isinstance(args[-1], dict) else {}
         with pytest.raises(TypeError):
@@ -49,7 +68,7 @@ def test_invalid_constructor(api, base):
 
 
 def test_repr(table: Table):
-    assert repr(table) == "<Table base_id='appJMY16gZDQrMWpA' table_name='Table Name'>"
+    assert repr(table) == "<Table base='appJMY16gZDQrMWpA' name='Table Name'>"
 
 
 def test_schema(requests_mock, sample_json):

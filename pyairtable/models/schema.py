@@ -30,10 +30,28 @@ def _find(collection: List[_T], id_or_name: str) -> _T:
     return items_by_name[id_or_name]
 
 
-class BaseInfo(AirtableModel):
+class Bases(AirtableModel):
     """
     See https://airtable.com/developers/web/api/list-bases
-    and https://airtable.com/developers/web/api/get-base-collaborators
+    """
+
+    bases: List["Bases.Info"] = _FL()
+
+    def base(self, base_id: str) -> "Bases.Info":
+        """
+        Returns basic information about the base with the given ID.
+        """
+        return _find(self.bases, base_id)
+
+    class Info(AirtableModel):
+        id: str
+        name: str
+        permission_level: PermissionLevel
+
+
+class BaseInfo(AirtableModel):
+    """
+    See https://airtable.com/developers/web/api/get-base-collaborators
     """
 
     id: str
@@ -52,12 +70,14 @@ class BaseInfo(AirtableModel):
         invite_links: List["InviteLink"] = _FL()
 
     class GroupCollaborators(AirtableModel):
-        base_collaborators: List["GroupCollaborator"] = _FL()
-        workspace_collaborators: List["GroupCollaborator"] = _FL()
+        via_base: List["GroupCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: List["GroupCollaborator"] = _FL(alias="workspaceCollaborators")
 
     class IndividualCollaborators(AirtableModel):
-        base_collaborators: List["IndividualCollaborator"] = _FL()
-        workspace_collaborators: List["IndividualCollaborator"] = _FL()
+        via_base: List["IndividualCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: List["IndividualCollaborator"] = _FL(
+            alias="workspaceCollaborators"
+        )
 
     class InviteLinks(AirtableModel):
         base_invite_links: List["InviteLink"] = _FL()
@@ -139,6 +159,91 @@ class InviteLink(AirtableModel):
     referred_by_user_id: str
     permission_level: PermissionLevel
     restricted_to_email_domains: List[str] = _FL()
+
+
+class BaseIndividualCollaborator(IndividualCollaborator):
+    base_id: str
+
+
+class BaseGroupCollaborator(GroupCollaborator):
+    base_id: str
+
+
+class BaseInviteLink(InviteLink):
+    base_id: str
+
+
+class EnterpriseInfo(AirtableModel):
+    id: str
+    created_time: str
+    group_ids: List[str]
+    user_ids: List[str]
+    workspace_ids: List[str]
+    email_domains: List["EnterpriseInfo.EmailDomain"]
+
+    class EmailDomain(AirtableModel):
+        email_domain: str
+        is_sso_required: bool
+
+
+class WorkspaceInfo(AirtableModel):
+    id: str
+    name: str
+    created_time: str
+    base_ids: List[str]
+    restrictions: "WorkspaceInfo.Restrictions" = pydantic.Field(alias="workspaceRestrictions")  # fmt: skip
+    group_collaborators: Optional["WorkspaceInfo.GroupCollaborators"] = None
+    individual_collaborators: Optional["WorkspaceInfo.IndividualCollaborators"] = None
+    invite_links: Optional["WorkspaceInfo.InviteLinks"] = None
+
+    class Restrictions(AirtableModel):
+        invite_creation: str = pydantic.Field(alias="inviteCreationRestriction")
+        share_creation: str = pydantic.Field(alias="shareCreationRestriction")
+
+    class GroupCollaborators(AirtableModel):
+        base_collaborators: List["BaseGroupCollaborator"]
+        workspace_collaborators: List["GroupCollaborator"]
+
+    class IndividualCollaborators(AirtableModel):
+        base_collaborators: List["BaseIndividualCollaborator"]
+        workspace_collaborators: List["IndividualCollaborator"]
+
+    class InviteLinks(AirtableModel):
+        base_invite_links: List["BaseInviteLink"]
+        workspace_invite_links: List["InviteLink"]
+
+
+class _NestedId(AirtableModel):
+    id: str
+
+
+class UserInfo(AirtableModel):
+    id: str
+    name: str
+    email: str
+    state: str
+    created_time: Optional[str]
+    invited_to_airtable_by_user_id: Optional[str]
+    last_activity_time: Optional[str]
+    is_managed_user: bool
+    groups: List[_NestedId] = pydantic.Field(default_factory=list)
+
+
+class GroupInfo(AirtableModel):
+    id: str
+    name: str
+    enterprise_account_id: str
+    created_time: str
+    updated_time: str
+    members: List["GroupInfo.GroupMember"]
+
+    class GroupMember(AirtableModel):
+        user_id: str
+        email: str
+        first_name: str
+        last_name: str
+        role: str
+        created_time: str
 
 
 # The data model is a bit confusing here, but it's designed for maximum reuse.
@@ -386,6 +491,37 @@ class UnknownFieldConfig(AirtableModel):
     options: Optional[Dict[Any, Any]]
 
 
+class _FieldSchemaBase(AirtableModel):
+    id: str
+    name: str
+    description: Optional[str]
+
+
+# This section is auto-generated so that FieldSchema and FieldConfig are kept aligned.
+# See .pre-commit-config.yaml, or just run `tox -e pre-commit` to refresh it.
+# fmt: off
+r"""[[[cog]]]
+
+import re
+with open(cog.inFile) as fp:
+    field_types = re.findall(r"class (\w+Field)Config\(", fp.read())
+
+cog.outl("FieldConfig: TypeAlias = Union[")
+for fld in field_types:
+    cog.outl(f"    {fld}Config,")
+cog.outl("]")
+cog.out("\n\n")
+
+for fld in field_types:
+    cog.outl(f"class {fld}Schema(_FieldSchemaBase, {fld}Config): pass  # noqa")
+cog.out("\n\n")
+
+cog.outl("FieldSchema: TypeAlias = Union[")
+for fld in field_types:
+    cog.outl(f"    {fld}Schema,")
+cog.outl("]")
+
+[[[out]]]"""
 FieldConfig: TypeAlias = Union[
     AutoNumberFieldConfig,
     BarcodeFieldConfig,
@@ -423,29 +559,6 @@ FieldConfig: TypeAlias = Union[
 ]
 
 
-class _FieldSchemaBase(AirtableModel):
-    id: str
-    name: str
-    description: Optional[str]
-
-
-# This section is auto-generated so that FieldSchema and FieldConfig are kept aligned.
-# See .pre-commit-config.yaml, or just run `tox -e pre-commit` to refresh it.
-
-# fmt: off
-# [[[cog]]]
-# import re
-# with open(cog.inFile) as fp:
-#     detail_classes = re.findall(r"class (\w+FieldConfig)\(", fp.read())
-# mapping = {detail: detail[:-6] + "Schema" for detail in detail_classes}
-# for detail, schema in mapping.items():
-#     cog.outl(f"class {schema}(_FieldSchemaBase, {detail}): pass  # noqa")
-# cog.outl("\n")
-# cog.outl("FieldSchema: TypeAlias = Union[")
-# for schema in mapping.values():
-#     cog.outl(f"    {schema},")
-# cog.outl("]")
-# [[[out]]]
 class AutoNumberFieldSchema(_FieldSchemaBase, AutoNumberFieldConfig): pass  # noqa
 class BarcodeFieldSchema(_FieldSchemaBase, BarcodeFieldConfig): pass  # noqa
 class ButtonFieldSchema(_FieldSchemaBase, ButtonFieldConfig): pass  # noqa
@@ -516,7 +629,7 @@ FieldSchema: TypeAlias = Union[
     UrlFieldSchema,
     UnknownFieldSchema,
 ]
-# [[[end]]] (checksum: f711a065c3583ccad1c69913d42af7d6)
+# [[[end]]] (checksum: 3f8dd40da7b03b16f7299cd99365692c)
 # fmt: on
 
 

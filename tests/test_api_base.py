@@ -30,8 +30,26 @@ def test_invalid_constructor():
         Base("api_key", "base_id", timeout=(1, 1))
 
 
-def test_repr(base):
-    assert "Base" in base.__repr__()
+@pytest.mark.parametrize(
+    "kwargs,expected",
+    [
+        (
+            dict(base_id="appFake"),
+            "<Base id='appFake'>",
+        ),
+        (
+            dict(base_id="appFake", name="Some name"),
+            "<Base id='appFake' name='Some name'>",
+        ),
+        (
+            dict(base_id="appFake", permission_level="editor"),
+            "<Base id='appFake' permission_level='editor'>",
+        ),
+    ],
+)
+def test_repr(api, kwargs, expected):
+    base = Base(api, **kwargs)
+    assert repr(base) == expected
 
 
 def test_url(base):
@@ -60,17 +78,36 @@ def test_table(base: Base, requests_mock):
     assert rv.url == f"https://api.airtable.com/v0/{base.id}/tablename"
 
 
-def test_table__with_validation(base: Base, requests_mock, sample_json):
+def test_table_validate(base: Base, requests_mock, sample_json):
     """
-    Test that Base.table() behaves differently once we've loaded a schema.
+    Test that Base.table(..., validate=True) allows us to look up a table
+    by either ID or name and get the correct properties.
     """
-    requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
-    base.schema()
-    # once a schema has been loaded, Base.table() can reuse objects by ID or name
-    assert base.table("tbltp8DGLhqbUmjK1") == base.table("Apartments")
+    m = requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+    base.table("tbltp8DGLhqbUmjK1", validate=True)
+    base.table("Apartments", validate=True)
+    assert m.call_count == 2
     # ...and will raise an exception if called with an invalid ID/name:
     with pytest.raises(KeyError):
-        base.table("DoesNotExist")
+        base.table("DoesNotExist", validate=True)
+
+
+def test_tables(base: Base, requests_mock, sample_json):
+    """
+    Test that Base.tables() returns a dict of validated Base instances.
+    """
+    requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+    result = base.tables()
+    assert len(result) == 2
+    assert result["tbltp8DGLhqbUmjK1"].name == "Apartments"
+    assert result["tblK6MZHez0ZvBChZ"].name == "Districts"
+
+
+def test_collaborators(base: Base, requests_mock, sample_json):
+    requests_mock.get(base.meta_url(), json=sample_json("BaseInfo"))
+    result = base.info()
+    assert result.individual_collaborators.via_base[0].email == "foo@bam.com"
+    assert result.group_collaborators.via_workspace[0].group_id == "ugp1mKGb3KXUyQfOZ"
 
 
 def test_webhooks(base: Base, requests_mock, sample_json):
@@ -127,23 +164,49 @@ def test_add_webhook(base: Base, requests_mock):
     assert result.mac_secret_base64 == "secret"
 
 
-def test_name(base, requests_mock):
+def test_name(api, base, requests_mock):
     """
     Test that Base().name is only set if passed explicitly to the constructor,
-    or if retrieved by a call to Base().info()
+    or if it is available in cached schema information.
     """
-    assert base.name is None
-    assert Base("token", "base_id").name is None
-    assert Base("token", "base_id", name="Base Name").name == "Base Name"
-
     requests_mock.get(
         base.meta_url(),
         json={
             "id": base.id,
-            "name": "Base Name",
+            "name": "Mocked Base Name",
             "permissionLevel": "create",
             "workspaceId": "wspFake",
         },
     )
-    assert base.info().name == "Base Name"
-    assert base.name == "Base Name"
+
+    assert api.base(base.id).name is None
+    assert base.name is None
+    assert base.info().name == "Mocked Base Name"
+    assert base.name == "Mocked Base Name"
+
+    # Test behavior with older constructor pattern
+    with pytest.warns(DeprecationWarning):
+        assert Base("tok", "app").name is None
+    with pytest.warns(DeprecationWarning):
+        assert Base("tok", "app", name="Base Name").name == "Base Name"
+
+
+def test_create_table(base, requests_mock, sample_json):
+    """
+    Test that Base.create_table() makes two calls, one to create the table,
+    and another to re-retrieve the entire base's schema.
+    """
+    schema = sample_json("BaseSchema")
+    url = base.meta_url("tables")
+    m = requests_mock.post(url, json={"id": "tbltp8DGLhqbUmjK1"})
+    m_get = requests_mock.get(url + "?include=visibleFieldIds", json=schema)
+    table = base.create_table(
+        "Table Name", [{"name": "Whatever"}], description="Description"
+    )
+    assert isinstance(table, Table)
+    assert m.call_count == m_get.call_count == 1
+    assert m.request_history[-1].json() == {
+        "name": "Table Name",
+        "description": "Description",
+        "fields": [{"name": "Whatever"}],
+    }
