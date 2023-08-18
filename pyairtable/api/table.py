@@ -185,9 +185,10 @@ class Table:
         """
         Retrieves all matching records in a single list.
 
-        >>> api.all('base_id', 'table_name', view='MyView', fields=['ColA', '-ColB'])
+        >>> table = api.table('base_id', 'table_name')
+        >>> table.all(view='MyView', fields=['ColA', '-ColB'])
         [{'fields': ...}, ...]
-        >>> api.all('base_id', 'table_name', max_records=50)
+        >>> table.all(max_records=50)
         [{'fields': ...}, ...]
 
         Keyword Args:
@@ -238,7 +239,8 @@ class Table:
         Creates a new record
 
         >>> record = {'Name': 'John'}
-        >>> api.create('base_id', 'table_name', record)
+        >>> table = api.table('base_id', 'table_name')
+        >>> table.create(record)
 
         Args:
             fields: Fields to insert. Must be a dict with field names or IDs as keys.

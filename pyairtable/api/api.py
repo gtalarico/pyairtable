@@ -24,7 +24,8 @@ class Api:
 
     Usage:
         >>> api = Api('auth_token')
-        >>> api.all('base_id', 'table_name')
+        >>> table = api.table('base_id', 'table_name')
+        >>> records = table.all()
     """
 
     VERSION = "v0"
