@@ -17,9 +17,9 @@ using a straightforward API within the :class:`~pyairtable.Base` class.
 .. automethod:: pyairtable.Base.webhook
     :noindex:
 
+.. automethod:: pyairtable.models.Webhook.payloads
+    :noindex:
+
 .. autoclass:: pyairtable.models.WebhookNotification
     :noindex:
     :members: from_request
-
-.. autoclass:: pyairtable.models.Webhook.payloads
-    :noindex:
