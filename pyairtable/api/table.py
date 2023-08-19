@@ -7,12 +7,12 @@ import pyairtable.models
 from pyairtable.api.retrying import Retry
 from pyairtable.api.types import (
     FieldName,
-    Fields,
     RecordDeletedDict,
     RecordDict,
     RecordId,
     UpdateRecordDict,
     UpsertResultDict,
+    WritableFields,
     assert_typed_dict,
     assert_typed_dicts,
 )
@@ -231,7 +231,7 @@ class Table:
 
     def create(
         self,
-        fields: Fields,
+        fields: WritableFields,
         typecast: bool = False,
         return_fields_by_field_id: bool = False,
     ) -> RecordDict:
@@ -260,7 +260,7 @@ class Table:
 
     def batch_create(
         self,
-        records: List[Fields],
+        records: List[WritableFields],
         typecast: bool = False,
         return_fields_by_field_id: bool = False,
     ) -> List[RecordDict]:
@@ -306,7 +306,7 @@ class Table:
     def update(
         self,
         record_id: RecordId,
-        fields: Fields,
+        fields: WritableFields,
         replace: bool = False,
         typecast: bool = False,
     ) -> RecordDict:

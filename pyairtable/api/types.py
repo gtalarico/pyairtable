@@ -214,6 +214,16 @@ class RecordDict(TypedDict):
 class CreateRecordDict(TypedDict):
     """
     A ``dict`` representing the payload passed to the Airtable API to create a record.
+
+    Field values must each be a :data:`~pyairtable.api.types.WritableFieldValue`.
+
+    Usage:
+        >>> table.create({
+        ...     "fields": {
+        ...         "Field Name": "Field Value",
+        ...         "Other Field": ["Value 1", "Value 2"]
+        ...     }
+        ... })
     """
 
     fields: WritableFields
@@ -223,12 +233,23 @@ class UpdateRecordDict(TypedDict):
     """
     A ``dict`` representing the payload passed to the Airtable API to update a record.
 
+    Field values must each be a :data:`~pyairtable.api.types.WritableFieldValue`.
+
     Usage:
-        >>> update_records = [
-        ...     {"id": "recAdw9EjV90xbW", "fields": {"Email": "alice@example.com"}},
-        ...     {"id": "recAdw9EjV90xbX", "fields": {"Email": "bob@example.com"}},
-        ... ]
-        >>> table.batch_update(update_records)
+        >>> table.batch_update([
+        ...     {
+        ...         "id": "recAdw9EjV90xbW",
+        ...         "fields": {
+        ...             "Email": "alice@example.com"
+        ...         }
+        ...     },
+        ...     {
+        ...         "id": "recAdw9EjV90xbX",
+        ...         "fields": {
+        ...             "Email": "bob@example.com"
+        ...         }
+        ...     }
+        ... ])
     """
 
     id: RecordId
