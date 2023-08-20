@@ -5,7 +5,7 @@ sphinx-autoapi
 sphinxext-opengraph
 revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@40f4b09fa5c199e3844153ef973a1155a56981dd
 sphinx-autodoc-typehints
-autodoc-pydantic
+autodoc-pydantic<2
 
 # Packaging
 wheel==0.38.1
