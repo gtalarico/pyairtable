@@ -109,6 +109,8 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
 
    * - ORM field class
      - Airtable field type(s)
+   * - :class:`~pyairtable.orm.fields.AITextField` 🔒
+     - `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`__
    * - :class:`~pyairtable.orm.fields.AttachmentsField`
      - `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__
    * - :class:`~pyairtable.orm.fields.AutoNumberField` 🔒

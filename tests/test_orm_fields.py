@@ -207,15 +207,16 @@ def test_type_validation_LinkField():
     argnames="test_case",
     argvalues=[
         # If a 2-tuple, the API and ORM values should be identical.
+        (f.AITextField, {"state": "empty", "isStale": True, "value": None}),
         (f.AutoNumberField, 1),
         (f.CountField, 1),
         (f.ExternalSyncSourceField, "Source"),
         (f.ButtonField, {"label": "Click me!"}),
         (f.LookupField, ["any", "values"]),
-        # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.CreatedByField, fake_user()),
-        (f.CreatedTimeField, DATETIME_S, DATETIME_V),
         (f.LastModifiedByField, fake_user()),
+        # If a 3-tuple, we should be able to convert API -> ORM values.
+        (f.CreatedTimeField, DATETIME_S, DATETIME_V),
         (f.LastModifiedTimeField, DATETIME_S, DATETIME_V),
     ],
     ids=operator.itemgetter(0),

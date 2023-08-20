@@ -77,6 +77,7 @@ if TYPE_CHECKING:
     assert_type(movie.actors[0].name, Optional[str])
 
     class EveryField(orm.Model):
+        aitext = orm.fields.AITextField("AI Generated Text")
         attachments = orm.fields.AttachmentsField("Attachments")
         autonumber = orm.fields.AutoNumberField("Autonumber")
         barcode = orm.fields.BarcodeField("Barcode")
@@ -106,6 +107,7 @@ if TYPE_CHECKING:
         url = orm.fields.UrlField("URL")
 
     record = EveryField()
+    assert_type(record.aitext, Optional[T.AITextDict])
     assert_type(record.attachments, List[T.AttachmentDict])
     assert_type(record.autonumber, Optional[int])
     assert_type(record.barcode, Optional[T.BarcodeDict])
