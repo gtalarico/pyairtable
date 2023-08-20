@@ -69,7 +69,11 @@ def typehints_formatter(annotation, config):
             continue
         if isinstance(value, type) and issubclass(value, dict):  # TypedDict
             return f":data:`~pyairtable.api.types.{name}`"
-        if isinstance(value, typing._GenericAlias):  # Union, Dict, etc.
+        # At this point there's no way to determine whether an annotation
+        # which was evaluated to Dict[str, Any] is Fields or something unrelated,
+        # so we limit this formatter to just type aliases which we *know* are unique.
+        # TODO: get *all* type alias annotations properly reflected in docs.
+        if name in ("WritableFieldValue", "WritableField"):
             return f":data:`~pyairtable.api.types.{name}`"
 
     if annotation == typing.Literal[pyairtable.orm.fields._LinkFieldOptions.LinkSelf]:
