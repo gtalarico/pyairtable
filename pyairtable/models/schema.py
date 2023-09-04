@@ -633,4 +633,14 @@ FieldSchema: TypeAlias = Union[
 # fmt: on
 
 
+# Shortcut to allow parsing unions, which is not possible otherwise in Pydantic v1.
+# See https://github.com/pydantic/pydantic/discussions/4950
+class HasFieldSchema(AirtableModel):
+    field_schema: FieldSchema
+
+
+def parse_field_schema(obj: Any) -> FieldSchema:
+    return HasFieldSchema.parse_obj({"field_schema": obj}).field_schema
+
+
 update_forward_refs(vars())

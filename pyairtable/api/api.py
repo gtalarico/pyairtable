@@ -99,10 +99,6 @@ class Api:
         data = self.request("GET", self.build_url("meta/whoami"))
         return assert_typed_dict(UserAndScopesDict, data)
 
-    @enterprise_only
-    def enterprise(self, enterprise_account_id: str) -> Enterprise:
-        return Enterprise(self, enterprise_account_id)
-
     def workspace(self, workspace_id: str) -> Workspace:
         return Workspace(self, workspace_id)
 
@@ -162,6 +158,23 @@ class Api:
                 for info in self._base_info.bases
             }
         return dict(self._bases)
+
+    def create_base(
+        self,
+        workspace_id: str,
+        name: str,
+        tables: Sequence[Dict[str, Any]],
+    ) -> "pyairtable.api.base.Base":
+        """
+        Creates a base in the given workspace.
+
+        Args:
+            workspace_id: The ID of the workspace for the new base (e.g. ``wspmhESAta6clCCwF``).
+            name: The name to give to the new base. Does not need to be unique.
+            tables: A list of ``dict`` objects that conform to Airtable's
+                `Table model <https://airtable.com/developers/web/api/model/table-model>`__.
+        """
+        return self.workspace(workspace_id).create_base(name, tables)
 
     def table(self, base_id: str, table_name: str) -> "pyairtable.api.table.Table":
         """
@@ -297,3 +310,16 @@ class Api:
         to the maximum number of records per request allowed by the API.
         """
         return chunked(iterable, self.MAX_RECORDS_PER_REQUEST)
+
+    @enterprise_only
+    def enterprise(self, enterprise_account_id: str) -> Enterprise:
+        return Enterprise(self, enterprise_account_id)
+
+    @enterprise_only
+    def delete_base(self, base: Union[str, "pyairtable.api.base.Base"]) -> None:
+        """
+        Deletes the base.
+        """
+        if isinstance(base, str):
+            base = self.base(base)
+        self.request("DELETE", base.meta_url())

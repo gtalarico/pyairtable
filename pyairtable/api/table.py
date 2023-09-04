@@ -16,7 +16,8 @@ from pyairtable.api.types import (
     assert_typed_dict,
     assert_typed_dicts,
 )
-from pyairtable.models.schema import TableSchema
+from pyairtable.models.schema import FieldSchema, TableSchema, parse_field_schema
+from pyairtable.utils import is_table_id
 
 
 class Table:
@@ -130,12 +131,31 @@ class Table:
         return f"<Table base={self.base.id!r} name={self.name!r}>"
 
     @property
+    def id(self) -> str:
+        """
+        Returns the table's Airtable ID. If the instance was created with a name
+        rather than an ID, this property may perform an API request to retrieve
+        the base's schema.
+        """
+        if is_table_id(self.name):
+            return self.name
+        return self.schema().id
+
+    @property
     def url(self) -> str:
         """
         Returns the URL for this table.
         """
         token = self._schema.id if self._schema else self.name
         return self.api.build_url(self.base.id, urllib.parse.quote(token, safe=""))
+
+    def meta_url(self, *components: str) -> str:
+        """
+        Builds a URL to a metadata endpoint for this table.
+        """
+        return self.api.build_url(
+            f"meta/bases/{self.base.id}/tables/{self.id}", *components
+        )
 
     def record_url(self, record_id: RecordId, *components: str) -> str:
         """
@@ -613,6 +633,31 @@ class Table:
         if force or not self._schema:
             self._schema = self.base.schema(force=force).table(self.name)
         return self._schema
+
+    def create_field(
+        self,
+        name: str,
+        field_type: str,
+        description: Optional[str] = None,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> FieldSchema:
+        """
+        Creates a field on the table.
+
+        Args:
+            name: The unique name of the field.
+            field_type: One of the `Airtable field types <https://airtable.com/developers/web/api/model/field-type>`__.
+            description: A long form description of the table.
+            options: Only available for some field types. For more information, read about the
+                `Airtable field model <https://airtable.com/developers/web/api/field-model>`__.
+        """
+        request: Dict[str, Any] = {"name": name, "type": field_type}
+        if description:
+            request["description"] = description
+        if options:
+            request["options"] = options
+        response = self.api.request("POST", self.meta_url("fields"), json=request)
+        return parse_field_schema(response)
 
 
 # These are at the bottom of the module to avoid circular imports

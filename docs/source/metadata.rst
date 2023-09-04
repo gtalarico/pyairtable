@@ -38,23 +38,17 @@ There may be parts of the pyAirtable API which are not supported below;
 you can always use :meth:`Api.request <pyairtable.Api.request>` to
 call them directly.
 
-.. automethod:: pyairtable.Workspace.create_base
+.. automethod:: pyairtable.Api.create_base
+    :noindex:
+
+.. automethod:: pyairtable.Api.delete_base
     :noindex:
 
 .. automethod:: pyairtable.Base.create_table
     :noindex:
 
-.. .. automethod:: pyairtable.Base.delete
-..     :noindex:
-
-.. .. automethod:: pyairtable.Table.create_field
-..     :noindex:
-
-.. .. automethod:: pyairtable.Table.delete_field
-..     :noindex:
-
-.. .. automethod:: pyairtable.Table.delete
-..     :noindex:
+.. automethod:: pyairtable.Table.create_field
+    :noindex:
 
 
 Enterprise information

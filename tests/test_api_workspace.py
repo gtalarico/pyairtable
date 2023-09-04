@@ -1,5 +1,6 @@
 import pytest
 
+from pyairtable.api.base import Base
 from pyairtable.api.workspace import Workspace
 
 
@@ -30,3 +31,12 @@ def test_bases(workspace, mock_info):
     assert bases[0].id == "appLkNDICXNqxSDhG"
     assert bases[1].id == "appSW9R5uCNmRmfl6"
     assert mock_info.call_count == 1
+
+
+def test_create_base(workspace, requests_mock, sample_json):
+    url = workspace.api.build_url("meta/bases")
+    requests_mock.get(url, json=sample_json("Bases"))
+    requests_mock.post(url, json={"id": "appLkNDICXNqxSDhG"})
+    base = workspace.create_base("Base Name", [])
+    assert isinstance(base, Base)
+    assert base.id == "appLkNDICXNqxSDhG"

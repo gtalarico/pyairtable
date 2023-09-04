@@ -6,7 +6,7 @@ from requests_mock import Mocker
 
 from pyairtable import Api, Base, Table
 from pyairtable.models.schema import TableSchema
-from pyairtable.testing import fake_record
+from pyairtable.testing import fake_id, fake_record
 from pyairtable.utils import chunked
 
 
@@ -71,10 +71,10 @@ def test_repr(table: Table):
     assert repr(table) == "<Table base='appJMY16gZDQrMWpA' name='Table Name'>"
 
 
-def test_schema(requests_mock, sample_json):
+def test_schema(base, requests_mock, sample_json):
     schema_json = sample_json("BaseSchema")
-    table = Table("api_key", "base_id", "Apartments")
-    requests_mock.get(table.base.meta_url("tables"), json=schema_json)
+    table = base.table("Apartments")
+    requests_mock.get(base.meta_url("tables"), json=schema_json)
     assert table.schema().id == "tbltp8DGLhqbUmjK1"
 
 
@@ -360,6 +360,25 @@ def test_batch_delete(table: Table, container, mock_records):
         resp = table.batch_delete(container(ids))
     expected = [{"deleted": True, "id": i} for i in ids]
     assert resp == expected
+
+
+def test_create_field(table, requests_mock, sample_json):
+    """
+    Tests the API for creating a field (but without actually performing the operation).
+    """
+    table.name = fake_id("tbl")  # so that the .id property doesn't request schema
+    field_schema = sample_json("field_schema/SingleSelectFieldSchema")
+    choices = ["Todo", "In progress", "Done"]
+    m = requests_mock.post(table.meta_url("fields"), json=field_schema)
+    f = table.create_field("Status", "singleSelect", options={"choices": choices})
+    assert f.id == "fldqCjrs1UhXgHUIc"
+    assert {c.name for c in f.options.choices} == set(choices)
+    assert m.call_count == 1
+    assert m.request_history[-1].json() == {
+        "name": "Status",
+        "type": "singleSelect",
+        "options": {"choices": choices},
+    }
 
 
 # Helpers

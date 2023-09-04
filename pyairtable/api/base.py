@@ -184,21 +184,6 @@ class Base:
             self._schema = BaseSchema.parse_obj(data)
         return self._schema
 
-    @enterprise_only
-    def info(self, *, force: bool = False) -> "BaseInfo":
-        """
-        Retrieves `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__
-        from the API.
-
-        Args:
-            force: |kwarg_force_metadata|
-        """
-        if force or not self._info:
-            params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
-            data = self.api.request("GET", self.meta_url(), params=params)
-            self._info = BaseInfo.parse_obj(data)
-        return self._info
-
     @property
     def webhooks_url(self) -> str:
         return self.api.build_url("bases", self.id, "webhooks")
@@ -296,3 +281,18 @@ class Base:
         request = create.dict(by_alias=True, exclude_unset=True)
         response = self.api.request("POST", self.webhooks_url, json=request)
         return CreateWebhookResponse.parse_obj(response)
+
+    @enterprise_only
+    def info(self, *, force: bool = False) -> "BaseInfo":
+        """
+        Retrieves `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__
+        from the API.
+
+        Args:
+            force: |kwarg_force_metadata|
+        """
+        if force or not self._info:
+            params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
+            data = self.api.request("GET", self.meta_url(), params=params)
+            self._info = BaseInfo.parse_obj(data)
+        return self._info

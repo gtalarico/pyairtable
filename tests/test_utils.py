@@ -37,3 +37,24 @@ def test_attachment():
         "url": "https://url.com",
         "filename": "test.jpg",
     }
+
+
+@pytest.mark.parametrize(
+    "func,value,expected",
+    [
+        (utils.is_airtable_id, -1, False),
+        (utils.is_airtable_id, "appAkBDICXDqESDhF", True),
+        (utils.is_airtable_id, "app0000000000Fake", True),
+        (utils.is_airtable_id, "appWrongLength", False),
+        (utils.is_record_id, "rec0000000000Fake", True),
+        (utils.is_record_id, "app0000000000Fake", False),
+        (utils.is_base_id, "app0000000000Fake", True),
+        (utils.is_base_id, "rec0000000000Fake", False),
+        (utils.is_table_id, "tbl0000000000Fake", True),
+        (utils.is_table_id, "rec0000000000Fake", False),
+        (utils.is_field_id, "fld0000000000Fake", True),
+        (utils.is_field_id, "rec0000000000Fake", False),
+    ],
+)
+def test_id_check(func, value, expected):
+    assert func(value) is expected

@@ -2,7 +2,7 @@ import inspect
 import re
 import textwrap
 from datetime import date, datetime
-from functools import wraps
+from functools import partial, wraps
 from typing import Any, Callable, Iterator, Sequence, TypeVar, Union, cast
 
 import requests
@@ -104,6 +104,27 @@ def chunked(iterable: Sequence[T], chunk_size: int) -> Iterator[Sequence[T]]:
         yield iterable[i : i + chunk_size]
 
 
+def is_airtable_id(value: Any, prefix: str = "") -> bool:
+    """
+    Check whether the given value is an Airtable ID.
+
+    Args:
+        value: The value to check.
+        prefix: If provided, the ID must have the given prefix.
+    """
+    if not isinstance(value, str):
+        return False
+    if prefix and not value.startswith(prefix):
+        return False
+    return len(value) == 17
+
+
+is_record_id = partial(is_airtable_id, prefix="rec")
+is_base_id = partial(is_airtable_id, prefix="app")
+is_table_id = partial(is_airtable_id, prefix="tbl")
+is_field_id = partial(is_airtable_id, prefix="fld")
+
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -131,7 +152,7 @@ def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
             if exc.response.status_code == 404:
                 exc.args = (
                     *exc.args,
-                    f"NOTE: {wrapped.__name__}() requires an enterprise billing plan.",
+                    f"NOTE: {wrapped.__qualname__}() requires an enterprise billing plan.",
                 )
             raise exc
 
