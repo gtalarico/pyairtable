@@ -170,7 +170,7 @@ def FIND(what: str, where: str, start_position: int = 0) -> str:
     """
     Creates a FIND statement
 
-    >>> FIND(STR(2021), FIELD('DatetimeCol'))
+    >>> FIND(STR_VALUE(2021), FIELD('DatetimeCol'))
     "FIND('2021', {DatetimeCol})"
 
     Args:
