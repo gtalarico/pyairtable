@@ -213,7 +213,7 @@ class WorkspaceInfo(AirtableModel):
         workspace_invite_links: List["InviteLink"]
 
 
-class _NestedId(AirtableModel):
+class NestedId(AirtableModel):
     id: str
 
 
@@ -225,8 +225,8 @@ class UserInfo(AirtableModel):
     created_time: Optional[str]
     invited_to_airtable_by_user_id: Optional[str]
     last_activity_time: Optional[str]
-    is_managed_user: bool
-    groups: List[_NestedId] = pydantic.Field(default_factory=list)
+    is_managed: bool
+    groups: List[NestedId] = pydantic.Field(default_factory=list)
 
 
 class GroupInfo(AirtableModel):
@@ -255,221 +255,364 @@ class GroupInfo(AirtableModel):
 
 
 class AutoNumberFieldConfig(AirtableModel):
+    """
+    Field configuration for `Auto number <https://airtable.com/developers/web/api/field-model#autonumber>`__.
+    """
+
     type: Literal["autoNumber"]
 
 
 class BarcodeFieldConfig(AirtableModel):
+    """
+    Field configuration for `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`__.
+    """
+
     type: Literal["barcode"]
 
 
 class ButtonFieldConfig(AirtableModel):
+    """
+    Field configuration for `Button <https://airtable.com/developers/web/api/field-model#button>`__.
+    """
+
     type: Literal["button"]
 
 
 class CheckboxFieldConfig(AirtableModel):
-    type: Literal["checkbox"]
-    options: Optional["CheckboxFieldConfig.Options"]
+    """
+    Field configuration for `Checkbox <https://airtable.com/developers/web/api/field-model#checkbox>`__.
+    """
 
-    class Options(AirtableModel):
-        color: str
-        icon: str
+    type: Literal["checkbox"]
+    options: Optional["CheckboxFieldOptions"]
+
+
+class CheckboxFieldOptions(AirtableModel):
+    color: str
+    icon: str
 
 
 class CountFieldConfig(AirtableModel):
-    type: Literal["count"]
-    options: Optional["CountFieldConfig.Options"]
+    """
+    Field configuration for `Count <https://airtable.com/developers/web/api/field-model#count>`__.
+    """
 
-    class Options(AirtableModel):
-        is_valid: bool
-        record_link_field_id: Optional[str]
+    type: Literal["count"]
+    options: Optional["CountFieldOptions"]
+
+
+class CountFieldOptions(AirtableModel):
+    is_valid: bool
+    record_link_field_id: Optional[str]
 
 
 class CreatedByFieldConfig(AirtableModel):
+    """
+    Field configuration for `Created by <https://airtable.com/developers/web/api/field-model#createdby>`__.
+    """
+
     type: Literal["createdBy"]
 
 
 class CreatedTimeFieldConfig(AirtableModel):
+    """
+    Field configuration for `Created time <https://airtable.com/developers/web/api/field-model#createdtime>`__.
+    """
+
     type: Literal["createdTime"]
 
 
 class CurrencyFieldConfig(AirtableModel):
-    type: Literal["currency"]
-    options: "CurrencyFieldConfig.Options"
+    """
+    Field configuration for `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__.
+    """
 
-    class Options(AirtableModel):
-        precision: int
-        symbol: str
+    type: Literal["currency"]
+    options: "CurrencyFieldOptions"
+
+
+class CurrencyFieldOptions(AirtableModel):
+    precision: int
+    symbol: str
 
 
 class DateFieldConfig(AirtableModel):
-    type: Literal["date"]
-    options: "DateFieldConfig.Options"
+    """
+    Field configuration for `Date <https://airtable.com/developers/web/api/field-model#dateonly>`__.
+    """
 
-    class Options(AirtableModel):
-        date_format: "DateTimeFieldConfig.Options.DateFormat"
+    type: Literal["date"]
+    options: "DateFieldOptions"
+
+
+class DateFieldOptions(AirtableModel):
+    date_format: "DateTimeFieldOptions.DateFormat"
 
 
 class DateTimeFieldConfig(AirtableModel):
+    """
+    Field configuration for `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__.
+    """
+
     type: Literal["dateTime"]
-    options: "DateTimeFieldConfig.Options"
+    options: "DateTimeFieldOptions"
 
-    class Options(AirtableModel):
-        time_zone: str
-        date_format: "DateTimeFieldConfig.Options.DateFormat"
-        time_format: "DateTimeFieldConfig.Options.TimeFormat"
 
-        class DateFormat(AirtableModel):
-            format: str
-            name: str
+class DateTimeFieldOptions(AirtableModel):
+    time_zone: str
+    date_format: "DateTimeFieldOptions.DateFormat"
+    time_format: "DateTimeFieldOptions.TimeFormat"
 
-        class TimeFormat(AirtableModel):
-            format: str
-            name: str
+    class DateFormat(AirtableModel):
+        format: str
+        name: str
+
+    class TimeFormat(AirtableModel):
+        format: str
+        name: str
 
 
 class DurationFieldConfig(AirtableModel):
-    type: Literal["duration"]
-    options: Optional["DurationFieldConfig.Options"]
+    """
+    Field configuration for `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__.
+    """
 
-    class Options(AirtableModel):
-        duration_format: str
+    type: Literal["duration"]
+    options: Optional["DurationFieldOptions"]
+
+
+class DurationFieldOptions(AirtableModel):
+    duration_format: str
 
 
 class EmailFieldConfig(AirtableModel):
+    """
+    Field configuration for `Email <https://airtable.com/developers/web/api/field-model#email>`__.
+    """
+
     type: Literal["email"]
 
 
 class ExternalSyncSourceFieldConfig(AirtableModel):
+    """
+    Field configuration for `Sync source <https://airtable.com/developers/web/api/field-model#syncsource>`__.
+    """
+
     type: Literal["externalSyncSource"]
-    options: Optional["SingleSelectFieldConfig.Options"]
+    options: Optional["SingleSelectFieldOptions"]
 
 
 class FormulaFieldConfig(AirtableModel):
-    type: Literal["formula"]
-    options: Optional["FormulaFieldConfig.Options"]
+    """
+    Field configuration for `Formula <https://airtable.com/developers/web/api/field-model#formula>`__.
+    """
 
-    class Options(AirtableModel):
-        formula: str
-        is_valid: bool
-        referenced_field_ids: Optional[List[str]]
-        result: Optional["FieldConfig"]
+    type: Literal["formula"]
+    options: Optional["FormulaFieldOptions"]
+
+
+class FormulaFieldOptions(AirtableModel):
+    formula: str
+    is_valid: bool
+    referenced_field_ids: Optional[List[str]]
+    result: Optional["FieldConfig"]
 
 
 class LastModifiedByFieldConfig(AirtableModel):
+    """
+    Field configuration for `Last modified by <https://airtable.com/developers/web/api/field-model#lastmodifiedby>`__.
+    """
+
     type: Literal["lastModifiedBy"]
 
 
 class LastModifiedTimeFieldConfig(AirtableModel):
-    type: Literal["lastModifiedTime"]
-    options: Optional["LastModifiedTimeFieldConfig.Options"]
+    """
+    Field configuration for `Last modified time <https://airtable.com/developers/web/api/field-model#lastmodifiedtime>`__.
+    """
 
-    class Options(AirtableModel):
-        is_valid: bool
-        referenced_field_ids: Optional[List[str]]
-        result: Optional[Union["DateFieldConfig", "DateTimeFieldConfig"]]
+    type: Literal["lastModifiedTime"]
+    options: Optional["LastModifiedTimeFieldOptions"]
+
+
+class LastModifiedTimeFieldOptions(AirtableModel):
+    is_valid: bool
+    referenced_field_ids: Optional[List[str]]
+    result: Optional[Union["DateFieldConfig", "DateTimeFieldConfig"]]
 
 
 class MultilineTextFieldConfig(AirtableModel):
+    """
+    Field configuration for `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
+    """
+
     type: Literal["multilineText"]
 
 
 class MultipleAttachmentsFieldConfig(AirtableModel):
-    type: Literal["multipleAttachments"]
-    options: Optional["MultipleAttachmentsFieldConfig.Options"]
+    """
+    Field configuration for `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__.
+    """
 
-    class Options(AirtableModel):
-        is_reversed: bool
+    type: Literal["multipleAttachments"]
+    options: Optional["MultipleAttachmentsFieldOptions"]
+
+
+class MultipleAttachmentsFieldOptions(AirtableModel):
+    """
+    Field configuration for `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__.
+    """
+
+    is_reversed: bool
 
 
 class MultipleCollaboratorsFieldConfig(AirtableModel):
+    """
+    Field configuration for `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__.
+    """
+
     type: Literal["multipleCollaborators"]
 
 
 class MultipleLookupValuesFieldConfig(AirtableModel):
-    type: Literal["multipleLookupValues"]
-    options: Optional["MultipleLookupValuesFieldConfig.Options"]
+    """
+    Field configuration for `Lookup <https://airtable.com/developers/web/api/field-model#lookup>__`.
+    """
 
-    class Options(AirtableModel):
-        field_id_in_linked_table: Optional[str]
-        is_valid: bool
-        record_link_field_id: Optional[str]
-        result: Optional["FieldConfig"]
+    type: Literal["multipleLookupValues"]
+    options: Optional["MultipleLookupValuesFieldOptions"]
+
+
+class MultipleLookupValuesFieldOptions(AirtableModel):
+    field_id_in_linked_table: Optional[str]
+    is_valid: bool
+    record_link_field_id: Optional[str]
+    result: Optional["FieldConfig"]
 
 
 class MultipleRecordLinksFieldConfig(AirtableModel):
-    type: Literal["multipleRecordLinks"]
-    options: Optional["MultipleRecordLinksFieldConfig.Options"]
+    """
+    Field configuration for `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>__`.
+    """
 
-    class Options(AirtableModel):
-        is_reversed: bool
-        linked_table_id: str
-        prefers_single_record_link: bool
-        inverse_link_field_id: Optional[str]
-        view_id_for_record_selection: Optional[str]
+    type: Literal["multipleRecordLinks"]
+    options: Optional["MultipleRecordLinksFieldOptions"]
+
+
+class MultipleRecordLinksFieldOptions(AirtableModel):
+    is_reversed: bool
+    linked_table_id: str
+    prefers_single_record_link: bool
+    inverse_link_field_id: Optional[str]
+    view_id_for_record_selection: Optional[str]
 
 
 class MultipleSelectsFieldConfig(AirtableModel):
+    """
+    Field configuration for `Multiple select <https://airtable.com/developers/web/api/field-model#multiselect>`__.
+    """
+
     type: Literal["multipleSelects"]
-    options: Optional["SingleSelectFieldConfig.Options"]
+    options: Optional["SingleSelectFieldOptions"]
 
 
 class NumberFieldConfig(AirtableModel):
-    type: Literal["number"]
-    options: Optional["NumberFieldConfig.Options"]
+    """
+    Field configuration for `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
+    """
 
-    class Options(AirtableModel):
-        precision: int
+    type: Literal["number"]
+    options: Optional["NumberFieldOptions"]
+
+
+class NumberFieldOptions(AirtableModel):
+    precision: int
 
 
 class PercentFieldConfig(AirtableModel):
+    """
+    Field configuration for `Percent <https://airtable.com/developers/web/api/field-model#percentnumber>`__.
+    """
+
     type: Literal["percent"]
-    options: Optional["NumberFieldConfig.Options"]
+    options: Optional["NumberFieldOptions"]
 
 
 class PhoneNumberFieldConfig(AirtableModel):
+    """
+    Field configuration for `Phone <https://airtable.com/developers/web/api/field-model#phone>`__.
+    """
+
     type: Literal["phoneNumber"]
 
 
 class RatingFieldConfig(AirtableModel):
-    type: Literal["rating"]
-    options: Optional["RatingFieldConfig.Options"]
+    """
+    Field configuration for `Rating <https://airtable.com/developers/web/api/field-model#rating>`__.
+    """
 
-    class Options(AirtableModel):
-        color: str
-        icon: str
-        max: int
+    type: Literal["rating"]
+    options: Optional["RatingFieldOptions"]
+
+
+class RatingFieldOptions(AirtableModel):
+    color: str
+    icon: str
+    max: int
 
 
 class RichTextFieldConfig(AirtableModel):
+    """
+    Field configuration for `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__.
+    """
+
     type: Literal["richText"]
 
 
 class RollupFieldConfig(AirtableModel):
-    type: Literal["rollup"]
-    options: Optional["RollupFieldConfig.Options"]
+    """
+    Field configuration for `Rollup <https://airtable.com/developers/web/api/field-model#rollup>__`.
+    """
 
-    class Options(AirtableModel):
-        field_id_in_linked_table: Optional[str]
-        is_valid: bool
-        record_link_field_id: Optional[str]
-        referenced_field_ids: Optional[List[str]]
-        result: Optional["FieldConfig"]
+    type: Literal["rollup"]
+    options: Optional["RollupFieldOptions"]
+
+
+class RollupFieldOptions(AirtableModel):
+    field_id_in_linked_table: Optional[str]
+    is_valid: bool
+    record_link_field_id: Optional[str]
+    referenced_field_ids: Optional[List[str]]
+    result: Optional["FieldConfig"]
 
 
 class SingleCollaboratorFieldConfig(AirtableModel):
+    """
+    Field configuration for `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`__.
+    """
+
     type: Literal["singleCollaborator"]
 
 
 class SingleLineTextFieldConfig(AirtableModel):
+    """
+    Field configuration for `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__.
+    """
+
     type: Literal["singleLineText"]
 
 
 class SingleSelectFieldConfig(AirtableModel):
-    type: Literal["singleSelect"]
-    options: Optional["SingleSelectFieldConfig.Options"]
+    """
+    Field configuration for `Single select <https://airtable.com/developers/web/api/field-model#select>`__.
+    """
 
-    class Options(AirtableModel):
-        choices: List["SingleSelectFieldConfig.Choice"]
+    type: Literal["singleSelect"]
+    options: Optional["SingleSelectFieldOptions"]
+
+
+class SingleSelectFieldOptions(AirtableModel):
+    choices: List["SingleSelectFieldOptions.Choice"]
 
     class Choice(AirtableModel):
         id: str
@@ -478,17 +621,21 @@ class SingleSelectFieldConfig(AirtableModel):
 
 
 class UrlFieldConfig(AirtableModel):
+    """
+    Field configuration for `Url <https://airtable.com/developers/web/api/field-model#urltext>`__.
+    """
+
     type: Literal["url"]
 
 
 class UnknownFieldConfig(AirtableModel):
     """
-    Fallback field configuration class so that the library doesn't crash
-    with a ValidationError if Airtable adds new types of fields in the future.
+    Field configuration class used as a fallback for unrecognized types.
+    This ensures we don't raise pydantic.ValidationError if Airtable adds new types.
     """
 
     type: str
-    options: Optional[Dict[Any, Any]]
+    options: Optional[Dict[str, Any]]
 
 
 class _FieldSchemaBase(AirtableModel):
@@ -504,24 +651,37 @@ r"""[[[cog]]]
 
 import re
 with open(cog.inFile) as fp:
-    field_types = re.findall(r"class (\w+Field)Config\(", fp.read())
+    field_types = re.findall(
+        r"class (\w+Field)Config\(.*?\):(?:\n    \"{3}(.*?)\"{3})?",
+        fp.read(),
+        re.MULTILINE + re.DOTALL
+    )
+
+cog.out("\n\n")
 
 cog.outl("FieldConfig: TypeAlias = Union[")
-for fld in field_types:
+for fld, _ in field_types:
     cog.outl(f"    {fld}Config,")
 cog.outl("]")
 cog.out("\n\n")
 
-for fld in field_types:
-    cog.outl(f"class {fld}Schema(_FieldSchemaBase, {fld}Config): pass  # noqa")
-cog.out("\n\n")
+for fld, doc in field_types:
+    cog.out(f"class {fld}Schema(_FieldSchemaBase, {fld}Config):\n    ")
+    if doc:
+        doc = doc.replace('ield configuration', 'ield schema')
+        cog.outl("\"\"\"" + doc + "\"\"\"")
+    else:
+        cog.outl("pass")
+    cog.out("\n\n")
 
 cog.outl("FieldSchema: TypeAlias = Union[")
-for fld in field_types:
+for fld, _ in field_types:
     cog.outl(f"    {fld}Schema,")
 cog.outl("]")
 
 [[[out]]]"""
+
+
 FieldConfig: TypeAlias = Union[
     AutoNumberFieldConfig,
     BarcodeFieldConfig,
@@ -559,39 +719,203 @@ FieldConfig: TypeAlias = Union[
 ]
 
 
-class AutoNumberFieldSchema(_FieldSchemaBase, AutoNumberFieldConfig): pass  # noqa
-class BarcodeFieldSchema(_FieldSchemaBase, BarcodeFieldConfig): pass  # noqa
-class ButtonFieldSchema(_FieldSchemaBase, ButtonFieldConfig): pass  # noqa
-class CheckboxFieldSchema(_FieldSchemaBase, CheckboxFieldConfig): pass  # noqa
-class CountFieldSchema(_FieldSchemaBase, CountFieldConfig): pass  # noqa
-class CreatedByFieldSchema(_FieldSchemaBase, CreatedByFieldConfig): pass  # noqa
-class CreatedTimeFieldSchema(_FieldSchemaBase, CreatedTimeFieldConfig): pass  # noqa
-class CurrencyFieldSchema(_FieldSchemaBase, CurrencyFieldConfig): pass  # noqa
-class DateFieldSchema(_FieldSchemaBase, DateFieldConfig): pass  # noqa
-class DateTimeFieldSchema(_FieldSchemaBase, DateTimeFieldConfig): pass  # noqa
-class DurationFieldSchema(_FieldSchemaBase, DurationFieldConfig): pass  # noqa
-class EmailFieldSchema(_FieldSchemaBase, EmailFieldConfig): pass  # noqa
-class ExternalSyncSourceFieldSchema(_FieldSchemaBase, ExternalSyncSourceFieldConfig): pass  # noqa
-class FormulaFieldSchema(_FieldSchemaBase, FormulaFieldConfig): pass  # noqa
-class LastModifiedByFieldSchema(_FieldSchemaBase, LastModifiedByFieldConfig): pass  # noqa
-class LastModifiedTimeFieldSchema(_FieldSchemaBase, LastModifiedTimeFieldConfig): pass  # noqa
-class MultilineTextFieldSchema(_FieldSchemaBase, MultilineTextFieldConfig): pass  # noqa
-class MultipleAttachmentsFieldSchema(_FieldSchemaBase, MultipleAttachmentsFieldConfig): pass  # noqa
-class MultipleCollaboratorsFieldSchema(_FieldSchemaBase, MultipleCollaboratorsFieldConfig): pass  # noqa
-class MultipleLookupValuesFieldSchema(_FieldSchemaBase, MultipleLookupValuesFieldConfig): pass  # noqa
-class MultipleRecordLinksFieldSchema(_FieldSchemaBase, MultipleRecordLinksFieldConfig): pass  # noqa
-class MultipleSelectsFieldSchema(_FieldSchemaBase, MultipleSelectsFieldConfig): pass  # noqa
-class NumberFieldSchema(_FieldSchemaBase, NumberFieldConfig): pass  # noqa
-class PercentFieldSchema(_FieldSchemaBase, PercentFieldConfig): pass  # noqa
-class PhoneNumberFieldSchema(_FieldSchemaBase, PhoneNumberFieldConfig): pass  # noqa
-class RatingFieldSchema(_FieldSchemaBase, RatingFieldConfig): pass  # noqa
-class RichTextFieldSchema(_FieldSchemaBase, RichTextFieldConfig): pass  # noqa
-class RollupFieldSchema(_FieldSchemaBase, RollupFieldConfig): pass  # noqa
-class SingleCollaboratorFieldSchema(_FieldSchemaBase, SingleCollaboratorFieldConfig): pass  # noqa
-class SingleLineTextFieldSchema(_FieldSchemaBase, SingleLineTextFieldConfig): pass  # noqa
-class SingleSelectFieldSchema(_FieldSchemaBase, SingleSelectFieldConfig): pass  # noqa
-class UrlFieldSchema(_FieldSchemaBase, UrlFieldConfig): pass  # noqa
-class UnknownFieldSchema(_FieldSchemaBase, UnknownFieldConfig): pass  # noqa
+class AutoNumberFieldSchema(_FieldSchemaBase, AutoNumberFieldConfig):
+    """
+    Field schema for `Auto number <https://airtable.com/developers/web/api/field-model#autonumber>`__.
+    """
+
+
+class BarcodeFieldSchema(_FieldSchemaBase, BarcodeFieldConfig):
+    """
+    Field schema for `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`__.
+    """
+
+
+class ButtonFieldSchema(_FieldSchemaBase, ButtonFieldConfig):
+    """
+    Field schema for `Button <https://airtable.com/developers/web/api/field-model#button>`__.
+    """
+
+
+class CheckboxFieldSchema(_FieldSchemaBase, CheckboxFieldConfig):
+    """
+    Field schema for `Checkbox <https://airtable.com/developers/web/api/field-model#checkbox>`__.
+    """
+
+
+class CountFieldSchema(_FieldSchemaBase, CountFieldConfig):
+    """
+    Field schema for `Count <https://airtable.com/developers/web/api/field-model#count>`__.
+    """
+
+
+class CreatedByFieldSchema(_FieldSchemaBase, CreatedByFieldConfig):
+    """
+    Field schema for `Created by <https://airtable.com/developers/web/api/field-model#createdby>`__.
+    """
+
+
+class CreatedTimeFieldSchema(_FieldSchemaBase, CreatedTimeFieldConfig):
+    """
+    Field schema for `Created time <https://airtable.com/developers/web/api/field-model#createdtime>`__.
+    """
+
+
+class CurrencyFieldSchema(_FieldSchemaBase, CurrencyFieldConfig):
+    """
+    Field schema for `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__.
+    """
+
+
+class DateFieldSchema(_FieldSchemaBase, DateFieldConfig):
+    """
+    Field schema for `Date <https://airtable.com/developers/web/api/field-model#dateonly>`__.
+    """
+
+
+class DateTimeFieldSchema(_FieldSchemaBase, DateTimeFieldConfig):
+    """
+    Field schema for `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__.
+    """
+
+
+class DurationFieldSchema(_FieldSchemaBase, DurationFieldConfig):
+    """
+    Field schema for `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__.
+    """
+
+
+class EmailFieldSchema(_FieldSchemaBase, EmailFieldConfig):
+    """
+    Field schema for `Email <https://airtable.com/developers/web/api/field-model#email>`__.
+    """
+
+
+class ExternalSyncSourceFieldSchema(_FieldSchemaBase, ExternalSyncSourceFieldConfig):
+    """
+    Field schema for `Sync source <https://airtable.com/developers/web/api/field-model#syncsource>`__.
+    """
+
+
+class FormulaFieldSchema(_FieldSchemaBase, FormulaFieldConfig):
+    """
+    Field schema for `Formula <https://airtable.com/developers/web/api/field-model#formula>`__.
+    """
+
+
+class LastModifiedByFieldSchema(_FieldSchemaBase, LastModifiedByFieldConfig):
+    """
+    Field schema for `Last modified by <https://airtable.com/developers/web/api/field-model#lastmodifiedby>`__.
+    """
+
+
+class LastModifiedTimeFieldSchema(_FieldSchemaBase, LastModifiedTimeFieldConfig):
+    """
+    Field schema for `Last modified time <https://airtable.com/developers/web/api/field-model#lastmodifiedtime>`__.
+    """
+
+
+class MultilineTextFieldSchema(_FieldSchemaBase, MultilineTextFieldConfig):
+    """
+    Field schema for `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
+    """
+
+
+class MultipleAttachmentsFieldSchema(_FieldSchemaBase, MultipleAttachmentsFieldConfig):
+    """
+    Field schema for `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__.
+    """
+
+
+class MultipleCollaboratorsFieldSchema(_FieldSchemaBase, MultipleCollaboratorsFieldConfig):
+    """
+    Field schema for `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__.
+    """
+
+
+class MultipleLookupValuesFieldSchema(_FieldSchemaBase, MultipleLookupValuesFieldConfig):
+    """
+    Field schema for `Lookup <https://airtable.com/developers/web/api/field-model#lookup>__`.
+    """
+
+
+class MultipleRecordLinksFieldSchema(_FieldSchemaBase, MultipleRecordLinksFieldConfig):
+    """
+    Field schema for `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>__`.
+    """
+
+
+class MultipleSelectsFieldSchema(_FieldSchemaBase, MultipleSelectsFieldConfig):
+    """
+    Field schema for `Multiple select <https://airtable.com/developers/web/api/field-model#multiselect>`__.
+    """
+
+
+class NumberFieldSchema(_FieldSchemaBase, NumberFieldConfig):
+    """
+    Field schema for `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
+    """
+
+
+class PercentFieldSchema(_FieldSchemaBase, PercentFieldConfig):
+    """
+    Field schema for `Percent <https://airtable.com/developers/web/api/field-model#percentnumber>`__.
+    """
+
+
+class PhoneNumberFieldSchema(_FieldSchemaBase, PhoneNumberFieldConfig):
+    """
+    Field schema for `Phone <https://airtable.com/developers/web/api/field-model#phone>`__.
+    """
+
+
+class RatingFieldSchema(_FieldSchemaBase, RatingFieldConfig):
+    """
+    Field schema for `Rating <https://airtable.com/developers/web/api/field-model#rating>`__.
+    """
+
+
+class RichTextFieldSchema(_FieldSchemaBase, RichTextFieldConfig):
+    """
+    Field schema for `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__.
+    """
+
+
+class RollupFieldSchema(_FieldSchemaBase, RollupFieldConfig):
+    """
+    Field schema for `Rollup <https://airtable.com/developers/web/api/field-model#rollup>__`.
+    """
+
+
+class SingleCollaboratorFieldSchema(_FieldSchemaBase, SingleCollaboratorFieldConfig):
+    """
+    Field schema for `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`__.
+    """
+
+
+class SingleLineTextFieldSchema(_FieldSchemaBase, SingleLineTextFieldConfig):
+    """
+    Field schema for `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__.
+    """
+
+
+class SingleSelectFieldSchema(_FieldSchemaBase, SingleSelectFieldConfig):
+    """
+    Field schema for `Single select <https://airtable.com/developers/web/api/field-model#select>`__.
+    """
+
+
+class UrlFieldSchema(_FieldSchemaBase, UrlFieldConfig):
+    """
+    Field schema for `Url <https://airtable.com/developers/web/api/field-model#urltext>`__.
+    """
+
+
+class UnknownFieldSchema(_FieldSchemaBase, UnknownFieldConfig):
+    """
+    Field schema class used as a fallback for unrecognized types.
+    This ensures we don't raise pydantic.ValidationError if Airtable adds new types.
+    """
 
 
 FieldSchema: TypeAlias = Union[
@@ -629,18 +953,18 @@ FieldSchema: TypeAlias = Union[
     UrlFieldSchema,
     UnknownFieldSchema,
 ]
-# [[[end]]] (checksum: 3f8dd40da7b03b16f7299cd99365692c)
+# [[[end]]] (checksum: 656f8c8bca467689a3f404ec9f1058fe)
 # fmt: on
 
 
 # Shortcut to allow parsing unions, which is not possible otherwise in Pydantic v1.
 # See https://github.com/pydantic/pydantic/discussions/4950
-class HasFieldSchema(AirtableModel):
+class _HasFieldSchema(AirtableModel):
     field_schema: FieldSchema
 
 
 def parse_field_schema(obj: Any) -> FieldSchema:
-    return HasFieldSchema.parse_obj({"field_schema": obj}).field_schema
+    return _HasFieldSchema.parse_obj({"field_schema": obj}).field_schema
 
 
 update_forward_refs(vars())

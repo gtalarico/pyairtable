@@ -123,6 +123,7 @@ is_record_id = partial(is_airtable_id, prefix="rec")
 is_base_id = partial(is_airtable_id, prefix="app")
 is_table_id = partial(is_airtable_id, prefix="tbl")
 is_field_id = partial(is_airtable_id, prefix="fld")
+is_user_id = partial(is_airtable_id, prefix="usr")
 
 
 F = TypeVar("F", bound=Callable[..., Any])

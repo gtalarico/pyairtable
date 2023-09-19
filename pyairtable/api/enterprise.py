@@ -1,7 +1,7 @@
-from typing import Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 from pyairtable.models.schema import EnterpriseInfo, GroupInfo, UserInfo
-from pyairtable.utils import enterprise_only
+from pyairtable.utils import enterprise_only, is_user_id
 
 
 @enterprise_only
@@ -53,26 +53,45 @@ class Enterprise:
         """
         Returns information on the users with the given IDs or emails.
 
+        Following the Airtable API specification, pyAirtable will perform
+        one API request for each user ID. However, when given a list of emails,
+        pyAirtable only needs to perform one API request for the entire list.
+
+        Read more at `Get user by ID <https://airtable.com/developers/web/api/get-user-by-id>`__
+        and `Get user by email <https://airtable.com/developers/web/api/get-user-by-email>`__.
+
         Args:
             ids_or_emails: A sequence of user IDs (``usrQBq2RGdihxl3vU``)
                 or email addresses (or both).
         """
+        users: Dict[str, UserInfo] = {}  # key by user ID to avoid returning duplicates
         user_ids: List[str] = []
         emails: List[str] = []
         for value in ids_or_emails:
-            (user_ids, emails)["@" in value].append(value)
+            if "@" in value:
+                emails.append(value)
+            elif is_user_id(value):
+                user_ids.append(value)
+            else:
+                raise ValueError(f"unrecognized user ID or email: {value!r}")
 
-        users = []
         for user_id in user_ids:
             response = self.api.request("GET", f"{self.url}/users/{user_id}")
-            users.append(UserInfo.parse_obj(response))
-        if emails:
-            response = self.api.request(
-                "GET", f"{self.url}/users", params={"email": emails}
-            )
-            users += [UserInfo.parse_obj(user_obj) for user_obj in response["users"]]
+            info = UserInfo.parse_obj(response)
+            users[info.id] = info
 
-        return users
+        if emails:
+            params = {"email": emails}
+            response = self.api.request("GET", f"{self.url}/users", params=params)
+            users.update(
+                {
+                    info.id: info
+                    for user_obj in response["users"]
+                    if (info := UserInfo.parse_obj(user_obj))
+                }
+            )
+
+        return list(users.values())
 
 
 # These are at the bottom of the module to avoid circular imports

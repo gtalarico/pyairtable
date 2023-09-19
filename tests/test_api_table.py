@@ -72,10 +72,30 @@ def test_repr(table: Table):
 
 
 def test_schema(base, requests_mock, sample_json):
-    schema_json = sample_json("BaseSchema")
+    """
+    Test that we can load schema from API.
+    """
     table = base.table("Apartments")
-    requests_mock.get(base.meta_url("tables"), json=schema_json)
-    assert table.schema().id == "tbltp8DGLhqbUmjK1"
+    m = requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+    assert isinstance(schema := table.schema(), TableSchema)
+    assert m.call_count == 1
+    assert schema.id == "tbltp8DGLhqbUmjK1"
+
+
+def test_id(base, requests_mock, sample_json):
+    """
+    Test that we load schema from API if we need the ID and don't have it,
+    but if we get a name that *looks* like an ID, we trust it.
+    """
+    m = requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+
+    table = base.table("tbltp8DGLhqbUmjK1")
+    assert table.id == "tbltp8DGLhqbUmjK1"
+    assert m.call_count == 0
+
+    table = base.table("Apartments")
+    assert table.id == "tbltp8DGLhqbUmjK1"
+    assert m.call_count == 1
 
 
 @pytest.mark.parametrize(
@@ -370,13 +390,19 @@ def test_create_field(table, requests_mock, sample_json):
     field_schema = sample_json("field_schema/SingleSelectFieldSchema")
     choices = ["Todo", "In progress", "Done"]
     m = requests_mock.post(table.meta_url("fields"), json=field_schema)
-    f = table.create_field("Status", "singleSelect", options={"choices": choices})
+    f = table.create_field(
+        "Status",
+        "singleSelect",
+        description="field description",
+        options={"choices": choices},
+    )
     assert f.id == "fldqCjrs1UhXgHUIc"
     assert {c.name for c in f.options.choices} == set(choices)
     assert m.call_count == 1
     assert m.request_history[-1].json() == {
         "name": "Status",
         "type": "singleSelect",
+        "description": "field description",
         "options": {"choices": choices},
     }
 

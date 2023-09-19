@@ -112,8 +112,7 @@ class Base:
 
     def tables(self, *, force: bool = False) -> Dict[str, "pyairtable.api.table.Table"]:
         """
-        Retrieves the base's schema from the API
-        and returns a mapping of IDs to :class:`Table` instances.
+        Retrieves the base's schema and returns a mapping of IDs to :class:`Table` instances.
 
         Args:
             force: |kwarg_force_metadata|
@@ -190,7 +189,7 @@ class Base:
 
     def webhooks(self) -> List[Webhook]:
         """
-        Retrieves all the base's webhooks from the API
+        Retrieves all the base's webhooks
         (see: `List webhooks <https://airtable.com/developers/web/api/list-webhooks>`_).
 
         Usage:
@@ -285,8 +284,7 @@ class Base:
     @enterprise_only
     def info(self, *, force: bool = False) -> "BaseInfo":
         """
-        Retrieves `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__
-        from the API.
+        Retrieves `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__.
 
         Args:
             force: |kwarg_force_metadata|

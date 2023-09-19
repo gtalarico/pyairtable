@@ -53,6 +53,7 @@ API: pyairtable.models.schema
 
 .. automodule:: pyairtable.models.schema
     :members:
+    :inherited-members: AirtableModel
 
 
 API: pyairtable.orm
@@ -67,7 +68,6 @@ API: pyairtable.orm.fields
 
 .. automodule:: pyairtable.orm.fields
     :members:
-    :member-order: bysource
     :exclude-members: valid_types, contains_type
     :no-inherited-members:
 

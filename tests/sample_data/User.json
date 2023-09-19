@@ -1,0 +1,45 @@
+{
+  "collaborations": {
+    "baseCollaborations": [
+      {
+        "baseId": "appLkNDICXNqxSDhG",
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "grantedByUserId": "usrqccqnMB2eHylqB",
+        "permissionLevel": "edit"
+      }
+    ],
+    "interfaceCollaborations": [
+      {
+        "baseId": "appLkNDICXNqxSDhG",
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "grantedByUserId": "usrqccqnMB2eHylqB",
+        "interfaceId": "pbdyGA3PsOziEHPDE",
+        "permissionLevel": "edit"
+      }
+    ],
+    "workspaceCollaborations": [
+      {
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "grantedByUserId": "usrGcrteE5fUMqq0R",
+        "permissionLevel": "owner",
+        "workspaceId": "wspmhESAta6clCCwF"
+      }
+    ]
+  },
+  "createdTime": "2019-01-03T12:33:12.421Z",
+  "email": "foo@bar.com",
+  "groups": [
+    {
+      "id": "ugp1mKGb3KXUyQfOZ"
+    },
+    {
+      "id": "ugpR8ZT9KtIgp8Bh3"
+    }
+  ],
+  "id": "usrL2PNC5o3H4lBEi",
+  "invitedToAirtableByUserId": "usrsOEchC9xuwRgKk",
+  "isManaged": true,
+  "lastActivityTime": "2019-01-03T12:33:12.421Z",
+  "name": "Jane Doe",
+  "state": "provisioned"
+}

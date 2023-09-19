@@ -7,7 +7,9 @@ from pyairtable.api import Api, Base, Table
 def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:  # pragma: no cover
     """
     Return list of Bases from an Api or Base instance.
-    For More Details `Metadata Api Documentation <https://airtable.com/api/meta>`_
+
+    This function has been deprecated. Use
+    :meth:`Api.bases() <pyairtable.Api.bases>` instead.
 
     Args:
         api: :class:`Api` or :class:`Base` instance
@@ -30,7 +32,7 @@ def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:  # pragma: no cover
         }
     """
     warnings.warn(
-        "get_api_bases is deprecated; use Api().bases() instead.",
+        "get_api_bases is deprecated; use Api.bases() instead.",
         category=DeprecationWarning,
         stacklevel=2,
     )
@@ -48,7 +50,9 @@ def get_api_bases(api: Union[Api, Base]) -> Dict[Any, Any]:  # pragma: no cover
 def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:  # pragma: no cover
     """
     Returns Schema of a Base
-    For More Details `Metadata Api Documentation <https://airtable.com/api/meta>`_
+
+    This function has been deprecated. Use
+    :meth:`Base.schema() <pyairtable.Base.schema>` instead.
 
     Args:
         base: :class:`Base` or :class:`Table` instance
@@ -90,7 +94,7 @@ def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:  # pragma: no c
         }
     """
     warnings.warn(
-        "get_base_schema is deprecated; use Base().schema() instead.",
+        "get_base_schema is deprecated; use Base.schema() instead.",
         category=DeprecationWarning,
         stacklevel=2,
     )
@@ -103,6 +107,9 @@ def get_base_schema(base: Union[Base, Table]) -> Dict[Any, Any]:  # pragma: no c
 def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:  # pragma: no cover
     """
     Returns the specific table schema record provided by base schema list
+
+    This function has been deprecated. Use
+    :meth:`Table.schema() <pyairtable.Table.schema>` instead.
 
     Args:
         table: :class:`Table` instance
@@ -130,7 +137,7 @@ def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:  # pragma: no co
         }
     """
     warnings.warn(
-        "get_table_schema is deprecated; use Table().schema() instead.",
+        "get_table_schema is deprecated; use Table.schema() instead.",
         category=DeprecationWarning,
         stacklevel=2,
     )

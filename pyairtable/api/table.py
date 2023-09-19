@@ -607,9 +607,7 @@ class Table:
 
     def schema(self, *, force: bool = False) -> TableSchema:
         """
-        Retrieves the schema of the current table. The return value
-        will be cached on the :class:`~pyairtable.Base` instance;
-        to refresh the cache, call `table.base.schema(force=True) <pyairtable.Base.schema>`.
+        Retrieves the schema of the current table.
 
         Usage:
             >>> table.schema()

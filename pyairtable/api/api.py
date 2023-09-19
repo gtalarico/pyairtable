@@ -169,7 +169,7 @@ class Api:
         Creates a base in the given workspace.
 
         Args:
-            workspace_id: The ID of the workspace for the new base (e.g. ``wspmhESAta6clCCwF``).
+            workspace_id: The ID of the workspace where the new base will live.
             name: The name to give to the new base. Does not need to be unique.
             tables: A list of ``dict`` objects that conform to Airtable's
                 `Table model <https://airtable.com/developers/web/api/model/table-model>`__.
@@ -313,12 +313,18 @@ class Api:
 
     @enterprise_only
     def enterprise(self, enterprise_account_id: str) -> Enterprise:
+        """
+        Returns an object representing an enterprise account.
+        """
         return Enterprise(self, enterprise_account_id)
 
     @enterprise_only
     def delete_base(self, base: Union[str, "pyairtable.api.base.Base"]) -> None:
         """
         Deletes the base.
+
+        Args:
+            base: Either a base ID or a :class:`~pyairtable.Base` instance.
         """
         if isinstance(base, str):
             base = self.base(base)

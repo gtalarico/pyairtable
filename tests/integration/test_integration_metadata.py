@@ -18,10 +18,10 @@ def test_api_base(api: Api, base_id: str, base_name: str):
     assert base.name == base_name
 
 
-def test_base_collaborators(base: Base):
+def test_base_info(base: Base):
     with pytest.raises(
         requests.HTTPError,
-        match=r"collaborators\(\) requires an enterprise billing plan",
+        match=r"Base.info\(\) requires an enterprise billing plan",
     ):
         base.info()
 

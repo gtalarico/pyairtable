@@ -28,6 +28,8 @@ def test_parse_field(sample_json, cls):
 @pytest.mark.parametrize(
     "clsname,method,id_or_name",
     [
+        ("Bases", "base", "appLkNDICXNqxSDhG"),
+        ("Bases", "base", "Apartment Hunting"),
         ("BaseSchema", "table", "tbltp8DGLhqbUmjK1"),
         ("BaseSchema", "table", "Apartments"),
         ("TableSchema", "field", "fld1VnoyuotSTyxW1"),
