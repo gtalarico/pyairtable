@@ -1,5 +1,4 @@
-include *.py
-include *.rst
-include tox.ini
+include pyairtable/**/*.py
+exclude pyairtable/**/conftest.py
 include LICENSE
 include README.md
