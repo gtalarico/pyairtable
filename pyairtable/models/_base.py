@@ -138,13 +138,13 @@ def update_forward_refs(
     at the time the attribute is created, we need to tell pydantic to
     update forward references after all the referenced models exist.
 
-    Only intended for use within pyAirtable, like:
+    Only intended for use within pyAirtable, as in:
 
         >>> from pyairtable.models._base import AirtableModel, update_forward_refs
-        >>> class A(AirtableModel): ...
-        >>> class B(AirtableModel): ...
-        ...     class B_One(AirtableModel): ...
-        ...     class B_Two(AirtableModel): ...
+        >>> class A(AirtableModel): pass
+        >>> class B(AirtableModel):
+        ...     class B_One(AirtableModel): pass
+        ...     class B_Two(AirtableModel): pass
         >>> update_forward_refs(vars())
     """
     # Avoid infinite circular loops
