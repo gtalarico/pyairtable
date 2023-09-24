@@ -1,7 +1,7 @@
 import posixpath
 import urllib.parse
 import warnings
-from typing import Any, Iterator, List, Optional, Union, overload
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Union, overload
 
 import pyairtable.models
 from pyairtable.api.retrying import Retry
@@ -371,7 +371,7 @@ class Table:
 
     def batch_upsert(
         self,
-        records: List[UpdateRecordDict],
+        records: Iterable[Dict[str, Any]],
         key_fields: List[FieldName],
         replace: bool = False,
         typecast: bool = False,
