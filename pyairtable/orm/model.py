@@ -142,8 +142,8 @@ class Model:
 
         The keyword argument ``id=`` special-cased and sets the record ID, not a field value.
 
-        >>> Contact(id="recWPqD9izdsNvlE", name="Bob")
-        <Contact id='recWPqD9izdsNvlE'>
+        >>> Contact(id="rec0WPqD9izdsNvlE", name="Bob")
+        <Contact id='rec0WPqD9izdsNvlE'>
         """
 
         if "id" in fields:

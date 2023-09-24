@@ -62,8 +62,8 @@ Iterate over a set of records of size ``page_size``, up until ``max_records`` or
   >>> for records in table.iterate(page_size=100, max_records=1000):
   ...     print(records)
   ...
-  [{'id': 'rec123asa23', 'fields': {'Last Name': 'Alfred', 'Age': 84}, ...}, ...]
-  [{'id': 'rec123asa23', 'fields': {'Last Name': 'Jameson', 'Age': 42}, ...}, ...]
+  [{'id': 'rec000000123asa23', 'fields': {'Last Name': 'Alfred', 'Age': 84}, ...}, ...]
+  [{'id': 'rec000000123asa23', 'fields': {'Last Name': 'Jameson', 'Age': 42}, ...}, ...]
 
 :meth:`~pyairtable.Table.all`
 
@@ -74,7 +74,7 @@ multiple requests.
 .. code-block:: python
 
   >>> table.all(sort=["Name", "-Age"])
-  [{'id': 'rec123asa23', 'fields': {'Last Name': 'Alfred', 'Age': 84}, ...}, ...]
+  [{'id': 'rec000000123asa23', 'fields': {'Last Name': 'Alfred', 'Age': 84}, ...}, ...]
 
 
 Parameters
@@ -198,7 +198,7 @@ Creates a single record from a dictionary representing the table's fields.
 .. code-block:: python
 
   >>> table.create({'Name': 'John'})
-  {'id': 'rec123asa23', 'fields': {'Name': 'John', ...}}
+  {'id': 'rec000000123asa23', 'fields': {'Name': 'John', ...}}
 
 
 :meth:`~pyairtable.Table.batch_create`
@@ -208,7 +208,7 @@ Create multiple records from a list of :class:`~pyairtable.api.types.WritableFie
 .. code-block:: python
 
   >>> table.batch_create([{'Name': 'John'}, ...])
-  [{'id': 'rec123asa23', 'fields': {'Name': 'John'}}, ...]
+  [{'id': 'rec000000123asa23', 'fields': {'Name': 'John'}}, ...]
 
 
 Updating Records

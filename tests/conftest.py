@@ -58,12 +58,12 @@ def mock_records():
             "createdTime": "2017-06-06T18:30:57.000Z",
         },
         {
-            "id": "recyXhbY4uax4567",
+            "id": "rec0yXhbY4uax4567",
             "fields": {"SameField": 456, "Value": "def"},
             "createdTime": "2017-06-06T18:30:57.000Z",
         },
         {
-            "id": "recyXhbY4uax891",
+            "id": "rec00yXhbY4uax891",
             "fields": {"SameField": 789, "Value": "xyz"},
             "createdTime": "2017-06-06T18:30:57.000Z",
         },

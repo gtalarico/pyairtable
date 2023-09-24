@@ -60,7 +60,7 @@ def annotate_doctest_namespace(
         table,
         [
             {
-                "id": "recW8eG2x0ew1Af",
+                "id": "rec00W8eG2x0ew1Af",
                 "createdTime": now,
                 "fields": {
                     "Attachments": [
@@ -106,7 +106,7 @@ def annotate_doctest_namespace(
             {"id": "recAdw9EjV90xbcdW", "createdTime": now, "fields": {}},
             {"id": "recAdw9EjV90xbcdX", "createdTime": now, "fields": {}},
             {
-                "id": "recW8eG2x0ew1Ac",
+                "id": "rec00W8eG2x0ew1Ac",
                 "createdTime": now,
                 "fields": {
                     "Collaborator": {

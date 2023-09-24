@@ -12,7 +12,7 @@ from pyairtable._compat import pydantic
 T = TypeVar("T")
 
 #: An alias for ``str`` used internally for disambiguation.
-#: Record IDs for Airtable look like ``"recAdw9EjV90xbZ"``.
+#: Record IDs for Airtable look like ``"rec00Adw9EjV90xbZ"``.
 RecordId: TypeAlias = str
 
 #: An alias for ``str`` used internally for disambiguation.
@@ -29,7 +29,7 @@ class AttachmentDict(TypedDict, total=False):
     """
     A ``dict`` representing an attachment stored in an Attachments field.
 
-    >>> record = table.get('recW8eG2x0ew1Af')
+    >>> record = table.get('rec00W8eG2x0ew1Af')
     >>> record['fields']['Attachments']
     [
         {
@@ -56,7 +56,7 @@ class CreateAttachmentDict(TypedDict, total=False):
     """
     A ``dict`` representing a new attachment to be written to the Airtable API.
 
-    >>> record = table.get("recW8eG2x0ew1Af")
+    >>> record = table.get("rec00W8eG2x0ew1Af")
     >>> new_attachment = {
     ...     "url": "https://example.com/image.jpg",
     ...     "filename": "something_else.jpg",
@@ -65,7 +65,7 @@ class CreateAttachmentDict(TypedDict, total=False):
     >>> existing.append(new_attachment)
     >>> table.update(record["id"], record["fields"])
     {
-        'id': 'recW8eG2x0ew1Af',
+        'id': 'rec00W8eG2x0ew1Af',
         'createdTime': '...',
         'fields': {
             'Attachments': [...],
@@ -82,7 +82,7 @@ class BarcodeDict(TypedDict, total=False):
     """
     A ``dict`` representing the value stored in a Barcode field.
 
-    >>> record = table.get('recW8eG2x0ew1Af')
+    >>> record = table.get('rec00W8eG2x0ew1Af')
     >>> record['fields']['Barcode']
     {'type': 'upce', 'text': '01234567'}
 
@@ -97,7 +97,7 @@ class ButtonDict(TypedDict):
     """
     A ``dict`` representing the value stored in a Button field.
 
-    >>> record = table.get('recW8eG2x0ew1Af')
+    >>> record = table.get('rec00W8eG2x0ew1Af')
     >>> record['fields']['Click Me']
     {'label': 'Click Me', 'url': 'http://example.com'}
 
@@ -112,7 +112,7 @@ class CollaboratorDict(TypedDict, total=False):
     """
     A dict representing the value stored in a User field returned from the API.
 
-    >>> record = table.get('recW8eG2x0ew1Af')
+    >>> record = table.get('rec00W8eG2x0ew1Af')
     >>> record['fields']['Created By']
     {
         'id': 'usrAdw9EjV90xbW',
@@ -148,12 +148,12 @@ class CollaboratorEmailDict(TypedDict):
     Often used when writing to the API, because the email of a collaborator
     may be more easily accessible than their Airtable user ID.
 
-    >>> record = table.update("recW8eG2x0ew1Ac", {
+    >>> record = table.update("rec00W8eG2x0ew1Ac", {
     ...     "Collaborator": {"email": "alice@example.com"}
     ... })
     >>> record
     {
-        'id': 'recW8eG2x0ew1Ac',
+        'id': 'rec00W8eG2x0ew1Ac',
         'createdTime': '...',
         'fields': {
             'Collaborator': {
@@ -208,7 +208,7 @@ class RecordDict(TypedDict):
     Usage:
         >>> table.first()
         {
-            'id': 'recW8eG2x0ew1Af',
+            'id': 'rec00W8eG2x0ew1Af',
             'createdTime': '...',
             'fields': {
                 ...
@@ -248,13 +248,13 @@ class UpdateRecordDict(TypedDict):
     Usage:
         >>> records = table.batch_update([
         ...     {
-        ...         "id": "recAdw9EjV90xbW",
+        ...         "id": "recAdw9EjV90xbcdW",
         ...         "fields": {
         ...             "Email": "alice@example.com"
         ...         }
         ...     },
         ...     {
-        ...         "id": "recAdw9EjV90xbX",
+        ...         "id": "recAdw9EjV90xbcdX",
         ...         "fields": {
         ...             "Email": "bob@example.com"
         ...         }
@@ -271,8 +271,8 @@ class RecordDeletedDict(TypedDict):
     A ``dict`` representing the payload returned by the Airtable API to confirm a deletion.
 
     Usage:
-        >>> table.delete("recW8eG2x0ew1Af")
-        {'id': 'recW8eG2x0ew1Af', 'deleted': True}
+        >>> table.delete("rec00W8eG2x0ew1Af")
+        {'id': 'rec00W8eG2x0ew1Af', 'deleted': True}
     """
 
     id: RecordId
@@ -337,13 +337,13 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
         >>> assert_typed_dict(
         ...     RecordDict,
         ...     {
-        ...         "id": "recAdw9EjV90xbZ",
+        ...         "id": "rec00Adw9EjV90xbZ",
         ...         "createdTime": "2023-05-22T21:24:15.333134Z",
         ...         "fields": {},
         ...     }
         ... )
         {
-            'id': 'recAdw9EjV90xbZ',
+            'id': 'rec00Adw9EjV90xbZ',
             'createdTime': '2023-05-22T21:24:15.333134Z',
             'fields': {}
         }
