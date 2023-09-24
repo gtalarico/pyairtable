@@ -56,13 +56,22 @@ class CreateAttachmentDict(TypedDict, total=False):
     """
     A ``dict`` representing a new attachment to be written to the Airtable API.
 
+    >>> record = table.get("recW8eG2x0ew1Af")
     >>> new_attachment = {
     ...     "url": "https://example.com/image.jpg",
     ...     "filename": "something_else.jpg",
     ... }
     >>> existing = record["fields"].setdefault("Attachments", [])
     >>> existing.append(new_attachment)
-    >>> table.update(existing["id"], existing["fields"])
+    >>> table.update(record["id"], record["fields"])
+    {
+        'id': 'recW8eG2x0ew1Af',
+        'createdTime': '...',
+        'fields': {
+            'Attachments': [...],
+            ...
+        }
+    }
     """
 
     url: Required[str]
@@ -139,14 +148,13 @@ class CollaboratorEmailDict(TypedDict):
     Often used when writing to the API, because the email of a collaborator
     may be more easily accessible than their Airtable user ID.
 
-    >>> table = Table("access_token", "base_id", "api_key")
-    >>> record = table.update("recW8eG2x0ew1Af", {
+    >>> record = table.update("recW8eG2x0ew1Ac", {
     ...     "Collaborator": {"email": "alice@example.com"}
     ... })
     >>> record
     {
-        'id': 'recW8eG2x0ew1Af',
-        'createdTime': 2023-06-07T17:35:17Z',
+        'id': 'recW8eG2x0ew1Ac',
+        'createdTime': '...',
         'fields': {
             'Collaborator': {
                 'id': 'usrAdw9EjV90xbW',
@@ -198,11 +206,13 @@ class RecordDict(TypedDict):
     See `List records <https://airtable.com/developers/web/api/list-records>`__.
 
     Usage:
-        >>> table.first(formula="Name = 'Alice'")
+        >>> table.first()
         {
-            'id': 'recAdw9EjV90xbW',
-            'createdTime': '2023-05-22T21:24:15.333134Z',
-            'fields': {'Name': 'Alice', 'Department': 'Engineering'}
+            'id': 'recW8eG2x0ew1Af',
+            'createdTime': '...',
+            'fields': {
+                ...
+            }
         }
     """
 
@@ -218,7 +228,7 @@ class CreateRecordDict(TypedDict):
     Field values must each be a :data:`~pyairtable.api.types.WritableFieldValue`.
 
     Usage:
-        >>> table.create({
+        >>> record = table.create({
         ...     "fields": {
         ...         "Field Name": "Field Value",
         ...         "Other Field": ["Value 1", "Value 2"]
@@ -236,7 +246,7 @@ class UpdateRecordDict(TypedDict):
     Field values must each be a :data:`~pyairtable.api.types.WritableFieldValue`.
 
     Usage:
-        >>> table.batch_update([
+        >>> records = table.batch_update([
         ...     {
         ...         "id": "recAdw9EjV90xbW",
         ...         "fields": {
@@ -261,8 +271,8 @@ class RecordDeletedDict(TypedDict):
     A ``dict`` representing the payload returned by the Airtable API to confirm a deletion.
 
     Usage:
-        >>> table.delete("recAdw9EjV90xbZ")
-        {'id': 'recAdw9EjV90xbZ', 'deleted': True}
+        >>> table.delete("recW8eG2x0ew1Af")
+        {'id': 'recW8eG2x0ew1Af', 'deleted': True}
     """
 
     id: RecordId
@@ -277,7 +287,7 @@ class UpsertResultDict(TypedDict):
     API documentation.
 
     Usage:
-        >>> table.batch_upsert(records, key_fields=["Name"])
+        >>> table.batch_upsert(upserts, key_fields=["Name"])
         {
             'createdRecords': [...],
             'updatedRecords': [...],
@@ -340,7 +350,7 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
 
         >>> assert_typed_dict(RecordDict, {"foo": "bar"})
         Traceback (most recent call last):
-        pydantic.error_wrappers.ValidationError: 3 validation errors for RecordDict
+        pydantic.v1.error_wrappers.ValidationError: 3 validation errors for RecordDict
         id
           field required (type=value_error.missing)
         createdTime

@@ -5,7 +5,6 @@ Configuration for pyairtable doctests
 # mypy: ignore-errors
 
 import datetime
-import pprint
 import re
 from importlib import import_module
 from typing import Any
@@ -14,20 +13,26 @@ from unittest import mock
 import pytest
 
 import pyairtable
-from pyairtable.testing import fake_airtable, fake_id
+import pyairtable.testing
+from pyairtable.testing import fake_id
+
+
+@pytest.fixture()
+def fake_airtable(requests_mock):
+    with pyairtable.testing.fake_airtable() as fake:
+        yield fake
 
 
 @pytest.fixture(autouse=True)
-def annotate_doctest_namespace(doctest_namespace, monkeypatch, requests_mock):
+def annotate_doctest_namespace(doctest_namespace, fake_airtable):
     """
     Ensures our doctests do not need to import common methods/classes
     or reference objects that our documentation assumes the user has
     already created.
     """
-    doctest_namespace["api"] = api = pyairtable.Api("FAKE API KEY")
+    doctest_namespace["api"] = api = pyairtable.Api("patX9e810wHn3mMLz")
     doctest_namespace["base"] = api.base(base := fake_id("app"))
     doctest_namespace["table"] = api.table(base, table := fake_id("tbl"))
-    doctest_namespace["pprint"] = pprint.pprint
 
     for objpath in (
         "pyairtable",
@@ -42,48 +47,70 @@ def annotate_doctest_namespace(doctest_namespace, monkeypatch, requests_mock):
             obj = import_module(name)
         doctest_namespace[name] = obj
 
-    with fake_airtable() as fake:
-        doctest_namespace["fake_airtable"] = fake
-        now = datetime.datetime.utcnow().isoformat()
-        fake.add_records(
-            base,
-            table,
-            [
-                {
-                    "id": "recW8eG2x0ew1Af",
-                    "createdTime": now,
-                    "fields": {
-                        "Attachments": [
-                            {
-                                "id": "attW8eG2x0ew1Af",
-                                "url": "https://example.com/hello.jpg",
-                                "filename": "hello.jpg",
-                            }
-                        ],
-                        "Barcode": {"type": "upce", "text": "01234567"},
-                        "Click Me": {"label": "Click Me", "url": "http://example.com"},
-                        "Created By": {
+    doctest_namespace["fake_airtable"] = fake_airtable
+    now = datetime.datetime.utcnow().isoformat()
+    fake_airtable.add_records(
+        base,
+        table,
+        [
+            {
+                "id": "recW8eG2x0ew1Af",
+                "createdTime": now,
+                "fields": {
+                    "Attachments": [
+                        {
+                            "id": "attW8eG2x0ew1Af",
+                            "url": "https://example.com/hello.jpg",
+                            "filename": "hello.jpg",
+                        }
+                    ],
+                    "Barcode": {"type": "upce", "text": "01234567"},
+                    "Click Me": {"label": "Click Me", "url": "http://example.com"},
+                    "Created By": {
+                        "id": "usrAdw9EjV90xbW",
+                        "email": "alice@example.com",
+                        "name": "Alice Arnold",
+                    },
+                    "Collaborators": [
+                        {
                             "id": "usrAdw9EjV90xbW",
                             "email": "alice@example.com",
                             "name": "Alice Arnold",
                         },
-                        "Collaborators": [
-                            {
-                                "id": "usrAdw9EjV90xbW",
-                                "email": "alice@example.com",
-                                "name": "Alice Arnold",
-                            },
-                            {
-                                "id": "usrAdw9EjV90xbX",
-                                "email": "bob@example.com",
-                                "name": "Bob Barker",
-                            },
-                        ],
-                    },
-                }
-            ],
-        )
-        yield
+                        {
+                            "id": "usrAdw9EjV90xbX",
+                            "email": "bob@example.com",
+                            "name": "Bob Barker",
+                        },
+                    ],
+                },
+            },
+        ],
+    )
+    fake_airtable.add_records(
+        base,
+        table,
+        [
+            {"id": "recAdw9EjV90xbW", "createdTime": now, "fields": {}},
+            {"id": "recAdw9EjV90xbX", "createdTime": now, "fields": {}},
+            {
+                "id": "recW8eG2x0ew1Ac",
+                "createdTime": now,
+                "fields": {
+                    "Collaborator": {
+                        "id": "usrAdw9EjV90xbW",
+                        "email": "alice@example.com",
+                        "name": "Alice Arnold",
+                    }
+                },
+            },
+        ],
+        immutable=True,
+    )
+    doctest_namespace["upserts"] = [
+        {"id": "recAdw9EjV90xbX", "fields": {"Name": "Record X"}},
+        {"fields": {"Name": "Record Y"}},
+    ]
 
 
 @pytest.fixture(autouse=True)
