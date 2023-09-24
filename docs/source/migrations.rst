@@ -49,11 +49,19 @@ See below for supported and unsupported patterns:
 
     # The following will raise a TypeError for mixing str & instances:
     >>> table = Table(api_key, base, table_name)  # [str, Base, str]
+    Traceback (most recent call last):
+    TypeError: Table() expects either (str, str, str) or (None, Base, str); got ...
+
+    # The following will raise a TypeError for mixing str & instances:
     >>> table = Table(api, base_id, table_name)  # [Api, str, str]
+    Traceback (most recent call last):
+    TypeError: Table() expects either (str, str, str) or (None, Base, str); got ...
 
     # The following will raise a TypeError. We do this proactively
     # to avoid situations where self.api and self.base don't align.
     >>> table = Table(api, base_id, table_name)  # [Api, Base, str]
+    Traceback (most recent call last):
+    TypeError: Table() expects either (str, str, str) or (None, Base, str); got ...
 
 You may need to change how your code looks up some pieces of connection metadata; for example:
 

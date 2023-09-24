@@ -35,9 +35,12 @@ def annotate_doctest_namespace(
     or reference objects that our documentation assumes the user has
     already created.
     """
-    doctest_namespace["api"] = api = pyairtable.Api("patFakeForDoctest")
-    doctest_namespace["base"] = base = api.base("appFakeForDoctest")
-    doctest_namespace["table"] = table = base.table("tblFakeForDoctest")
+    doctest_namespace["api_key"] = api_key = "patFakeForDoctest"
+    doctest_namespace["base_id"] = base_id = "appFakeForDoctest"
+    doctest_namespace["table_name"] = table_name = "tblFakeForDoctest"
+    doctest_namespace["api"] = api = pyairtable.Api(api_key)
+    doctest_namespace["base"] = base = api.base(base_id)
+    doctest_namespace["table"] = table = base.table(table_name)
     doctest_namespace["fake_airtable"] = fake_airtable
     table.add_comment("recThatHasComment", "Hello, @[usrVMNxslc6jG0Xed]!")
 
