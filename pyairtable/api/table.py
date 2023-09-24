@@ -260,7 +260,7 @@ class Table:
 
     def batch_create(
         self,
-        records: List[WritableFields],
+        records: Iterable[WritableFields],
         typecast: bool = False,
         return_fields_by_field_id: bool = False,
     ) -> List[RecordDict]:
@@ -282,11 +282,14 @@ class Table:
         ]
 
         Args:
-            records: List of dicts representing records to be created.
+            records: Iterable of dicts representing records to be created.
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
         inserted_records = []
+
+        # If we got an iterator, exhaust it and collect it into a list.
+        records = list(records)
 
         for chunk in self.api.chunked(records):
             new_records = [{"fields": fields} for fields in chunk]
@@ -334,7 +337,7 @@ class Table:
 
     def batch_update(
         self,
-        records: List[UpdateRecordDict],
+        records: Iterable[UpdateRecordDict],
         replace: bool = False,
         typecast: bool = False,
         return_fields_by_field_id: bool = False,
@@ -353,6 +356,9 @@ class Table:
         """
         updated_records = []
         method = "put" if replace else "patch"
+
+        # If we got an iterator, exhaust it and collect it into a list.
+        records = list(records)
 
         for chunk in self.api.chunked(records):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in chunk]
@@ -395,6 +401,9 @@ class Table:
         Returns:
             Lists of created/updated record IDs, along with the list of all records affected.
         """
+        # If we got an iterator, exhaust it and collect it into a list.
+        records = list(records)
+
         # The API will reject a request where a record is missing any of fieldsToMergeOn,
         # but we might not reach that error until we've done several batch operations.
         # To spare implementers from having to recover from a partially applied upsert,
@@ -454,7 +463,7 @@ class Table:
             self.api.request("delete", self.record_url(record_id)),
         )
 
-    def batch_delete(self, record_ids: List[RecordId]) -> List[RecordDeletedDict]:
+    def batch_delete(self, record_ids: Iterable[RecordId]) -> List[RecordDeletedDict]:
         """
         Deletes the given records, operating in batches.
 
@@ -471,6 +480,9 @@ class Table:
             Confirmation that the records were deleted.
         """
         deleted_records = []
+
+        # If we got an iterator, exhaust it and collect it into a list.
+        record_ids = list(record_ids)
 
         for chunk in self.api.chunked(record_ids):
             result = self.api.request("delete", self.url, params={"records[]": chunk})
