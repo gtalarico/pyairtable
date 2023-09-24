@@ -3,6 +3,7 @@ Helper functions for writing tests that use the pyairtable library.
 """
 import datetime
 import random
+import re
 import string
 from collections import defaultdict
 from contextlib import ExitStack
@@ -12,6 +13,7 @@ from unittest import mock
 from typing_extensions import Self as SelfType
 
 from pyairtable.api.api import Api
+from pyairtable.api.base import Base
 from pyairtable.api.table import Table
 from pyairtable.api.types import (
     AttachmentDict,
@@ -152,11 +154,13 @@ class FakeAirtable:
 
     def add_records(
         self,
-        base_id: str,
-        table_name: str,
+        base: Union[str, Base],
+        table: Union[str, Table],
         records: Sequence[RecordDict],
         immutable: bool = False,
     ) -> None:
+        base_id = base if isinstance(base, str) else base.id
+        table_name = table if isinstance(table, str) else table.name
         self._records.setdefault((base_id, table_name), {}).update(
             {record["id"]: record for record in records}
         )
@@ -257,19 +261,30 @@ class FakeAirtable:
         return {"id": "usrX9e810wHn3mMLz"}
 
     def _add_comment(self, table: Table, record_id: str, text: str) -> Comment:
+        if record_id in self._immutable and record_id in self._comments:
+            return self._comments[record_id][0]
         comment = Comment(
             id=fake_id("com"),
             text=text,
             created_time=datetime.datetime.utcnow().isoformat(),
-            last_updated_time=datetime.datetime.utcnow().isoformat(),
+            last_updated_time=None,
             author=Collaborator(
                 id="usr0000pyairtable",
                 email="pyairtable@example.com",
-                name="pyairtable",
+                name="Your pyairtable access token",
             ),
-            mentioned={},
+            mentioned={
+                user_id: Comment.Mentioned(
+                    display_name="Alice",
+                    email="alice@example.com",
+                    id=user_id,
+                    type="user",
+                )
+                for user_id in re.findall(r"@\[(usr\w+?)\]", text)
+            },
         )
-        self._comments[record_id].append(comment)
+        if record_id not in self._immutable:
+            self._comments[record_id].append(comment)
         return comment
 
     def _get_comments(self, table: Table, record_id: str) -> List[Comment]:

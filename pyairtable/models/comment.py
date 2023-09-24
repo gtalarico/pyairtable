@@ -12,9 +12,9 @@ class Comment(SerializableModel, writable=["text"]):
     >>> table.comments("recMNxslc6jG0XedV")
     [
         Comment(
-            id='comdVMNxslc6jG0Xe',
+            id='com...',
             text='Hello, @[usrVMNxslc6jG0Xed]!',
-            created_time='2023-06-07T17:46:24.435891',
+            created_time='...',
             last_updated_time=None,
             mentioned={
                 'usrVMNxslc6jG0Xed': Mentioned(
@@ -59,10 +59,10 @@ class Comment(SerializableModel, writable=["text"]):
         A user or group that was mentioned within a comment.
         Stored as a ``dict`` that is keyed by ID.
 
-        >>> comment = table.add_comment(record_id, "Hello, @[usrVMNxslc6jG0Xed]!")
+        >>> comment = table.add_comment("recMNxslc6jG0XedV", "Hello, @[usrVMNxslc6jG0Xed]!")
         >>> comment.mentioned
         {
-            "usrVMNxslc6jG0Xed": Mentioned(
+            'usrVMNxslc6jG0Xed': Mentioned(
                 display_name='Alice',
                 email='alice@example.com',
                 id='usrVMNxslc6jG0Xed',

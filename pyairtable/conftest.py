@@ -2,6 +2,8 @@
 Configuration for pyairtable doctests
 """
 
+# This file is part of the test suite, not the library,
+# so we don't type-check it. Annotations are for IDEs.
 # mypy: ignore-errors
 
 import datetime
@@ -15,8 +17,7 @@ import pytest
 import pyairtable
 import pyairtable.models.collaborator
 import pyairtable.models.comment
-import pyairtable.testing
-from pyairtable.testing import FakeAirtable, fake_id
+from pyairtable.testing import FakeAirtable
 
 
 @pytest.fixture()
@@ -34,9 +35,11 @@ def annotate_doctest_namespace(
     or reference objects that our documentation assumes the user has
     already created.
     """
-    doctest_namespace["api"] = api = pyairtable.Api("patX9e810wHn3mMLz")
-    doctest_namespace["base"] = api.base(base := fake_id("app"))
-    doctest_namespace["table"] = api.table(base, table := fake_id("tbl"))
+    doctest_namespace["api"] = api = pyairtable.Api("patFakeForDoctest")
+    doctest_namespace["base"] = base = api.base("appFakeForDoctest")
+    doctest_namespace["table"] = table = base.table("tblFakeForDoctest")
+    doctest_namespace["fake_airtable"] = fake_airtable
+    table.add_comment("recThatHasComment", "Hello, @[usrVMNxslc6jG0Xed]!")
 
     for objpath in (
         "pyairtable",
@@ -51,7 +54,6 @@ def annotate_doctest_namespace(
             obj = import_module(name)
         doctest_namespace[name] = obj
 
-    doctest_namespace["fake_airtable"] = fake_airtable
     now = datetime.datetime.utcnow().isoformat()
     fake_airtable.add_records(
         base,
@@ -94,14 +96,15 @@ def annotate_doctest_namespace(
                 "createdTime": now,
                 "fields": {"First Name": "John", "Age": 20},
             },
+            {"id": "recMNxslc6jG0XedV", "createdTime": now, "fields": {}},
         ],
     )
     fake_airtable.add_records(
         base,
         table,
         [
-            {"id": "recAdw9EjV90xbW", "createdTime": now, "fields": {}},
-            {"id": "recAdw9EjV90xbX", "createdTime": now, "fields": {}},
+            {"id": "recAdw9EjV90xbcdW", "createdTime": now, "fields": {}},
+            {"id": "recAdw9EjV90xbcdX", "createdTime": now, "fields": {}},
             {
                 "id": "recW8eG2x0ew1Ac",
                 "createdTime": now,
@@ -116,29 +119,8 @@ def annotate_doctest_namespace(
         ],
         immutable=True,
     )
-    fake_airtable._comments["recMNxslc6jG0XedV"] = [
-        pyairtable.models.comment.Comment(
-            id="comdVMNxslc6jG0Xe",
-            text="Hello, @[usrVMNxslc6jG0Xed]!",
-            created_time="2023-06-07T17:46:24.435891",
-            last_updated_time=None,
-            mentioned={
-                "usrVMNxslc6jG0Xed": pyairtable.models.comment.Comment.Mentioned(
-                    display_name="Alice",
-                    email="alice@example.com",
-                    id="usrVMNxslc6jG0Xed",
-                    type="user",
-                )
-            },
-            author=pyairtable.models.collaborator.Collaborator(
-                id="usr0000pyairtable",
-                email="pyairtable@example.com",
-                name="Your pyairtable access token",
-            ),
-        )
-    ]
     doctest_namespace["upserts"] = [
-        {"id": "recAdw9EjV90xbX", "fields": {"Name": "Record X"}},
+        {"id": "recAdw9EjV90xbcdX", "fields": {"Name": "Record X"}},
         {"fields": {"Name": "Record Y"}},
     ]
 

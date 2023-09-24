@@ -454,8 +454,8 @@ class Table:
         """
         Deletes the given record.
 
-        >>> table.delete('recAdw9EjV90xbW')
-        {'id': 'recAdw9EjV90xbW', 'deleted': True}
+        >>> table.delete('recAdw9EjV90xbcdW')
+        {'id': 'recAdw9EjV90xbcdW', 'deleted': True}
 
         Args:
             record_id: |arg_record_id|
@@ -472,10 +472,10 @@ class Table:
         """
         Deletes the given records, operating in batches.
 
-        >>> table.batch_delete(['recAdw9EjV90xbW', 'recAdw9EjV90xbX'])
+        >>> table.batch_delete(['recAdw9EjV90xbcdW', 'recAdw9EjV90xbcdX'])
         [
-            {'id': 'recAdw9EjV90xbW', 'deleted': True},
-            {'id': 'recAdw9EjV90xbX', 'deleted': True}
+            {'id': 'recAdw9EjV90xbcdW', 'deleted': True},
+            {'id': 'recAdw9EjV90xbcdX', 'deleted': True}
         ]
 
         Args:
@@ -497,12 +497,12 @@ class Table:
         Returns a list of comments on the given record.
 
         Usage:
-            >>> table.comments("recMNxslc6jG0XedV")
+            >>> table.comments("recThatHasComment")
             [
                 Comment(
-                    id='comdVMNxslc6jG0Xe',
+                    id='com...',
                     text='Hello, @[usrVMNxslc6jG0Xed]!',
-                    created_time='2023-06-07T17:46:24.435891',
+                    created_time='...',
                     last_updated_time=None,
                     mentioned={
                         'usrVMNxslc6jG0Xed': Mentioned(
@@ -544,7 +544,6 @@ class Table:
         See `Create comment <https://airtable.com/developers/web/api/create-comment>`_ for details.
 
         Usage:
-            >>> table = api.table("appNxslc6jG0XedVM", "tblslc6jG0XedVMNx")
             >>> comment = table.add_comment("recMNxslc6jG0XedV", "Hello, @[usrVMNxslc6jG0Xed]!")
             >>> comment.text = "Never mind!"
             >>> comment.save()
