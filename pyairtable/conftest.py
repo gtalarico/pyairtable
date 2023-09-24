@@ -7,24 +7,28 @@ Configuration for pyairtable doctests
 import datetime
 import re
 from importlib import import_module
-from typing import Any
+from typing import Any, Dict
 from unittest import mock
 
 import pytest
 
 import pyairtable
+import pyairtable.models.collaborator
+import pyairtable.models.comment
 import pyairtable.testing
-from pyairtable.testing import fake_id
+from pyairtable.testing import FakeAirtable, fake_id
 
 
 @pytest.fixture()
 def fake_airtable(requests_mock):
-    with pyairtable.testing.fake_airtable() as fake:
+    with FakeAirtable() as fake:
         yield fake
 
 
 @pytest.fixture(autouse=True)
-def annotate_doctest_namespace(doctest_namespace, fake_airtable):
+def annotate_doctest_namespace(
+    doctest_namespace: Dict[str, Any], fake_airtable: FakeAirtable
+):
     """
     Ensures our doctests do not need to import common methods/classes
     or reference objects that our documentation assumes the user has
@@ -85,6 +89,11 @@ def annotate_doctest_namespace(doctest_namespace, fake_airtable):
                     ],
                 },
             },
+            {
+                "id": "recwPQIfs4wKPyc9D",
+                "createdTime": now,
+                "fields": {"First Name": "John", "Age": 20},
+            },
         ],
     )
     fake_airtable.add_records(
@@ -107,6 +116,27 @@ def annotate_doctest_namespace(doctest_namespace, fake_airtable):
         ],
         immutable=True,
     )
+    fake_airtable._comments["recMNxslc6jG0XedV"] = [
+        pyairtable.models.comment.Comment(
+            id="comdVMNxslc6jG0Xe",
+            text="Hello, @[usrVMNxslc6jG0Xed]!",
+            created_time="2023-06-07T17:46:24.435891",
+            last_updated_time=None,
+            mentioned={
+                "usrVMNxslc6jG0Xed": pyairtable.models.comment.Comment.Mentioned(
+                    display_name="Alice",
+                    email="alice@example.com",
+                    id="usrVMNxslc6jG0Xed",
+                    type="user",
+                )
+            },
+            author=pyairtable.models.collaborator.Collaborator(
+                id="usr0000pyairtable",
+                email="pyairtable@example.com",
+                name="Your pyairtable access token",
+            ),
+        )
+    ]
     doctest_namespace["upserts"] = [
         {"id": "recAdw9EjV90xbX", "fields": {"Name": "Record X"}},
         {"fields": {"Name": "Record Y"}},

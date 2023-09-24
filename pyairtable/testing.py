@@ -4,9 +4,12 @@ Helper functions for writing tests that use the pyairtable library.
 import datetime
 import random
 import string
-from contextlib import ExitStack, contextmanager
+from collections import defaultdict
+from contextlib import ExitStack
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Tuple, Union
 from unittest import mock
+
+from typing_extensions import Self as SelfType
 
 from pyairtable.api.api import Api
 from pyairtable.api.table import Table
@@ -22,6 +25,8 @@ from pyairtable.api.types import (
     UserAndScopesDict,
     WritableFields,
 )
+from pyairtable.models.collaborator import Collaborator
+from pyairtable.models.comment import Comment
 
 
 def fake_id(type: str = "rec", value: Any = None) -> str:
@@ -97,7 +102,7 @@ def fake_attachment() -> AttachmentDict:
 
 class FakeAirtable:
     """
-    Used to mock the Airtable API for testing purposes.
+    Context manager that mocks the Airtable API for testing purposes.
 
     FakeAirtable uses in-memory data structures to store and retrieve
     instances of :class:`~pyairtable.api.types.RecordDict`. It does not
@@ -107,8 +112,43 @@ class FakeAirtable:
     """
 
     def __init__(self) -> None:
-        self._records: Dict[Tuple[str, str], Dict[str, RecordDict]] = {}
-        self._immutable: Set[Tuple[str, str, str]] = set()
+        self._records: Dict[Tuple[str, str], Dict[str, RecordDict]] = defaultdict(dict)
+        self._comments: Dict[str, List[Comment]] = defaultdict(list)
+        self._immutable: Set[str] = set()
+        self._stack: Optional[ExitStack] = None
+
+    def __enter__(self) -> SelfType:
+        self._stack = ExitStack()
+
+        def _noop(*args: Any, **kwargs: Any) -> None:
+            return None
+
+        for target, method in [
+            ("pyairtable.Table.get", self._get),
+            ("pyairtable.Table.iterate", self._iterate),
+            ("pyairtable.Table.create", self._create),
+            ("pyairtable.Table.update", self._update),
+            ("pyairtable.Table.delete", self._delete),
+            ("pyairtable.Table.batch_create", self._batch_create),
+            ("pyairtable.Table.batch_update", self._batch_update),
+            ("pyairtable.Table.batch_delete", self._batch_delete),
+            ("pyairtable.Table.batch_upsert", self._batch_upsert),
+            ("pyairtable.Table.add_comment", self._add_comment),
+            ("pyairtable.Table.comments", self._get_comments),
+            ("pyairtable.Api.whoami", self._whoami),
+            ("pyairtable.models._base.SerializableModel.save", _noop),
+            ("pyairtable.models._base.SerializableModel.delete", _noop),
+        ]:
+            self._stack.enter_context(
+                mock.patch(target, autospec=True, side_effect=method)
+            )
+
+        return self
+
+    def __exit__(self, *exc_details: Any) -> None:
+        assert self._stack is not None
+        self._stack.__exit__(*exc_details)
+        self._stack = None
 
     def add_records(
         self,
@@ -121,9 +161,7 @@ class FakeAirtable:
             {record["id"]: record for record in records}
         )
         if immutable:
-            self._immutable.update(
-                (base_id, table_name, record["id"]) for record in records
-            )
+            self._immutable.update(record["id"] for record in records)
 
     def _get(self, table: Table, record_id: str) -> RecordDict:
         return self._records[(table.base.id, table.name)][record_id]
@@ -143,15 +181,23 @@ class FakeAirtable:
         return record
 
     def _update(
-        self, table: Table, record_id: str, fields: WritableFields, **kwargs: Any
+        self,
+        table: Table,
+        record_id: str,
+        fields: WritableFields,
+        replace: bool = False,
+        **kwargs: Any,
     ) -> RecordDict:
         record = self._records[(table.base.id, table.name)][record_id]
-        if (table.base.id, table.name, record_id) not in self._immutable:
+        if record_id not in self._immutable:
+            if replace:
+                record["fields"] = {}
             record["fields"].update(fields)
         return record
 
     def _delete(self, table: Table, record_id: str) -> RecordDeletedDict:
-        del self._records[(table.base.id, table.name)][record_id]
+        if record_id not in self._immutable:
+            del self._records[(table.base.id, table.name)][record_id]
         return {"id": record_id, "deleted": True}
 
     def _batch_create(
@@ -163,7 +209,8 @@ class FakeAirtable:
         self, table: Table, records: List[UpdateRecordDict], **kwargs: Any
     ) -> List[RecordDict]:
         return [
-            self._update(table, record["id"], record["fields"]) for record in records
+            self._update(table, record["id"], record["fields"], **kwargs)
+            for record in records
         ]
 
     def _batch_delete(
@@ -209,28 +256,21 @@ class FakeAirtable:
     def _whoami(self, api: Api) -> UserAndScopesDict:
         return {"id": "usrX9e810wHn3mMLz"}
 
+    def _add_comment(self, table: Table, record_id: str, text: str) -> Comment:
+        comment = Comment(
+            id=fake_id("com"),
+            text=text,
+            created_time=datetime.datetime.utcnow().isoformat(),
+            last_updated_time=datetime.datetime.utcnow().isoformat(),
+            author=Collaborator(
+                id="usr0000pyairtable",
+                email="pyairtable@example.com",
+                name="pyairtable",
+            ),
+            mentioned={},
+        )
+        self._comments[record_id].append(comment)
+        return comment
 
-@contextmanager
-def fake_airtable() -> Iterator[FakeAirtable]:
-    """
-    Context manager that will mock all pyAirtable API endpoints to avoid making
-    network calls and to allow stubbing of basic interactions with pyAirtable.
-    """
-    fake = FakeAirtable()
-
-    with ExitStack() as stack:
-        for target, method in [
-            ("pyairtable.Table.get", fake._get),
-            ("pyairtable.Table.iterate", fake._iterate),
-            ("pyairtable.Table.create", fake._create),
-            ("pyairtable.Table.update", fake._update),
-            ("pyairtable.Table.delete", fake._delete),
-            ("pyairtable.Table.batch_create", fake._batch_create),
-            ("pyairtable.Table.batch_update", fake._batch_update),
-            ("pyairtable.Table.batch_delete", fake._batch_delete),
-            ("pyairtable.Table.batch_upsert", fake._batch_upsert),
-            ("pyairtable.Api.whoami", fake._whoami),
-        ]:
-            stack.enter_context(mock.patch(target, autospec=True, side_effect=method))
-
-        yield fake
+    def _get_comments(self, table: Table, record_id: str) -> List[Comment]:
+        return self._comments[record_id]

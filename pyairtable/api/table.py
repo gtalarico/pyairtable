@@ -23,7 +23,7 @@ class Table:
     Represents an Airtable table.
 
     Usage:
-        >>> api = Api(access_token)
+        >>> api = Api("your_personal_access_token")
         >>> table = api.table("base_id", "table_name")
         >>> records = table.all()
     """
@@ -70,13 +70,15 @@ class Table:
 
         This approach is deprecated, and will likely be removed in the future.
 
-            >>> Table("api_key", "base_id", "table_name", timeout=(1, 1))
+            >>> Table("api_key", "appBase", "tblName", timeout=(1, 1))
+            <Table base_id='appBase' table_name='tblName'>
 
         New style constructor has an odd signature to preserve backwards-compatibility
         with the old style (above), requiring ``None`` as the first argument, followed by
         an instance of :class:`Base`, followed by the table name.
 
-            >>> Table(None, base, "table_name")
+            >>> Table(None, Base(api, 'appBase'), "tblName")
+            <Table base_id='appBase' table_name='tblName'>
 
         These signatures may change in the future. Developers using this library are
         encouraged to not construct Table instances directly, and instead fetch tables
@@ -131,7 +133,11 @@ class Table:
         Retrieves a record by its ID.
 
         >>> table.get('recwPQIfs4wKPyc9D')
-        {'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
+        {
+            'id': 'recwPQIfs4wKPyc9D',
+            'createdTime': '...',
+            'fields': {'First Name': 'John', 'Age': 20}
+        }
 
         Args:
             record_id: |arg_record_id|
@@ -152,11 +158,7 @@ class Table:
 
         >>> it = table.iterate()
         >>> next(it)
-        [{"id": ...}, {"id": ...}, {"id": ...}, ...]
-        >>> next(it)
-        [{"id": ...}, {"id": ...}, {"id": ...}, ...]
-        >>> next(it)
-        [{"id": ...}]
+        [{'id': ...}, {'id': ...}, {'id': ...}, ...]
         >>> next(it)
         Traceback (most recent call last):
         StopIteration
@@ -185,11 +187,8 @@ class Table:
         """
         Retrieves all matching records in a single list.
 
-        >>> table = api.table('base_id', 'table_name')
-        >>> table.all(view='MyView', fields=['ColA', '-ColB'])
-        [{'fields': ...}, ...]
-        >>> table.all(max_records=50)
-        [{'fields': ...}, ...]
+        >>> records = table.all(view='MyView', fields=['ColA', '-ColB'])
+        >>> records = table.all(max_records=50)
 
         Keyword Args:
             view: |kwarg_view|
@@ -241,6 +240,13 @@ class Table:
         >>> record = {'Name': 'John'}
         >>> table = api.table('base_id', 'table_name')
         >>> table.create(record)
+        {
+            'id': 'rec...',
+            'createdTime': '...',
+            'fields': {
+                'Name': 'John'
+            }
+        }
 
         Args:
             fields: Fields to insert. Must be a dict with field names or IDs as keys.
@@ -270,13 +276,13 @@ class Table:
         >>> table.batch_create([{'Name': 'John'}, {'Name': 'Marc'}])
         [
             {
-                'id': 'recW9e0c9w0er9gug',
-                'createdTime': '2017-03-14T22:04:31.000Z',
+                'id': 'rec...',
+                'createdTime': '...',
                 'fields': {'Name': 'John'}
             },
             {
-                'id': 'recW9e0c9w0er9guh',
-                'createdTime': '2017-03-14T22:04:31.000Z',
+                'id': 'rec...',
+                'createdTime': '...',
                 'fields': {'Name': 'Marc'}
             }
         ]
@@ -314,9 +320,17 @@ class Table:
         Updates a particular record ID with the given fields.
 
         >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21})
-        {'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
+        {
+            'id': 'recwPQIfs4wKPyc9D',
+            'createdTime': '...',
+            'fields': {'First Name': 'John', 'Age': 21}
+        }
         >>> table.update('recwPQIfs4wKPyc9D', {"Age": 22}, replace=True)
-        {'id': 'recwPQIfs4wKPyc9D', 'fields': {'Age': 22}}
+        {
+            'id': 'recwPQIfs4wKPyc9D',
+            'createdTime': '...',
+            'fields': {'Age': 22}
+        }
 
         Args:
             record_id: |arg_record_id|
@@ -440,8 +454,8 @@ class Table:
         """
         Deletes the given record.
 
-        >>> table.delete('recwPQIfs4wKPyc9D')
-        {'id': 'recwPQIfs4wKPyc9D', 'deleted': True}
+        >>> table.delete('recAdw9EjV90xbW')
+        {'id': 'recAdw9EjV90xbW', 'deleted': True}
 
         Args:
             record_id: |arg_record_id|
@@ -458,10 +472,10 @@ class Table:
         """
         Deletes the given records, operating in batches.
 
-        >>> table.batch_delete(['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F'])
+        >>> table.batch_delete(['recAdw9EjV90xbW', 'recAdw9EjV90xbX'])
         [
-            {'id': 'recwPQIfs4wKPyc9D', 'deleted': True},
-            {'id': 'recwDxIfs3wDPyc3F', 'deleted': True}
+            {'id': 'recAdw9EjV90xbW', 'deleted': True},
+            {'id': 'recAdw9EjV90xbX', 'deleted': True}
         ]
 
         Args:
@@ -483,7 +497,6 @@ class Table:
         Returns a list of comments on the given record.
 
         Usage:
-            >>> table = Api.table("appNxslc6jG0XedVM", "tblslc6jG0XedVMNx")
             >>> table.comments("recMNxslc6jG0XedV")
             [
                 Comment(
@@ -531,7 +544,7 @@ class Table:
         See `Create comment <https://airtable.com/developers/web/api/create-comment>`_ for details.
 
         Usage:
-            >>> table = Api.table("appNxslc6jG0XedVM", "tblslc6jG0XedVMNx")
+            >>> table = api.table("appNxslc6jG0XedVM", "tblslc6jG0XedVMNx")
             >>> comment = table.add_comment("recMNxslc6jG0XedV", "Hello, @[usrVMNxslc6jG0Xed]!")
             >>> comment.text = "Never mind!"
             >>> comment.save()

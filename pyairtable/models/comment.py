@@ -48,11 +48,11 @@ class Comment(SerializableModel, writable=["text"]):
     #: The ISO 8601 timestamp of when the comment was last edited.
     last_updated_time: Optional[str]
 
-    #: The account which created the comment.
-    author: Collaborator
-
     #: Users or groups that were mentioned in the text.
     mentioned: Optional[Dict[str, "Comment.Mentioned"]]
+
+    #: The account which created the comment.
+    author: Collaborator
 
     class Mentioned(AirtableModel):
         """
@@ -73,10 +73,10 @@ class Comment(SerializableModel, writable=["text"]):
         See `User mentioned <https://airtable.com/developers/web/api/model/user-mentioned>`_ for more details.
         """
 
-        id: str
-        type: str
         display_name: str
         email: Optional[str] = None
+        id: str
+        type: str
 
 
 update_forward_refs(vars())
