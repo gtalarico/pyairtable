@@ -881,3 +881,60 @@ FIELD_CLASSES_TO_TYPES = {
     cls: {key for (key, val) in FIELD_TYPES_TO_CLASSES.items() if val == cls}
     for cls in ALL_FIELDS
 }
+
+
+# Auto-generate __all__ to explicitly exclude any imported values
+r"""[[[cog]]]
+import re
+
+with open(cog.inFile) as fp:
+    src = fp.read()
+
+classes = re.findall(r"class ([A-Z]\w+Field)", src)
+constants = re.findall(r"^([A-Z][A-Z_+]) = ", src)
+extras = ["LinkSelf"]
+names = sorted(classes + constants + extras)
+
+cog.outl("\n\n__all__ = [")
+for name in names:
+    cog.outl(f'    "{name}",')
+cog.outl("]")
+[[[out]]]"""
+
+
+__all__ = [
+    "AITextField",
+    "AttachmentsField",
+    "AutoNumberField",
+    "BarcodeField",
+    "ButtonField",
+    "CheckboxField",
+    "CollaboratorField",
+    "CountField",
+    "CreatedByField",
+    "CreatedTimeField",
+    "CurrencyField",
+    "DateField",
+    "DatetimeField",
+    "DurationField",
+    "EmailField",
+    "ExternalSyncSourceField",
+    "FloatField",
+    "IntegerField",
+    "LastModifiedByField",
+    "LastModifiedTimeField",
+    "LinkField",
+    "LinkSelf",
+    "LookupField",
+    "MultipleCollaboratorsField",
+    "MultipleSelectField",
+    "NumberField",
+    "PercentField",
+    "PhoneNumberField",
+    "RatingField",
+    "RichTextField",
+    "SelectField",
+    "TextField",
+    "UrlField",
+]
+# [[[end]]] (checksum: 4722c0951e598ac999d3c16ebd3d8c1c)

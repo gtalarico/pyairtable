@@ -217,6 +217,10 @@ class NestedId(AirtableModel):
     id: str
 
 
+class NestedFieldId(AirtableModel):
+    field_id: str
+
+
 class UserInfo(AirtableModel):
     id: str
     name: str
@@ -252,6 +256,23 @@ class GroupInfo(AirtableModel):
 # SomethingFieldSchema inherits from _FieldSchemaBase and SomethingFieldConfig.
 # FieldConfig is a union of all available *FieldConfig classes.
 # FieldSchema is a union of all available *FieldSchema classes.
+
+
+class AITextFieldConfig(AirtableModel):
+    """
+    Field configuration for `AI text <https://airtable.com/developers/web/api/field-model#aitext>`__.
+    """
+
+    type: Literal["aiText"]
+    options: "AITextFieldOptions"
+
+
+class AITextFieldOptions(AirtableModel):
+    prompt: Optional[List[Union[str, "AITextFieldOptions.PromptField"]]]
+    referenced_field_ids: Optional[List[str]]
+
+    class PromptField(AirtableModel):
+        field: NestedFieldId
 
 
 class AutoNumberFieldConfig(AirtableModel):
@@ -683,6 +704,7 @@ cog.outl("]")
 
 
 FieldConfig: TypeAlias = Union[
+    AITextFieldConfig,
     AutoNumberFieldConfig,
     BarcodeFieldConfig,
     ButtonFieldConfig,
@@ -717,6 +739,12 @@ FieldConfig: TypeAlias = Union[
     UrlFieldConfig,
     UnknownFieldConfig,
 ]
+
+
+class AITextFieldSchema(_FieldSchemaBase, AITextFieldConfig):
+    """
+    Field schema for `AI text <https://airtable.com/developers/web/api/field-model#aitext>`__.
+    """
 
 
 class AutoNumberFieldSchema(_FieldSchemaBase, AutoNumberFieldConfig):
@@ -919,6 +947,7 @@ class UnknownFieldSchema(_FieldSchemaBase, UnknownFieldConfig):
 
 
 FieldSchema: TypeAlias = Union[
+    AITextFieldSchema,
     AutoNumberFieldSchema,
     BarcodeFieldSchema,
     ButtonFieldSchema,
@@ -953,7 +982,7 @@ FieldSchema: TypeAlias = Union[
     UrlFieldSchema,
     UnknownFieldSchema,
 ]
-# [[[end]]] (checksum: 656f8c8bca467689a3f404ec9f1058fe)
+# [[[end]]] (checksum: afb669896323650954a082cb4b079c16)
 # fmt: on
 
 
