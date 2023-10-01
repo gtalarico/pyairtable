@@ -49,6 +49,7 @@ from typing_extensions import TypeAlias
 
 from pyairtable import utils
 from pyairtable.api.types import (
+    AITextDict,
     AttachmentDict,
     BarcodeDict,
     ButtonDict,
@@ -601,6 +602,16 @@ class LinkField(_ListField[RecordId, T_Linked]):
 # get some extra functionality for free in the future.
 
 
+class AITextField(_DictField[AITextDict]):
+    """
+    Read-only field that returns a `dict`. For more information, read the
+    `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`_
+    documentation.
+    """
+
+    readonly = True
+
+
 class AttachmentsField(_ValidatingListField[AttachmentDict]):
     """
     Accepts a list of dicts in the format detailed in
@@ -833,6 +844,7 @@ READONLY_FIELDS = {cls for cls in ALL_FIELDS if cls.readonly}
 #:
 #: :meta hide-value:
 FIELD_TYPES_TO_CLASSES = {
+    "aiText": AITextField,
     "autoNumber": AutoNumberField,
     "barcode": BarcodeField,
     "button": ButtonField,
