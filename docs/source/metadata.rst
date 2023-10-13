@@ -26,6 +26,9 @@ You'll find more detail in the API reference for :mod:`pyairtable.models.schema`
 .. automethod:: pyairtable.Base.tables
     :noindex:
 
+.. automethod:: pyairtable.Base.shares
+    :noindex:
+
 .. automethod:: pyairtable.Table.schema
     :noindex:
 

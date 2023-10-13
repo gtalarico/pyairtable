@@ -103,11 +103,18 @@ def test_tables(base: Base, requests_mock, sample_json):
     assert result["tblK6MZHez0ZvBChZ"].name == "Districts"
 
 
-def test_collaborators(base: Base, requests_mock, sample_json):
+def test_info(base: Base, requests_mock, sample_json):
     requests_mock.get(base.meta_url(), json=sample_json("BaseInfo"))
     result = base.info()
     assert result.individual_collaborators.via_base[0].email == "foo@bam.com"
     assert result.group_collaborators.via_workspace[0].group_id == "ugp1mKGb3KXUyQfOZ"
+
+
+def test_shares(base: Base, requests_mock, sample_json):
+    requests_mock.get(base.meta_url("shares"), json=sample_json("BaseShares"))
+    result = base.shares()
+    assert result[0].state == "enabled"
+    assert result[1].effective_email_domain_allow_list == []
 
 
 def test_webhooks(base: Base, requests_mock, sample_json):

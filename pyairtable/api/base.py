@@ -3,7 +3,12 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 import pyairtable.api.api
 import pyairtable.api.table
-from pyairtable.models.schema import BaseInfo, BaseSchema, PermissionLevel
+from pyairtable.models.schema import (
+    BaseInfo,
+    BaseSchema,
+    BaseShare,
+    PermissionLevel,
+)
 from pyairtable.models.webhook import (
     CreateWebhook,
     CreateWebhookResponse,
@@ -30,6 +35,7 @@ class Base:
     # Cached metadata to reduce API calls
     _info: Optional[BaseInfo] = None
     _schema: Optional[BaseSchema] = None
+    _shares: Optional[List[BaseShare]] = None
 
     def __init__(
         self,
@@ -294,3 +300,16 @@ class Base:
             data = self.api.request("GET", self.meta_url(), params=params)
             self._info = BaseInfo.parse_obj(data)
         return self._info
+
+    @enterprise_only
+    def shares(self, *, force: bool = False) -> List[BaseShare]:
+        """
+        Retrieves `base shares <https://airtable.com/developers/web/api/list-shares>`__.
+
+        Args:
+            force: |kwarg_force_metadata|
+        """
+        if force or not self._shares:
+            data = self.api.request("GET", self.meta_url("shares"))
+            self._shares = [BaseShare.parse_obj(share) for share in data["shares"]]
+        return self._shares

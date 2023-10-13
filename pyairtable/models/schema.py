@@ -84,6 +84,23 @@ class BaseInfo(AirtableModel):
         workspace_invite_links: List["InviteLink"] = _FL()
 
 
+class BaseShare(AirtableModel):
+    """
+    See https://airtable.com/developers/web/api/list-shares
+    """
+
+    state: str
+    created_by_user_id: str
+    created_time: str
+    share_id: str
+    type: str
+    is_password_protected: bool
+    block_installation_id: Optional[str] = None
+    restricted_to_email_domains: List[str] = _FL()
+    view_id: Optional[str] = None
+    effective_email_domain_allow_list: List[str] = _FL()
+
+
 class BaseSchema(AirtableModel):
     """
     See https://airtable.com/developers/web/api/get-base-schema
