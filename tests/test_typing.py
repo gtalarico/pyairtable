@@ -55,6 +55,16 @@ if TYPE_CHECKING:
     table.update(record_id, {"Field Name": {"email": "alice@example.com"}})
     table.update(record_id, {"Field Name": ["rec1", "rec2", "rec3"]})
 
+    # Ensure batch_upsert takes both records with and without IDs
+    table.batch_upsert(
+        [
+            {"fields": {"Name": "Carol"}},
+            {"id": "recAsdf", "fields": {"Name": "Bob"}},
+            {"id": "recAsdf", "createdTime": "", "fields": {"Name": "Alice"}},
+        ],
+        key_fields=["Name"],
+    )
+
     # Test type annotations for the ORM
     class Actor(orm.Model):
         name = orm.fields.TextField("Name")

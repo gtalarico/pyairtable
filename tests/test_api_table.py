@@ -215,7 +215,8 @@ def test_create(table: Table, mock_response_single):
     assert dict_equals(resp, mock_response_single)
 
 
-def test_batch_create(table: Table, mock_records):
+@pytest.mark.parametrize("container", [list, tuple, iter])
+def test_batch_create(table: Table, container, mock_records):
     with Mocker() as mock:
         for chunk in _chunk(mock_records, 10):
             mock.post(
@@ -224,7 +225,7 @@ def test_batch_create(table: Table, mock_records):
                 json={"records": chunk},
             )
         records = [i["fields"] for i in mock_records]
-        resp = table.batch_create(records)
+        resp = table.batch_create(container(records))
     assert seq_equals(resp, mock_records)
 
 
@@ -244,8 +245,9 @@ def test_update(table: Table, mock_response_single, replace, http_method):
     assert dict_equals(resp, mock_response_single)
 
 
+@pytest.mark.parametrize("container", [list, tuple, iter])
 @pytest.mark.parametrize("replace,http_method", [(False, "PATCH"), (True, "PUT")])
-def test_batch_update(table: Table, replace, http_method):
+def test_batch_update(table: Table, container, replace, http_method):
     records = [fake_record(fieldvalue=index) for index in range(50)]
     with Mocker() as mock:
         mock.register_uri(
@@ -255,13 +257,14 @@ def test_batch_update(table: Table, replace, http_method):
                 {"json": {"records": chunk}} for chunk in table.api.chunked(records)
             ],
         )
-        resp = table.batch_update(records, replace=replace)
+        resp = table.batch_update(container(records), replace=replace)
 
     assert resp == records
 
 
+@pytest.mark.parametrize("container", [list, tuple, iter])
 @pytest.mark.parametrize("replace,http_method", [(False, "PATCH"), (True, "PUT")])
-def test_batch_upsert(table: Table, replace, http_method, monkeypatch):
+def test_batch_upsert(table: Table, container, replace, http_method, monkeypatch):
     field_name = "Name"
     exists1 = fake_record({field_name: "Exists 1"})
     exists2 = fake_record({field_name: "Exists 2"})
@@ -283,7 +286,9 @@ def test_batch_upsert(table: Table, replace, http_method, monkeypatch):
             response_list=[{"json": response} for response in responses],
         )
         monkeypatch.setattr(table.api, "MAX_RECORDS_PER_REQUEST", 1)
-        resp = table.batch_upsert(payload, key_fields=[field_name], replace=replace)
+        resp = table.batch_upsert(
+            container(payload), key_fields=[field_name], replace=replace
+        )
 
     assert resp == {
         "createdRecords": [created["id"]],
@@ -311,7 +316,8 @@ def test_delete(table: Table, mock_response_single):
     assert resp == expected
 
 
-def test_batch_delete(table: Table, mock_records):
+@pytest.mark.parametrize("container", [list, tuple, iter])
+def test_batch_delete(table: Table, container, mock_records):
     ids = [i["id"] for i in mock_records]
     with Mocker() as mock:
         for chunk in _chunk(ids, 10):
@@ -325,7 +331,7 @@ def test_batch_delete(table: Table, mock_records):
                 json=json_response,
             )
 
-        resp = table.batch_delete(ids)
+        resp = table.batch_delete(container(ids))
     expected = [{"deleted": True, "id": i} for i in ids]
     assert resp == expected
 
