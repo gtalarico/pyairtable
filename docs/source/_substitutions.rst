@@ -67,7 +67,8 @@
 
 .. |kwarg_validate_metadata| replace::
     If ``False``, will create an object without validating the ID/name provided.
-    If ``True``, will fetch information from the metadata API and validate the ID/name exists.
+    If ``True``, will fetch information from the metadata API and validate the ID/name exists,
+    raising ``KeyError`` if it does not.
 
 .. |warn| unicode:: U+26A0 .. WARNING SIGN
 

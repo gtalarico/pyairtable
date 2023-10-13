@@ -94,13 +94,13 @@ def test_table_validate(base: Base, requests_mock, sample_json):
 
 def test_tables(base: Base, requests_mock, sample_json):
     """
-    Test that Base.tables() returns a dict of validated Base instances.
+    Test that Base.tables() returns a list of validated Base instances.
     """
     requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
     result = base.tables()
     assert len(result) == 2
-    assert result["tbltp8DGLhqbUmjK1"].name == "Apartments"
-    assert result["tblK6MZHez0ZvBChZ"].name == "Districts"
+    assert result[0].name == "Apartments"
+    assert result[1].name == "Districts"
 
 
 def test_info(base: Base, requests_mock, sample_json):

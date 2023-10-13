@@ -3,12 +3,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 import pyairtable.api.api
 import pyairtable.api.table
-from pyairtable.models.schema import (
-    BaseInfo,
-    BaseSchema,
-    BaseShare,
-    PermissionLevel,
-)
+from pyairtable.models.schema import BaseInfo, BaseSchema, BaseShare, PermissionLevel
 from pyairtable.models.webhook import (
     CreateWebhook,
     CreateWebhookResponse,
@@ -116,24 +111,24 @@ class Base:
             return pyairtable.api.table.Table(None, self, schema)
         return pyairtable.api.table.Table(None, self, id_or_name)
 
-    def tables(self, *, force: bool = False) -> Dict[str, "pyairtable.api.table.Table"]:
+    def tables(self, *, force: bool = False) -> List["pyairtable.api.table.Table"]:
         """
-        Retrieves the base's schema and returns a mapping of IDs to :class:`Table` instances.
+        Retrieves the base's schema and returns a list of :class:`Table` instances.
 
         Args:
             force: |kwarg_force_metadata|
 
         Usage:
             >>> base.tables()
-            {
-                'tbltp8DGLhqbUmjK1': <Table base='appLkNDICXNqxSDhG' id='tbltp8DGLhqbUmjK1' name='Apartments'>,
-                'tblK6MZHez0ZvBChZ': <Table base='appLkNDICXNqxSDhG' id='tblK6MZHez0ZvBChZ' name='Districts'>
-            }
+            [
+                <Table base='appLkNDICXNqxSDhG' id='tbltp8DGLhqbUmjK1' name='Apartments'>,
+                <Table base='appLkNDICXNqxSDhG' id='tblK6MZHez0ZvBChZ' name='Districts'>
+            ]
         """
-        return {
-            info.id: pyairtable.api.table.Table(None, self, info)
-            for info in self.schema(force=force).tables
-        }
+        return [
+            pyairtable.api.table.Table(None, self, table_schema)
+            for table_schema in self.schema(force=force).tables
+        ]
 
     def create_table(
         self,
