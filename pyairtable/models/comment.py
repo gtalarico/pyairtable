@@ -4,7 +4,11 @@ from ._base import AirtableModel, SerializableModel, update_forward_refs
 from .collaborator import Collaborator
 
 
-class Comment(SerializableModel, writable=["text"]):
+class Comment(
+    SerializableModel,
+    writable=["text"],
+    url="{record_url}/comments/{self.id}",
+):
     """
     A record comment that has been retrieved from the Airtable API.
 

@@ -569,9 +569,7 @@ class Table:
         url = self.record_url(record_id, "comments")
         return [
             pyairtable.models.Comment.from_api(
-                api=self.api,
-                url=self.record_url(record_id, "comments", comment["id"]),
-                obj=comment,
+                comment, self.api, context={"record_url": self.record_url(record_id)}
             )
             for page in self.api.iterate_requests("GET", url)
             for comment in page["comments"]
@@ -600,9 +598,7 @@ class Table:
         url = self.record_url(record_id, "comments")
         response = self.api.request("POST", url, json={"text": text})
         return pyairtable.models.Comment.from_api(
-            api=self.api,
-            url=self.record_url(record_id, "comments", response["id"]),
-            obj=response,
+            response, self.api, context={"record_url": self.record_url(record_id)}
         )
 
     def schema(self, *, force: bool = False) -> TableSchema:
@@ -635,7 +631,7 @@ class Table:
     def create_field(
         self,
         name: str,
-        field_type: str,
+        type: str,
         description: Optional[str] = None,
         options: Optional[Dict[str, Any]] = None,
     ) -> FieldSchema:
@@ -649,13 +645,25 @@ class Table:
             options: Only available for some field types. For more information, read about the
                 `Airtable field model <https://airtable.com/developers/web/api/field-model>`__.
         """
-        request: Dict[str, Any] = {"name": name, "type": field_type}
+        request: Dict[str, Any] = {"name": name, "type": type}
         if description:
             request["description"] = description
         if options:
             request["options"] = options
         response = self.api.request("POST", self.meta_url("fields"), json=request)
-        return parse_field_schema(response)
+        # This hopscotch ensures that the FieldSchema object we return has an API and a URL,
+        # and that developers don't need to reload our schema to be able to access it.
+        field_schema = parse_field_schema(response)
+        field_schema.set_api(
+            self.api,
+            context={
+                "base": self.base,
+                "table_schema": self._schema or self,
+            },
+        )
+        if self._schema:
+            self._schema.fields.append(field_schema)
+        return field_schema
 
 
 # These are at the bottom of the module to avoid circular imports

@@ -181,7 +181,7 @@ class Base:
             url = self.meta_url("tables")
             params = {"include": ["visibleFieldIds"]}
             data = self.api.request("GET", url, params=params)
-            self._schema = BaseSchema.parse_obj(data)
+            self._schema = BaseSchema.from_api(data, self.api, context=self)
         return self._schema
 
     @property
@@ -211,11 +211,7 @@ class Base:
         """
         response = self.api.request("GET", self.webhooks_url)
         return [
-            Webhook.from_api(
-                api=self.api,
-                url=f"{self.webhooks_url}/{data['id']}",
-                obj=data,
-            )
+            Webhook.from_api(data, self.api, context=self)
             for data in response["webhooks"]
         ]
 

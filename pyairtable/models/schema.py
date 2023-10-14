@@ -5,7 +5,7 @@ from typing_extensions import TypeAlias
 
 from pyairtable._compat import pydantic
 
-from ._base import AirtableModel, update_forward_refs
+from ._base import AirtableModel, SerializableModel, update_forward_refs
 
 PermissionLevel: TypeAlias = Literal[
     "none", "read", "comment", "edit", "create", "owner"
@@ -115,7 +115,13 @@ class BaseSchema(AirtableModel):
         return _find(self.tables, id_or_name)
 
 
-class TableSchema(AirtableModel):
+class TableSchema(
+    SerializableModel,
+    allow_delete=False,
+    save_null_values=False,
+    writable=["name", "description"],
+    url="meta/bases/{base.id}/tables/{self.id}",
+):
     """
     See https://airtable.com/developers/web/api/get-base-schema
     """
@@ -676,7 +682,13 @@ class UnknownFieldConfig(AirtableModel):
     options: Optional[Dict[str, Any]]
 
 
-class _FieldSchemaBase(AirtableModel):
+class _FieldSchemaBase(
+    SerializableModel,
+    allow_delete=False,
+    save_null_values=False,
+    writable=["name", "description"],
+    url="meta/bases/{base.id}/tables/{table_schema.id}/fields/{self.id}",
+):
     id: str
     name: str
     description: Optional[str]

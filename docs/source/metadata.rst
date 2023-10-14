@@ -53,6 +53,19 @@ call them directly.
 .. automethod:: pyairtable.Table.create_field
     :noindex:
 
+To rename a table or field, you can modify its schema object directly
+and call ``save()``:
+
+.. code-block:: python
+
+    >>> schema = table.schema()
+    >>> schema.name = "Renamed"
+    >>> schema.save()
+    >>> field = schema.field("Name")
+    >>> field.name = "Label"
+    >>> field.description = "The primary field on the table"
+    >>> field.save()
+
 
 Enterprise information
 -----------------------------

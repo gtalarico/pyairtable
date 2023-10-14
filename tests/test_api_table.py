@@ -405,6 +405,7 @@ def test_create_field(table, requests_mock, sample_json):
         "description": "field description",
         "options": {"choices": choices},
     }
+    assert f._url.endswith(f"/{table.base.id}/tables/{table.name}/fields/{f.id}")
 
 
 # Helpers

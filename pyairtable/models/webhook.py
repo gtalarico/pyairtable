@@ -15,7 +15,11 @@ FD: Callable[[], Any] = partial(pydantic.Field, default_factory=dict)
 FL: Callable[[], Any] = partial(pydantic.Field, default_factory=list)
 
 
-class Webhook(SerializableModel, allow_update=False):
+class Webhook(
+    SerializableModel,
+    allow_update=False,
+    url="bases/{base.id}/webhooks/{self.id}",
+):
     """
     A webhook that has been retrieved from the Airtable API.
 

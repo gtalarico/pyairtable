@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, ClassVar, Iterable, Mapping, Optional, Set, Type, Union
+from typing import Any, ClassVar, Dict, Iterable, Mapping, Optional, Set, Type, Union
 
 import inflection
 from typing_extensions import Self as SelfType
@@ -34,6 +34,87 @@ class AirtableModel(pydantic.BaseModel):
         instance._raw = obj
         return instance
 
+    @classmethod
+    def from_api(
+        cls,
+        obj: Any,
+        api: "pyairtable.api.api.Api",
+        *,
+        context: Optional[Any] = None,
+    ) -> SelfType:
+        """
+        Constructs an instance which is able to update itself using an
+        :class:`~pyairtable.Api`.
+
+        Args:
+            obj: The JSON data structure used to construct the instance.
+                 Will be passed to `parse_obj <https://docs.pydantic.dev/latest/usage/models/#helper-functions>`_.
+            api: The connection to use for saving updates.
+            context: An object, sequence of objects, or mapping of names to objects
+                which will be used as arguments to ``str.format()`` when constructing
+                the URL for a :class:`~pyairtable.models._base.SerializableModel`.
+        """
+        instance = cls.parse_obj(obj)
+        cascade_api(instance, api, context=context)
+        return instance
+
+
+def _context_name(obj: Any) -> str:
+    return inflection.underscore(type(obj).__name__)
+
+
+def cascade_api(
+    obj: Any,
+    api: "pyairtable.api.api.Api",
+    *,
+    context: Optional[Any] = None,
+) -> None:
+    """
+    Ensure all nested objects have access to the given Api instance,
+    and trigger them to configure their URLs accordingly.
+
+    Args:
+        api: The instance of the API to set.
+        context: A mapping of class names to instances of that class.
+    """
+    if context is None:
+        context = {}
+    # context=[Foo(), Bar()] is short for context={"foo": Foo(), "bar": Bar()}
+    if isinstance(context, (list, tuple, set)):
+        context = {_context_name(ctx_obj): ctx_obj for ctx_obj in context}
+    # context=Foo() is short for context={"foo": Foo()}
+    if context and not isinstance(context, dict):
+        context = {_context_name(context): context}
+
+    # Ensure we don't get stuck in infinite loops
+    visited: Set[int] = context.setdefault("__visited__", set())
+    if id(obj) in visited:
+        return
+    visited.add(id(obj))
+
+    # Iterate over containers and cascade API context down to contained models.
+    if isinstance(obj, (list, tuple, set)):
+        for value in obj:
+            cascade_api(value, api, context=context)
+    if isinstance(obj, dict):
+        for value in obj.values():
+            cascade_api(value, api, context=context)
+    if not isinstance(obj, AirtableModel):
+        return
+
+    # If we get this far, we're dealing with a model, so add it to the context.
+    # If it's a ModelNamedThis, the key will be model_named_this.
+    context = {**context, _context_name(obj): obj}
+
+    # This is what we came here for
+    if isinstance(obj, SerializableModel):
+        obj.set_api(api, context=context)
+
+    # Find and apply API/context to nested models in every Pydantic field.
+    for field_name in type(obj).__fields__:
+        if field_value := getattr(obj, field_name, None):
+            cascade_api(field_value, api, context=context)
+
 
 class SerializableModel(AirtableModel):
     """
@@ -45,43 +126,37 @@ class SerializableModel(AirtableModel):
         * ``readonly=``: field names that should not be written to API on ``save()``.
         * ``allow_update=``: boolean indicating whether to allow ``save()`` (default: true)
         * ``allow_delete=``: boolean indicating whether to allow ``delete()`` (default: true)
+        * ``save_null_values=``: boolean indicating whether ``save()`` should write nulls (default: true)
+        * ``url=``: format string for building the URL to be used when saving changes to this model.
     """
 
-    __writable: ClassVar[Optional[Iterable[str]]]
-    __readonly: ClassVar[Optional[Iterable[str]]]
-    __allow_update: ClassVar[bool]
-    __allow_delete: ClassVar[bool]
+    __writable: ClassVar[Optional[Iterable[str]]] = None
+    __readonly: ClassVar[Optional[Iterable[str]]] = None
+    __allow_update: ClassVar[bool] = True
+    __allow_delete: ClassVar[bool] = True
+    __save_none: ClassVar[bool] = True
+    __url_pattern: ClassVar[str] = ""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        # These are private to SerializableModel
         if "writable" in kwargs and "readonly" in kwargs:
             raise ValueError("incompatible kwargs 'writable' and 'readonly'")
-        cls.__writable = kwargs.pop("writable", None)
-        cls.__readonly = kwargs.pop("readonly", None)
-        cls.__allow_update = bool(kwargs.pop("allow_update", True))
-        cls.__allow_delete = bool(kwargs.pop("allow_delete", True))
+        cls.__writable = kwargs.pop("writable", cls.__writable)
+        cls.__readonly = kwargs.pop("readonly", cls.__readonly)
+        cls.__allow_update = bool(kwargs.pop("allow_update", cls.__allow_update))
+        cls.__allow_delete = bool(kwargs.pop("allow_delete", cls.__allow_delete))
+        cls.__save_none = bool(kwargs.pop("save_null_values", cls.__save_none))
+        cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
         super().__init_subclass__(**kwargs)
 
     _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
     _url: str = pydantic.PrivateAttr()
     _deleted: bool = pydantic.PrivateAttr(default=False)
 
-    @classmethod
-    def from_api(cls, api: "pyairtable.api.api.Api", url: str, obj: Any) -> SelfType:
-        """
-        Constructs an instance which is able to update itself using an
-        :class:`~pyairtable.Api`.
-
-        Args:
-            api: The connection to use for saving updates.
-            url: The URL which can receive PATCH or DELETE requests for this object.
-            obj: The JSON data structure used to construct the instance.
-                 Will be passed to `parse_obj <https://docs.pydantic.dev/latest/usage/models/#helper-functions>`_.
-        """
-        parsed = cls.parse_obj(obj)
-        parsed._api = api
-        parsed._url = url
-        return parsed
+    def set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
+        self._api = api
+        self._url = self.__url_pattern.format(**context, self=self)
+        if self._url and not self._url.startswith("http"):
+            self._url = api.build_url(self._url)
 
     def save(self) -> None:
         """
@@ -93,19 +168,34 @@ class SerializableModel(AirtableModel):
             raise NotImplementedError(f"{self.__class__.__name__}.save() not allowed")
         if self._deleted:
             raise RuntimeError("save() called after delete()")
+        if not self._url:
+            raise RuntimeError("save() called with no URL specified")
         include = set(self.__writable) if self.__writable else None
         exclude = set(self.__readonly) if self.__readonly else None
-        data = self.dict(by_alias=True, include=include, exclude=exclude)
+        data = self.dict(
+            by_alias=True,
+            include=include,
+            exclude=exclude,
+            exclude_none=(not self.__save_none),
+        )
         response = self._api.request("PATCH", self._url, json=data)
-        copyable = self.parse_obj(response)
-        self.__dict__.update(copyable.__dict__)
+        copyable = type(self).parse_obj(response)
+        self.__dict__.update(
+            {
+                key: value
+                for (key, value) in copyable.__dict__.items()
+                if key in type(self).__fields__
+            }
+        )
 
     def delete(self) -> None:
         """
-        Delete the record on the server and marks this instance as deleted.
+        Delete the record on the server and mark this instance as deleted.
         """
         if not self.__allow_delete:
             raise NotImplementedError(f"{self.__class__.__name__}.delete() not allowed")
+        if not self._url:
+            raise RuntimeError("delete() called with no URL specified")
         self._api.request("DELETE", self._url)
         self._deleted = True
 

@@ -15,12 +15,14 @@ def raw_data():
 @pytest.fixture
 def create_instance(api, raw_data):
     def _creates_instance(**kwargs):
+        kwargs.setdefault("url", "https://example.com/{self.foo}/{self.bar}/{self.baz}")
+
         class Subclass(SerializableModel, **kwargs):
             foo: int
             bar: int
             baz: int
 
-        return Subclass.from_api(api, "https://www.example.com", raw_data)
+        return Subclass.from_api(raw_data, api)
 
     return _creates_instance
 
@@ -37,15 +39,25 @@ def test_raw(raw_data):
     assert obj._raw == raw_data
 
 
-def test_from_api(raw_data):
+@pytest.mark.parametrize("prefix", ["https://api.airtable.com/v0/prefix", "prefix"])
+def test_from_api(raw_data, prefix, api):
     """
-    Test that SerializableModel.from_api persists its parameters correctly.
+    Test that SerializableModel.from_api persists its parameters correctly,
+    and that if `url=` is passed to the subclass, we'll always get a valid URL.
     """
-    url = "https://www.example.com"
-    obj = SerializableModel.from_api("api", url, raw_data)
-    assert obj._api == "api"
-    assert obj._url == url
+
+    class Dummy(SerializableModel, url="{prefix}/foo={self.foo}/bar={self.bar}"):
+        foo: int
+        bar: int
+
+    obj = Dummy.from_api(raw_data, api, context={"prefix": prefix})
+    assert obj._api == api
     assert obj._raw == raw_data
+    assert obj._url == "https://api.airtable.com/v0/prefix/foo=1/bar=2"
+    assert obj.foo == 1
+    assert obj.bar == 2
+    assert not hasattr(obj, "baz")
+    assert obj._raw["baz"] == 3
 
 
 def test_save(requests_mock, create_instance):
