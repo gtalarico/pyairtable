@@ -233,7 +233,7 @@ class WebhookNotification(AirtableModel):
         if isinstance(secret, str):
             secret = base64.decodebytes(secret.encode("ascii"))
         hmac = HMAC(secret, body.encode("ascii"), "sha256")
-        expected = "hmac-sha256-" + hmac.hexdigest()
+        expected = "hmac-sha256=" + hmac.hexdigest()
         if header != expected:
             raise ValueError("X-Airtable-Content-MAC header failed validation")
         return cls.parse_raw(body)
