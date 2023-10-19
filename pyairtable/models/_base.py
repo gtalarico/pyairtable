@@ -79,9 +79,6 @@ def cascade_api(
     """
     if context is None:
         context = {}
-    # context=[Foo(), Bar()] is short for context={"foo": Foo(), "bar": Bar()}
-    if isinstance(context, (list, tuple, set)):
-        context = {_context_name(ctx_obj): ctx_obj for ctx_obj in context}
     # context=Foo() is short for context={"foo": Foo()}
     if context and not isinstance(context, dict):
         context = {_context_name(context): context}
@@ -149,7 +146,7 @@ class SerializableModel(AirtableModel):
         super().__init_subclass__(**kwargs)
 
     _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
-    _url: str = pydantic.PrivateAttr()
+    _url: str = pydantic.PrivateAttr(default="")
     _deleted: bool = pydantic.PrivateAttr(default=False)
 
     def set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
@@ -160,7 +157,8 @@ class SerializableModel(AirtableModel):
 
     def save(self) -> None:
         """
-        Save any changes made to the instance's writable fields.
+        Save any changes made to the instance's writable fields and update the
+        instance with any refreshed values returned from the API.
 
         Will raise ``RuntimeError`` if the record has been deleted.
         """

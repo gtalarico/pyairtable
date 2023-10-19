@@ -23,6 +23,8 @@ def _find(collection: List[_T], id_or_name: str) -> _T:
     items_by_name: Dict[str, _T] = {}
 
     for item in collection:
+        if getattr(item, "deleted", None):
+            continue
         if item.id == id_or_name:
             return item
         items_by_name[item.name] = item
@@ -146,7 +148,9 @@ class TableSchema(
         return _find(self.views, id_or_name)
 
 
-class ViewSchema(AirtableModel):
+class ViewSchema(
+    SerializableModel, allow_update=False, url="meta/bases/{base.id}/views/{self.id}"
+):
     """
     See https://airtable.com/developers/web/api/get-view-metadata
     """

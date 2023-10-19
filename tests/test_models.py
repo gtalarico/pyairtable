@@ -81,6 +81,16 @@ def test_save_not_allowed(create_instance):
         obj.save()
 
 
+def test_save_without_url(create_instance):
+    """
+    Test that if we do not provide context for computing a URL when an instance
+    is created, we won't be able to save it later.
+    """
+    obj = create_instance(url="")
+    with pytest.raises(RuntimeError):
+        obj.save()
+
+
 def test_delete(requests_mock, create_instance):
     obj = create_instance()
     m = requests_mock.delete(obj._url)
@@ -94,6 +104,16 @@ def test_delete(requests_mock, create_instance):
 def test_delete_not_allowed(create_instance):
     obj = create_instance(allow_delete=False)
     with pytest.raises(NotImplementedError):
+        obj.delete()
+
+
+def test_delete_without_url(create_instance):
+    """
+    Test that if we do not provide context for computing a URL when an instance
+    is created, we won't be able to delete it later.
+    """
+    obj = create_instance(url="")
+    with pytest.raises(RuntimeError):
         obj.delete()
 
 

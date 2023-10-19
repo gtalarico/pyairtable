@@ -40,3 +40,9 @@ def test_create_base(workspace, requests_mock, sample_json):
     base = workspace.create_base("Base Name", [])
     assert isinstance(base, Base)
     assert base.id == "appLkNDICXNqxSDhG"
+
+
+def test_delete(workspace, requests_mock):
+    m = requests_mock.delete(workspace.url, json={"id": workspace.id, "deleted": True})
+    workspace.delete()
+    assert m.call_count == 1

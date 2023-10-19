@@ -141,8 +141,8 @@ class Base:
 
         Args:
             name: The unique table name.
-            fields: A list of ``dict`` objects that conform to Airtable's
-                `Field model <https://airtable.com/developers/web/api/model/field-model>`__.
+            fields: A list of ``dict`` objects that conform to the
+                `Airtable field model <https://airtable.com/developers/web/api/field-model>`__.
             description: The table description. Must be no longer than 20k characters.
         """
         url = self.meta_url("tables")
@@ -304,3 +304,14 @@ class Base:
             data = self.api.request("GET", self.meta_url("shares"))
             self._shares = [BaseShare.parse_obj(share) for share in data["shares"]]
         return self._shares
+
+    @enterprise_only
+    def delete(self) -> None:
+        """
+        Deletes the base.
+
+        Usage:
+            >>> base = api.base("appMxESAta6clCCwF")
+            >>> base.delete()
+        """
+        self.api.request("DELETE", self.meta_url())

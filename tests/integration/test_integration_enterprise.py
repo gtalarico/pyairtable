@@ -35,7 +35,7 @@ def blank_base(workspace: pyairtable.Workspace):
     try:
         yield base
     finally:
-        workspace.api.delete_base(base)
+        base.delete()
 
 
 def test_create_table(blank_base: pyairtable.Base):

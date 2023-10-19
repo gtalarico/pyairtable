@@ -1,8 +1,5 @@
 from unittest import mock
 
-import pytest
-from requests import HTTPError
-
 from pyairtable import Api, Base, Table  # noqa
 
 
@@ -117,21 +114,3 @@ def test_create_base(api):
         api.create_base("wspFake", "Fake Name", [])
 
     m.assert_called_once_with("Fake Name", [])
-
-
-def test_delete_base(api, base, requests_mock):
-    """
-    Test that Api.delete_base accepts either a Base or an ID.
-    """
-    m = requests_mock.delete(base.meta_url(), json={"id": base.id, "deleted": True})
-    api.delete_base(base)
-    assert m.call_count == 1
-    api.delete_base(base.id)
-    assert m.call_count == 2
-
-
-def test_delete_base__enterprise_only_table(api, base, requests_mock):
-    requests_mock.delete(base.meta_url(), status_code=404)
-    with pytest.raises(HTTPError) as excinfo:
-        api.delete_base(base.id)
-    assert "Api.delete_base() requires an enterprise billing plan" in str(excinfo)

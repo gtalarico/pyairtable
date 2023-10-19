@@ -317,15 +317,3 @@ class Api:
         Returns an object representing an enterprise account.
         """
         return Enterprise(self, enterprise_account_id)
-
-    @enterprise_only
-    def delete_base(self, base: Union[str, "pyairtable.api.base.Base"]) -> None:
-        """
-        Deletes the base.
-
-        Args:
-            base: Either a base ID or a :class:`~pyairtable.Base` instance.
-        """
-        if isinstance(base, str):
-            base = self.base(base)
-        self.request("DELETE", base.meta_url())

@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+from requests import HTTPError
 
 from pyairtable import Base, Table
 from pyairtable.testing import fake_id
@@ -217,3 +218,22 @@ def test_create_table(base, requests_mock, sample_json):
         "description": "Description",
         "fields": [{"name": "Whatever"}],
     }
+
+
+def test_delete(base, requests_mock):
+    """
+    Test that Base.delete() hits the right endpoint.
+    """
+    m = requests_mock.delete(base.meta_url(), json={"id": base.id, "deleted": True})
+    base.delete()
+    assert m.call_count == 1
+
+
+def test_delete__enterprise_only_table(api, base, requests_mock):
+    """
+    Test that Base.delete() explains why it might be getting a 404.
+    """
+    requests_mock.delete(base.meta_url(), status_code=404)
+    with pytest.raises(HTTPError) as excinfo:
+        base.delete()
+    assert "Base.delete() requires an enterprise billing plan" in str(excinfo)

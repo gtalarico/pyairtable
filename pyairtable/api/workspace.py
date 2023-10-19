@@ -77,6 +77,17 @@ class Workspace:
         """
         return self.info().name
 
+    @enterprise_only
+    def delete(self) -> None:
+        """
+        Deletes the workspace.
+
+        Usage:
+            >>> ws = api.workspace("wspmhESAta6clCCwF")
+            >>> ws.delete()
+        """
+        self.api.request("DELETE", self.url)
+
 
 # These are at the bottom of the module to avoid circular imports
 import pyairtable.api.api  # noqa

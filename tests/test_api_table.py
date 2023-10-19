@@ -15,6 +15,16 @@ def table_schema(sample_json) -> TableSchema:
     return TableSchema.parse_obj(sample_json("TableSchema"))
 
 
+@pytest.fixture
+def mock_schema(table, requests_mock, sample_json):
+    table_schema = sample_json("TableSchema")
+    table_schema["id"] = table.name = fake_id("tbl")
+    return requests_mock.get(
+        table.base.meta_url("tables") + "?include=visibleFieldIds",
+        json={"tables": [table_schema]},
+    )
+
+
 def test_constructor(base: Base):
     """
     Test the constructor.
@@ -382,30 +392,53 @@ def test_batch_delete(table: Table, container, mock_records):
     assert resp == expected
 
 
-def test_create_field(table, requests_mock, sample_json):
+def test_create_field(table, mock_schema, requests_mock, sample_json):
     """
     Tests the API for creating a field (but without actually performing the operation).
     """
-    table.name = fake_id("tbl")  # so that the .id property doesn't request schema
-    field_schema = sample_json("field_schema/SingleSelectFieldSchema")
+    mock_create = requests_mock.post(
+        table.meta_url("fields"),
+        json=sample_json("field_schema/SingleSelectFieldSchema"),
+    )
+
+    # Ensure we have pre-loaded our schema
+    table.schema()
+    assert mock_schema.call_count == 1
+
+    # Create the field
     choices = ["Todo", "In progress", "Done"]
-    m = requests_mock.post(table.meta_url("fields"), json=field_schema)
-    f = table.create_field(
+    fld = table.create_field(
         "Status",
         "singleSelect",
         description="field description",
         options={"choices": choices},
     )
-    assert f.id == "fldqCjrs1UhXgHUIc"
-    assert {c.name for c in f.options.choices} == set(choices)
-    assert m.call_count == 1
-    assert m.request_history[-1].json() == {
+    assert mock_create.call_count == 1
+    assert mock_create.request_history[-1].json() == {
         "name": "Status",
         "type": "singleSelect",
         "description": "field description",
         "options": {"choices": choices},
     }
-    assert f._url.endswith(f"/{table.base.id}/tables/{table.name}/fields/{f.id}")
+
+    # Test the result we got back
+    assert fld.id == "fldqCjrs1UhXgHUIc"
+    assert fld.name == "Status"
+    assert {c.name for c in fld.options.choices} == set(choices)
+
+    # Test that we constructed the URL correctly
+    assert fld._url.endswith(f"/{table.base.id}/tables/{table.name}/fields/{fld.id}")
+
+    # Test that the schema has been updated without a second API call
+    assert table._schema.field(fld.id).name == "Status"
+    assert mock_schema.call_count == 1
+
+
+def test_delete_view(table, mock_schema, requests_mock):
+    view = table.schema().view("Grid view")
+    m = requests_mock.delete(view._url)
+    view.delete()
+    assert m.call_count == 1
 
 
 # Helpers
