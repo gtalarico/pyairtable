@@ -68,6 +68,9 @@ The following methods allow creating bases, tables, or fields:
 .. automethod:: pyairtable.Workspace.create_base
     :noindex:
 
+.. automethod:: pyairtable.Workspace.move_base
+    :noindex:
+
 .. automethod:: pyairtable.Base.create_table
     :noindex:
 

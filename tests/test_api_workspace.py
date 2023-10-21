@@ -5,8 +5,13 @@ from pyairtable.api.workspace import Workspace
 
 
 @pytest.fixture
-def workspace(api):
-    return Workspace(api, "wspFakeWorkspaceId")
+def workspace_id():
+    return "wspFakeWorkspaceId"
+
+
+@pytest.fixture
+def workspace(api, workspace_id):
+    return Workspace(api, workspace_id)
 
 
 @pytest.fixture
@@ -46,3 +51,33 @@ def test_delete(workspace, requests_mock):
     m = requests_mock.delete(workspace.url, json={"id": workspace.id, "deleted": True})
     workspace.delete()
     assert m.call_count == 1
+
+
+@pytest.mark.parametrize("workspace_param", ["workspace", "workspace_id"])
+@pytest.mark.parametrize("base_param", ["base", "base_id"])
+@pytest.mark.parametrize(
+    "kwargs,expected",
+    [
+        ({}, {}),
+        ({"index": 8}, {"targetIndex": 8}),
+    ],
+)
+def test_move_base(
+    workspace,
+    workspace_id,
+    workspace_param,
+    base,
+    base_id,
+    base_param,
+    kwargs,
+    expected,
+    requests_mock,
+):
+    m = requests_mock.post(workspace.url + "/moveBase")
+    workspace.move_base(locals()[base_param], locals()[workspace_param], **kwargs)
+    assert m.call_count == 1
+    assert m.request_history[-1].json() == {
+        "baseId": base_id,
+        "targetWorkspaceId": workspace_id,
+        **expected,
+    }

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from pyairtable.models.schema import WorkspaceInfo
 from pyairtable.utils import enterprise_only
@@ -87,6 +87,29 @@ class Workspace:
             >>> ws.delete()
         """
         self.api.request("DELETE", self.url)
+
+    @enterprise_only
+    def move_base(
+        self,
+        base: Union[str, "pyairtable.api.base.Base"],
+        target: Union[str, "Workspace"],
+        index: Optional[int] = None,
+    ) -> None:
+        """
+        Moves the given base to a new workspace.
+
+        Usage:
+            >>> ws = api.workspace("wspmhESAta6clCCwF")
+            >>> base = api.workspace("appCwFmhESAta6clC")
+            >>> workspace.move_base(base, "wspSomeOtherPlace", index=0)
+        """
+        base_id = base if isinstance(base, str) else base.id
+        target_id = target if isinstance(target, str) else target.id
+        payload: Dict[str, Any] = {"baseId": base_id, "targetWorkspaceId": target_id}
+        if index is not None:
+            payload["targetIndex"] = index
+        url = self.url + "/moveBase"
+        self.api.request("POST", url, json=payload)
 
 
 # These are at the bottom of the module to avoid circular imports

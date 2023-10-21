@@ -39,9 +39,14 @@ def api(constants) -> Api:
     return Api(constants["API_KEY"])
 
 
+@pytest.fixture
+def base_id(constants) -> str:
+    return constants["BASE_ID"]
+
+
 @pytest.fixture()
-def base(api: Api, constants) -> Base:
-    return api.base(constants["BASE_ID"])
+def base(api: Api, base_id) -> Base:
+    return api.base(base_id)
 
 
 @pytest.fixture()
