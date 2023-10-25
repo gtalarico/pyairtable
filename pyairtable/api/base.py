@@ -3,7 +3,12 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 import pyairtable.api.api
 import pyairtable.api.table
-from pyairtable.models.schema import BaseInfo, BaseSchema, BaseShare, PermissionLevel
+from pyairtable.models.schema import (
+    BaseCollaborators,
+    BaseSchema,
+    BaseShare,
+    PermissionLevel,
+)
 from pyairtable.models.webhook import (
     CreateWebhook,
     CreateWebhookResponse,
@@ -28,7 +33,7 @@ class Base:
     permission_level: Optional[PermissionLevel]
 
     # Cached metadata to reduce API calls
-    _info: Optional[BaseInfo] = None
+    _collaborators: Optional[BaseCollaborators] = None
     _schema: Optional[BaseSchema] = None
     _shares: Optional[List[BaseShare]] = None
 
@@ -76,8 +81,8 @@ class Base:
         The name of the base, if provided to the constructor
         or available in cached base information.
         """
-        if self._info:
-            return self._info.name
+        if self._collaborators:
+            return self._collaborators.name
         return self._name
 
     def __repr__(self) -> str:
@@ -279,7 +284,7 @@ class Base:
         return CreateWebhookResponse.parse_obj(response)
 
     @enterprise_only
-    def info(self, *, force: bool = False) -> "BaseInfo":
+    def collaborators(self, *, force: bool = False) -> "BaseCollaborators":
         """
         Retrieves `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__.
 
@@ -289,8 +294,8 @@ class Base:
         if force or not self._info:
             params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
             data = self.api.request("GET", self.meta_url(), params=params)
-            self._info = BaseInfo.parse_obj(data)
-        return self._info
+            self._collaborators = BaseCollaborators.parse_obj(data)
+        return self._collaborators
 
     @enterprise_only
     def shares(self, *, force: bool = False) -> List[BaseShare]:

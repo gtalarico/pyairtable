@@ -21,9 +21,9 @@ def test_api_base(api: Api, base_id: str, base_name: str):
 def test_base_info(base: Base):
     with pytest.raises(
         requests.HTTPError,
-        match=r"Base.info\(\) requires an enterprise billing plan",
+        match=r"Base.collaborators\(\) requires an enterprise billing plan",
     ):
-        base.info()
+        base.collaborators()
 
 
 def test_base_schema(base: Base, table_name: str):

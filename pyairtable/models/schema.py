@@ -53,7 +53,7 @@ class Bases(AirtableModel):
         permission_level: PermissionLevel
 
 
-class BaseInfo(AirtableModel):
+class BaseCollaborators(AirtableModel):
     """
     Detailed information about who can access a base.
 
@@ -64,10 +64,10 @@ class BaseInfo(AirtableModel):
     name: str
     permission_level: PermissionLevel
     workspace_id: str
-    interfaces: Dict[str, "BaseInfo.InterfaceCollaborators"] = _FD()
-    group_collaborators: Optional["BaseInfo.GroupCollaborators"]
-    individual_collaborators: Optional["BaseInfo.IndividualCollaborators"]
-    invite_links: Optional["BaseInfo.InviteLinks"]
+    interfaces: Dict[str, "BaseCollaborators.InterfaceCollaborators"] = _FD()
+    group_collaborators: Optional["BaseCollaborators.GroupCollaborators"]
+    individual_collaborators: Optional["BaseCollaborators.IndividualCollaborators"]
+    invite_links: Optional["BaseCollaborators.InviteLinks"]
 
     class InterfaceCollaborators(AirtableModel):
         created_time: str

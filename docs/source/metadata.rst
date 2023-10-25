@@ -47,7 +47,7 @@ return a 404 error, and pyAirtable will add a reminder to the exception to check
 .. automethod:: pyairtable.Api.enterprise
     :noindex:
 
-.. automethod:: pyairtable.Base.info
+.. automethod:: pyairtable.Base.collaborators
     :noindex:
 
 .. automethod:: pyairtable.Workspace.info

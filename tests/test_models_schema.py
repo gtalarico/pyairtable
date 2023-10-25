@@ -9,7 +9,7 @@ import pyairtable.models.schema
     "clsname",
     [
         "Bases",
-        "BaseInfo",
+        "BaseCollaborators",
         "BaseSchema",
         "TableSchema",
         "ViewSchema",

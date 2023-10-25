@@ -104,9 +104,9 @@ def test_tables(base: Base, requests_mock, sample_json):
     assert result[1].name == "Districts"
 
 
-def test_info(base: Base, requests_mock, sample_json):
-    requests_mock.get(base.meta_url(), json=sample_json("BaseInfo"))
-    result = base.info()
+def test_collaborators(base: Base, requests_mock, sample_json):
+    requests_mock.get(base.meta_url(), json=sample_json("BaseCollaborators"))
+    result = base.collaborators()
     assert result.individual_collaborators.via_base[0].email == "foo@bam.com"
     assert result.group_collaborators.via_workspace[0].group_id == "ugp1mKGb3KXUyQfOZ"
 
@@ -189,7 +189,7 @@ def test_name(api, base, requests_mock):
 
     assert api.base(base.id).name is None
     assert base.name is None
-    assert base.info().name == "Mocked Base Name"
+    assert base.collaborators().name == "Mocked Base Name"
     assert base.name == "Mocked Base Name"
 
     # Test behavior with older constructor pattern
