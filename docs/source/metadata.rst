@@ -29,9 +29,6 @@ You'll find more detail in the API reference for :mod:`pyairtable.models.schema`
 .. automethod:: pyairtable.Base.tables
     :noindex:
 
-.. automethod:: pyairtable.Base.shares
-    :noindex:
-
 .. automethod:: pyairtable.Table.schema
     :noindex:
 
@@ -48,6 +45,9 @@ return a 404 error, and pyAirtable will add a reminder to the exception to check
     :noindex:
 
 .. automethod:: pyairtable.Base.collaborators
+    :noindex:
+
+.. automethod:: pyairtable.Base.shares
     :noindex:
 
 .. automethod:: pyairtable.Workspace.info

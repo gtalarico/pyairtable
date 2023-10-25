@@ -15,7 +15,7 @@ from pyairtable.models.webhook import (
     Webhook,
     WebhookSpecification,
 )
-from pyairtable.utils import enterprise_only
+from pyairtable.utils import cache_unless_forced, enterprise_only
 
 
 class Base:
@@ -167,12 +167,10 @@ class Base:
         """
         return self.api.build_url("meta/bases", self.id, *components)
 
-    def schema(self, *, force: bool = False) -> BaseSchema:
+    @cache_unless_forced
+    def schema(self) -> BaseSchema:
         """
         Retrieves the schema of all tables in the base and caches it.
-
-        Args:
-            force: |kwarg_force_metadata|
 
         Usage:
             >>> base.schema().tables
@@ -182,12 +180,10 @@ class Base:
             >>> base.schema().table("My Table")
             TableSchema(id="...", name="My Table", ...)
         """
-        if force or not self._schema:
-            url = self.meta_url("tables")
-            params = {"include": ["visibleFieldIds"]}
-            data = self.api.request("GET", url, params=params)
-            self._schema = BaseSchema.from_api(data, self.api, context=self)
-        return self._schema
+        url = self.meta_url("tables")
+        params = {"include": ["visibleFieldIds"]}
+        data = self.api.request("GET", url, params=params)
+        return BaseSchema.from_api(data, self.api, context=self)
 
     @property
     def webhooks_url(self) -> str:
@@ -284,31 +280,23 @@ class Base:
         return CreateWebhookResponse.parse_obj(response)
 
     @enterprise_only
-    def collaborators(self, *, force: bool = False) -> "BaseCollaborators":
+    @cache_unless_forced
+    def collaborators(self) -> "BaseCollaborators":
         """
         Retrieves `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__.
-
-        Args:
-            force: |kwarg_force_metadata|
         """
-        if force or not self._info:
-            params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
-            data = self.api.request("GET", self.meta_url(), params=params)
-            self._collaborators = BaseCollaborators.parse_obj(data)
-        return self._collaborators
+        params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
+        data = self.api.request("GET", self.meta_url(), params=params)
+        return BaseCollaborators.parse_obj(data)
 
     @enterprise_only
-    def shares(self, *, force: bool = False) -> List[BaseShare]:
+    @cache_unless_forced
+    def shares(self) -> List[BaseShare]:
         """
         Retrieves `base shares <https://airtable.com/developers/web/api/list-shares>`__.
-
-        Args:
-            force: |kwarg_force_metadata|
         """
-        if force or not self._shares:
-            data = self.api.request("GET", self.meta_url("shares"))
-            self._shares = [BaseShare.parse_obj(share) for share in data["shares"]]
-        return self._shares
+        data = self.api.request("GET", self.meta_url("shares"))
+        return [BaseShare.parse_obj(share) for share in data["shares"]]
 
     @enterprise_only
     def delete(self) -> None:

@@ -1,7 +1,7 @@
 from typing import Dict, Iterable, List, Optional
 
 from pyairtable.models.schema import EnterpriseInfo, GroupInfo, UserInfo
-from pyairtable.utils import enterprise_only, is_user_id
+from pyairtable.utils import cache_unless_forced, enterprise_only, is_user_id
 
 
 @enterprise_only
@@ -23,18 +23,14 @@ class Enterprise:
     def url(self) -> str:
         return self.api.build_url("meta/enterpriseAccounts", self.id)
 
-    def info(self, *, force: bool = False) -> EnterpriseInfo:
+    @cache_unless_forced
+    def info(self) -> EnterpriseInfo:
         """
         Retrieves basic information about the enterprise, caching the result.
-
-        Args:
-            force: |kwarg_force_metadata|
         """
-        if force or not self._info:
-            params = {"include": ["collaborators", "inviteLinks"]}
-            payload = self.api.request("GET", self.url, params=params)
-            self._info = EnterpriseInfo.parse_obj(payload)
-        return self._info
+        params = {"include": ["collaborators", "inviteLinks"]}
+        payload = self.api.request("GET", self.url, params=params)
+        return EnterpriseInfo.parse_obj(payload)
 
     def group(self, group_id: str) -> GroupInfo:
         url = self.api.build_url(f"meta/groups/{group_id}")

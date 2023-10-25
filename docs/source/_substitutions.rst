@@ -62,8 +62,8 @@
     key is the field id. This defaults to `false`, which returns field objects where the key is the field name.
 
 .. |kwarg_force_metadata| replace::
-    If ``False``, will only fetch information from the API if it has not been cached.
-    If ``True``, will always fetch information from the API, overwriting any cached values.
+    By default, this method will only fetch information from the API if it has not been cached.
+    If called with ``force=True`` it will always call the API, and will overwrite any cached values.
 
 .. |kwarg_validate_metadata| replace::
     If ``False``, will create an object without validating the ID/name provided.

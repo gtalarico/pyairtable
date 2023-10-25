@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from pyairtable.models.schema import WorkspaceInfo
-from pyairtable.utils import enterprise_only
+from pyairtable.utils import cache_unless_forced, enterprise_only
 
 
 class Workspace:
@@ -48,19 +48,15 @@ class Workspace:
     # Everything below here requires .info() and is therefore Enterprise-only
 
     @enterprise_only
-    def info(self, *, force: bool = False) -> WorkspaceInfo:
+    @cache_unless_forced
+    def info(self) -> WorkspaceInfo:
         """
         Retrieves basic information, collaborators, and invites
         for the given workspace, caching the result.
-
-        Args:
-            force: |kwarg_force_metadata|
         """
-        if force or not self._info:
-            params = {"include": ["collaborators", "inviteLinks"]}
-            payload = self.api.request("GET", self.url, params=params)
-            self._info = WorkspaceInfo.parse_obj(payload)
-        return self._info
+        params = {"include": ["collaborators", "inviteLinks"]}
+        payload = self.api.request("GET", self.url, params=params)
+        return WorkspaceInfo.parse_obj(payload)
 
     @enterprise_only
     def bases(self) -> List["pyairtable.api.base.Base"]:

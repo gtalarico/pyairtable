@@ -3,14 +3,15 @@ import re
 import textwrap
 from datetime import date, datetime
 from functools import partial, wraps
-from typing import Any, Callable, Iterator, Sequence, TypeVar, Union, cast
+from typing import Any, Callable, Generic, Iterator, Sequence, TypeVar, Union, cast
 
 import requests
-from typing_extensions import ParamSpec
+from typing_extensions import ParamSpec, Protocol
 
 from pyairtable.api.types import CreateAttachmentDict
 
 P = ParamSpec("P")
+R = TypeVar("R", covariant=True)
 T = TypeVar("T")
 
 
@@ -135,14 +136,14 @@ def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
     we will annotate the error with a helpful note to the user.
     """
 
-    if modify_docstring and (doc := wrapped.__doc__):
-        wrapped.__doc__ = _prepend_docstring_text(doc, "|enterprise_only|")
+    if modify_docstring:
+        _prepend_docstring_text(wrapped, "|enterprise_only|")
 
     # Allow putting the decorator on a class
     if inspect.isclass(wrapped):
         for name, obj in vars(wrapped).items():
             if inspect.isfunction(obj):
-                setattr(wrapped, name, enterprise_only(obj, modify_docstring=False))
+                setattr(wrapped, name, enterprise_only(obj))
         return cast(F, wrapped)
 
     @wraps(wrapped)
@@ -160,8 +161,48 @@ def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
     return _decorated  # type: ignore[return-value]
 
 
-def _prepend_docstring_text(doc: str, text: str) -> str:
+def _prepend_docstring_text(obj: Any, text: str) -> None:
+    if not (doc := obj.__doc__):
+        return
     doc = doc.lstrip("\n")
     if has_leading_spaces := re.match(r"^\s+", doc):
         text = textwrap.indent(text, has_leading_spaces[0])
-    return f"{text}\n\n{doc}"
+    obj.__doc__ = f"{text}\n\n{doc}"
+
+
+def _append_docstring_text(obj: Any, text: str) -> None:
+    if not (doc := obj.__doc__):
+        return
+    doc = doc.rstrip("\n")
+    if has_leading_spaces := re.match(r"^\s+", doc):
+        text = textwrap.indent(text, has_leading_spaces[0])
+    obj.__doc__ = f"{doc}\n\n{text}"
+
+
+class FetchMethod(Protocol, Generic[R]):
+    def __get__(self, instance: Any, owner: Any) -> Callable[..., R]:
+        ...
+
+    def __call__(self_, self: Any, *, force: bool = False) -> R:
+        ...
+
+
+def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
+    """
+    Wraps a method (e.g. ``Base.shares()``) in a decorator that will save
+    a memoized version of the return value for future reuse, but will also
+    allow callers to pass ``force=True`` to recompute the memoized version.
+    """
+
+    attr = f"_{func.__name__}"
+
+    @wraps(func)
+    def _inner(self: Any, *, force: bool = False) -> R:
+        if force or not getattr(self, attr, None):
+            setattr(self, attr, func(self))
+        return cast(R, getattr(self, attr))
+
+    _inner.__annotations__["force"] = bool
+    _append_docstring_text(_inner, "Args:\n\tforce: |kwarg_force_metadata|")
+
+    return _inner

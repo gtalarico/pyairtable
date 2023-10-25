@@ -5,15 +5,13 @@ import requests
 from requests.sessions import Session
 from typing_extensions import TypeAlias
 
-import pyairtable.api.base
-import pyairtable.api.table
 from pyairtable.api import retrying
 from pyairtable.api.enterprise import Enterprise
 from pyairtable.api.params import options_to_json_and_params, options_to_params
 from pyairtable.api.types import UserAndScopesDict, assert_typed_dict
 from pyairtable.api.workspace import Workspace
 from pyairtable.models.schema import Bases
-from pyairtable.utils import chunked, enterprise_only
+from pyairtable.utils import cache_unless_forced, chunked, enterprise_only
 
 T = TypeVar("T")
 TimeoutTuple: TypeAlias = Tuple[int, int]
@@ -122,13 +120,11 @@ class Api:
             return self.bases(force=True)[base_id]
         return pyairtable.api.base.Base(self, base_id)
 
-    def bases(self, *, force: bool = False) -> Dict[str, "pyairtable.api.base.Base"]:
+    @cache_unless_forced
+    def bases(self) -> Dict[str, "pyairtable.api.base.Base"]:
         """
         Retrieves a list of all bases from the API and caches it,
         returning a mapping of IDs to :class:`Base` instances.
-
-        Args:
-            force: |kwarg_force_metadata|
 
         Usage:
             >>> api.bases()
@@ -137,27 +133,25 @@ class Api:
                 'appLkNDICXNqxSDhG': <pyairtable.Base base_id='appLkNDICXNqxSDhG'>
             }
         """
-        if force or not self._bases:
-            url = self.build_url("meta/bases")
-            self._base_info = Bases.parse_obj(
-                {
-                    "bases": [
-                        base_info
-                        for page in self.iterate_requests("GET", url)
-                        for base_info in page["bases"]
-                    ]
-                }
-            )
-            self._bases = {
-                info.id: pyairtable.api.base.Base(
-                    self,
-                    info.id,
-                    name=info.name,
-                    permission_level=info.permission_level,
-                )
-                for info in self._base_info.bases
+        url = self.build_url("meta/bases")
+        collection = Bases.parse_obj(
+            {
+                "bases": [
+                    base_info
+                    for page in self.iterate_requests("GET", url)
+                    for base_info in page["bases"]
+                ]
             }
-        return dict(self._bases)
+        )
+        return {
+            info.id: pyairtable.api.base.Base(
+                self,
+                info.id,
+                name=info.name,
+                permission_level=info.permission_level,
+            )
+            for info in collection.bases
+        }
 
     def create_base(
         self,
@@ -317,3 +311,7 @@ class Api:
         Returns an object representing an enterprise account.
         """
         return Enterprise(self, enterprise_account_id)
+
+
+import pyairtable.api.base  # noqa
+import pyairtable.api.table  # noqa
