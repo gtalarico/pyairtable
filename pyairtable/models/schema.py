@@ -34,6 +34,8 @@ def _find(collection: List[_T], id_or_name: str) -> _T:
 
 class Bases(AirtableModel):
     """
+    The list of bases visible to the API token.
+
     See https://airtable.com/developers/web/api/list-bases
     """
 
@@ -53,6 +55,8 @@ class Bases(AirtableModel):
 
 class BaseInfo(AirtableModel):
     """
+    Detailed information about who can access a base.
+
     See https://airtable.com/developers/web/api/get-base-collaborators
     """
 
@@ -88,6 +92,8 @@ class BaseInfo(AirtableModel):
 
 class BaseShare(AirtableModel):
     """
+    Detailed information about a shared view.
+
     See https://airtable.com/developers/web/api/list-shares
     """
 
@@ -105,6 +111,8 @@ class BaseShare(AirtableModel):
 
 class BaseSchema(AirtableModel):
     """
+    Schema of all tables within the base.
+
     See https://airtable.com/developers/web/api/get-base-schema
     """
 
@@ -125,6 +133,17 @@ class TableSchema(
     url="meta/bases/{base.id}/tables/{self.id}",
 ):
     """
+    Metadata for a table.
+
+    Usage:
+        >>> schema = base.table("Table Name").schema()
+        >>> schema.id
+        'tbl6clmhESAtaCCwF'
+        >>> schema.fields
+        [FieldSchema(...), ...]
+        >>> schema.views
+        [ViewSchema(...), ...]
+
     See https://airtable.com/developers/web/api/get-base-schema
     """
 
@@ -152,6 +171,16 @@ class ViewSchema(
     SerializableModel, allow_update=False, url="meta/bases/{base.id}/views/{self.id}"
 ):
     """
+    Metadata for a view.
+
+    Usage:
+        >>> vw = table.schema().view("View name")
+        >>> vw.name
+        'View name'
+        >>> vw.type
+        'grid'
+        >>> vw.delete()
+
     See https://airtable.com/developers/web/api/get-view-metadata
     """
 
@@ -201,6 +230,13 @@ class BaseInviteLink(InviteLink):
 
 
 class EnterpriseInfo(AirtableModel):
+    """
+    Information about groups, users, workspaces, and email domains
+    associated with an enterprise account.
+
+    See https://airtable.com/developers/web/api/get-enterprise
+    """
+
     id: str
     created_time: str
     group_ids: List[str]
@@ -214,6 +250,12 @@ class EnterpriseInfo(AirtableModel):
 
 
 class WorkspaceInfo(AirtableModel):
+    """
+    Detailed information about who can access a workspace.
+
+    See https://airtable.com/developers/web/api/get-workspace-collaborators
+    """
+
     id: str
     name: str
     created_time: str
@@ -249,6 +291,12 @@ class NestedFieldId(AirtableModel):
 
 
 class UserInfo(AirtableModel):
+    """
+    Detailed information about a user.
+
+    See https://airtable.com/developers/web/api/get-user-by-id
+    """
+
     id: str
     name: str
     email: str
@@ -261,6 +309,12 @@ class UserInfo(AirtableModel):
 
 
 class GroupInfo(AirtableModel):
+    """
+    Detailed information about a user group and its members.
+
+    See https://airtable.com/developers/web/api/get-user-group
+    """
+
     id: str
     name: str
     enterprise_account_id: str
