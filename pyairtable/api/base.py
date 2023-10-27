@@ -6,7 +6,7 @@ import pyairtable.api.table
 from pyairtable.models.schema import (
     BaseCollaborators,
     BaseSchema,
-    BaseShare,
+    BaseShares,
     PermissionLevel,
 )
 from pyairtable.models.webhook import (
@@ -35,7 +35,7 @@ class Base:
     # Cached metadata to reduce API calls
     _collaborators: Optional[BaseCollaborators] = None
     _schema: Optional[BaseSchema] = None
-    _shares: Optional[List[BaseShare]] = None
+    _shares: Optional[List[BaseShares.Info]] = None
 
     def __init__(
         self,
@@ -291,12 +291,12 @@ class Base:
 
     @enterprise_only
     @cache_unless_forced
-    def shares(self) -> List[BaseShare]:
+    def shares(self) -> List[BaseShares.Info]:
         """
         Retrieves `base shares <https://airtable.com/developers/web/api/list-shares>`__.
         """
         data = self.api.request("GET", self.meta_url("shares"))
-        return [BaseShare.parse_obj(share) for share in data["shares"]]
+        return BaseShares.parse_obj(data).shares
 
     @enterprise_only
     def delete(self) -> None:

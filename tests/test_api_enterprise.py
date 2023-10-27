@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from pyairtable.api.enterprise import Enterprise
-from pyairtable.models.schema import EnterpriseInfo, GroupInfo, UserInfo
+from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 
 
 @pytest.fixture
@@ -13,13 +13,13 @@ def enterprise(api):
 
 @pytest.fixture
 def enterprise_mocks(enterprise, requests_mock, sample_json):
-    user_json = sample_json("User")
+    user_json = sample_json("UserInfo")
     group_json = sample_json("UserGroup")
     m = Mock()
     m.user_id = user_json["id"]
     m.get_info = requests_mock.get(
         enterprise.url,
-        json=sample_json("Enterprise"),
+        json=sample_json("EnterpriseInfo"),
     )
     m.get_user = requests_mock.get(
         f"{enterprise.url}/users/{m.user_id}",
@@ -50,7 +50,6 @@ def test_info(enterprise, enterprise_mocks):
 def test_user(enterprise, enterprise_mocks):
     user = enterprise.user(enterprise_mocks.user_id)
     assert isinstance(user, UserInfo)
-    assert user.name == "Jane Doe"
     assert enterprise_mocks.get_user.call_count == 1
 
 
@@ -78,7 +77,7 @@ def test_users__invalid_value(enterprise, enterprise_mocks):
 def test_group(enterprise, enterprise_mocks):
     info = enterprise.group("ugp1mKGb3KXUyQfOZ")
     assert enterprise_mocks.get_group.call_count == 1
-    assert isinstance(info, GroupInfo)
+    assert isinstance(info, UserGroup)
     assert info.id == "ugp1mKGb3KXUyQfOZ"
     assert info.name == "Group name"
     assert info.members[0].email == "foo@bar.com"

@@ -90,23 +90,26 @@ class BaseCollaborators(AirtableModel):
         workspace_invite_links: List["InviteLink"] = _FL()
 
 
-class BaseShare(AirtableModel):
+class BaseShares(AirtableModel):
     """
-    Detailed information about a shared view.
+    Collection of shared views in a base.
 
     See https://airtable.com/developers/web/api/list-shares
     """
 
-    state: str
-    created_by_user_id: str
-    created_time: str
-    share_id: str
-    type: str
-    is_password_protected: bool
-    block_installation_id: Optional[str] = None
-    restricted_to_email_domains: List[str] = _FL()
-    view_id: Optional[str] = None
-    effective_email_domain_allow_list: List[str] = _FL()
+    shares: List["BaseShares.Info"]
+
+    class Info(AirtableModel):
+        state: str
+        created_by_user_id: str
+        created_time: str
+        share_id: str
+        type: str
+        is_password_protected: bool
+        block_installation_id: Optional[str] = None
+        restricted_to_email_domains: List[str] = _FL()
+        view_id: Optional[str] = None
+        effective_email_domain_allow_list: List[str] = _FL()
 
 
 class BaseSchema(AirtableModel):
@@ -301,14 +304,45 @@ class UserInfo(AirtableModel):
     name: str
     email: str
     state: str
-    created_time: Optional[str]
-    invited_to_airtable_by_user_id: Optional[str]
+    is_sso_required: bool
+    is_two_factor_auth_enabled: bool
     last_activity_time: Optional[str]
-    is_managed: bool
+    created_time: Optional[str]
+    enterprise_user_type: Optional[str]
+    invited_to_airtable_by_user_id: Optional[str]
+    is_managed: bool = False
+    collaborations: Optional["Collaborations"]
     groups: List[NestedId] = pydantic.Field(default_factory=list)
 
 
-class GroupInfo(AirtableModel):
+class Collaborations(AirtableModel):
+    """
+    The full set of collaborations granted to a user or user group.
+
+    See https://airtable.com/developers/web/api/model/collaborations
+    """
+
+    base_collaborations: List["Collaborations.BaseCollaboration"]
+    interface_collaborations: List["Collaborations.InterfaceCollaboration"]
+    workspace_collaborations: List["Collaborations.WorkspaceCollaboration"]
+
+    class BaseCollaboration(AirtableModel):
+        base_id: str
+        created_time: str
+        granted_by_user_id: str
+        permission_level: PermissionLevel
+
+    class InterfaceCollaboration(BaseCollaboration):
+        interface_id: str
+
+    class WorkspaceCollaboration(AirtableModel):
+        workspace_id: str
+        created_time: str
+        granted_by_user_id: str
+        permission_level: PermissionLevel
+
+
+class UserGroup(AirtableModel):
     """
     Detailed information about a user group and its members.
 
@@ -320,9 +354,10 @@ class GroupInfo(AirtableModel):
     enterprise_account_id: str
     created_time: str
     updated_time: str
-    members: List["GroupInfo.GroupMember"]
+    members: List["UserGroup.Member"]
+    collaborations: Optional["Collaborations"]
 
-    class GroupMember(AirtableModel):
+    class Member(AirtableModel):
         user_id: str
         email: str
         first_name: str

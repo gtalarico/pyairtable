@@ -16,7 +16,7 @@ def workspace(api, workspace_id):
 
 @pytest.fixture
 def mock_info(workspace, requests_mock, sample_json):
-    return requests_mock.get(workspace.url, json=sample_json("Workspace"))
+    return requests_mock.get(workspace.url, json=sample_json("WorkspaceCollaborators"))
 
 
 def test_collaborators(workspace, mock_info):

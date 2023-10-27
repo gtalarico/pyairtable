@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, List, Optional
 
-from pyairtable.models.schema import EnterpriseInfo, GroupInfo, UserInfo
+from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.utils import cache_unless_forced, enterprise_only, is_user_id
 
 
@@ -32,9 +32,9 @@ class Enterprise:
         payload = self.api.request("GET", self.url, params=params)
         return EnterpriseInfo.parse_obj(payload)
 
-    def group(self, group_id: str) -> GroupInfo:
+    def group(self, group_id: str) -> UserGroup:
         url = self.api.build_url(f"meta/groups/{group_id}")
-        return GroupInfo.parse_obj(self.api.request("GET", url))
+        return UserGroup.parse_obj(self.api.request("GET", url))
 
     def user(self, id_or_email: str) -> UserInfo:
         """

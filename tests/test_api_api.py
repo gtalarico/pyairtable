@@ -101,7 +101,7 @@ def test_workspace(api):
 
 def test_enterprise(api, requests_mock, sample_json):
     url = api.build_url("meta/enterpriseAccount/entUBq2RGdihxl3vU")
-    requests_mock.get(url, json=sample_json("Enterprise"))
+    requests_mock.get(url, json=sample_json("EnterpriseInfo"))
     enterprise = api.enterprise("entUBq2RGdihxl3vU")
     assert enterprise.id == "entUBq2RGdihxl3vU"
 

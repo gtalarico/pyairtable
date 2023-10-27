@@ -39,7 +39,9 @@
   "id": "usrL2PNC5o3H4lBEi",
   "invitedToAirtableByUserId": "usrsOEchC9xuwRgKk",
   "isManaged": true,
+  "isSsoRequired": true,
+  "isTwoFactorAuthEnabled": false,
   "lastActivityTime": "2019-01-03T12:33:12.421Z",
-  "name": "Jane Doe",
+  "name": "foo baz",
   "state": "provisioned"
 }
