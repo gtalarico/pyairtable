@@ -246,7 +246,7 @@ class EnterpriseInfo(AirtableModel):
         is_sso_required: bool
 
 
-class WorkspaceInfo(AirtableModel):
+class WorkspaceCollaborators(AirtableModel):
     """
     Detailed information about who can access a workspace.
 
@@ -257,10 +257,13 @@ class WorkspaceInfo(AirtableModel):
     name: str
     created_time: str
     base_ids: List[str]
-    restrictions: "WorkspaceInfo.Restrictions" = pydantic.Field(alias="workspaceRestrictions")  # fmt: skip
-    group_collaborators: Optional["WorkspaceInfo.GroupCollaborators"] = None
-    individual_collaborators: Optional["WorkspaceInfo.IndividualCollaborators"] = None
-    invite_links: Optional["WorkspaceInfo.InviteLinks"] = None
+    # We really don't need black to wrap these lines of text.
+    # fmt: off
+    restrictions: "WorkspaceCollaborators.Restrictions" = pydantic.Field(alias="workspaceRestrictions")
+    group_collaborators: Optional["WorkspaceCollaborators.GroupCollaborators"] = None
+    individual_collaborators: Optional["WorkspaceCollaborators.IndividualCollaborators"] = None
+    invite_links: Optional["WorkspaceCollaborators.InviteLinks"] = None
+    # fmt: on
 
     class Restrictions(AirtableModel):
         invite_creation: str = pydantic.Field(alias="inviteCreationRestriction")

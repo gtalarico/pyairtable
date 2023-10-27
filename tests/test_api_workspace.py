@@ -19,9 +19,9 @@ def mock_info(workspace, requests_mock, sample_json):
     return requests_mock.get(workspace.url, json=sample_json("Workspace"))
 
 
-def test_info(workspace, mock_info):
-    assert workspace.info().id == "wspmhESAta6clCCwF"
-    assert workspace.info().name == "my first workspace"
+def test_collaborators(workspace, mock_info):
+    assert workspace.collaborators().id == "wspmhESAta6clCCwF"
+    assert workspace.collaborators().name == "my first workspace"
     assert mock_info.call_count == 1
 
 

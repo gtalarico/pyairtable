@@ -21,7 +21,7 @@ def workspace(api: pyairtable.Api, workspace_id):
 @pytest.fixture(autouse=True)
 def confirm_enterprise_plan(workspace: pyairtable.Workspace):
     try:
-        workspace.info()
+        workspace.collaborators()
     except HTTPError:
         pytest.skip("This test requires creator access to an enterprise workspace")
 

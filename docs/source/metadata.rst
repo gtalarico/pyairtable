@@ -50,7 +50,7 @@ return a 404 error, and pyAirtable will add a reminder to the exception to check
 .. automethod:: pyairtable.Base.shares
     :noindex:
 
-.. automethod:: pyairtable.Workspace.info
+.. automethod:: pyairtable.Workspace.collaborators
     :noindex:
 
 .. automethod:: pyairtable.Enterprise.info

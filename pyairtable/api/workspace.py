@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from pyairtable.models.schema import WorkspaceInfo
+from pyairtable.models.schema import WorkspaceCollaborators
 from pyairtable.utils import cache_unless_forced, enterprise_only
 
 
@@ -10,7 +10,7 @@ class Workspace:
     and its own set of collaborators.
 
     >>> ws = api.workspace("wspmhESAta6clCCwF")
-    >>> ws.info().name
+    >>> ws.collaborators().name
     'my first workspace'
     >>> ws.create_base("Base Name", tables=[...])
     <pyairtable.Base base_id="appMhESAta6clCCwF">
@@ -18,10 +18,11 @@ class Workspace:
     Most workspace functionality is limited to users on Enterprise billing plans.
     """
 
+    _collaborators: Optional[WorkspaceCollaborators] = None
+
     def __init__(self, api: "pyairtable.api.api.Api", workspace_id: str):
         self.api = api
         self.id = workspace_id
-        self._info: Optional[WorkspaceInfo] = None
 
     @property
     def url(self) -> str:
@@ -49,21 +50,21 @@ class Workspace:
 
     @enterprise_only
     @cache_unless_forced
-    def info(self) -> WorkspaceInfo:
+    def collaborators(self) -> WorkspaceCollaborators:
         """
         Retrieves basic information, collaborators, and invites
         for the given workspace, caching the result.
         """
         params = {"include": ["collaborators", "inviteLinks"]}
         payload = self.api.request("GET", self.url, params=params)
-        return WorkspaceInfo.parse_obj(payload)
+        return WorkspaceCollaborators.parse_obj(payload)
 
     @enterprise_only
     def bases(self) -> List["pyairtable.api.base.Base"]:
         """
         Retrieves all bases within the workspace.
         """
-        return [self.api.base(base_id) for base_id in self.info().base_ids]
+        return [self.api.base(base_id) for base_id in self.collaborators().base_ids]
 
     @property
     @enterprise_only
@@ -71,7 +72,7 @@ class Workspace:
         """
         The name of the workspace.
         """
-        return self.info().name
+        return self.collaborators().name
 
     @enterprise_only
     def delete(self) -> None:
