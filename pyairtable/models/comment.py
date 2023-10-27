@@ -1,11 +1,12 @@
 from typing import Dict, Optional
 
-from ._base import AirtableModel, SerializableModel, update_forward_refs
+from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, update_forward_refs
 from .collaborator import Collaborator
 
 
 class Comment(
-    SerializableModel,
+    CanUpdateModel,
+    CanDeleteModel,
     writable=["text"],
     url="{record_url}/comments/{self.id}",
 ):
@@ -56,31 +57,32 @@ class Comment(
     author: Collaborator
 
     #: Users or groups that were mentioned in the text.
-    mentioned: Optional[Dict[str, "Comment.Mentioned"]]
+    mentioned: Optional[Dict[str, "Mentioned"]]
 
-    class Mentioned(AirtableModel):
-        """
-        A user or group that was mentioned within a comment.
-        Stored as a ``dict`` that is keyed by ID.
 
-        >>> comment = table.add_comment(record_id, "Hello, @[usrVMNxslc6jG0Xed]!")
-        >>> comment.mentioned
-        {
-            "usrVMNxslc6jG0Xed": Mentioned(
-                display_name='Alice',
-                email='alice@example.com',
-                id='usrVMNxslc6jG0Xed',
-                type='user'
-            )
-        }
+class Mentioned(AirtableModel):
+    """
+    A user or group that was mentioned within a comment.
+    Stored as a ``dict`` that is keyed by ID.
 
-        See `User mentioned <https://airtable.com/developers/web/api/model/user-mentioned>`_ for more details.
-        """
+    >>> comment = table.add_comment(record_id, "Hello, @[usrVMNxslc6jG0Xed]!")
+    >>> comment.mentioned
+    {
+        "usrVMNxslc6jG0Xed": Mentioned(
+            display_name='Alice',
+            email='alice@example.com',
+            id='usrVMNxslc6jG0Xed',
+            type='user'
+        )
+    }
 
-        id: str
-        type: str
-        display_name: str
-        email: Optional[str] = None
+    See `User mentioned <https://airtable.com/developers/web/api/model/user-mentioned>`_ for more details.
+    """
+
+    id: str
+    type: str
+    display_name: str
+    email: Optional[str] = None
 
 
 update_forward_refs(vars())

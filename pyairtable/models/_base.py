@@ -5,6 +5,7 @@ import inflection
 from typing_extensions import Self as SelfType
 
 from pyairtable._compat import pydantic
+from pyairtable.utils import _append_docstring_text
 
 
 class AirtableModel(pydantic.BaseModel):
@@ -52,7 +53,7 @@ class AirtableModel(pydantic.BaseModel):
             api: The connection to use for saving updates.
             context: An object, sequence of objects, or mapping of names to objects
                 which will be used as arguments to ``str.format()`` when constructing
-                the URL for a :class:`~pyairtable.models._base.SerializableModel`.
+                the URL for a :class:`~pyairtable.models._base.RestfulModel`.
         """
         instance = cls.parse_obj(obj)
         cascade_api(instance, api, context=context)
@@ -104,7 +105,7 @@ def cascade_api(
     context = {**context, _context_name(obj): obj}
 
     # This is what we came here for
-    if isinstance(obj, SerializableModel):
+    if isinstance(obj, RestfulModel):
         obj.set_api(api, context=context)
 
     # Find and apply API/context to nested models in every Pydantic field.
@@ -113,47 +114,94 @@ def cascade_api(
             cascade_api(field_value, api, context=context)
 
 
-class SerializableModel(AirtableModel):
+class RestfulModel(AirtableModel):
     """
-    Base model for any data structures that can be saved back to the API.
+    Base model for any data structures that wrap around a REST API endpoint.
+
+    Subclasses can pass a number of keyword arguments to control serialization behavior:
+
+        * ``url=``: format string for building the URL to be used when saving changes to this model.
+    """
+
+    __url_pattern: ClassVar[str] = ""
+
+    _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
+    _url: str = pydantic.PrivateAttr(default="")
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
+        super().__init_subclass__()
+
+    def set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
+        """
+        Sets a link to the API and builds the REST URL used for this resource.
+
+        :meta private:
+        """
+        self._api = api
+        self._url = self.__url_pattern.format(**context, self=self)
+        if self._url and not self._url.startswith("http"):
+            self._url = api.build_url(self._url)
+
+
+class CanDeleteModel(RestfulModel):
+    """
+    Mix-in for RestfulModel that allows a model to be deleted.
+    """
+
+    _deleted: bool = pydantic.PrivateAttr(default=False)
+
+    @property
+    def deleted(self) -> bool:
+        """
+        Indicates whether the record has been deleted since being returned from the API.
+        """
+        return self._deleted
+
+    def delete(self) -> None:
+        """
+        Delete the record on the server and mark this instance as deleted.
+        """
+        if not self._url:
+            raise RuntimeError("delete() called with no URL specified")
+        self._api.request("DELETE", self._url)
+        self._deleted = True
+
+
+class CanUpdateModel(RestfulModel):
+    """
+    Mix-in for RestfulModel that allows a model to be modified and saved.
 
     Subclasses can pass a number of keyword arguments to control serialization behavior:
 
         * ``writable=``: field names that should be written to API on ``save()``.
         * ``readonly=``: field names that should not be written to API on ``save()``.
-        * ``allow_update=``: boolean indicating whether to allow ``save()`` (default: true)
-        * ``allow_delete=``: boolean indicating whether to allow ``delete()`` (default: true)
         * ``save_null_values=``: boolean indicating whether ``save()`` should write nulls (default: true)
-        * ``url=``: format string for building the URL to be used when saving changes to this model.
     """
 
     __writable: ClassVar[Optional[Iterable[str]]] = None
     __readonly: ClassVar[Optional[Iterable[str]]] = None
-    __allow_update: ClassVar[bool] = True
-    __allow_delete: ClassVar[bool] = True
     __save_none: ClassVar[bool] = True
-    __url_pattern: ClassVar[str] = ""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         if "writable" in kwargs and "readonly" in kwargs:
             raise ValueError("incompatible kwargs 'writable' and 'readonly'")
         cls.__writable = kwargs.pop("writable", cls.__writable)
         cls.__readonly = kwargs.pop("readonly", cls.__readonly)
-        cls.__allow_update = bool(kwargs.pop("allow_update", cls.__allow_update))
-        cls.__allow_delete = bool(kwargs.pop("allow_delete", cls.__allow_delete))
         cls.__save_none = bool(kwargs.pop("save_null_values", cls.__save_none))
-        cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
+        if cls.__writable:
+            _append_docstring_text(
+                cls,
+                "The following fields can be modified and saved: "
+                + ", ".join(f"``{field}``" for field in cls.__writable),
+            )
+        if cls.__readonly:
+            _append_docstring_text(
+                cls,
+                "The following fields are read-only and cannot be modified:\n"
+                + ", ".join(f"``{field}``" for field in cls.__readonly),
+            )
         super().__init_subclass__(**kwargs)
-
-    _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
-    _url: str = pydantic.PrivateAttr(default="")
-    _deleted: bool = pydantic.PrivateAttr(default=False)
-
-    def set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
-        self._api = api
-        self._url = self.__url_pattern.format(**context, self=self)
-        if self._url and not self._url.startswith("http"):
-            self._url = api.build_url(self._url)
 
     def save(self) -> None:
         """
@@ -162,9 +210,7 @@ class SerializableModel(AirtableModel):
 
         Will raise ``RuntimeError`` if the record has been deleted.
         """
-        if not self.__allow_update:
-            raise NotImplementedError(f"{self.__class__.__name__}.save() not allowed")
-        if self._deleted:
+        if getattr(self, "_deleted", None):
             raise RuntimeError("save() called after delete()")
         if not self._url:
             raise RuntimeError("save() called with no URL specified")
@@ -185,24 +231,6 @@ class SerializableModel(AirtableModel):
                 if key in type(self).__fields__
             }
         )
-
-    def delete(self) -> None:
-        """
-        Delete the record on the server and mark this instance as deleted.
-        """
-        if not self.__allow_delete:
-            raise NotImplementedError(f"{self.__class__.__name__}.delete() not allowed")
-        if not self._url:
-            raise RuntimeError("delete() called with no URL specified")
-        self._api.request("DELETE", self._url)
-        self._deleted = True
-
-    @property
-    def deleted(self) -> bool:
-        """
-        Indicates whether the record has been deleted since being returned from the API.
-        """
-        return self._deleted
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Prevents implementers from changing values on readonly or non-writable fields.

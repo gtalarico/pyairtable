@@ -5,7 +5,7 @@ from typing_extensions import TypeAlias
 
 from pyairtable._compat import pydantic
 
-from ._base import AirtableModel, SerializableModel, update_forward_refs
+from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, update_forward_refs
 
 PermissionLevel: TypeAlias = Literal[
     "none", "read", "comment", "edit", "create", "owner"
@@ -126,8 +126,7 @@ class BaseSchema(AirtableModel):
 
 
 class TableSchema(
-    SerializableModel,
-    allow_delete=False,
+    CanUpdateModel,
     save_null_values=False,
     writable=["name", "description"],
     url="meta/bases/{base.id}/tables/{self.id}",
@@ -167,9 +166,7 @@ class TableSchema(
         return _find(self.views, id_or_name)
 
 
-class ViewSchema(
-    SerializableModel, allow_update=False, url="meta/bases/{base.id}/views/{self.id}"
-):
+class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):
     """
     Metadata for a view.
 
@@ -741,8 +738,7 @@ class UnknownFieldConfig(AirtableModel):
 
 
 class _FieldSchemaBase(
-    SerializableModel,
-    allow_delete=False,
+    CanUpdateModel,
     save_null_values=False,
     writable=["name", "description"],
     url="meta/bases/{base.id}/tables/{table_schema.id}/fields/{self.id}",

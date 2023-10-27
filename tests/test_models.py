@@ -2,7 +2,8 @@ import pytest
 
 from pyairtable.models._base import (
     AirtableModel,
-    SerializableModel,
+    CanDeleteModel,
+    CanUpdateModel,
     update_forward_refs,
 )
 
@@ -15,9 +16,17 @@ def raw_data():
 @pytest.fixture
 def create_instance(api, raw_data):
     def _creates_instance(**kwargs):
+        # These kwargs used to be interpreted by __init_subclass__ but now that behavior
+        # is controlled by mixins. This weirdness is just to avoid redoing our tests.
+        base_classes = []
+        if kwargs.pop("allow_update", True):
+            base_classes.append(CanUpdateModel)
+        if kwargs.pop("allow_delete", True):
+            base_classes.append(CanDeleteModel)
+
         kwargs.setdefault("url", "https://example.com/{self.foo}/{self.bar}/{self.baz}")
 
-        class Subclass(SerializableModel, **kwargs):
+        class Subclass(*base_classes, **kwargs):
             foo: int
             bar: int
             baz: int
@@ -42,11 +51,11 @@ def test_raw(raw_data):
 @pytest.mark.parametrize("prefix", ["https://api.airtable.com/v0/prefix", "prefix"])
 def test_from_api(raw_data, prefix, api):
     """
-    Test that SerializableModel.from_api persists its parameters correctly,
+    Test that CanUpdate.from_api persists its parameters correctly,
     and that if `url=` is passed to the subclass, we'll always get a valid URL.
     """
 
-    class Dummy(SerializableModel, url="{prefix}/foo={self.foo}/bar={self.bar}"):
+    class Dummy(CanUpdateModel, url="{prefix}/foo={self.foo}/bar={self.bar}"):
         foo: int
         bar: int
 
@@ -77,7 +86,7 @@ def test_save(requests_mock, create_instance):
 
 def test_save_not_allowed(create_instance):
     obj = create_instance(allow_update=False)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AttributeError):
         obj.save()
 
 
@@ -103,7 +112,7 @@ def test_delete(requests_mock, create_instance):
 
 def test_delete_not_allowed(create_instance):
     obj = create_instance(allow_delete=False)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AttributeError):
         obj.delete()
 
 
