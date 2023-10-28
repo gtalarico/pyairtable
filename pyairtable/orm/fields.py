@@ -1,5 +1,5 @@
 """
-Field are used to define the Airtable column type for your pyAirtable models.
+Fields define how you'll interact with your data when using the :doc:`orm`.
 
 Internally these are implemented as `descriptors <https://docs.python.org/3/howto/descriptor.html>`_,
 which allows us to define methods and type annotations for getting and setting attribute values.
@@ -212,6 +212,42 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
             ("readonly", self.readonly),
             ("validate_type", self.validate_type),
         ]
+
+    def eq(self, value: Any) -> "formulas.Comparison":
+        """
+        Build an :class:`~pyairtable.formulas.EQ` comparison using this field.
+        """
+        return formulas.EQ(self, value)
+
+    def ne(self, value: Any) -> "formulas.Comparison":
+        """
+        Build an :class:`~pyairtable.formulas.NE` comparison using this field.
+        """
+        return formulas.NE(self, value)
+
+    def gt(self, value: Any) -> "formulas.Comparison":
+        """
+        Build a :class:`~pyairtable.formulas.GT` comparison using this field.
+        """
+        return formulas.GT(self, value)
+
+    def lt(self, value: Any) -> "formulas.Comparison":
+        """
+        Build an :class:`~pyairtable.formulas.LT` comparison using this field.
+        """
+        return formulas.LT(self, value)
+
+    def gte(self, value: Any) -> "formulas.Comparison":
+        """
+        Build a :class:`~pyairtable.formulas.GTE` comparison using this field.
+        """
+        return formulas.GTE(self, value)
+
+    def lte(self, value: Any) -> "formulas.Comparison":
+        """
+        Build an :class:`~pyairtable.formulas.LTE` comparison using this field.
+        """
+        return formulas.LTE(self, value)
 
 
 #: A generic Field whose internal and API representations are the same type.
@@ -896,13 +932,14 @@ extras = ["LinkSelf"]
 names = sorted(classes + constants + extras)
 
 cog.outl("\n\n__all__ = [")
-for name in names:
+for name in ["Field", *names]:
     cog.outl(f'    "{name}",')
 cog.outl("]")
 [[[out]]]"""
 
 
 __all__ = [
+    "Field",
     "AITextField",
     "AttachmentsField",
     "AutoNumberField",
@@ -937,4 +974,8 @@ __all__ = [
     "TextField",
     "UrlField",
 ]
-# [[[end]]] (checksum: 4722c0951e598ac999d3c16ebd3d8c1c)
+# [[[end]]] (checksum: 3fa8c12315457baf170f9766fd8c9f8e)
+
+
+# Delayed import to avoid circular dependency
+from pyairtable import formulas  # noqa

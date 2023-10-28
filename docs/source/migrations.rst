@@ -6,6 +6,47 @@ Migration Guide
 *****************
 
 
+Migrating from 2.x to 3.0
+============================
+
+In this release we've made breaking changes to the :mod:`pyairtable.formulas` module.
+In general, most functions and methods in this module will return instances of
+:class:`~pyairtable.formulas.Formula`, which can be chained, combined, and eventually
+passed to the ``formula=`` keyword argument to methods like :meth:`~pyairtable.Table.all`.
+
+The full list of breaking changes is below:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Function
+      - Changes
+    * - ``to_airtable_value()``
+      - Removed. Use :func:`~pyairtable.formulas.to_formula_str` instead.
+    * - ``EQUAL()``
+      - Removed. Use :class:`~pyairtable.formulas.EQ` instead.
+    * - ``NOT_EQUAL()``
+      - Removed. Use :class:`~pyairtable.formulas.NE` instead.
+    * - ``LESS()``
+      - Removed. Use :class:`~pyairtable.formulas.LT` instead.
+    * - ``LESS_EQUAL()``
+      - Removed. Use :class:`~pyairtable.formulas.LTE` instead.
+    * - ``GREATER()``
+      - Removed. Use :class:`~pyairtable.formulas.GT` instead.
+    * - ``GREATER_EQUAL()``
+      - Removed. Use :class:`~pyairtable.formulas.GTE` instead.
+    * - ``FIELD()``
+      - Removed. Use :class:`~pyairtable.formulas.Field` or :func:`~pyairtable.formulas.field_name`.
+    * - ``STR_VALUE()``
+      - Removed. Use :func:`~pyairtable.formulas.quoted` instead.
+    * - :func:`~pyairtable.formulas.AND`, :func:`~pyairtable.formulas.OR`
+      - These no longer return ``str``, and instead return instances of
+        :class:`~pyairtable.formulas.Comparison`.
+    * - :func:`~pyairtable.formulas.IF`, :func:`~pyairtable.formulas.FIND`, :func:`~pyairtable.formulas.LOWER`
+      - These no longer return ``str``, and instead return instances of
+        :class:`~pyairtable.formulas.FunctionCall`.
+
+
 Migrating from 2.2 to 2.3
 ============================
 

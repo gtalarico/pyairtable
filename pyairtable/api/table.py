@@ -16,6 +16,7 @@ from pyairtable.api.types import (
     assert_typed_dict,
     assert_typed_dicts,
 )
+from pyairtable.formulas import Formula, to_formula_str
 from pyairtable.models.schema import FieldSchema, TableSchema, parse_field_schema
 from pyairtable.utils import is_table_id
 
@@ -230,6 +231,8 @@ class Table:
             time_zone: |kwarg_time_zone|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
+        if isinstance(formula := options.get("formula"), Formula):
+            options["formula"] = to_formula_str(formula)
         for page in self.api.iterate_requests(
             method="get",
             url=self.url,

@@ -2,6 +2,11 @@
 Changelog
 =========
 
+3.0
+------------------------
+
+* Rewrite of :mod:`pyairtable.formulas` module.
+
 2.3.0 (2024-02-25)
 ------------------------
 
@@ -36,7 +41,7 @@ Changelog
   :func:`~pyairtable.formulas.GREATER_EQUAL`,
   and
   :func:`~pyairtable.formulas.NOT_EQUAL`.
-  - `PR #323 <https://github.com/gtalarico/pyairtable/pull/323>`_.
+  - `PR #323 <https://github.com/gtalarico/pyairtable/pull/323>`_
 
 2.2.1 (2023-11-28)
 ------------------------

@@ -1,10 +1,12 @@
 from posixpath import join as urljoin
+from unittest import mock
 
 import pytest
 from requests import Request
 from requests_mock import Mocker
 
 from pyairtable import Api, Base, Table
+from pyairtable.formulas import AND, EQ, Field
 from pyairtable.models.schema import TableSchema
 from pyairtable.testing import fake_id, fake_record
 from pyairtable.utils import chunked
@@ -256,6 +258,23 @@ def test_iterate(table: Table, mock_response_list, mock_records):
 
     for n, response in enumerate(mock_response_list):
         assert seq_equals(pages[n], response["records"])
+
+
+def test_iterate__formula_conversion(table):
+    """
+    Test that .iterate() will convert a Formula to a str.
+    """
+    with mock.patch("pyairtable.Api.iterate_requests") as m:
+        table.all(formula=AND(EQ(Field("Name"), "Alice")))
+
+    m.assert_called_once_with(
+        method="get",
+        url=table.url,
+        fallback=mock.ANY,
+        options={
+            "formula": "AND({Name}='Alice')",
+        },
+    )
 
 
 def test_create(table: Table, mock_response_single):
