@@ -186,7 +186,7 @@ def test_notification_from_request(secret):
         "timestamp": "2022-02-01T21:25:05.663Z",
     }
     header = (
-        "hmac-sha256-e26da696a90933647bddc83995c3e1e3bb1c3d8ce1ff61cb7469767d50b2b2d4"
+        "hmac-sha256=e26da696a90933647bddc83995c3e1e3bb1c3d8ce1ff61cb7469767d50b2b2d4"
     )
 
     body = json.dumps(notification_json)
