@@ -151,7 +151,7 @@ def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
         try:
             return wrapped(*args, **kwargs)
         except requests.exceptions.HTTPError as exc:
-            if exc.response.status_code == 404:
+            if exc.response is not None and exc.response.status_code == 404:
                 exc.args = (
                     *exc.args,
                     f"NOTE: {wrapped.__qualname__}() requires an enterprise billing plan.",
