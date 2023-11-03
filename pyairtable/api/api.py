@@ -37,6 +37,9 @@ class Api:
     #: Airtable-imposed limit on the length of a URL (including query parameters).
     MAX_URL_LENGTH = 16000
 
+    # Cached metadata to reduce API calls
+    _bases: Optional[Dict[str, "pyairtable.api.base.Base"]] = None
+
     def __init__(
         self,
         api_key: str,
@@ -70,9 +73,6 @@ class Api:
         self.endpoint_url = endpoint_url
         self.timeout = timeout
         self.api_key = api_key
-
-        self._bases: Dict[str, "pyairtable.api.base.Base"] = {}
-        self._base_info: Optional[Bases] = None
 
     @property
     def api_key(self) -> str:

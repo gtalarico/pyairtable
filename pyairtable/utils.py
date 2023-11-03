@@ -198,7 +198,7 @@ def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
 
     @wraps(func)
     def _inner(self: Any, *, force: bool = False) -> R:
-        if force or not getattr(self, attr, None):
+        if force or getattr(self, attr, None) is None:
             setattr(self, attr, func(self))
         return cast(R, getattr(self, attr))
 
