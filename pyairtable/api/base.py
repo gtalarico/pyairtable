@@ -3,12 +3,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 import pyairtable.api.api
 import pyairtable.api.table
-from pyairtable.models.schema import (
-    BaseCollaborators,
-    BaseSchema,
-    BaseShares,
-    PermissionLevel,
-)
+from pyairtable.models.schema import BaseCollaborators, BaseSchema, BaseShares
 from pyairtable.models.webhook import (
     CreateWebhook,
     CreateWebhookResponse,
@@ -30,7 +25,7 @@ class Base:
     id: str
 
     #: The permission level the current user has on the base
-    permission_level: Optional[PermissionLevel]
+    permission_level: Optional[str]
 
     # Cached metadata to reduce API calls
     _collaborators: Optional[BaseCollaborators] = None
@@ -43,7 +38,7 @@ class Base:
         base_id: str,
         *,
         name: Optional[str] = None,
-        permission_level: Optional[PermissionLevel] = None,
+        permission_level: Optional[str] = None,
     ):
         """
         Old style constructor takes ``str`` arguments, and will create its own

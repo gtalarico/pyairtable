@@ -7,10 +7,6 @@ from pyairtable._compat import pydantic
 
 from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, update_forward_refs
 
-PermissionLevel: TypeAlias = Literal[
-    "none", "read", "comment", "edit", "create", "owner"
-]
-
 _T = TypeVar("_T", bound=Any)
 _FL = partial(pydantic.Field, default_factory=list)
 _FD = partial(pydantic.Field, default_factory=dict)
@@ -50,7 +46,7 @@ class Bases(AirtableModel):
     class Info(AirtableModel):
         id: str
         name: str
-        permission_level: PermissionLevel
+        permission_level: str
 
 
 class BaseCollaborators(AirtableModel):
@@ -62,7 +58,7 @@ class BaseCollaborators(AirtableModel):
 
     id: str
     name: str
-    permission_level: PermissionLevel
+    permission_level: str
     workspace_id: str
     interfaces: Dict[str, "BaseCollaborators.InterfaceCollaborators"] = _FD()
     group_collaborators: Optional["BaseCollaborators.GroupCollaborators"]
@@ -196,7 +192,7 @@ class GroupCollaborator(AirtableModel):
     granted_by_user_id: str
     group_id: str
     name: str
-    permission_level: PermissionLevel
+    permission_level: str
 
 
 class IndividualCollaborator(AirtableModel):
@@ -204,7 +200,7 @@ class IndividualCollaborator(AirtableModel):
     granted_by_user_id: str
     user_id: str
     email: str
-    permission_level: PermissionLevel
+    permission_level: str
 
 
 class InviteLink(AirtableModel):
@@ -213,7 +209,7 @@ class InviteLink(AirtableModel):
     created_time: str
     invited_email: Optional[str]
     referred_by_user_id: str
-    permission_level: PermissionLevel
+    permission_level: str
     restricted_to_email_domains: List[str] = _FL()
 
 
@@ -330,7 +326,7 @@ class Collaborations(AirtableModel):
         base_id: str
         created_time: str
         granted_by_user_id: str
-        permission_level: PermissionLevel
+        permission_level: str
 
     class InterfaceCollaboration(BaseCollaboration):
         interface_id: str
@@ -339,7 +335,7 @@ class Collaborations(AirtableModel):
         workspace_id: str
         created_time: str
         granted_by_user_id: str
-        permission_level: PermissionLevel
+        permission_level: str
 
 
 class UserGroup(AirtableModel):
