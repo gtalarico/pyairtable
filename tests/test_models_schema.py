@@ -1,8 +1,10 @@
 from operator import attrgetter, itemgetter
+from typing import List, Optional
 
 import pytest
 
 import pyairtable.models.schema
+from pyairtable.models._base import AirtableModel
 
 
 @pytest.mark.parametrize(
@@ -79,3 +81,38 @@ def test_deserialized_values(test_case, sample_json):
     obj = cls.parse_obj(sample_json(clsname))
     val = eval(clsname_attr, None, {clsname: obj})
     assert val == expected
+
+
+class Outer(AirtableModel):
+    inners: List["Outer.Inner"]
+
+    class Inner(AirtableModel):
+        id: str
+        name: str
+        deleted: Optional[bool] = None
+
+    def find(self, id_or_name):
+        return pyairtable.models.schema._find(self.inners, id_or_name)
+
+
+def test_find():
+    """
+    Test that _find() retrieves an object based on ID or name,
+    and skips any models that are marked as deleted.
+    """
+
+    collection = Outer.parse_obj(
+        {
+            "inners": [
+                {"id": "0001", "name": "One"},
+                {"id": "0002", "name": "Two"},
+                {"id": "0003", "name": "Three", "deleted": True},
+            ]
+        }
+    )
+    assert collection.find("0001").id == "0001"
+    assert collection.find("Two").id == "0002"
+    with pytest.raises(KeyError):
+        collection.find("0003")
+    with pytest.raises(KeyError):
+        collection.find("0004")
