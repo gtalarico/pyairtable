@@ -614,12 +614,6 @@ class Table:
                 fields=[...],
                 views=[...]
             )
-            >>> table.schema().field("fld6jG0XedVMNxFQW")
-            SingleLineTextFieldSchema(
-                id='fld6jG0XedVMNxFQW',
-                name='Name',
-                type='singleLineText'
-            )
 
         Args:
             force: |kwarg_force_metadata|

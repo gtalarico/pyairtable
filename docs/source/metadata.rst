@@ -57,7 +57,25 @@ return a 404 error, and pyAirtable will add a reminder to the exception to check
     :noindex:
 
 
-Modifying schema elements
+Modifying existing schema
+-----------------------------
+
+To modify a table or field, you can modify its schema object directly and
+call ``save()``, as shown below. You can only change names and descriptions;
+the Airtable API does not permit changing a field's type or other options.
+
+.. code-block:: python
+
+    >>> schema = table.schema()
+    >>> schema.name = "Renamed"
+    >>> schema.save()
+    >>> field = schema.field("Name")
+    >>> field.name = "Label"
+    >>> field.description = "The primary field on the table"
+    >>> field.save()
+
+
+Creating schema elements
 -----------------------------
 
 The following methods allow creating bases, tables, or fields:
@@ -77,33 +95,26 @@ The following methods allow creating bases, tables, or fields:
 .. automethod:: pyairtable.Table.create_field
     :noindex:
 
-To modify a table or field, you can modify its schema object directly
-and call ``save()``, as below. You can only rename a field or modify
-its description; the Airtable API does not permit changing its type
-or other field options.
-
-.. code-block:: python
-
-    >>> schema = table.schema()
-    >>> schema.name = "Renamed"
-    >>> schema.save()
-    >>> field = schema.field("Name")
-    >>> field.name = "Label"
-    >>> field.description = "The primary field on the table"
-    >>> field.save()
-
 
 Deleting schema elements
 -----------------------------
 
+|enterprise_only|
+
 The Airtable API does not allow deleting tables or fields, but it does allow
-deleting workspaces, bases, and views. pyAirtable exposes those via these methods:
+deleting workspaces, bases, and views. pyAirtable supports the following methods:
 
-.. automethod:: pyairtable.Workspace.delete
-    :noindex:
+To delete a :class:`~pyairtable.Workspace`:
 
-.. automethod:: pyairtable.Base.delete
-    :noindex:
+    >>> ws = api.workspace("wspmhESAta6clCCwF")
+    >>> ws.delete()
 
-.. automethod:: pyairtable.models.schema.ViewSchema.delete
-    :noindex:
+To delete a :class:`~pyairtable.Base`:
+
+    >>> base = api.base("appMxESAta6clCCwF")
+    >>> base.delete()
+
+To delete a view, first retrieve its :class:`~pyairtable.models.schema.ViewSchema`:
+
+    >>> vw = table.schema().view("View Name")
+    >>> vw.delete()

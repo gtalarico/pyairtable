@@ -16,6 +16,11 @@ from pyairtable.utils import cache_unless_forced, enterprise_only
 class Base:
     """
     Represents an Airtable base.
+
+    Usage:
+        >>> base = api.base("appNxslc6jG0XedVM")
+        >>> table = base.table("Table Name")
+        >>> records = table.all()
     """
 
     #: The connection to the Airtable API.
@@ -121,8 +126,8 @@ class Base:
         Usage:
             >>> base.tables()
             [
-                <Table base='appLkNDICXNqxSDhG' id='tbltp8DGLhqbUmjK1' name='Apartments'>,
-                <Table base='appLkNDICXNqxSDhG' id='tblK6MZHez0ZvBChZ' name='Districts'>
+                <Table base='appLkN...' id='tbltp8DGLhqbUmjK1' name='Apartments'>,
+                <Table base='appLkN...' id='tblK6MZHez0ZvBChZ' name='Districts'>
             ]
         """
         return [

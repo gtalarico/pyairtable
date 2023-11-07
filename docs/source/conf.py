@@ -49,6 +49,8 @@ autoclass_content = "class"
 
 # See https://autodoc-pydantic.readthedocs.io/en/v1.9.0/users/configuration.html
 autodoc_pydantic_field_show_alias = False
+autodoc_pydantic_field_show_default = False
+autodoc_pydantic_field_show_required = False
 autodoc_pydantic_model_member_order = "bysource"
 autodoc_pydantic_model_show_config_summary = False
 autodoc_pydantic_model_show_field_summary = False

@@ -129,8 +129,8 @@ class Api:
         Usage:
             >>> api.bases()
             {
-                'appSW9R5uCNmRmfl6': <pyairtable.Base base_id='appSW9R5uCNmRmfl6'>,
-                'appLkNDICXNqxSDhG': <pyairtable.Base base_id='appLkNDICXNqxSDhG'>
+                'appSW9...': <pyairtable.Base base_id='appSW9...'>,
+                'appLkN...': <pyairtable.Base base_id='appLkN...'>
             }
         """
         url = self.build_url("meta/bases")

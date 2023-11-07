@@ -113,6 +113,20 @@ class BaseSchema(AirtableModel):
     Schema of all tables within the base.
 
     See https://airtable.com/developers/web/api/get-base-schema
+
+    Usage:
+        >>> schema = api.base(base_id).schema()
+        >>> schema.tables
+        [TableSchema(...), ...]
+        >>> schema.table("Table Name")
+        TableSchema(
+            id='tbl6jG0XedVMNxFQW',
+            name='Table Name',
+            primary_field_id='fld0XedVMNxFQW6jG',
+            description=None,
+            fields=[...],
+            views=[...]
+        )
     """
 
     tables: List["TableSchema"]
@@ -133,16 +147,32 @@ class TableSchema(
     """
     Metadata for a table.
 
+    See https://airtable.com/developers/web/api/get-base-schema
+
     Usage:
         >>> schema = base.table("Table Name").schema()
         >>> schema.id
         'tbl6clmhESAtaCCwF'
+        >>> schema.name
+        'Table Name'
+
         >>> schema.fields
         [FieldSchema(...), ...]
+        >>> schema().field("fld6jG0XedVMNxFQW")
+        SingleLineTextFieldSchema(
+            id='fld6jG0XedVMNxFQW',
+            name='Name',
+            type='singleLineText'
+        )
+
         >>> schema.views
         [ViewSchema(...), ...]
-
-    See https://airtable.com/developers/web/api/get-base-schema
+        >>> schema().view("View Name")
+        ViewSchema(
+            id='viw6jG0XedVMNxFQW',
+            name='My Grid View',
+            type='grid'
+        )
     """
 
     id: str
@@ -169,6 +199,8 @@ class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):
     """
     Metadata for a view.
 
+    See https://airtable.com/developers/web/api/get-view-metadata
+
     Usage:
         >>> vw = table.schema().view("View name")
         >>> vw.name
@@ -176,8 +208,6 @@ class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):
         >>> vw.type
         'grid'
         >>> vw.delete()
-
-    See https://airtable.com/developers/web/api/get-view-metadata
     """
 
     id: str
