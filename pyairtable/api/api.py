@@ -107,7 +107,7 @@ class Api:
         validate: bool = False,
     ) -> "pyairtable.api.base.Base":
         """
-        Returns a new :class:`Base` instance that uses this instance of :class:`Api`.
+        Return a new :class:`Base` instance that uses this instance of :class:`Api`.
 
         Args:
             base_id: |arg_base_id|
@@ -121,20 +121,12 @@ class Api:
         return pyairtable.api.base.Base(self, base_id)
 
     @cache_unless_forced
-    def bases(self) -> Dict[str, "pyairtable.api.base.Base"]:
+    def _base_info(self) -> Bases:
         """
-        Retrieves a list of all bases from the API and caches it,
-        returning a mapping of IDs to :class:`Base` instances.
-
-        Usage:
-            >>> api.bases()
-            {
-                'appSW9...': <pyairtable.Base base_id='appSW9...'>,
-                'appLkN...': <pyairtable.Base base_id='appLkN...'>
-            }
+        Return a schema object that represents all bases available via the API.
         """
         url = self.build_url("meta/bases")
-        collection = Bases.parse_obj(
+        return Bases.parse_obj(
             {
                 "bases": [
                     base_info
@@ -143,6 +135,21 @@ class Api:
                 ]
             }
         )
+
+    def bases(self, *, force: bool = False) -> Dict[str, "pyairtable.api.base.Base"]:
+        """
+        Build a mapping of IDs to :class:`Base` instances.
+
+        Args:
+            force: |kwarg_force_metadata|
+
+        Usage:
+            >>> api.bases()
+            {
+                'appSW9...': <pyairtable.Base base_id='appSW9...'>,
+                'appLkN...': <pyairtable.Base base_id='appLkN...'>
+            }
+        """
         return {
             info.id: pyairtable.api.base.Base(
                 self,
@@ -150,7 +157,7 @@ class Api:
                 name=info.name,
                 permission_level=info.permission_level,
             )
-            for info in collection.bases
+            for info in self._base_info(force=force).bases
         }
 
     def create_base(

@@ -195,6 +195,8 @@ def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
     """
 
     attr = f"_{func.__name__}"
+    if attr.startswith("__"):
+        attr = "_cached_" + attr.lstrip("_")
 
     @wraps(func)
     def _inner(self: Any, *, force: bool = False) -> R:

@@ -69,7 +69,7 @@ def test_bases(api, requests_mock, sample_json):
     assert bases["appLkNDICXNqxSDhG"].id == "appLkNDICXNqxSDhG"
 
     # Should not make a second API call...
-    assert api.bases() == bases
+    assert set(api.bases()) == set(bases)
     assert m.call_count == 1
     # ....unless we force it:
     reloaded = api.bases(force=True)
