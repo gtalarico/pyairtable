@@ -1,5 +1,5 @@
 import posixpath
-from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import requests
 from requests.sessions import Session
@@ -117,7 +117,8 @@ class Api:
             KeyError: if ``fetch=True`` and the given base ID does not exist.
         """
         if validate:
-            return self.bases(force=True)[base_id]
+            bases = {base.id: base for base in self.bases(force=True)}
+            return bases[base_id]
         return pyairtable.api.base.Base(self, base_id)
 
     @cache_unless_forced
@@ -136,29 +137,29 @@ class Api:
             }
         )
 
-    def bases(self, *, force: bool = False) -> Dict[str, "pyairtable.api.base.Base"]:
+    def bases(self, *, force: bool = False) -> List["pyairtable.api.base.Base"]:
         """
-        Build a mapping of IDs to :class:`Base` instances.
+        Retrieve the base's schema and return a list of :class:`Base` instances.
 
         Args:
             force: |kwarg_force_metadata|
 
         Usage:
             >>> api.bases()
-            {
-                'appSW9...': <pyairtable.Base base_id='appSW9...'>,
-                'appLkN...': <pyairtable.Base base_id='appLkN...'>
-            }
+            [
+                <pyairtable.Base base_id='appSW9...'>,
+                <pyairtable.Base base_id='appLkN...'>
+            ]
         """
-        return {
-            info.id: pyairtable.api.base.Base(
+        return [
+            pyairtable.api.base.Base(
                 self,
                 info.id,
                 name=info.name,
                 permission_level=info.permission_level,
             )
             for info in self._base_info(force=force).bases
-        }
+        ]
 
     def create_base(
         self,

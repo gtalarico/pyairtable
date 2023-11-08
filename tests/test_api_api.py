@@ -63,17 +63,16 @@ def test_whoami(api, requests_mock):
 
 def test_bases(api, requests_mock, sample_json):
     m = requests_mock.get(api.build_url("meta/bases"), json=sample_json("Bases"))
-    bases = api.bases()
+    base_ids = [base.id for base in api.bases()]
     assert m.call_count == 1
-    assert set(bases) == {"appLkNDICXNqxSDhG", "appSW9R5uCNmRmfl6"}
-    assert bases["appLkNDICXNqxSDhG"].id == "appLkNDICXNqxSDhG"
+    assert base_ids == ["appLkNDICXNqxSDhG", "appSW9R5uCNmRmfl6"]
 
     # Should not make a second API call...
-    assert set(api.bases()) == set(bases)
+    assert [base.id for base in api.bases()] == base_ids
     assert m.call_count == 1
     # ....unless we force it:
     reloaded = api.bases(force=True)
-    assert set(reloaded) == set(bases)
+    assert [base.id for base in reloaded] == base_ids
     assert m.call_count == 2
 
 
