@@ -44,7 +44,7 @@ class AirtableModel(pydantic.BaseModel):
         context: Optional[Any] = None,
     ) -> SelfType:
         """
-        Constructs an instance which is able to update itself using an
+        Construct an instance which is able to update itself using an
         :class:`~pyairtable.Api`.
 
         Args:
@@ -134,7 +134,7 @@ class RestfulModel(AirtableModel):
 
     def set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
         """
-        Sets a link to the API and builds the REST URL used for this resource.
+        Set a link to the API and builds the REST URL used for this resource.
 
         :meta private:
         """

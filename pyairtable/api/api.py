@@ -168,7 +168,9 @@ class Api:
         tables: Sequence[Dict[str, Any]],
     ) -> "pyairtable.api.base.Base":
         """
-        Creates a base in the given workspace.
+        Create a base in the given workspace.
+
+        See https://airtable.com/developers/web/api/create-base
 
         Args:
             workspace_id: The ID of the workspace where the new base will live.
@@ -180,13 +182,13 @@ class Api:
 
     def table(self, base_id: str, table_name: str) -> "pyairtable.api.table.Table":
         """
-        Returns a new :class:`Table` instance that uses this instance of :class:`Api`.
+        Build a new :class:`Table` instance that uses this instance of :class:`Api`.
         """
         return self.base(base_id).table(table_name)
 
     def build_url(self, *components: str) -> str:
         """
-        Returns a URL to the Airtable API endpoint with the given URL components,
+        Build a URL to the Airtable API endpoint with the given URL components,
         including the API version number.
         """
         return posixpath.join(self.endpoint_url, self.VERSION, *components)
@@ -201,10 +203,8 @@ class Api:
         json: Optional[Dict[str, Any]] = None,
     ) -> Any:
         """
-        Makes a request to the Airtable API, optionally converting a GET to a POST
-        if the URL exceeds the API's maximum URL length.
-
-        See https://support.airtable.com/docs/enforcement-of-url-length-limit-for-web-api-requests
+        Make a request to the Airtable API, optionally converting a GET to a POST if the URL exceeds the
+        `maximum URL length <https://support.airtable.com/docs/enforcement-of-url-length-limit-for-web-api-requests>`__.
 
         Args:
             method: HTTP method to use.
@@ -278,7 +278,7 @@ class Api:
         offset_field: str = "offset",
     ) -> Iterator[Any]:
         """
-        Makes one or more requests and iterates through each result.
+        Make one or more requests and iterates through each result.
 
         If the response payload contains an 'offset' value, this method will perform
         another request with that offset value as a parameter (query params for GET,
@@ -308,7 +308,7 @@ class Api:
 
     def chunked(self, iterable: Sequence[T]) -> Iterator[Sequence[T]]:
         """
-        Iterates through chunks of the given sequence that are equal in size
+        Iterate through chunks of the given sequence that are equal in size
         to the maximum number of records per request allowed by the API.
         """
         return chunked(iterable, self.MAX_RECORDS_PER_REQUEST)
@@ -316,7 +316,7 @@ class Api:
     @enterprise_only
     def enterprise(self, enterprise_account_id: str) -> Enterprise:
         """
-        Returns an object representing an enterprise account.
+        Build an object representing an enterprise account.
         """
         return Enterprise(self, enterprise_account_id)
 

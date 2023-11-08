@@ -26,7 +26,7 @@ class Enterprise:
     @cache_unless_forced
     def info(self) -> EnterpriseInfo:
         """
-        Retrieves basic information about the enterprise, caching the result.
+        Retrieve basic information about the enterprise, caching the result.
         """
         params = {"include": ["collaborators", "inviteLinks"]}
         payload = self.api.request("GET", self.url, params=params)
@@ -38,7 +38,7 @@ class Enterprise:
 
     def user(self, id_or_email: str) -> UserInfo:
         """
-        Returns information on a single user with the given ID or email.
+        Retrieve information on a single user with the given ID or email.
 
         Args:
             id_or_email: A user ID (``usrQBq2RGdihxl3vU``) or email address.
@@ -47,7 +47,7 @@ class Enterprise:
 
     def users(self, ids_or_emails: Iterable[str]) -> List[UserInfo]:
         """
-        Returns information on the users with the given IDs or emails.
+        Retrieve information on the users with the given IDs or emails.
 
         Following the Airtable API specification, pyAirtable will perform
         one API request for each user ID. However, when given a list of emails,

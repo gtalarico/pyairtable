@@ -133,9 +133,22 @@ class Table:
     @property
     def id(self) -> str:
         """
-        Returns the table's Airtable ID. If the instance was created with a name
-        rather than an ID, this property may perform an API request to retrieve
-        the base's schema.
+        Get the table's Airtable ID.
+
+        If the instance was created with a name rather than an ID, this property will perform
+        an API request to retrieve the base's schema. For example:
+
+        .. code-block:: python
+
+            # This will not create any network traffic
+            >>> table = base.table('tbl00000000000123')
+            >>> table.id
+            'tbl00000000000123'
+
+            # This will fetch schema for the base when `table.id` is called
+            >>> table = base.table('Table Name')
+            >>> table.id
+            'tbl00000000000123'
         """
         if is_table_id(self.name):
             return self.name
@@ -144,14 +157,14 @@ class Table:
     @property
     def url(self) -> str:
         """
-        Returns the URL for this table.
+        Build the URL for this table.
         """
         token = self._schema.id if self._schema else self.name
         return self.api.build_url(self.base.id, urllib.parse.quote(token, safe=""))
 
     def meta_url(self, *components: str) -> str:
         """
-        Builds a URL to a metadata endpoint for this table.
+        Build a URL to a metadata endpoint for this table.
         """
         return self.api.build_url(
             f"meta/bases/{self.base.id}/tables/{self.id}", *components
@@ -159,20 +172,20 @@ class Table:
 
     def record_url(self, record_id: RecordId, *components: str) -> str:
         """
-        Returns the URL for the given record ID, with optional trailing components.
+        Build the URL for the given record ID, with optional trailing components.
         """
         return posixpath.join(self.url, record_id, *components)
 
     @property
     def api(self) -> "pyairtable.api.api.Api":
         """
-        Returns the same API connection as table's :class:`~pyairtable.Base`.
+        The API connection used by the table's :class:`~pyairtable.Base`.
         """
         return self.base.api
 
     def get(self, record_id: RecordId, **options: Any) -> RecordDict:
         """
-        Retrieves a record by its ID.
+        Retrieve a record by its ID.
 
         >>> table.get('recwPQIfs4wKPyc9D')
         {'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
@@ -191,7 +204,7 @@ class Table:
 
     def iterate(self, **options: Any) -> Iterator[List[RecordDict]]:
         """
-        Iterates through each page of results from `List records <https://airtable.com/developers/web/api/list-records>`_.
+        Iterate through each page of results from `List records <https://airtable.com/developers/web/api/list-records>`_.
         To get all records at once, use :meth:`all`.
 
         >>> it = table.iterate()
@@ -227,7 +240,7 @@ class Table:
 
     def all(self, **options: Any) -> List[RecordDict]:
         """
-        Retrieves all matching records in a single list.
+        Retrieve all matching records in a single list.
 
         >>> table = api.table('base_id', 'table_name')
         >>> table.all(view='MyView', fields=['ColA', '-ColB'])
@@ -251,7 +264,7 @@ class Table:
 
     def first(self, **options: Any) -> Optional[RecordDict]:
         """
-        Retrieves the first matching record.
+        Retrieve the first matching record.
         Returns ``None`` if no records are returned.
 
         This is similar to :meth:`~pyairtable.Table.all`, except
@@ -280,7 +293,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> RecordDict:
         """
-        Creates a new record
+        Create a new record
 
         >>> record = {'Name': 'John'}
         >>> table = api.table('base_id', 'table_name')
@@ -309,7 +322,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> List[RecordDict]:
         """
-        Creats a number of new records in batches.
+        Create a number of new records in batches.
 
         >>> table.batch_create([{'Name': 'John'}, {'Name': 'Marc'}])
         [
@@ -358,7 +371,7 @@ class Table:
         typecast: bool = False,
     ) -> RecordDict:
         """
-        Updates a particular record ID with the given fields.
+        Update a particular record ID with the given fields.
 
         >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21})
         {'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
@@ -387,7 +400,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> List[RecordDict]:
         """
-        Updates several records in batches.
+        Update several records in batches.
 
         Args:
             records: Records to update.
@@ -428,7 +441,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> UpsertResultDict:
         """
-        Updates or creates records in batches, either using ``id`` (if given) or using a set of
+        Update or create records in batches, either using ``id`` (if given) or using a set of
         fields (``key_fields``) to look for matches. For more information on how this operation
         behaves, see Airtable's API documentation for `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`__.
 
@@ -491,7 +504,7 @@ class Table:
 
     def delete(self, record_id: RecordId) -> RecordDeletedDict:
         """
-        Deletes the given record.
+        Delete the given record.
 
         >>> table.delete('recwPQIfs4wKPyc9D')
         {'id': 'recwPQIfs4wKPyc9D', 'deleted': True}
@@ -509,7 +522,7 @@ class Table:
 
     def batch_delete(self, record_ids: Iterable[RecordId]) -> List[RecordDeletedDict]:
         """
-        Deletes the given records, operating in batches.
+        Delete the given records, operating in batches.
 
         >>> table.batch_delete(['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F'])
         [
@@ -536,7 +549,7 @@ class Table:
 
     def comments(self, record_id: RecordId) -> List["pyairtable.models.Comment"]:
         """
-        Returns a list of comments on the given record.
+        Retrieve all comments on the given record.
 
         Usage:
             >>> table = Api.table("appNxslc6jG0XedVM", "tblslc6jG0XedVMNx")
@@ -581,7 +594,7 @@ class Table:
         text: str,
     ) -> "pyairtable.models.Comment":
         """
-        Creates a comment on a record.
+        Create a comment on a record.
         See `Create comment <https://airtable.com/developers/web/api/create-comment>`_ for details.
 
         Usage:
@@ -603,7 +616,7 @@ class Table:
 
     def schema(self, *, force: bool = False) -> TableSchema:
         """
-        Retrieves the schema of the current table.
+        Retrieve the schema of the current table.
 
         Usage:
             >>> table.schema()
@@ -630,7 +643,7 @@ class Table:
         options: Optional[Dict[str, Any]] = None,
     ) -> FieldSchema:
         """
-        Creates a field on the table.
+        Create a field on the table.
 
         Args:
             name: The unique name of the field.

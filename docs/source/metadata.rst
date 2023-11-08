@@ -8,7 +8,7 @@ Metadata
 The Airtable API gives you the ability to list all of your bases, tables, fields, and views.
 pyAirtable allows you to inspect and interact with the metadata in your bases.
 
-There may be parts of the pyAirtable API which are not supported below;
+There may be parts of the Airtable API which are not supported below;
 you can always use :meth:`Api.request <pyairtable.Api.request>` to call them directly.
 
 

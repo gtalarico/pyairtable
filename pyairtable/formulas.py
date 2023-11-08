@@ -9,7 +9,7 @@ from .utils import date_to_iso_str, datetime_to_iso_str
 
 def match(dict_values: Fields, *, match_any: bool = False) -> str:
     """
-    Creates one or more ``EQUAL()`` expressions for each provided dict value.
+    Create one or more ``EQUAL()`` expressions for each provided dict value.
     If more than one assetions is included, the expressions are
     groupped together into using ``AND()`` (all values must match).
 
@@ -117,7 +117,7 @@ def to_airtable_value(value: Any) -> Any:
 
 def EQUAL(left: Any, right: Any) -> str:
     """
-    Creates an equality assertion
+    Create an equality assertion
 
     >>> EQUAL(2,2)
     '2=2'
@@ -127,7 +127,7 @@ def EQUAL(left: Any, right: Any) -> str:
 
 def FIELD(name: str) -> str:
     """
-    Creates a reference to a field. Quotes are escaped.
+    Create a reference to a field. Quotes are escaped.
 
     Args:
         name: field name
@@ -143,7 +143,7 @@ def FIELD(name: str) -> str:
 
 def STR_VALUE(value: str) -> str:
     """
-    Wraps string in quotes. This is needed when referencing a string inside a formula.
+    Wrap string in quotes. This is needed when referencing a string inside a formula.
     Quotes are escaped.
 
     >>> STR_VALUE("John")
@@ -158,7 +158,7 @@ def STR_VALUE(value: str) -> str:
 
 def IF(logical: str, value1: str, value2: str) -> str:
     """
-    Creates an IF statement
+    Create an IF statement
 
     >>> IF(1=1, 0, 1)
     'IF(1=1, 0, 1)'
@@ -168,7 +168,7 @@ def IF(logical: str, value1: str, value2: str) -> str:
 
 def FIND(what: str, where: str, start_position: int = 0) -> str:
     """
-    Creates a FIND statement
+    Create a FIND statement
 
     >>> FIND(STR_VALUE(2021), FIELD('DatetimeCol'))
     "FIND('2021', {DatetimeCol})"
@@ -187,7 +187,7 @@ def FIND(what: str, where: str, start_position: int = 0) -> str:
 
 def AND(*args: str) -> str:
     """
-    Creates an AND Statement
+    Create an AND Statement
 
     >>> AND(1, 2, 3)
     'AND(1, 2, 3)'

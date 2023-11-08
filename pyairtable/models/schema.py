@@ -39,7 +39,7 @@ class Bases(AirtableModel):
 
     def base(self, base_id: str) -> "Bases.Info":
         """
-        Returns basic information about the base with the given ID.
+        Get basic information about the base with the given ID.
         """
         return _find(self.bases, base_id)
 
@@ -133,7 +133,7 @@ class BaseSchema(AirtableModel):
 
     def table(self, id_or_name: str) -> "TableSchema":
         """
-        Returns the schema for the table with the given ID or name.
+        Get the schema for the table with the given ID or name.
         """
         return _find(self.tables, id_or_name)
 
@@ -184,13 +184,13 @@ class TableSchema(
 
     def field(self, id_or_name: str) -> "FieldSchema":
         """
-        Returns the schema for the field with the given ID or name.
+        Get the schema for the field with the given ID or name.
         """
         return _find(self.fields, id_or_name)
 
     def view(self, id_or_name: str) -> "ViewSchema":
         """
-        Returns the schema for the view with the given ID or name.
+        Get the schema for the view with the given ID or name.
         """
         return _find(self.views, id_or_name)
 

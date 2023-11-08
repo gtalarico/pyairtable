@@ -17,7 +17,7 @@ T = TypeVar("T")
 
 def datetime_to_iso_str(value: datetime) -> str:
     """
-    Converts ``datetime`` object into Airtable compatible ISO 8601 string
+    Convert ``datetime`` object into Airtable compatible ISO 8601 string
     e.g. "2014-09-05T12:34:56.000Z"
 
     Args:
@@ -38,7 +38,7 @@ def datetime_from_iso_str(value: str) -> datetime:
 
 def date_to_iso_str(value: Union[date, datetime]) -> str:
     """
-    Converts a ``date`` or ``datetime`` into an Airtable-compatible ISO 8601 string
+    Convert a ``date`` or ``datetime`` into an Airtable-compatible ISO 8601 string
 
     Args:
         value: date or datetime object, e.g. "2014-09-05"
@@ -48,7 +48,7 @@ def date_to_iso_str(value: Union[date, datetime]) -> str:
 
 def date_from_iso_str(value: str) -> date:
     """
-    Converts ISO 8601 date string into a ``date`` object.
+    Convert ISO 8601 date string into a ``date`` object.
 
     Args:
         value: date string, e.g. "2014-09-05"
@@ -58,7 +58,7 @@ def date_from_iso_str(value: str) -> date:
 
 def attachment(url: str, filename: str = "") -> CreateAttachmentDict:
     """
-    Returns a dictionary using the expected dictionary format for creating attachments.
+    Build a ``dict`` in the expected format for creating attachments.
 
     When creating an attachment, ``url`` is required, and ``filename`` is optional.
     Airtable will download the file at the given url and keep its own copy of it.
@@ -132,7 +132,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
     """
-    Wraps a function or method so that if Airtable returns a 404,
+    Wrap a function or method so that if Airtable returns a 404,
     we will annotate the error with a helpful note to the user.
     """
 
@@ -189,7 +189,7 @@ class FetchMethod(Protocol, Generic[R]):
 
 def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
     """
-    Wraps a method (e.g. ``Base.shares()``) in a decorator that will save
+    Wrap a method (e.g. ``Base.shares()``) in a decorator that will save
     a memoized version of the return value for future reuse, but will also
     allow callers to pass ``force=True`` to recompute the memoized version.
     """

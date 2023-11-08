@@ -85,7 +85,7 @@ class Model:
     @classmethod
     def _attribute_descriptor_map(cls) -> Dict[str, AnyField]:
         """
-        Returns a dictionary mapping the model's attribute names to the field's
+        Build a mapping of the model's attribute names to field descriptor instances.
 
         >>> class Test(Model):
         ...     first_name = TextField("First Name")
@@ -102,7 +102,7 @@ class Model:
     @classmethod
     def _field_name_descriptor_map(cls) -> Dict[FieldName, AnyField]:
         """
-        Returns a dictionary that maps field names to descriptor instances.
+        Build a mapping of the model's field names to field descriptor instances.
 
         >>> class Test(Model):
         ...     first_name = TextField("First Name")
@@ -118,7 +118,7 @@ class Model:
 
     def __init__(self, **fields: Any):
         """
-        Constructs a model instance with field values based on the given keyword args.
+        Construct a model instance with field values based on the given keyword args.
 
         >>> Contact(name="Alice", birthday=date(1980, 1, 1))
         <unsaved Contact>
@@ -198,12 +198,13 @@ class Model:
 
     def save(self) -> bool:
         """
-        Saves or updates a model.
+        Save the model to the API.
 
         If the instance does not exist already, it will be created;
         otherwise, the existing record will be updated.
 
-        Returns ``True`` if a record was created and ``False`` if it was updated.
+        Returns:
+            ``True`` if a record was created, ``False`` if it was updated.
         """
         if self._deleted:
             raise RuntimeError(f"{self.id} was deleted")
@@ -223,7 +224,7 @@ class Model:
 
     def delete(self) -> bool:
         """
-        Deletes the record.
+        Delete the record.
 
         Raises:
             ValueError: if the record does not exist.
@@ -239,7 +240,7 @@ class Model:
     @classmethod
     def all(cls, **kwargs: Any) -> List[SelfType]:
         """
-        Returns all records for this model. For all supported
+        Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
         """
         table = cls.get_table()
@@ -248,7 +249,7 @@ class Model:
     @classmethod
     def first(cls, **kwargs: Any) -> Optional[SelfType]:
         """
-        Returns the first record for this model. For all supported
+        Retrieve the first record for this model. For all supported
         keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
         """
         table = cls.get_table()
@@ -258,7 +259,8 @@ class Model:
 
     def to_record(self, only_writable: bool = False) -> RecordDict:
         """
-        Returns a dictionary object as an Airtable record.
+        Build a :class:`~pyairtable.api.types.RecordDict` to represent this instance.
+
         This method converts internal field values into values expected by Airtable.
         For example, a ``datetime`` value from :class:`~pyairtable.orm.fields.DatetimeField`
         is converted into an ISO 8601 string.
@@ -318,7 +320,7 @@ class Model:
 
     def fetch(self) -> None:
         """
-        Fetches field values from the API and resets instance field values.
+        Fetch field values from the API and resets instance field values.
         """
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
@@ -361,7 +363,7 @@ class Model:
     @classmethod
     def batch_save(cls, models: List[SelfType]) -> None:
         """
-        Saves a list of model instances to the Airtable API with as few
+        Save a list of model instances to the Airtable API with as few
         network requests as possible. Can accept a mixture of new records
         (which have not been saved yet) and existing records that have IDs.
         """
@@ -391,7 +393,7 @@ class Model:
     @classmethod
     def batch_delete(cls, models: List[SelfType]) -> None:
         """
-        Deletes a list of model instances from Airtable.
+        Delete a list of model instances from Airtable.
 
         Raises:
             ValueError: if the model has not been saved to Airtable.

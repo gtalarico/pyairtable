@@ -34,7 +34,9 @@ class Workspace:
         tables: Sequence[Dict[str, Any]],
     ) -> "pyairtable.api.base.Base":
         """
-        Creates a base in the given workspace.
+        Create a base in the given workspace.
+
+        See https://airtable.com/developers/web/api/create-base
 
         Args:
             name: The name to give to the new base. Does not need to be unique.
@@ -52,8 +54,10 @@ class Workspace:
     @cache_unless_forced
     def collaborators(self) -> WorkspaceCollaborators:
         """
-        Retrieves basic information, collaborators, and invites
+        Retrieve basic information, collaborators, and invite links
         for the given workspace, caching the result.
+
+        See https://airtable.com/developers/web/api/get-workspace-collaborators
         """
         params = {"include": ["collaborators", "inviteLinks"]}
         payload = self.api.request("GET", self.url, params=params)
@@ -62,7 +66,7 @@ class Workspace:
     @enterprise_only
     def bases(self) -> List["pyairtable.api.base.Base"]:
         """
-        Retrieves all bases within the workspace.
+        Retrieve all bases within the workspace.
         """
         return [self.api.base(base_id) for base_id in self.collaborators().base_ids]
 
@@ -77,7 +81,9 @@ class Workspace:
     @enterprise_only
     def delete(self) -> None:
         """
-        Deletes the workspace.
+        Delete the workspace.
+
+        See https://airtable.com/developers/web/api/delete-workspace
 
         Usage:
             >>> ws = api.workspace("wspmhESAta6clCCwF")
@@ -93,7 +99,9 @@ class Workspace:
         index: Optional[int] = None,
     ) -> None:
         """
-        Moves the given base to a new workspace.
+        Move the given base to a new workspace.
+
+        See https://airtable.com/developers/web/api/move-base
 
         Usage:
             >>> ws = api.workspace("wspmhESAta6clCCwF")

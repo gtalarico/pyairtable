@@ -100,7 +100,7 @@ class Base:
         validate: bool = False,
     ) -> "pyairtable.api.table.Table":
         """
-        Returns a new :class:`Table` instance using this instance of :class:`Base`.
+        Build a new :class:`Table` instance using this instance of :class:`Base`.
 
         Args:
             id_or_name: An Airtable table ID or name. Table name should be unencoded,
@@ -118,7 +118,7 @@ class Base:
 
     def tables(self, *, force: bool = False) -> List["pyairtable.api.table.Table"]:
         """
-        Retrieves the base's schema and returns a list of :class:`Table` instances.
+        Retrieve the base's schema and returns a list of :class:`Table` instances.
 
         Args:
             force: |kwarg_force_metadata|
@@ -142,7 +142,7 @@ class Base:
         description: Optional[str] = None,
     ) -> "pyairtable.api.table.Table":
         """
-        Creates a table in the given base.
+        Create a table in the given base.
 
         Args:
             name: The unique table name.
@@ -163,14 +163,14 @@ class Base:
 
     def meta_url(self, *components: Any) -> str:
         """
-        Builds a URL to a metadata endpoint for this base.
+        Build a URL to a metadata endpoint for this base.
         """
         return self.api.build_url("meta/bases", self.id, *components)
 
     @cache_unless_forced
     def schema(self) -> BaseSchema:
         """
-        Retrieves the schema of all tables in the base and caches it.
+        Retrieve the schema of all tables in the base and caches it.
 
         Usage:
             >>> base.schema().tables
@@ -191,7 +191,7 @@ class Base:
 
     def webhooks(self) -> List[Webhook]:
         """
-        Retrieves all the base's webhooks
+        Retrieve all the base's webhooks
         (see: `List webhooks <https://airtable.com/developers/web/api/list-webhooks>`_).
 
         Usage:
@@ -218,7 +218,7 @@ class Base:
 
     def webhook(self, webhook_id: str) -> Webhook:
         """
-        Returns a single webhook or raises ``KeyError`` if the given ID is invalid.
+        Build a single webhook or raises ``KeyError`` if the given ID is invalid.
 
         Airtable's API does not permit retrieving a single webhook, so this function
         will call :meth:`~webhooks` and simply return one item from the list.
@@ -234,7 +234,7 @@ class Base:
         spec: Union[WebhookSpecification, Dict[Any, Any]],
     ) -> CreateWebhookResponse:
         """
-        Creates a webhook on the base with the given
+        Create a webhook on the base with the given
         `webhooks specification <https://airtable.com/developers/web/api/model/webhooks-specification>`_.
 
         The return value will contain a unique secret that must be saved
@@ -283,7 +283,7 @@ class Base:
     @cache_unless_forced
     def collaborators(self) -> "BaseCollaborators":
         """
-        Retrieves `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__.
+        Retrieve `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__.
         """
         params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
         data = self.api.request("GET", self.meta_url(), params=params)
@@ -293,7 +293,7 @@ class Base:
     @cache_unless_forced
     def shares(self) -> List[BaseShares.Info]:
         """
-        Retrieves `base shares <https://airtable.com/developers/web/api/list-shares>`__.
+        Retrieve `base shares <https://airtable.com/developers/web/api/list-shares>`__.
         """
         data = self.api.request("GET", self.meta_url("shares"))
         return BaseShares.parse_obj(data).shares
@@ -301,7 +301,7 @@ class Base:
     @enterprise_only
     def delete(self) -> None:
         """
-        Deletes the base.
+        Delete the base.
 
         Usage:
             >>> base = api.base("appMxESAta6clCCwF")

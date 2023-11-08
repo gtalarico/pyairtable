@@ -11,7 +11,7 @@ from pyairtable.api.types import AttachmentDict, CollaboratorDict, Fields, Recor
 
 def fake_id(type: str = "rec", value: Any = None) -> str:
     """
-    Generates a fake Airtable-style ID.
+    Generate a fake Airtable-style ID.
 
     Args:
         type: the object type prefix, defaults to "rec"
@@ -35,7 +35,7 @@ def fake_meta(
     api_key: str = "patFakePersonalAccessToken",
 ) -> type:
     """
-    Returns a ``Meta`` class for inclusion in a ``Model`` subclass.
+    Generate a ``Meta`` class for inclusion in a ``Model`` subclass.
     """
     attrs = {"base_id": base_id, "table_name": table_name, "api_key": api_key}
     return type("Meta", (), attrs)
@@ -47,7 +47,7 @@ def fake_record(
     **other_fields: Any,
 ) -> RecordDict:
     """
-    Returns a fake record dict with the given field values.
+    Generate a fake record dict with the given field values.
 
     >>> fake_record({"Name": "Alice"})
     {'id': '...', 'createdTime': '...', 'fields': {'Name': 'Alice'}}
@@ -66,11 +66,24 @@ def fake_record(
 
 
 def fake_user(value: Any = None) -> CollaboratorDict:
+    """
+    Generate a fake user dict with the given value for an email prefix.
+
+    >>> fake_user("alice")
+    {'id': 'usr000000000Alice', 'email': 'alice@example.com', 'name': 'Fake User'}
+    """
     id = fake_id("usr", value)
-    return {"id": id, "email": f"{value or id}@example.com", "name": "Fake User"}
+    return {
+        "id": id,
+        "email": f"{value or id}@example.com",
+        "name": "Fake User",
+    }
 
 
 def fake_attachment() -> AttachmentDict:
+    """
+    Generate a fake attachment dict.
+    """
     return {
         "id": fake_id("att"),
         "url": "https://example.com/",

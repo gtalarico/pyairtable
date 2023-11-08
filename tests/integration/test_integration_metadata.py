@@ -8,7 +8,7 @@ pytestmark = [pytest.mark.integration]
 
 
 def test_api_bases(api: Api, base_id: str, base_name: str, table_name: str):
-    bases = api.bases()
+    bases = {base.id: base for base in api.bases()}
     assert bases[base_id].name == base_name
     assert bases[base_id].table(table_name).name == table_name
 

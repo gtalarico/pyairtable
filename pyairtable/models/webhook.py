@@ -214,7 +214,7 @@ class WebhookNotification(AirtableModel):
         secret: Union[bytes, str],
     ) -> SelfType:
         """
-        Validates a request body and X-Airtable-Content-MAC header
+        Validate a request body and X-Airtable-Content-MAC header
         using the secret returned when the webhook was created.
 
         Args:
