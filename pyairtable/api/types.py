@@ -325,7 +325,7 @@ class UserAndScopesDict(TypedDict, total=False):
 @lru_cache
 def _create_model_from_typeddict(cls: Type[T]) -> Type[pydantic.BaseModel]:
     """
-    Creates a pydantic model from a TypedDict to use as a validator.
+    Create a pydantic model from a TypedDict to use as a validator.
     Memoizes the result so we don't have to call this more than once per class.
     """
     # Mypy can't tell that we are using pydantic v1.
@@ -390,7 +390,7 @@ def assert_typed_dicts(cls: Type[T], objects: Any) -> List[T]:
 
 def is_airtable_error(obj: Any) -> bool:
     """
-    Returns whether the given object represents an Airtable error.
+    Determine whether the given object represents an Airtable error.
     """
     if isinstance(obj, dict):
         return set(obj) in ({"error"}, {"specialValue"})

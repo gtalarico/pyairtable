@@ -1,20 +1,26 @@
 import warnings
-from functools import lru_cache
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import pyairtable.api.api
 import pyairtable.api.table
+from pyairtable.models.schema import BaseCollaborators, BaseSchema, BaseShares
 from pyairtable.models.webhook import (
     CreateWebhook,
     CreateWebhookResponse,
     Webhook,
     WebhookSpecification,
 )
+from pyairtable.utils import cache_unless_forced, enterprise_only
 
 
 class Base:
     """
     Represents an Airtable base.
+
+    Usage:
+        >>> base = api.base("appNxslc6jG0XedVM")
+        >>> table = base.table("Table Name")
+        >>> records = table.all()
     """
 
     #: The connection to the Airtable API.
@@ -23,7 +29,22 @@ class Base:
     #: The base ID, in the format ``appXXXXXXXXXXXXXX``
     id: str
 
-    def __init__(self, api: Union["pyairtable.api.api.Api", str], base_id: str):
+    #: The permission level the current user has on the base
+    permission_level: Optional[str]
+
+    # Cached metadata to reduce API calls
+    _collaborators: Optional[BaseCollaborators] = None
+    _schema: Optional[BaseSchema] = None
+    _shares: Optional[List[BaseShares.Info]] = None
+
+    def __init__(
+        self,
+        api: Union["pyairtable.api.api.Api", str],
+        base_id: str,
+        *,
+        name: Optional[str] = None,
+        permission_level: Optional[str] = None,
+    ):
         """
         Old style constructor takes ``str`` arguments, and will create its own
         instance of :class:`Api`.
@@ -51,25 +72,118 @@ class Base:
 
         self.api = api
         self.id = base_id
+        self.permission_level = permission_level
+        self._name = name
+
+    @property
+    def name(self) -> Optional[str]:
+        """
+        The name of the base, if provided to the constructor
+        or available in cached base information.
+        """
+        if self._collaborators:
+            return self._collaborators.name
+        return self._name
 
     def __repr__(self) -> str:
-        return f"<pyairtable.Base base_id={self.id!r}>"
+        repr = f"<Base id={self.id!r}"
+        if name := self.name:
+            repr += f" {name=}"
+        if permission_level := self.permission_level:
+            repr += f" {permission_level=}"
+        return repr + ">"
 
-    @lru_cache
-    def table(self, table_name: str) -> "pyairtable.api.table.Table":
+    def table(
+        self,
+        id_or_name: str,
+        *,
+        validate: bool = False,
+    ) -> "pyairtable.api.table.Table":
         """
-        Returns a new :class:`Table` instance using all shared
-        attributes from :class:`Base`.
+        Build a new :class:`Table` instance using this instance of :class:`Base`.
 
         Args:
-            table_name: An Airtable table name. Table name should be unencoded,
+            id_or_name: An Airtable table ID or name. Table name should be unencoded,
                 as shown on browser.
+            validate: |kwarg_validate_metadata|
+
+        Usage:
+            >>> base.table('Apartments')
+            <Table base='appLkNDICXNqxSDhG' name='Apartments'>
         """
-        return pyairtable.api.table.Table(None, self, table_name)
+        if validate:
+            schema = self.schema(force=True).table(id_or_name)
+            return pyairtable.api.table.Table(None, self, schema)
+        return pyairtable.api.table.Table(None, self, id_or_name)
+
+    def tables(self, *, force: bool = False) -> List["pyairtable.api.table.Table"]:
+        """
+        Retrieve the base's schema and returns a list of :class:`Table` instances.
+
+        Args:
+            force: |kwarg_force_metadata|
+
+        Usage:
+            >>> base.tables()
+            [
+                <Table base='appLkN...' id='tbltp8DGLhqbUmjK1' name='Apartments'>,
+                <Table base='appLkN...' id='tblK6MZHez0ZvBChZ' name='Districts'>
+            ]
+        """
+        return [
+            pyairtable.api.table.Table(None, self, table_schema)
+            for table_schema in self.schema(force=force).tables
+        ]
+
+    def create_table(
+        self,
+        name: str,
+        fields: Sequence[Dict[str, Any]],
+        description: Optional[str] = None,
+    ) -> "pyairtable.api.table.Table":
+        """
+        Create a table in the given base.
+
+        Args:
+            name: The unique table name.
+            fields: A list of ``dict`` objects that conform to the
+                `Airtable field model <https://airtable.com/developers/web/api/field-model>`__.
+            description: The table description. Must be no longer than 20k characters.
+        """
+        url = self.meta_url("tables")
+        payload = {"name": name, "fields": fields}
+        if description:
+            payload["description"] = description
+        response = self.api.request("POST", url, json=payload)
+        return self.table(response["id"], validate=True)
 
     @property
     def url(self) -> str:
         return self.api.build_url(self.id)
+
+    def meta_url(self, *components: Any) -> str:
+        """
+        Build a URL to a metadata endpoint for this base.
+        """
+        return self.api.build_url("meta/bases", self.id, *components)
+
+    @cache_unless_forced
+    def schema(self) -> BaseSchema:
+        """
+        Retrieve the schema of all tables in the base and caches it.
+
+        Usage:
+            >>> base.schema().tables
+            [TableSchema(...), TableSchema(...), ...]
+            >>> base.schema().table("tblXXXXXXXXXXXXXX")
+            TableSchema(id="tblXXXXXXXXXXXXXX", ...)
+            >>> base.schema().table("My Table")
+            TableSchema(id="...", name="My Table", ...)
+        """
+        url = self.meta_url("tables")
+        params = {"include": ["visibleFieldIds"]}
+        data = self.api.request("GET", url, params=params)
+        return BaseSchema.from_api(data, self.api, context=self)
 
     @property
     def webhooks_url(self) -> str:
@@ -77,7 +191,7 @@ class Base:
 
     def webhooks(self) -> List[Webhook]:
         """
-        Retrieves all the base's webhooks from the API
+        Retrieve all the base's webhooks
         (see: `List webhooks <https://airtable.com/developers/web/api/list-webhooks>`_).
 
         Usage:
@@ -98,17 +212,13 @@ class Base:
         """
         response = self.api.request("GET", self.webhooks_url)
         return [
-            Webhook.from_api(
-                api=self.api,
-                url=f"{self.webhooks_url}/{data['id']}",
-                obj=data,
-            )
+            Webhook.from_api(data, self.api, context=self)
             for data in response["webhooks"]
         ]
 
     def webhook(self, webhook_id: str) -> Webhook:
         """
-        Returns a single webhook or raises ``KeyError`` if the given ID is invalid.
+        Build a single webhook or raises ``KeyError`` if the given ID is invalid.
 
         Airtable's API does not permit retrieving a single webhook, so this function
         will call :meth:`~webhooks` and simply return one item from the list.
@@ -124,7 +234,7 @@ class Base:
         spec: Union[WebhookSpecification, Dict[Any, Any]],
     ) -> CreateWebhookResponse:
         """
-        Creates a webhook on the base with the given
+        Create a webhook on the base with the given
         `webhooks specification <https://airtable.com/developers/web/api/model/webhooks-specification>`_.
 
         The return value will contain a unique secret that must be saved
@@ -168,3 +278,33 @@ class Base:
         request = create.dict(by_alias=True, exclude_unset=True)
         response = self.api.request("POST", self.webhooks_url, json=request)
         return CreateWebhookResponse.parse_obj(response)
+
+    @enterprise_only
+    @cache_unless_forced
+    def collaborators(self) -> "BaseCollaborators":
+        """
+        Retrieve `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__.
+        """
+        params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
+        data = self.api.request("GET", self.meta_url(), params=params)
+        return BaseCollaborators.parse_obj(data)
+
+    @enterprise_only
+    @cache_unless_forced
+    def shares(self) -> List[BaseShares.Info]:
+        """
+        Retrieve `base shares <https://airtable.com/developers/web/api/list-shares>`__.
+        """
+        data = self.api.request("GET", self.meta_url("shares"))
+        return BaseShares.parse_obj(data).shares
+
+    @enterprise_only
+    def delete(self) -> None:
+        """
+        Delete the base.
+
+        Usage:
+            >>> base = api.base("appMxESAta6clCCwF")
+            >>> base.delete()
+        """
+        self.api.request("DELETE", self.meta_url())

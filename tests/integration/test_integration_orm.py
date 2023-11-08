@@ -180,7 +180,7 @@ def test_every_field(Everything):
         type(field) for field in vars(Everything).values() if isinstance(field, f.Field)
     }
     for field_class in f.ALL_FIELDS:
-        if field_class in {f.ExternalSyncSourceField}:
+        if field_class in {f.ExternalSyncSourceField, f.AITextField}:
             continue
         assert field_class in classes_used
 

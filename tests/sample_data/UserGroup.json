@@ -1,0 +1,60 @@
+{
+  "collaborations": {
+    "baseCollaborations": [
+      {
+        "baseId": "appLkNDICXNqxSDhG",
+        "createdTime": "2021-06-02T07:37:50.000Z",
+        "grantedByUserId": "usrogvSbotRtzdtZW",
+        "permissionLevel": "create"
+      }
+    ],
+    "interfaceCollaborations": [
+      {
+        "baseId": "appLkNDICXNqxSDhG",
+        "createdTime": "2019-01-03T12:33:12.421Z",
+        "grantedByUserId": "usrqccqnMB2eHylqB",
+        "interfaceId": "pbdyGA3PsOziEHPDE",
+        "permissionLevel": "edit"
+      }
+    ],
+    "workspaceCollaborations": [
+      {
+        "createdTime": "2021-06-02T07:37:48.000Z",
+        "grantedByUserId": "usrqccqnMB2eHylqB",
+        "permissionLevel": "edit",
+        "workspaceId": "wspmhESAta6clCCwF"
+      }
+    ]
+  },
+  "createdTime": "2021-06-02T07:37:19.000Z",
+  "enterpriseAccountId": "entUBq2RGdihxl3vU",
+  "id": "ugp1mKGb3KXUyQfOZ",
+  "members": [
+    {
+      "createdTime": "2021-06-02T07:37:19.000Z",
+      "email": "foo@bar.com",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "role": "member",
+      "userId": "usrL2PNC5o3H4lBEi"
+    },
+    {
+      "createdTime": "2021-06-02T07:37:19.000Z",
+      "email": "foo@bam.com",
+      "firstName": "Alex",
+      "lastName": "Hay",
+      "role": "manager",
+      "userId": "usrsOEchC9xuwRgKk"
+    },
+    {
+      "createdTime": "2021-06-02T07:37:19.000Z",
+      "email": "bam@bam.com",
+      "firstName": "John",
+      "lastName": "Dane",
+      "role": "member",
+      "userId": "usrGcrteE5fUMqq0R"
+    }
+  ],
+  "name": "Group name",
+  "updatedTime": "2022-09-02T10:10:35:000Z"
+}

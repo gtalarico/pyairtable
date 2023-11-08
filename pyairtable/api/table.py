@@ -16,6 +16,8 @@ from pyairtable.api.types import (
     assert_typed_dict,
     assert_typed_dicts,
 )
+from pyairtable.models.schema import FieldSchema, TableSchema, parse_field_schema
+from pyairtable.utils import is_table_id
 
 
 class Table:
@@ -33,6 +35,9 @@ class Table:
 
     #: Can be either the table name or the table ID (``tblXXXXXXXXXXXXXX``).
     name: str
+
+    # Cached schema information to reduce API calls
+    _schema: Optional[TableSchema] = None
 
     @overload
     def __init__(
@@ -56,11 +61,20 @@ class Table:
     ):
         ...
 
+    @overload
+    def __init__(
+        self,
+        api_key: None,
+        base_id: "pyairtable.api.base.Base",
+        table_name: TableSchema,
+    ):
+        ...
+
     def __init__(
         self,
         api_key: Union[None, str],
         base_id: Union["pyairtable.api.base.Base", str],
-        table_name: str,
+        table_name: Union[str, TableSchema],
         **kwargs: Any,
     ):
         """
@@ -91,44 +105,87 @@ class Table:
                 stacklevel=2,
             )
             api = pyairtable.api.api.Api(api_key, **kwargs)
-            base = api.base(base_id)
-        elif api_key is None and isinstance(base_id, pyairtable.api.base.Base):
-            base = base_id
+            self.base = api.base(base_id)
+        elif api_key is None and isinstance(base := base_id, pyairtable.api.base.Base):
+            self.base = base
         else:
             raise TypeError(
-                "Table() expects either (str, str, str) or (None, Base, str);"
+                "Table() expects (None, Base, str | TableSchema);"
                 f" got ({type(api_key)}, {type(base_id)}, {type(table_name)})"
             )
 
-        self.base = base
-        self.name = table_name
+        if isinstance(table_name, str):
+            self.name = table_name
+        elif isinstance(schema := table_name, TableSchema):
+            self._schema = schema
+            self.name = schema.name
+        else:
+            raise TypeError(
+                "Table() expects (None, Base, str | TableSchema);"
+                f" got ({type(api_key)}, {type(base_id)}, {type(table_name)})"
+            )
 
     def __repr__(self) -> str:
-        return f"<Table base_id={self.base.id!r} table_name={self.name!r}>"
+        if self._schema:
+            return f"<Table base={self.base.id!r} id={self._schema.id!r} name={self._schema.name!r}>"
+        return f"<Table base={self.base.id!r} name={self.name!r}>"
+
+    @property
+    def id(self) -> str:
+        """
+        Get the table's Airtable ID.
+
+        If the instance was created with a name rather than an ID, this property will perform
+        an API request to retrieve the base's schema. For example:
+
+        .. code-block:: python
+
+            # This will not create any network traffic
+            >>> table = base.table('tbl00000000000123')
+            >>> table.id
+            'tbl00000000000123'
+
+            # This will fetch schema for the base when `table.id` is called
+            >>> table = base.table('Table Name')
+            >>> table.id
+            'tbl00000000000123'
+        """
+        if is_table_id(self.name):
+            return self.name
+        return self.schema().id
 
     @property
     def url(self) -> str:
         """
-        Returns the URL for this table.
+        Build the URL for this table.
         """
-        return self.api.build_url(self.base.id, urllib.parse.quote(self.name, safe=""))
+        token = self._schema.id if self._schema else self.name
+        return self.api.build_url(self.base.id, urllib.parse.quote(token, safe=""))
+
+    def meta_url(self, *components: str) -> str:
+        """
+        Build a URL to a metadata endpoint for this table.
+        """
+        return self.api.build_url(
+            f"meta/bases/{self.base.id}/tables/{self.id}", *components
+        )
 
     def record_url(self, record_id: RecordId, *components: str) -> str:
         """
-        Returns the URL for the given record ID, with optional trailing components.
+        Build the URL for the given record ID, with optional trailing components.
         """
         return posixpath.join(self.url, record_id, *components)
 
     @property
     def api(self) -> "pyairtable.api.api.Api":
         """
-        Returns the same API connection as table's :class:`~pyairtable.Base`.
+        The API connection used by the table's :class:`~pyairtable.Base`.
         """
         return self.base.api
 
     def get(self, record_id: RecordId, **options: Any) -> RecordDict:
         """
-        Retrieves a record by its ID.
+        Retrieve a record by its ID.
 
         >>> table.get('recwPQIfs4wKPyc9D')
         {'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
@@ -147,7 +204,7 @@ class Table:
 
     def iterate(self, **options: Any) -> Iterator[List[RecordDict]]:
         """
-        Iterates through each page of results from `List records <https://airtable.com/developers/web/api/list-records>`_.
+        Iterate through each page of results from `List records <https://airtable.com/developers/web/api/list-records>`_.
         To get all records at once, use :meth:`all`.
 
         >>> it = table.iterate()
@@ -183,7 +240,7 @@ class Table:
 
     def all(self, **options: Any) -> List[RecordDict]:
         """
-        Retrieves all matching records in a single list.
+        Retrieve all matching records in a single list.
 
         >>> table = api.table('base_id', 'table_name')
         >>> table.all(view='MyView', fields=['ColA', '-ColB'])
@@ -207,7 +264,7 @@ class Table:
 
     def first(self, **options: Any) -> Optional[RecordDict]:
         """
-        Retrieves the first matching record.
+        Retrieve the first matching record.
         Returns ``None`` if no records are returned.
 
         This is similar to :meth:`~pyairtable.Table.all`, except
@@ -236,7 +293,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> RecordDict:
         """
-        Creates a new record
+        Create a new record
 
         >>> record = {'Name': 'John'}
         >>> table = api.table('base_id', 'table_name')
@@ -265,7 +322,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> List[RecordDict]:
         """
-        Creats a number of new records in batches.
+        Create a number of new records in batches.
 
         >>> table.batch_create([{'Name': 'John'}, {'Name': 'Marc'}])
         [
@@ -314,7 +371,7 @@ class Table:
         typecast: bool = False,
     ) -> RecordDict:
         """
-        Updates a particular record ID with the given fields.
+        Update a particular record ID with the given fields.
 
         >>> table.update('recwPQIfs4wKPyc9D', {"Age": 21})
         {'id': 'recwPQIfs4wKPyc9D', 'fields': {'First Name': 'John', 'Age': 21}}
@@ -343,7 +400,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> List[RecordDict]:
         """
-        Updates several records in batches.
+        Update several records in batches.
 
         Args:
             records: Records to update.
@@ -384,7 +441,7 @@ class Table:
         return_fields_by_field_id: bool = False,
     ) -> UpsertResultDict:
         """
-        Updates or creates records in batches, either using ``id`` (if given) or using a set of
+        Update or create records in batches, either using ``id`` (if given) or using a set of
         fields (``key_fields``) to look for matches. For more information on how this operation
         behaves, see Airtable's API documentation for `Update multiple records <https://airtable.com/developers/web/api/update-multiple-records#request-performupsert-fieldstomergeon>`__.
 
@@ -447,7 +504,7 @@ class Table:
 
     def delete(self, record_id: RecordId) -> RecordDeletedDict:
         """
-        Deletes the given record.
+        Delete the given record.
 
         >>> table.delete('recwPQIfs4wKPyc9D')
         {'id': 'recwPQIfs4wKPyc9D', 'deleted': True}
@@ -465,7 +522,7 @@ class Table:
 
     def batch_delete(self, record_ids: Iterable[RecordId]) -> List[RecordDeletedDict]:
         """
-        Deletes the given records, operating in batches.
+        Delete the given records, operating in batches.
 
         >>> table.batch_delete(['recwPQIfs4wKPyc9D', 'recwDxIfs3wDPyc3F'])
         [
@@ -492,7 +549,7 @@ class Table:
 
     def comments(self, record_id: RecordId) -> List["pyairtable.models.Comment"]:
         """
-        Returns a list of comments on the given record.
+        Retrieve all comments on the given record.
 
         Usage:
             >>> table = Api.table("appNxslc6jG0XedVM", "tblslc6jG0XedVMNx")
@@ -525,9 +582,7 @@ class Table:
         url = self.record_url(record_id, "comments")
         return [
             pyairtable.models.Comment.from_api(
-                api=self.api,
-                url=self.record_url(record_id, "comments", comment["id"]),
-                obj=comment,
+                comment, self.api, context={"record_url": self.record_url(record_id)}
             )
             for page in self.api.iterate_requests("GET", url)
             for comment in page["comments"]
@@ -539,7 +594,7 @@ class Table:
         text: str,
     ) -> "pyairtable.models.Comment":
         """
-        Creates a comment on a record.
+        Create a comment on a record.
         See `Create comment <https://airtable.com/developers/web/api/create-comment>`_ for details.
 
         Usage:
@@ -556,10 +611,66 @@ class Table:
         url = self.record_url(record_id, "comments")
         response = self.api.request("POST", url, json={"text": text})
         return pyairtable.models.Comment.from_api(
-            api=self.api,
-            url=self.record_url(record_id, "comments", response["id"]),
-            obj=response,
+            response, self.api, context={"record_url": self.record_url(record_id)}
         )
+
+    def schema(self, *, force: bool = False) -> TableSchema:
+        """
+        Retrieve the schema of the current table.
+
+        Usage:
+            >>> table.schema()
+            TableSchema(
+                id='tblslc6jG0XedVMNx',
+                name='My Table',
+                primary_field_id='fld6jG0XedVMNxFQW',
+                fields=[...],
+                views=[...]
+            )
+
+        Args:
+            force: |kwarg_force_metadata|
+        """
+        if force or not self._schema:
+            self._schema = self.base.schema(force=force).table(self.name)
+        return self._schema
+
+    def create_field(
+        self,
+        name: str,
+        type: str,
+        description: Optional[str] = None,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> FieldSchema:
+        """
+        Create a field on the table.
+
+        Args:
+            name: The unique name of the field.
+            field_type: One of the `Airtable field types <https://airtable.com/developers/web/api/model/field-type>`__.
+            description: A long form description of the table.
+            options: Only available for some field types. For more information, read about the
+                `Airtable field model <https://airtable.com/developers/web/api/field-model>`__.
+        """
+        request: Dict[str, Any] = {"name": name, "type": type}
+        if description:
+            request["description"] = description
+        if options:
+            request["options"] = options
+        response = self.api.request("POST", self.meta_url("fields"), json=request)
+        # This hopscotch ensures that the FieldSchema object we return has an API and a URL,
+        # and that developers don't need to reload our schema to be able to access it.
+        field_schema = parse_field_schema(response)
+        field_schema.set_api(
+            self.api,
+            context={
+                "base": self.base,
+                "table_schema": self._schema or self,
+            },
+        )
+        if self._schema:
+            self._schema.fields.append(field_schema)
+        return field_schema
 
 
 # These are at the bottom of the module to avoid circular imports

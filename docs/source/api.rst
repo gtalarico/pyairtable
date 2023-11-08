@@ -6,7 +6,7 @@ API Reference
 =============
 
 
-Module: pyairtable
+API: pyairtable
 *******************************
 
 .. autoclass:: pyairtable.Api
@@ -18,48 +18,62 @@ Module: pyairtable
 .. autoclass:: pyairtable.Table
     :members:
 
+.. autoclass:: pyairtable.Workspace
+    :members:
+
+.. autoclass:: pyairtable.Enterprise
+    :members:
+
 .. autofunction:: pyairtable.retry_strategy
 
 
-Module: pyairtable.api.types
+API: pyairtable.api.types
 *******************************
 
 .. automodule:: pyairtable.api.types
     :members:
 
 
-Module: pyairtable.formulas
+API: pyairtable.formulas
 *******************************
 
 .. automodule:: pyairtable.formulas
     :members:
 
 
-Module: pyairtable.models
+API: pyairtable.models
 *******************************
 
 .. automodule:: pyairtable.models
     :members:
+    :inherited-members: AirtableModel
 
 
-Module: pyairtable.orm
+API: pyairtable.models.schema
+********************************
+
+.. automodule:: pyairtable.models.schema
+    :members:
+    :inherited-members: AirtableModel
+
+
+API: pyairtable.orm
 *******************************
 
 .. autoclass:: pyairtable.orm.Model
     :members:
 
 
-Module: pyairtable.orm.fields
+API: pyairtable.orm.fields
 *******************************
 
 .. automodule:: pyairtable.orm.fields
     :members:
-    :member-order: bysource
     :exclude-members: valid_types, contains_type
     :no-inherited-members:
 
 
-Module: pyairtable.utils
+API: pyairtable.utils
 *******************************
 
 .. automodule:: pyairtable.utils

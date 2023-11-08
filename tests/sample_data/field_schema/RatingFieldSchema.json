@@ -1,0 +1,10 @@
+{
+  "type": "rating",
+  "options": {
+    "icon": "star",
+    "max": 5,
+    "color": "yellowBright"
+  },
+  "id": "fldlvlcSYXyatQSZI",
+  "name": "Stars"
+}

@@ -12,11 +12,7 @@ from pyairtable.models.webhook import Webhook, WebhookNotification, WebhookPaylo
 @pytest.fixture
 def webhook(sample_json, base, api):
     webhook_json = sample_json("Webhook")
-    return Webhook.from_api(
-        api=api,
-        url=f"{base.webhooks_url}/{webhook_json['id']}",
-        obj=webhook_json,
-    )
+    return Webhook.from_api(webhook_json, api, context=base)
 
 
 @pytest.fixture

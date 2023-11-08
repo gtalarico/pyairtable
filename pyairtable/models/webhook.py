@@ -8,14 +8,14 @@ from typing_extensions import Self as SelfType
 from pyairtable._compat import pydantic
 from pyairtable.api.types import RecordId
 
-from ._base import AirtableModel, SerializableModel, update_forward_refs
+from ._base import AirtableModel, CanDeleteModel, update_forward_refs
 
 # Shortcuts to avoid lots of line wrapping
 FD: Callable[[], Any] = partial(pydantic.Field, default_factory=dict)
 FL: Callable[[], Any] = partial(pydantic.Field, default_factory=list)
 
 
-class Webhook(SerializableModel, allow_update=False):
+class Webhook(CanDeleteModel, url="bases/{base.id}/webhooks/{self.id}"):
     """
     A webhook that has been retrieved from the Airtable API.
 
@@ -214,7 +214,7 @@ class WebhookNotification(AirtableModel):
         secret: Union[bytes, str],
     ) -> SelfType:
         """
-        Validates a request body and X-Airtable-Content-MAC header
+        Validate a request body and X-Airtable-Content-MAC header
         using the secret returned when the webhook was created.
 
         Args:

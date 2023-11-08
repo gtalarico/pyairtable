@@ -5,8 +5,24 @@ from requests import Request
 from requests_mock import Mocker
 
 from pyairtable import Api, Base, Table
-from pyairtable.testing import fake_record
+from pyairtable.models.schema import TableSchema
+from pyairtable.testing import fake_id, fake_record
 from pyairtable.utils import chunked
+
+
+@pytest.fixture()
+def table_schema(sample_json) -> TableSchema:
+    return TableSchema.parse_obj(sample_json("TableSchema"))
+
+
+@pytest.fixture
+def mock_schema(table, requests_mock, sample_json):
+    table_schema = sample_json("TableSchema")
+    table_schema["id"] = table.name = fake_id("tbl")
+    return requests_mock.get(
+        table.base.meta_url("tables") + "?include=visibleFieldIds",
+        json={"tables": [table_schema]},
+    )
 
 
 def test_constructor(base: Base):
@@ -17,6 +33,18 @@ def test_constructor(base: Base):
     assert table.api == base.api
     assert table.base == base
     assert table.name == "table_name"
+
+
+def test_constructor_with_schema(base: Base, table_schema: TableSchema):
+    table = Table(None, base, table_schema)
+    assert table.api == base.api
+    assert table.base == base
+    assert table.name == table_schema.name
+    assert table.url == f"https://api.airtable.com/v0/{base.id}/{table_schema.id}"
+    assert (
+        repr(table)
+        == f"<Table base='{base.id}' id='{table_schema.id}' name='{table_schema.name}'>"
+    )
 
 
 def test_deprecated_constructor(api: Api, base: Base):
@@ -41,6 +69,7 @@ def test_invalid_constructor(api, base):
         [api, "base_id", "table_name"],
         ["api_key", base, "table_name"],
         [api, base, "table_name"],
+        [None, base, -1],
     ]:
         kwargs = args.pop() if isinstance(args[-1], dict) else {}
         with pytest.raises(TypeError):
@@ -49,7 +78,34 @@ def test_invalid_constructor(api, base):
 
 
 def test_repr(table: Table):
-    assert repr(table) == "<Table base_id='appJMY16gZDQrMWpA' table_name='Table Name'>"
+    assert repr(table) == "<Table base='appJMY16gZDQrMWpA' name='Table Name'>"
+
+
+def test_schema(base, requests_mock, sample_json):
+    """
+    Test that we can load schema from API.
+    """
+    table = base.table("Apartments")
+    m = requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+    assert isinstance(schema := table.schema(), TableSchema)
+    assert m.call_count == 1
+    assert schema.id == "tbltp8DGLhqbUmjK1"
+
+
+def test_id(base, requests_mock, sample_json):
+    """
+    Test that we load schema from API if we need the ID and don't have it,
+    but if we get a name that *looks* like an ID, we trust it.
+    """
+    m = requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+
+    table = base.table("tbltp8DGLhqbUmjK1")
+    assert table.id == "tbltp8DGLhqbUmjK1"
+    assert m.call_count == 0
+
+    table = base.table("Apartments")
+    assert table.id == "tbltp8DGLhqbUmjK1"
+    assert m.call_count == 1
 
 
 @pytest.mark.parametrize(
@@ -334,6 +390,55 @@ def test_batch_delete(table: Table, container, mock_records):
         resp = table.batch_delete(container(ids))
     expected = [{"deleted": True, "id": i} for i in ids]
     assert resp == expected
+
+
+def test_create_field(table, mock_schema, requests_mock, sample_json):
+    """
+    Tests the API for creating a field (but without actually performing the operation).
+    """
+    mock_create = requests_mock.post(
+        table.meta_url("fields"),
+        json=sample_json("field_schema/SingleSelectFieldSchema"),
+    )
+
+    # Ensure we have pre-loaded our schema
+    table.schema()
+    assert mock_schema.call_count == 1
+
+    # Create the field
+    choices = ["Todo", "In progress", "Done"]
+    fld = table.create_field(
+        "Status",
+        "singleSelect",
+        description="field description",
+        options={"choices": choices},
+    )
+    assert mock_create.call_count == 1
+    assert mock_create.request_history[-1].json() == {
+        "name": "Status",
+        "type": "singleSelect",
+        "description": "field description",
+        "options": {"choices": choices},
+    }
+
+    # Test the result we got back
+    assert fld.id == "fldqCjrs1UhXgHUIc"
+    assert fld.name == "Status"
+    assert {c.name for c in fld.options.choices} == set(choices)
+
+    # Test that we constructed the URL correctly
+    assert fld._url.endswith(f"/{table.base.id}/tables/{table.name}/fields/{fld.id}")
+
+    # Test that the schema has been updated without a second API call
+    assert table._schema.field(fld.id).name == "Status"
+    assert mock_schema.call_count == 1
+
+
+def test_delete_view(table, mock_schema, requests_mock):
+    view = table.schema().view("Grid view")
+    m = requests_mock.delete(view._url)
+    view.delete()
+    assert m.call_count == 1
 
 
 # Helpers

@@ -12,7 +12,7 @@ def dict_list_to_request_params(
     values: List[Dict[str, str]],
 ) -> Dict[str, str]:
     """
-    Returns dict to be used by request params from dict list
+    Build the dict to be used by request params from dict list
 
     Expected Airtable Url Params is:
         `?sort[0][field]=FieldOne&sort[0][direction]=asc`
@@ -95,7 +95,7 @@ OPTIONS_NOT_SUPPORTED_VIA_POST = ("user_locale", "time_zone")
 
 def options_to_params(options: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Converts Airtable options to a dict of query params.
+    Convert Airtable options to a dict of query params.
 
     Args:
         options: A dict of Airtable-specific options. See :ref:`parameters`.
@@ -120,7 +120,7 @@ def options_to_json_and_params(
     options: Dict[str, Any]
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
-    Converts Airtable options to a JSON payload with (possibly) leftover query params.
+    Convert Airtable options to a JSON payload with (possibly) leftover query params.
 
     Args:
         options: A dict of Airtable-specific options. See :ref:`parameters`.

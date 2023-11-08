@@ -1,0 +1,10 @@
+{
+  "type": "multipleRecordLinks",
+  "options": {
+    "linkedTableId": "tblFgcHgyO7LlhgUe",
+    "isReversed": false,
+    "prefersSingleRecordLink": false
+  },
+  "id": "fldNvFMYxBnf35WkO",
+  "name": "Link to Self"
+}

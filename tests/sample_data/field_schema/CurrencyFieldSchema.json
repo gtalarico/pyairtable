@@ -1,0 +1,9 @@
+{
+  "type": "currency",
+  "options": {
+    "precision": 2,
+    "symbol": "$"
+  },
+  "id": "fldotSLYreNpZ1oD3",
+  "name": "Dollars"
+}

@@ -1,6 +1,14 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
+-   repo: local
+    hooks:
+    -   id: cog
+        name: cog
+        language: python
+        additional_dependencies: [cogapp]
+        entry: python -m cogapp -cr --verbosity=1 --markers="[[[cog]]] [[[out]]] [[[end]]]"
+        files: \.py$
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:

@@ -1,0 +1,9 @@
+{
+  "type": "checkbox",
+  "options": {
+    "icon": "check",
+    "color": "greenBright"
+  },
+  "id": "fldxX0QdH2ROzqDS9",
+  "name": "Done"
+}

@@ -33,6 +33,16 @@ def test_field():
         del t.name
 
 
+def test_description():
+    class T:
+        name = f.Field("Name")
+
+    T.other = f.Field("Other")
+
+    assert T.name._description == "T.name"
+    assert T.other._description == "'Other' field"
+
+
 @pytest.mark.parametrize(
     "instance,expected",
     [
@@ -387,18 +397,28 @@ def test_list_field_with_none():
     assert T.from_record(fake_record(Fld=None)).the_field == []
 
 
-def test_list_field_with_invalid_type():
+@pytest.mark.parametrize(
+    "field_class,invalid_value",
+    [
+        (f._ListField, object()),
+        (f.AttachmentsField, [1, 2, 3]),
+        (f.MultipleCollaboratorsField, [1, 2, 3]),
+        (f.MultipleSelectField, [{"complex": "type"}]),
+    ],
+)
+def test_list_field_with_invalid_type(field_class, invalid_value):
     """
-    Ensure that a ListField represents a null value as an empty list.
+    Ensure that a ListField raises TypeError when given a non-list,
+    or a list of objects that don't match `contains_type`.
     """
 
     class T(Model):
         Meta = fake_meta()
-        the_field = f._ListField("Field Name", str)
+        the_field = field_class("Field Name", str)
 
     obj = T.from_record(fake_record())
     with pytest.raises(TypeError):
-        obj.the_field = object()
+        obj.the_field = invalid_value
 
 
 def test_list_field_with_string():

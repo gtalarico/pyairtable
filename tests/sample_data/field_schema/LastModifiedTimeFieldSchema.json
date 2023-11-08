@@ -1,0 +1,23 @@
+{
+  "type": "lastModifiedTime",
+  "options": {
+    "isValid": true,
+    "referencedFieldIds": [],
+    "result": {
+      "type": "dateTime",
+      "options": {
+        "dateFormat": {
+          "name": "local",
+          "format": "l"
+        },
+        "timeFormat": {
+          "name": "12hour",
+          "format": "h:mma"
+        },
+        "timeZone": "client"
+      }
+    }
+  },
+  "id": "fldoGZqYuPMGHyt51",
+  "name": "Last Modified"
+}

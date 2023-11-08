@@ -32,8 +32,8 @@ def comment_json():
 
 @pytest.fixture
 def comment(comment_json, table):
-    url = table.record_url(RECORD_ID, "comments", comment_json["id"])
-    return Comment.from_api(table.api, url, comment_json)
+    record_url = table.record_url(RECORD_ID)
+    return Comment.from_api(comment_json, table.api, context={"record_url": record_url})
 
 
 @pytest.fixture

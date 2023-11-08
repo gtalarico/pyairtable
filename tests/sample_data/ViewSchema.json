@@ -1,0 +1,12 @@
+
+{
+  "id": "viwQpsuEDqHFqegkp",
+  "name": "My Grid View",
+  "personalForUserId": "usrL2PNC5o3H4lBEi",
+  "type": "grid",
+  "visibleFieldIds": [
+    "fldL2PNC5o3H4lBE1",
+    "fldL2PNC5o3H4lBE2",
+    "fldL2PNC5o3H4lBE3"
+  ]
+}

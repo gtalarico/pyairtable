@@ -18,7 +18,7 @@ def retry_strategy(
     **kwargs: Any,
 ) -> Retry:
     """
-    Creates a `Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_
+    Create a `Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_
     instance with adjustable default values. :class:`~pyairtable.Api` accepts this via the
     ``retry_strategy=`` parameter.
 

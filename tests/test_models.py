@@ -2,7 +2,8 @@ import pytest
 
 from pyairtable.models._base import (
     AirtableModel,
-    SerializableModel,
+    CanDeleteModel,
+    CanUpdateModel,
     update_forward_refs,
 )
 
@@ -15,12 +16,22 @@ def raw_data():
 @pytest.fixture
 def create_instance(api, raw_data):
     def _creates_instance(**kwargs):
-        class Subclass(SerializableModel, **kwargs):
+        # These kwargs used to be interpreted by __init_subclass__ but now that behavior
+        # is controlled by mixins. This weirdness is just to avoid redoing our tests.
+        base_classes = []
+        if kwargs.pop("allow_update", True):
+            base_classes.append(CanUpdateModel)
+        if kwargs.pop("allow_delete", True):
+            base_classes.append(CanDeleteModel)
+
+        kwargs.setdefault("url", "https://example.com/{self.foo}/{self.bar}/{self.baz}")
+
+        class Subclass(*base_classes, **kwargs):
             foo: int
             bar: int
             baz: int
 
-        return Subclass.from_api(api, "https://www.example.com", raw_data)
+        return Subclass.from_api(raw_data, api)
 
     return _creates_instance
 
@@ -37,15 +48,25 @@ def test_raw(raw_data):
     assert obj._raw == raw_data
 
 
-def test_from_api(raw_data):
+@pytest.mark.parametrize("prefix", ["https://api.airtable.com/v0/prefix", "prefix"])
+def test_from_api(raw_data, prefix, api):
     """
-    Test that SerializableModel.from_api persists its parameters correctly.
+    Test that CanUpdate.from_api persists its parameters correctly,
+    and that if `url=` is passed to the subclass, we'll always get a valid URL.
     """
-    url = "https://www.example.com"
-    obj = SerializableModel.from_api("api", url, raw_data)
-    assert obj._api == "api"
-    assert obj._url == url
+
+    class Dummy(CanUpdateModel, url="{prefix}/foo={self.foo}/bar={self.bar}"):
+        foo: int
+        bar: int
+
+    obj = Dummy.from_api(raw_data, api, context={"prefix": prefix})
+    assert obj._api == api
     assert obj._raw == raw_data
+    assert obj._url == "https://api.airtable.com/v0/prefix/foo=1/bar=2"
+    assert obj.foo == 1
+    assert obj.bar == 2
+    assert not hasattr(obj, "baz")
+    assert obj._raw["baz"] == 3
 
 
 def test_save(requests_mock, create_instance):
@@ -65,7 +86,17 @@ def test_save(requests_mock, create_instance):
 
 def test_save_not_allowed(create_instance):
     obj = create_instance(allow_update=False)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AttributeError):
+        obj.save()
+
+
+def test_save_without_url(create_instance):
+    """
+    Test that if we do not provide context for computing a URL when an instance
+    is created, we won't be able to save it later.
+    """
+    obj = create_instance(url="")
+    with pytest.raises(RuntimeError):
         obj.save()
 
 
@@ -81,7 +112,17 @@ def test_delete(requests_mock, create_instance):
 
 def test_delete_not_allowed(create_instance):
     obj = create_instance(allow_delete=False)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AttributeError):
+        obj.delete()
+
+
+def test_delete_without_url(create_instance):
+    """
+    Test that if we do not provide context for computing a URL when an instance
+    is created, we won't be able to delete it later.
+    """
+    obj = create_instance(url="")
+    with pytest.raises(RuntimeError):
         obj.delete()
 
 
