@@ -6,7 +6,7 @@ Metadata
 ==============
 
 The Airtable API gives you the ability to list all of your bases, tables, fields, and views.
-pyAirtable allows you to inspect and interact with the metadata in your bases.
+pyAirtable allows you to inspect and interact with this metadata in your bases.
 
 There may be parts of the Airtable API which are not supported below;
 you can always use :meth:`Api.request <pyairtable.Api.request>` to call them directly.
@@ -62,7 +62,7 @@ Modifying existing schema
 
 To modify a table or field, you can modify its schema object directly and
 call ``save()``, as shown below. You can only change names and descriptions;
-the Airtable API does not permit changing a field's type or other options.
+the Airtable API does not permit changing any other options.
 
 .. code-block:: python
 
