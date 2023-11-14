@@ -2,6 +2,21 @@
 Changelog
 =========
 
+2.2.0 (2023-11-13)
+------------------------
+
+* Fixed a bug in how webhook notification signatures are validated
+  - `PR #312 <https://github.com/gtalarico/pyairtable/pull/312>`_.
+* Added support for reading and modifying :doc:`metadata`
+  - `PR #311 <https://github.com/gtalarico/pyairtable/pull/311>`_.
+* Added support for the 'AI Text' field type
+  - `PR #310 <https://github.com/gtalarico/pyairtable/pull/310>`_.
+* Batch methods can now accept generators or iterators, not just lists
+  - `PR #308 <https://github.com/gtalarico/pyairtable/pull/308>`_.
+* Fixed a few documentation errors
+  - `PR #301 <https://github.com/gtalarico/pyairtable/pull/301>`_,
+    `PR #306 <https://github.com/gtalarico/pyairtable/pull/306>`_.
+
 2.1.0 (2023-08-18)
 ------------------------
 

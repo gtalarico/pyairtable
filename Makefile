@@ -12,7 +12,7 @@ hooks:
 
 .PHONY: release
 release:
-	@bash -c "./scripts/release.sh"
+	@zsh -c "./scripts/release.sh"
 
 .PHONY: test test-e2e coverage lint format docs clean
 test:
