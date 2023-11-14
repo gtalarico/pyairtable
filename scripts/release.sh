@@ -23,7 +23,7 @@ function bump {
         git add pyairtable/__init__.py
         PAGER=cat git status
         PAGER=cat git diff --cached pyairtable/__init__.py
-        confirm_eval echo git commit -m "Release $release_version" pyairtable/__init__.py
+        confirm_eval git commit -m "Release $release_version" pyairtable/__init__.py
     fi
 }
 
@@ -33,8 +33,8 @@ function push {
     if [[ -z "$origin" ]]; then
         fail "no remote matching $endpoint"
     fi
-    confirm_eval echo git tag -s -m "Release $release_version" $release_version
-    confirm_eval echo git push $origin $release_version
+    confirm_eval git tag -s -m "Release $release_version" $release_version
+    confirm_eval git push $origin $release_version
 }
 
 bump
