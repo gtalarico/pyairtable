@@ -16,9 +16,9 @@ pip install pyairtable
 
 ## Documentation
 
-Read the full documentation on [pyairtable.readthedocs.io](https://pyairtable.readthedocs.io/en/latest/getting-started.html).
+Read the full documentation on [pyairtable.readthedocs.io](https://pyairtable.readthedocs.io/en/stable/getting-started.html).
 
-If you're still using airtable-python-wrapper and want to upgrade, read the [migration guide](https://pyairtable.readthedocs.io/en/latest/migrations.html).
+If you're still using airtable-python-wrapper and want to upgrade, read the [migration guide](https://pyairtable.readthedocs.io/en/stable/migrations.html).
 
 ## Contributing
 
