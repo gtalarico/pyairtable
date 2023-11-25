@@ -208,6 +208,7 @@ def test_linked_record_can_be_saved(requests_mock, access_linked_records):
             "Link": [address_id],
         },
         "typecast": True,
+        "returnFieldsByFieldId": False,
     }
 
 
