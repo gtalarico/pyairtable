@@ -60,18 +60,13 @@ def test_return_fields_by_field_id(table: Table, cols):
     record = table.create({cols.TEXT_ID: "Hello"}, return_fields_by_field_id=True)
     assert record["fields"][cols.TEXT_ID] == "Hello"
 
-    # Updating a record by field ID does not require any special parameters,
-    # but the return value will have field names (not IDs).
-    updated = table.update(record["id"], {cols.TEXT_ID: "Goodbye"})
-    assert updated["fields"][cols.TEXT] == "Goodbye"
-
-    # This is not supported (422 Client Error: Unprocessable Entity for url)
-    # updated = table.update(
-    #     record["id"],
-    #     {cols.TEXT_ID: "Goodbye"},
-    #     return_fields_by_field_id=True,
-    # )
-    # assert updated["fields"][cols.TEXT_ID] == "Goodbye"
+    # Update one record with return_fields_by_field_id=True
+    updated = table.update(
+        record["id"],
+        {cols.TEXT_ID: "Goodbye"},
+        return_fields_by_field_id=True,
+    )
+    assert updated["fields"][cols.TEXT_ID] == "Goodbye"
 
     # Create multiple records with return_fields_by_field_id=True
     records = table.batch_create(
