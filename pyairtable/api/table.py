@@ -369,6 +369,7 @@ class Table:
         fields: WritableFields,
         replace: bool = False,
         typecast: bool = False,
+        return_fields_by_field_id: bool = False,
     ) -> RecordDict:
         """
         Update a particular record ID with the given fields.
@@ -383,12 +384,17 @@ class Table:
             fields: Fields to update. Must be a dict with column names or IDs as keys.
             replace: |kwarg_replace|
             typecast: |kwarg_typecast|
+            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
         method = "put" if replace else "patch"
         updated = self.api.request(
             method=method,
             url=self.record_url(record_id),
-            json={"fields": fields, "typecast": typecast},
+            json={
+                "fields": fields,
+                "typecast": typecast,
+                "returnFieldsByFieldId": return_fields_by_field_id,
+            },
         )
         return assert_typed_dict(RecordDict, updated)
 
