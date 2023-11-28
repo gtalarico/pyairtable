@@ -2,6 +2,12 @@
 Changelog
 =========
 
+2.2.1 (2023-11-28)
+------------------------
+
+* :meth:`~pyairtable.Table.update` now accepts ``return_fields_by_field_id=True``
+  - `PR #320 <https://github.com/gtalarico/pyairtable/pull/320>`_.
+
 2.2.0 (2023-11-13)
 ------------------------
 
@@ -13,9 +19,9 @@ Changelog
   - `PR #310 <https://github.com/gtalarico/pyairtable/pull/310>`_.
 * Batch methods can now accept generators or iterators, not just lists
   - `PR #308 <https://github.com/gtalarico/pyairtable/pull/308>`_.
-* Fixed a few documentation errors
-  - `PR #301 <https://github.com/gtalarico/pyairtable/pull/301>`_,
-    `PR #306 <https://github.com/gtalarico/pyairtable/pull/306>`_.
+* Fixed a few documentation errors -
+  `PR #301 <https://github.com/gtalarico/pyairtable/pull/301>`_,
+  `PR #306 <https://github.com/gtalarico/pyairtable/pull/306>`_.
 
 2.1.0 (2023-08-18)
 ------------------------
