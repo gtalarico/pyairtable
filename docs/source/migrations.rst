@@ -53,7 +53,7 @@ See below for supported and unsupported patterns:
 
     # The following will raise a TypeError. We do this proactively
     # to avoid situations where self.api and self.base don't align.
-    >>> table = Table(api, base_id, table_name)  # [Api, Base, str]
+    >>> table = Table(api, base, table_name)  # [Api, Base, str]
 
 You may need to change how your code looks up some pieces of connection metadata; for example:
 
