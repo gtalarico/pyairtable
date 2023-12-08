@@ -130,6 +130,9 @@ class Table:
             return f"<Table base={self.base.id!r} id={self._schema.id!r} name={self._schema.name!r}>"
         return f"<Table base={self.base.id!r} name={self.name!r}>"
 
+    def __hash__(self) -> int:
+        return hash((self.id, self.base.id))
+
     @property
     def id(self) -> str:
         """

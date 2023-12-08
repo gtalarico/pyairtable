@@ -93,6 +93,9 @@ class Base:
             repr += f" {permission_level=}"
         return repr + ">"
 
+    def __hash__(self) -> int:
+        return hash(self.id)
+
     def table(
         self,
         id_or_name: str,
