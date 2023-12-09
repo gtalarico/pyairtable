@@ -218,3 +218,53 @@ def LOWER(value: str) -> str:
     "LOWER(TestValue)"
     """
     return "LOWER({})".format(value)
+
+
+def NOT_EQUAL(left: Any, right: Any) -> str:
+    """
+    Create an inequality assertion
+
+    >>> NOT_EQUAL(2,2)
+    '2!=2'
+    """
+    return "{}!={}".format(left, right)
+
+
+def LESS_EQUAL(left: Any, right: Any) -> str:
+    """
+    Create a less than assertion
+
+    >>> LESS_EQUAL(2,2)
+    '2<=2'
+    """
+    return "{}<={}".format(left, right)
+
+
+def GREATER_EQUAL(left: Any, right: Any) -> str:
+    """
+    Create a greater than assertion
+
+    >>> GREATER_EQUAL(2,2)
+    '2>=2'
+    """
+    return "{}>={}".format(left, right)
+
+
+def LESS(left: Any, right: Any) -> str:
+    """
+    Create a less assertion
+
+    >>> LESS(2,2)
+    '2<2'
+    """
+    return "{}<{}".format(left, right)
+
+
+def GREATER(left: Any, right: Any) -> str:
+    """
+    Create a greater assertion
+
+    >>> GREATER(2,2)
+    '2>2'
+    """
+    return "{}>{}".format(left, right)

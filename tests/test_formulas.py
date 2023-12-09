@@ -5,8 +5,13 @@ from pyairtable.formulas import (
     EQUAL,
     FIELD,
     FIND,
+    GREATER,
+    GREATER_EQUAL,
     IF,
+    LESS,
+    LESS_EQUAL,
     LOWER,
+    NOT_EQUAL,
     OR,
     STR_VALUE,
     escape_quotes,
@@ -86,3 +91,23 @@ def test_escape_quotes(text, escaped):
 
 def test_lower():
     assert LOWER("TestValue") == "LOWER(TestValue)"
+
+
+def test_greater_equal():
+    assert GREATER_EQUAL("A", "B") == "A>=B"
+
+
+def test_less_equal():
+    assert LESS_EQUAL("A", "B") == "A<=B"
+
+
+def test_greater():
+    assert GREATER("A", "B") == "A>B"
+
+
+def test_less():
+    assert LESS("A", "B") == "A<B"
+
+
+def test_not_equal():
+    assert NOT_EQUAL("A", "B") == "A!=B"
