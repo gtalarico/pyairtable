@@ -116,3 +116,21 @@ def test_find():
         collection.find("0003")
     with pytest.raises(KeyError):
         collection.find("0004")
+
+
+@pytest.mark.parametrize(
+    "kind,collaborator",
+    [
+        ("user", "usrsOEchC9xuwRgKk"),
+        ("group", "ugpR8ZT9KtIgp8Bh3"),
+    ],
+)
+def test_base_collaborators__add(base, kind, collaborator, requests_mock, sample_json):
+    requests_mock.get(base.meta_url(), json=sample_json("BaseCollaborators"))
+    m = requests_mock.post(base.meta_url("collaborators"), body="")
+    method = getattr(base.collaborators(), f"add_{kind}")
+    method(collaborator, "read")
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "collaborators": [{kind: {"id": collaborator}, "permissionLevel": "read"}]
+    }

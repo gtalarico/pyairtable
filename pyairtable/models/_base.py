@@ -106,7 +106,7 @@ def cascade_api(
 
     # This is what we came here for
     if isinstance(obj, RestfulModel):
-        obj.set_api(api, context=context)
+        obj._set_api(api, context=context)
 
     # Find and apply API/context to nested models in every Pydantic field.
     for field_name in type(obj).__fields__:
@@ -132,16 +132,25 @@ class RestfulModel(AirtableModel):
         cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
         super().__init_subclass__()
 
-    def set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
+    def _set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
         """
         Set a link to the API and builds the REST URL used for this resource.
-
-        :meta private:
         """
         self._api = api
         self._url = self.__url_pattern.format(**context, self=self)
         if self._url and not self._url.startswith("http"):
             self._url = api.build_url(self._url)
+
+    def _reload(self, obj: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Reload the model's contents from the given object, or by making a GET request to the API.
+        """
+        if obj is None:
+            obj = self._api.get(self._url)
+        copyable = type(self).parse_obj(obj)
+        self.__dict__.update(
+            {key: copyable.__dict__.get(key) for key in type(self).__fields__}
+        )
 
 
 class CanDeleteModel(RestfulModel):
@@ -223,14 +232,7 @@ class CanUpdateModel(RestfulModel):
             exclude_none=(not self.__save_none),
         )
         response = self._api.request("PATCH", self._url, json=data)
-        copyable = type(self).parse_obj(response)
-        self.__dict__.update(
-            {
-                key: value
-                for (key, value) in copyable.__dict__.items()
-                if key in type(self).__fields__
-            }
-        )
+        self._reload(response)
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Prevents implementers from changing values on readonly or non-writable fields.

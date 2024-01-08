@@ -1,4 +1,5 @@
 import posixpath
+from functools import partialmethod
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import requests
@@ -267,6 +268,11 @@ class Api:
 
         response = self.session.send(prepared, timeout=self.timeout)
         return self._process_response(response)
+
+    get = partialmethod(request, "GET")
+    post = partialmethod(request, "POST")
+    patch = partialmethod(request, "PATCH")
+    delete = partialmethod(request, "DELETE")
 
     def _process_response(self, response: requests.Response) -> Any:
         try:

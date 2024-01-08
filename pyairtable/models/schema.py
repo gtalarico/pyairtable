@@ -5,7 +5,13 @@ from typing_extensions import TypeAlias
 
 from pyairtable._compat import pydantic
 
-from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, update_forward_refs
+from ._base import (
+    AirtableModel,
+    CanDeleteModel,
+    CanUpdateModel,
+    RestfulModel,
+    update_forward_refs,
+)
 
 _T = TypeVar("_T", bound=Any)
 _FL = partial(pydantic.Field, default_factory=list)
@@ -49,7 +55,7 @@ class Bases(AirtableModel):
         permission_level: str
 
 
-class BaseCollaborators(AirtableModel):
+class BaseCollaborators(RestfulModel, url="meta/bases/{base.id}"):
     """
     Detailed information about who can access a base.
 
@@ -84,6 +90,40 @@ class BaseCollaborators(AirtableModel):
     class InviteLinks(AirtableModel):
         base_invite_links: List["InviteLink"] = _FL()
         workspace_invite_links: List["InviteLink"] = _FL()
+
+    def _add_collaborator(
+        self, collaborator_type: str, collaborator_id: str, permission_level: str
+    ) -> None:
+        payload = {
+            "collaborators": [
+                {
+                    collaborator_type: {"id": collaborator_id},
+                    "permissionLevel": permission_level,
+                }
+            ]
+        }
+        self._api.post(f"{self._url}/collaborators", json=payload)
+        self._reload()
+
+    def add_user(self, user_id: str, permission_level: str) -> None:
+        """
+        Add a user as a base collaborator.
+
+        Args:
+            user_id: The user ID.
+            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+        """
+        self._add_collaborator("user", user_id, permission_level)
+
+    def add_group(self, group_id: str, permission_level: str) -> None:
+        """
+        Add a group as a base collaborator.
+
+        Args:
+            group_id: The group ID.
+            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+        """
+        self._add_collaborator("group", group_id, permission_level)
 
 
 class BaseShares(AirtableModel):

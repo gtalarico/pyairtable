@@ -292,7 +292,7 @@ class Base:
         """
         params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
         data = self.api.request("GET", self.meta_url(), params=params)
-        return BaseCollaborators.parse_obj(data)
+        return BaseCollaborators.from_api(data, self.api, context=self)
 
     @enterprise_only
     @cache_unless_forced

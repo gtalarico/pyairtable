@@ -667,7 +667,7 @@ class Table:
         # This hopscotch ensures that the FieldSchema object we return has an API and a URL,
         # and that developers don't need to reload our schema to be able to access it.
         field_schema = parse_field_schema(response)
-        field_schema.set_api(
+        field_schema._set_api(
             self.api,
             context={
                 "base": self.base,
