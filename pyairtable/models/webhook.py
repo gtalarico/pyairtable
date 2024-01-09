@@ -147,7 +147,7 @@ class Webhook(CanDeleteModel, url="bases/{base.id}/webhooks/{self.id}"):
         ):
             payloads = page["payloads"]
             for index, payload in enumerate(payloads):
-                payload = WebhookPayload.parse_obj(payload)
+                payload = WebhookPayload.from_api(payload, self._api, context=self)
                 payload.cursor = cursor + index
                 yield payload
                 count += 1

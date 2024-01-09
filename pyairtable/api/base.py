@@ -159,7 +159,7 @@ class Base:
         payload = {"name": name, "fields": fields}
         if description:
             payload["description"] = description
-        response = self.api.request("POST", url, json=payload)
+        response = self.api.post(url, json=payload)
         return self.table(response["id"], validate=True)
 
     @property
@@ -187,7 +187,7 @@ class Base:
         """
         url = self.meta_url("tables")
         params = {"include": ["visibleFieldIds"]}
-        data = self.api.request("GET", url, params=params)
+        data = self.api.get(url, params=params)
         return BaseSchema.from_api(data, self.api, context=self)
 
     @property
@@ -215,7 +215,7 @@ class Base:
                 )
             ]
         """
-        response = self.api.request("GET", self.webhooks_url)
+        response = self.api.get(self.webhooks_url)
         return [
             Webhook.from_api(data, self.api, context=self)
             for data in response["webhooks"]
@@ -277,12 +277,12 @@ class Base:
                 can also provide :class:`~pyairtable.models.webhook.WebhookSpecification`.
         """
         if isinstance(spec, dict):
-            spec = WebhookSpecification.parse_obj(spec)
+            spec = WebhookSpecification.from_api(spec, self.api)
 
         create = CreateWebhook(notification_url=notify_url, specification=spec)
         request = create.dict(by_alias=True, exclude_unset=True)
-        response = self.api.request("POST", self.webhooks_url, json=request)
-        return CreateWebhookResponse.parse_obj(response)
+        response = self.api.post(self.webhooks_url, json=request)
+        return CreateWebhookResponse.from_api(response, self.api)
 
     @enterprise_only
     @cache_unless_forced
@@ -291,7 +291,7 @@ class Base:
         Retrieve `base collaborators <https://airtable.com/developers/web/api/get-base-collaborators>`__.
         """
         params = {"include": ["collaborators", "inviteLinks", "interfaces"]}
-        data = self.api.request("GET", self.meta_url(), params=params)
+        data = self.api.get(self.meta_url(), params=params)
         return BaseCollaborators.from_api(data, self.api, context=self)
 
     @enterprise_only
@@ -300,8 +300,9 @@ class Base:
         """
         Retrieve `base shares <https://airtable.com/developers/web/api/list-shares>`__.
         """
-        data = self.api.request("GET", self.meta_url("shares"))
-        return BaseShares.parse_obj(data).shares
+        data = self.api.get(self.meta_url("shares"))
+        shares_obj = BaseShares.from_api(data, self.api, context=self)
+        return shares_obj.shares
 
     @enterprise_only
     def delete(self) -> None:
@@ -312,4 +313,4 @@ class Base:
             >>> base = api.base("appMxESAta6clCCwF")
             >>> base.delete()
         """
-        self.api.request("DELETE", self.meta_url())
+        self.api.delete(self.meta_url())

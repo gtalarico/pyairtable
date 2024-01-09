@@ -30,12 +30,6 @@ class AirtableModel(pydantic.BaseModel):
     _raw: Any = pydantic.PrivateAttr()
 
     @classmethod
-    def parse_obj(cls, obj: Any) -> SelfType:
-        instance = super().parse_obj(obj)
-        instance._raw = obj
-        return instance
-
-    @classmethod
     def from_api(
         cls,
         obj: Any,
@@ -56,6 +50,7 @@ class AirtableModel(pydantic.BaseModel):
                 the URL for a :class:`~pyairtable.models._base.RestfulModel`.
         """
         instance = cls.parse_obj(obj)
+        instance._raw = obj
         cascade_api(instance, api, context=context)
         return instance
 
@@ -127,6 +122,7 @@ class RestfulModel(AirtableModel):
 
     _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
     _url: str = pydantic.PrivateAttr(default="")
+    _url_context: Any = None
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
@@ -138,6 +134,7 @@ class RestfulModel(AirtableModel):
         """
         self._api = api
         self._url = self.__url_pattern.format(**context, self=self)
+        self._url_context = context
         if self._url and not self._url.startswith("http"):
             self._url = api.build_url(self._url)
 
@@ -147,7 +144,7 @@ class RestfulModel(AirtableModel):
         """
         if obj is None:
             obj = self._api.get(self._url)
-        copyable = type(self).parse_obj(obj)
+        copyable = type(self).from_api(obj, self._api, context=self._url_context)
         self.__dict__.update(
             {key: copyable.__dict__.get(key) for key in type(self).__fields__}
         )

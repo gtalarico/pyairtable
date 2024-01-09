@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 
 from pyairtable.models._base import (
@@ -36,13 +38,13 @@ def create_instance(api, raw_data):
     return _creates_instance
 
 
-def test_raw(raw_data):
+def test_raw(raw_data, api):
     """
-    Test that AirtableModel.parse_obj saves the raw value, so that developers
+    Test that AirtableModel.from_api saves the raw value, so that developers
     can access the exact payload we received from the API. This is mostly
     in case Airtable adds new things to webhooks or webhook payloads in the future.
     """
-    obj = AirtableModel.parse_obj(raw_data)
+    obj = AirtableModel.from_api(raw_data, api)
     assert not hasattr(obj, "foo")
     assert not hasattr(obj, "bar")
     assert obj._raw == raw_data
@@ -98,6 +100,70 @@ def test_save_without_url(create_instance):
     obj = create_instance(url="")
     with pytest.raises(RuntimeError):
         obj.save()
+
+
+def test_save__nested_reload(requests_mock, api):
+    """
+    Test that reloading an object with nested models correctly reloads all of them,
+    while preserving those nested models' access to the API.
+    """
+
+    class Parent(CanUpdateModel, url="foo/{self.id}"):
+        id: int
+        name: str
+        children: List["Parent.Child"]  # noqa
+
+        class Child(CanUpdateModel, url="foo/{parent.id}/child/{child.id}"):
+            id: int
+            name: str
+
+    update_forward_refs(Parent)
+
+    parent_data = {
+        "id": 1,
+        "name": "One",
+        "children": [
+            (child2_data := {"id": 2, "name": "Two"}),
+            (child3_data := {"id": 3, "name": "Three"}),
+        ],
+    }
+    requests_mock.get(parent_url := api.build_url("foo/1"), json=parent_data)
+    requests_mock.get(child2_url := api.build_url("foo/1/child/2"), json=child2_data)
+    requests_mock.get(child3_url := api.build_url("foo/1/child/3"), json=child3_data)
+
+    parent = Parent.from_api(parent_data, api)
+    assert parent.name == "One"
+    assert parent.children[0].name == "Two"
+
+    # Test that we can still reload the parent object
+    m_parent_patch = requests_mock.patch(
+        parent_url,
+        json={
+            **parent_data,
+            "name": (parent_update := "One Updated"),
+        },
+    )
+    parent.name = parent_update
+    parent.save()
+    assert m_parent_patch.call_count == 1
+    assert m_parent_patch.last_request.json()["name"] == parent_update
+
+    # Test that we can still patch a nested object after its parent was reloaded,
+    # because we saved the URL context from `from_api()` and reused it on `_reload()`.
+    m_child2_patch = requests_mock.patch(child2_url, json=child2_data)
+    m_child3_patch = requests_mock.patch(
+        child3_url,
+        json={
+            **child3_data,
+            "name": (child3_update := "Three Updated"),
+        },
+    )
+    parent.children[1].name = child3_update
+    parent.children[1].save()
+    assert m_child3_patch.call_count == 1
+    assert m_child3_patch.last_request.json()["name"] == child3_update
+    assert parent.children[1].name == child3_update
+    assert m_child2_patch.call_count == 0  # just to be sure
 
 
 def test_delete(requests_mock, create_instance):

@@ -130,15 +130,14 @@ class Api:
         Return a schema object that represents all bases available via the API.
         """
         url = self.build_url("meta/bases")
-        return Bases.parse_obj(
-            {
-                "bases": [
-                    base_info
-                    for page in self.iterate_requests("GET", url)
-                    for base_info in page["bases"]
-                ]
-            }
-        )
+        data = {
+            "bases": [
+                base_info
+                for page in self.iterate_requests("GET", url)
+                for base_info in page["bases"]
+            ]
+        }
+        return Bases.from_api(data, self)
 
     def _base_from_info(self, base_info: Bases.Info) -> "pyairtable.api.base.Base":
         return pyairtable.api.base.Base(

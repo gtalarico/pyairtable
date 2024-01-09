@@ -8,7 +8,6 @@ from pyairtable.utils import (
     coerce_iso_str,
     coerce_list_str,
     enterprise_only,
-    is_user_id,
 )
 
 
@@ -37,8 +36,8 @@ class Enterprise:
         Retrieve basic information about the enterprise, caching the result.
         """
         params = {"include": ["collaborators", "inviteLinks"]}
-        payload = self.api.request("GET", self.url, params=params)
-        return EnterpriseInfo.parse_obj(payload)
+        response = self.api.get(self.url, params=params)
+        return EnterpriseInfo.from_api(response, self.api)
 
     def group(self, group_id: str, collaborations: bool = True) -> UserGroup:
         """
@@ -51,7 +50,7 @@ class Enterprise:
         """
         params = {"include": ["collaborations"] if collaborations else []}
         url = self.api.build_url(f"meta/groups/{group_id}")
-        payload = self.api.request("GET", url, params=params)
+        payload = self.api.get(url, params=params)
         return UserGroup.parse_obj(payload)
 
     def user(self, id_or_email: str, collaborations: bool = True) -> UserInfo:
@@ -86,8 +85,7 @@ class Enterprise:
         for value in ids_or_emails:
             (emails if "@" in value else user_ids).append(value)
 
-        response = self.api.request(
-            method="GET",
+        response = self.api.get(
             url=f"{self.url}/users",
             params={
                 "id": user_ids,
