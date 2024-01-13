@@ -1,5 +1,5 @@
 import datetime
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, patch
 
 import pytest
 
@@ -150,16 +150,56 @@ def test_group__no_collaboration(enterprise, enterprise_mocks):
 
 
 @pytest.mark.parametrize(
-    "fncall,length",
+    "fncall,expected_size",
     [
         (call(), N_AUDIT_PAGES * N_AUDIT_PAGE_SIZE),
+        (call(page_limit=1), N_AUDIT_PAGE_SIZE),
     ],
 )
-def test_audit_log(enterprise, fncall, length):
+def test_audit_log(enterprise, fncall, expected_size):
     events = [
         event
         for page in enterprise.audit_log(*fncall.args, **fncall.kwargs)
         for event in page.events
     ]
-    print(repr(events))
-    assert len(events) == length
+    assert len(events) == expected_size
+
+
+def test_audit_log__no_loop(enterprise, requests_mock):
+    """
+    Test that an empty page of events does not cause an infinite loop.
+    """
+    requests_mock.get(
+        enterprise.api.build_url(
+            f"meta/enterpriseAccounts/{enterprise.id}/auditLogEvents"
+        ),
+        json={
+            "events": [],
+            "pagination": {"previous": "dummy"},
+        },
+    )
+    events = [event for page in enterprise.audit_log() for event in page.events]
+    assert len(events) == 0
+
+
+@pytest.mark.parametrize(
+    "fncall,sortorder,offset_field",
+    [
+        (call(), "descending", "previous"),
+        (call(sort_asc=True), "ascending", "next"),
+    ],
+)
+def test_audit_log__sortorder(
+    api,
+    enterprise,
+    enterprise_mocks,
+    fncall,
+    sortorder,
+    offset_field,
+):
+    with patch.object(api, "iterate_requests", wraps=api.iterate_requests) as m:
+        list(enterprise.audit_log(*fncall.args, **fncall.kwargs))
+
+    request = enterprise_mocks.get_audit_log.last_request
+    assert request.qs["sortorder"] == [sortorder]
+    assert m.mock_calls[-1].kwargs["offset_field"] == offset_field

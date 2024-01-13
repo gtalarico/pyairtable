@@ -1,8 +1,9 @@
 import datetime
 from typing import Any, Iterable, Iterator, List, Optional, Union, cast
-from typing_extensions import TypeVar
-from pyairtable.models.audit import AuditLogResponse
 
+from typing_extensions import TypeVar
+
+from pyairtable.models.audit import AuditLogResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.utils import cache_unless_forced, enterprise_only
 
@@ -102,6 +103,7 @@ class Enterprise:
         self,
         *,
         page_size: Optional[int] = None,
+        page_limit: Optional[int] = None,
         sort_asc: Optional[bool] = False,
         previous: Optional[str] = None,
         next: Optional[str] = None,
@@ -160,6 +162,7 @@ class Enterprise:
 
         Args:
             page_size: How many events per page to return (maximum 100).
+            page_limit: How many pages to return before stopping.
             sort_asc: Whether to sort in ascending order (earliest to latest)
                 rather than descending order (latest to earliest).
             previous: Requests the previous page of results from the given ID.
@@ -205,15 +208,18 @@ class Enterprise:
         params = {k: v for (k, v) in params.items() if v}
         offset_field = "next" if sort_asc else "previous"
         url = self.api.build_url(f"meta/enterpriseAccounts/{self.id}/auditLogEvents")
-        for response in self.api.iterate_requests(
+        iter_requests = self.api.iterate_requests(
             method="GET",
             url=url,
             params=params,
             offset_field=offset_field,
-        ):
+        )
+        for count, response in enumerate(iter_requests, start=1):
             parsed = AuditLogResponse.parse_obj(response)
             yield parsed
             if not parsed.events:
+                return
+            if page_limit is not None and count >= page_limit:
                 return
 
 

@@ -133,3 +133,16 @@ def test_update_field(blank_base: pyairtable.Base):
     field.description = "Renamed"
     field.save()
     assert reload_field().description == "Renamed"
+
+
+def test_audit_log(api):
+    """
+    Test that we can call the audit log endpoint.
+    """
+    if "AIRTABLE_ENTERPRISE_ID" not in os.environ:
+        return pytest.skip("test_audit_log requires AIRTABLE_ENTERPRISE_ID")
+
+    enterprise = api.enterprise(os.environ["AIRTABLE_ENTERPRISE_ID"])
+    for page in enterprise.audit_log(page_limit=1):
+        for event in page.events:
+            assert isinstance(event.action, str)
