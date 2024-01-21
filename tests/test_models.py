@@ -38,16 +38,29 @@ def create_instance(api, raw_data):
     return _creates_instance
 
 
-def test_raw(raw_data, api):
+def test_raw(api):
     """
     Test that AirtableModel.from_api saves the raw value, so that developers
     can access the exact payload we received from the API. This is mostly
-    in case Airtable adds new things to webhooks or webhook payloads in the future.
+    in case Airtable adds new things to webhooks or schemas in the future.
     """
-    obj = AirtableModel.from_api(raw_data, api)
+
+    class Grandchild(AirtableModel):
+        value: int
+
+    class Child(AirtableModel):
+        grandchild: Grandchild
+
+    class Parent(AirtableModel):
+        child: Child
+
+    raw = {"child": {"grandchild": {"value": 1}}, "foo": "FOO", "bar": "BAR"}
+    obj = Parent.from_api(raw, api)
     assert not hasattr(obj, "foo")
     assert not hasattr(obj, "bar")
-    assert obj._raw == raw_data
+    assert obj._raw == raw
+    assert obj.child._raw == raw["child"]
+    assert obj.child.grandchild._raw == raw["child"]["grandchild"]
 
 
 @pytest.mark.parametrize("prefix", ["https://api.airtable.com/v0/prefix", "prefix"])

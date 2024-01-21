@@ -29,10 +29,14 @@ class AirtableModel(pydantic.BaseModel):
 
     _raw: Any = pydantic.PrivateAttr()
 
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        self._raw = data
+
     @classmethod
     def from_api(
         cls,
-        obj: Any,
+        obj: Dict[str, Any],
         api: "pyairtable.api.api.Api",
         *,
         context: Optional[Any] = None,
@@ -49,8 +53,7 @@ class AirtableModel(pydantic.BaseModel):
                 which will be used as arguments to ``str.format()`` when constructing
                 the URL for a :class:`~pyairtable.models._base.RestfulModel`.
         """
-        instance = cls.parse_obj(obj)
-        instance._raw = obj
+        instance = cls(**obj)
         cascade_api(instance, api, context=context)
         return instance
 
@@ -130,7 +133,7 @@ class RestfulModel(AirtableModel):
 
     def _set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
         """
-        Set a link to the API and builds the REST URL used for this resource.
+        Set a link to the API and build the REST URL used for this resource.
         """
         self._api = api
         self._url = self.__url_pattern.format(**context, self=self)
