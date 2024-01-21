@@ -337,7 +337,7 @@ class UserInfo(AirtableModel):
     enterprise_user_type: Optional[str]
     invited_to_airtable_by_user_id: Optional[str]
     is_managed: bool = False
-    collaborations: Optional["Collaborations"]
+    collaborations: "Collaborations"
     groups: List[NestedId] = pydantic.Field(default_factory=list)
 
 
@@ -351,6 +351,27 @@ class Collaborations(AirtableModel):
     base_collaborations: List["Collaborations.BaseCollaboration"]
     interface_collaborations: List["Collaborations.InterfaceCollaboration"]
     workspace_collaborations: List["Collaborations.WorkspaceCollaboration"]
+
+    @property
+    def bases(self) -> Dict[str, "Collaborations.BaseCollaboration"]:
+        """
+        Mapping of base IDs to collaborations, to make lookups easier.
+        """
+        return {c.base_id: c for c in self.base_collaborations}
+
+    @property
+    def interfaces(self) -> Dict[str, "Collaborations.InterfaceCollaboration"]:
+        """
+        Mapping of interface IDs to collaborations, to make lookups easier.
+        """
+        return {c.interface_id: c for c in self.interface_collaborations}
+
+    @property
+    def workspaces(self) -> Dict[str, "Collaborations.WorkspaceCollaboration"]:
+        """
+        Mapping of workspace IDs to collaborations, to make lookups easier.
+        """
+        return {c.workspace_id: c for c in self.workspace_collaborations}
 
     class BaseCollaboration(AirtableModel):
         base_id: str
@@ -381,7 +402,7 @@ class UserGroup(AirtableModel):
     created_time: str
     updated_time: str
     members: List["UserGroup.Member"]
-    collaborations: Optional["Collaborations"]
+    collaborations: "Collaborations"
 
     class Member(AirtableModel):
         user_id: str

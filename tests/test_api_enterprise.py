@@ -21,10 +21,6 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
         enterprise.url,
         json=sample_json("EnterpriseInfo"),
     )
-    m.get_user = requests_mock.get(
-        f"{enterprise.url}/users/{m.user_id}",
-        json=user_json,
-    )
     m.get_users = requests_mock.get(
         f"{enterprise.url}/users",
         json={"users": [user_json]},
@@ -50,7 +46,7 @@ def test_info(enterprise, enterprise_mocks):
 def test_user(enterprise, enterprise_mocks):
     user = enterprise.user(enterprise_mocks.user_id)
     assert isinstance(user, UserInfo)
-    assert enterprise_mocks.get_user.call_count == 1
+    assert enterprise_mocks.get_users.call_count == 1
 
 
 @pytest.mark.parametrize(
@@ -67,11 +63,6 @@ def test_users(enterprise, enterprise_mocks, search_for):
     assert isinstance(user := results[0], UserInfo)
     assert user.id == "usrL2PNC5o3H4lBEi"
     assert user.state == "provisioned"
-
-
-def test_users__invalid_value(enterprise, enterprise_mocks):
-    with pytest.raises(ValueError):
-        enterprise.users(["not an ID or email"])
 
 
 def test_group(enterprise, enterprise_mocks):

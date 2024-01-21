@@ -1,7 +1,7 @@
-from typing import Dict, Iterable, List, Optional
+from typing import Iterable, List, Optional
 
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
-from pyairtable.utils import cache_unless_forced, enterprise_only, is_user_id
+from pyairtable.utils import cache_unless_forced, enterprise_only
 
 
 @enterprise_only
@@ -33,8 +33,10 @@ class Enterprise:
         return EnterpriseInfo.parse_obj(payload)
 
     def group(self, group_id: str) -> UserGroup:
+        params = {"include": ["collaborations"]}
         url = self.api.build_url(f"meta/groups/{group_id}")
-        return UserGroup.parse_obj(self.api.request("GET", url))
+        payload = self.api.request("GET", url, params=params)
+        return UserGroup.parse_obj(payload)
 
     def user(self, id_or_email: str) -> UserInfo:
         """
@@ -49,44 +51,32 @@ class Enterprise:
         """
         Retrieve information on the users with the given IDs or emails.
 
-        Following the Airtable API specification, pyAirtable will perform
-        one API request for each user ID. However, when given a list of emails,
-        pyAirtable only needs to perform one API request for the entire list.
-
-        Read more at `Get user by ID <https://airtable.com/developers/web/api/get-user-by-id>`__
-        and `Get user by email <https://airtable.com/developers/web/api/get-user-by-email>`__.
+        Read more at `Get users by ID or email <https://airtable.com/developers/web/api/get-users-by-id-or-email>`__.
 
         Args:
             ids_or_emails: A sequence of user IDs (``usrQBq2RGdihxl3vU``)
                 or email addresses (or both).
         """
-        users: Dict[str, UserInfo] = {}  # key by user ID to avoid returning duplicates
         user_ids: List[str] = []
         emails: List[str] = []
         for value in ids_or_emails:
-            if "@" in value:
-                emails.append(value)
-            elif is_user_id(value):
-                user_ids.append(value)
-            else:
-                raise ValueError(f"unrecognized user ID or email: {value!r}")
+            (emails if "@" in value else user_ids).append(value)
 
-        for user_id in user_ids:
-            response = self.api.request("GET", f"{self.url}/users/{user_id}")
-            info = UserInfo.parse_obj(response)
-            users[info.id] = info
-
-        if emails:
-            params = {"email": emails}
-            response = self.api.request("GET", f"{self.url}/users", params=params)
-            users.update(
-                {
-                    info.id: info
-                    for user_obj in response["users"]
-                    if (info := UserInfo.parse_obj(user_obj))
-                }
-            )
-
+        response = self.api.request(
+            method="GET",
+            url=f"{self.url}/users",
+            params={
+                "id": user_ids,
+                "email": emails,
+                "include": ["collaborations"],
+            },
+        )
+        # key by user ID to avoid returning duplicates
+        users = {
+            info.id: info
+            for user_obj in response["users"]
+            if (info := UserInfo.from_api(user_obj, self.api, context=self))
+        }
         return list(users.values())
 
 
