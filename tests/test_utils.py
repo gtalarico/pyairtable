@@ -58,3 +58,32 @@ def test_attachment():
 )
 def test_id_check(func, value, expected):
     assert func(value) is expected
+
+
+@pytest.mark.parametrize(
+    "func,input,expected",
+    [
+        (utils.coerce_iso_str, None, None),
+        (utils.coerce_iso_str, "asdf", ValueError),
+        (utils.coerce_iso_str, -1, TypeError),
+        (utils.coerce_iso_str, "2023-01-01", "2023-01-01"),
+        (utils.coerce_iso_str, "2023-01-01 12:34:56", "2023-01-01 12:34:56"),
+        (utils.coerce_iso_str, date(2023, 1, 1), "2023-01-01"),
+        (
+            utils.coerce_iso_str,
+            datetime(2023, 1, 1, 12, 34, 56),
+            "2023-01-01T12:34:56",
+        ),
+        (utils.coerce_list_str, None, []),
+        (utils.coerce_list_str, "asdf", ["asdf"]),
+        (utils.coerce_list_str, ("one", "two", "three"), ["one", "two", "three"]),
+        (utils.coerce_list_str, -1, TypeError),
+    ],
+)
+def test_converter(func, input, expected):
+    if isinstance(expected, type) and issubclass(expected, Exception):
+        with pytest.raises(expected):
+            func(input)
+        return
+
+    assert func(input) == expected

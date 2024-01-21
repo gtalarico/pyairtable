@@ -3,7 +3,19 @@ import re
 import textwrap
 from datetime import date, datetime
 from functools import partial, wraps
-from typing import Any, Callable, Generic, Iterator, Sequence, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import requests
 from typing_extensions import ParamSpec, Protocol
@@ -208,3 +220,29 @@ def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
     _append_docstring_text(_inner, "Args:\n\tforce: |kwarg_force_metadata|")
 
     return _inner
+
+
+def coerce_iso_str(value: Any) -> Optional[str]:
+    """
+    Given an input that might be a date or datetime, or an ISO 8601 formatted str,
+    convert the value into an ISO 8601 formatted str.
+    """
+    if value is None:
+        return value
+    if isinstance(value, str):
+        datetime.fromisoformat(value)  # validates type, nothing more
+        return value
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    raise TypeError(f"cannot coerce {type(value)} into ISO 8601 str")
+
+
+def coerce_list_str(value: Optional[Union[str, Iterable[str]]]) -> List[str]:
+    """
+    Given an input that is either a str or an iterable of str, return a list.
+    """
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    return list(value)

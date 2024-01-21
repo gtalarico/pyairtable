@@ -1,11 +1,15 @@
 import datetime
-from typing import Any, Iterable, Iterator, List, Optional, Union, cast
-
-from typing_extensions import TypeVar
+from typing import Iterable, Iterator, List, Optional, Union
 
 from pyairtable.models.audit import AuditLogResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
-from pyairtable.utils import cache_unless_forced, enterprise_only
+from pyairtable.utils import (
+    cache_unless_forced,
+    coerce_iso_str,
+    coerce_list_str,
+    enterprise_only,
+    is_user_id,
+)
 
 
 @enterprise_only
@@ -187,12 +191,12 @@ class Enterprise:
             An object representing a single page of audit log results.
         """
 
-        start_time = _coerce_isoformat(start_time)
-        end_time = _coerce_isoformat(end_time)
-        user_id = _coerce_list(user_id)
-        event_type = _coerce_list(event_type)
-        model_id = _coerce_list(model_id)
-        category = _coerce_list(category)
+        start_time = coerce_iso_str(start_time)
+        end_time = coerce_iso_str(end_time)
+        user_id = coerce_list_str(user_id)
+        event_type = coerce_list_str(event_type)
+        model_id = coerce_list_str(model_id)
+        category = coerce_list_str(category)
         params = {
             "startTime": start_time,
             "endTime": end_time,
@@ -221,28 +225,6 @@ class Enterprise:
                 return
             if page_limit is not None and count >= page_limit:
                 return
-
-
-def _coerce_isoformat(value: Any) -> Optional[str]:
-    if value is None:
-        return value
-    if isinstance(value, str):
-        datetime.datetime.fromisoformat(value)  # validates type, nothing more
-        return value
-    if isinstance(value, (datetime.date, datetime.datetime)):
-        return value.isoformat()
-    raise TypeError(f"cannot coerce {type(value)} into ISO 8601 str")
-
-
-T = TypeVar("T")
-
-
-def _coerce_list(value: Optional[Union[str, Iterable[T]]]) -> List[T]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return cast(List[T], [value])
-    return list(value)
 
 
 # These are at the bottom of the module to avoid circular imports
