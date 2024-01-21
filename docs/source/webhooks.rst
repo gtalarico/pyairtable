@@ -1,3 +1,6 @@
+.. include:: _substitutions.rst
+.. include:: _warn_latest.rst
+
 Webhooks
 ==============================
 

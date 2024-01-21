@@ -157,6 +157,9 @@ def test_group__no_collaboration(enterprise, enterprise_mocks):
     ],
 )
 def test_audit_log(enterprise, fncall, expected_size):
+    """
+    Test that we iterate through multiple pages of the audit log. correctly
+    """
     events = [
         event
         for page in enterprise.audit_log(*fncall.args, **fncall.kwargs)
@@ -197,6 +200,10 @@ def test_audit_log__sortorder(
     sortorder,
     offset_field,
 ):
+    """
+    Test that we calculate sortorder and offset_field correctly
+    dpeending on whether we're ascending or descending.
+    """
     with patch.object(api, "iterate_requests", wraps=api.iterate_requests) as m:
         list(enterprise.audit_log(*fncall.args, **fncall.kwargs))
 

@@ -6,6 +6,13 @@ from pyairtable.models._base import AirtableModel, update_forward_refs
 
 
 class AuditLogResponse(AirtableModel):
+    """
+    Represents a page of audit log events.
+
+    See `Audit log events <https://airtable.com/developers/web/api/audit-log-events>`__
+    for more information on how to interpret this data structure.
+    """
+
     events: List["AuditLogEvent"]
     pagination: Optional["AuditLogResponse.Pagination"] = None
 
@@ -15,6 +22,13 @@ class AuditLogResponse(AirtableModel):
 
 
 class AuditLogEvent(AirtableModel):
+    """
+    Represents a single audit log event.
+
+    See `Audit log events <https://airtable.com/developers/web/api/audit-log-events>`__
+    for more information on how to interpret this data structure.
+    """
+
     id: str
     timestamp: str
     action: str

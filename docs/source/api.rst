@@ -49,6 +49,14 @@ API: pyairtable.models
     :inherited-members: AirtableModel
 
 
+API: pyairtable.models.audit
+********************************
+
+.. automodule:: pyairtable.models.audit
+    :members:
+    :inherited-members: AirtableModel
+
+
 API: pyairtable.models.schema
 ********************************
 

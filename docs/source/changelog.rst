@@ -5,6 +5,9 @@ Changelog
 2.3.0 (TBD)
 ------------------------
 
+* Added :meth:`Enterprise.audit_log <pyairtable.Enterprise.audit_log>`
+  to iterate page-by-page through `audit log events <https://airtable.com/developers/web/api/audit-logs-overview>`__.
+  - `PR #330 <https://github.com/gtalarico/pyairtable/pull/330>`_.
 * :meth:`Api.base <pyairtable.Api.base>`,
   :meth:`Api.table <pyairtable.Api.table>`,
   and :meth:`Base.table <pyairtable.Base.table>`
