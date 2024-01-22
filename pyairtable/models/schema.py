@@ -34,6 +34,68 @@ def _find(collection: List[_T], id_or_name: str) -> _T:
     return items_by_name[id_or_name]
 
 
+class _Collaborators(RestfulModel):
+    """
+    Mixin for use with RestfulModel subclasses that have a /collaborators endpoint.
+    """
+
+    def _add_collaborator(
+        self, collaborator_type: str, collaborator_id: str, permission_level: str
+    ) -> None:
+        payload = {
+            "collaborators": [
+                {
+                    collaborator_type: {"id": collaborator_id},
+                    "permissionLevel": permission_level,
+                }
+            ]
+        }
+        self._api.post(f"{self._url}/collaborators", json=payload)
+        self._reload()
+
+    def add_user(self, user_id: str, permission_level: str) -> None:
+        """
+        Add a user as a collaborator.
+
+        Args:
+            user_id: The user ID.
+            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+        """
+        self._add_collaborator("user", user_id, permission_level)
+
+    def add_group(self, group_id: str, permission_level: str) -> None:
+        """
+        Add a group as a collaborator.
+
+        Args:
+            group_id: The group ID.
+            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+        """
+        self._add_collaborator("group", group_id, permission_level)
+
+    def update(self, collaborator_id: str, permission_level: str) -> None:
+        """
+        Change the permission level granted to a user or group.
+
+        Args:
+            collaborator_id: The user or group ID.
+            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+        """
+        self._api.patch(
+            f"{self._url}/collaborators/{collaborator_id}",
+            json={"permissionLevel": permission_level},
+        )
+
+    def remove(self, collaborator_id: str) -> None:
+        """
+        Remove a user or group as a collaborator.
+
+        Args:
+            collaborator_id: The user or group ID.
+        """
+        self._api.delete(f"{self._url}/collaborators/{collaborator_id}")
+
+
 class Bases(AirtableModel):
     """
     The list of bases visible to the API token.
@@ -55,7 +117,7 @@ class Bases(AirtableModel):
         permission_level: str
 
 
-class BaseCollaborators(RestfulModel, url="meta/bases/{base.id}"):
+class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
     """
     Detailed information about who can access a base.
 
@@ -90,40 +152,6 @@ class BaseCollaborators(RestfulModel, url="meta/bases/{base.id}"):
     class InviteLinks(AirtableModel):
         base_invite_links: List["InviteLink"] = _FL()
         workspace_invite_links: List["InviteLink"] = _FL()
-
-    def _add_collaborator(
-        self, collaborator_type: str, collaborator_id: str, permission_level: str
-    ) -> None:
-        payload = {
-            "collaborators": [
-                {
-                    collaborator_type: {"id": collaborator_id},
-                    "permissionLevel": permission_level,
-                }
-            ]
-        }
-        self._api.post(f"{self._url}/collaborators", json=payload)
-        self._reload()
-
-    def add_user(self, user_id: str, permission_level: str) -> None:
-        """
-        Add a user as a base collaborator.
-
-        Args:
-            user_id: The user ID.
-            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
-        """
-        self._add_collaborator("user", user_id, permission_level)
-
-    def add_group(self, group_id: str, permission_level: str) -> None:
-        """
-        Add a group as a base collaborator.
-
-        Args:
-            group_id: The group ID.
-            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
-        """
-        self._add_collaborator("group", group_id, permission_level)
 
 
 class BaseShares(AirtableModel):
@@ -315,7 +343,7 @@ class EnterpriseInfo(AirtableModel):
         is_sso_required: bool
 
 
-class WorkspaceCollaborators(AirtableModel):
+class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
     """
     Detailed information about who can access a workspace.
 
@@ -326,13 +354,10 @@ class WorkspaceCollaborators(AirtableModel):
     name: str
     created_time: str
     base_ids: List[str]
-    # We really don't need black to wrap these lines of text.
-    # fmt: off
-    restrictions: "WorkspaceCollaborators.Restrictions" = pydantic.Field(alias="workspaceRestrictions")
+    restrictions: "WorkspaceCollaborators.Restrictions" = pydantic.Field(alias="workspaceRestrictions")  # fmt: skip
     group_collaborators: Optional["WorkspaceCollaborators.GroupCollaborators"] = None
-    individual_collaborators: Optional["WorkspaceCollaborators.IndividualCollaborators"] = None
+    individual_collaborators: Optional["WorkspaceCollaborators.IndividualCollaborators"] = None  # fmt: skip
     invite_links: Optional["WorkspaceCollaborators.InviteLinks"] = None
-    # fmt: on
 
     class Restrictions(AirtableModel):
         invite_creation: str = pydantic.Field(alias="inviteCreationRestriction")

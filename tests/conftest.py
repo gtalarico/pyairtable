@@ -30,7 +30,9 @@ def url_builder():
 @pytest.fixture
 def constants():
     return dict(
-        API_KEY="FakeApiKey", BASE_ID="appJMY16gZDQrMWpA", TABLE_NAME="Table Name"
+        API_KEY="FakeApiKey",
+        BASE_ID="appJMY16gZDQrMWpA",
+        TABLE_NAME="Table Name",
     )
 
 

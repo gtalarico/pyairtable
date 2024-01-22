@@ -5,6 +5,7 @@ import pytest
 
 import pyairtable.models.schema
 from pyairtable.models._base import AirtableModel
+from pyairtable.testing import fake_id
 
 
 @pytest.mark.parametrize(
@@ -119,18 +120,90 @@ def test_find():
 
 
 @pytest.mark.parametrize(
-    "kind,collaborator",
+    "kind,id",
     [
         ("user", "usrsOEchC9xuwRgKk"),
         ("group", "ugpR8ZT9KtIgp8Bh3"),
     ],
 )
-def test_base_collaborators__add(base, kind, collaborator, requests_mock, sample_json):
+def test_base_collaborators__add(base, kind, id, requests_mock, sample_json):
+    """
+    Test that we can call base.collaborators().add_{user,group}
+    to grant access to the base.
+    """
     requests_mock.get(base.meta_url(), json=sample_json("BaseCollaborators"))
     m = requests_mock.post(base.meta_url("collaborators"), body="")
     method = getattr(base.collaborators(), f"add_{kind}")
-    method(collaborator, "read")
+    method(id, "read")
     assert m.call_count == 1
     assert m.last_request.json() == {
-        "collaborators": [{kind: {"id": collaborator}, "permissionLevel": "read"}]
+        "collaborators": [{kind: {"id": id}, "permissionLevel": "read"}]
     }
+
+
+@pytest.mark.parametrize(
+    "kind,id",
+    [
+        ("user", "usrsOEchC9xuwRgKk"),
+        ("group", "ugpR8ZT9KtIgp8Bh3"),
+    ],
+)
+def test_workspace_collaborators__add(api, kind, id, requests_mock, sample_json):
+    """
+    Test that we can call workspace.collaborators().add_{user,group}
+    to grant access to the workspace.
+    """
+    workspace_json = sample_json("WorkspaceCollaborators")
+    workspace = api.workspace(workspace_json["id"])
+    requests_mock.get(workspace.url, json=workspace_json)
+    m = requests_mock.post(f"{workspace.url}/collaborators", body="")
+    method = getattr(workspace.collaborators(), f"add_{kind}")
+    method(id, "read")
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "collaborators": [{kind: {"id": id}, "permissionLevel": "read"}]
+    }
+
+
+@pytest.mark.parametrize(
+    "name,id",
+    [
+        ("base", "appLkNDICXNqxSDhG"),
+        ("workspace", "wspmhESAta6clCCwF"),
+    ],
+)
+def test_update_collaborator(api, name, id, requests_mock, sample_json):
+    """
+    Test that we can call collaborators().update() to change the permission level
+    of a user or group on a base or workspace.
+    """
+    target = getattr(api, name)(id)
+    grp = fake_id("grp")
+    obj = sample_json(f"{name.capitalize()}Collaborators")
+    requests_mock.get(api.build_url(f"meta/{name}s/{id}"), json=obj)
+    m = requests_mock.patch(api.build_url(f"meta/{name}s/{id}/collaborators/{grp}"))
+    target.collaborators().update(grp, "read")
+    assert m.call_count == 1
+    assert m.last_request.json() == {"permissionLevel": "read"}
+
+
+@pytest.mark.parametrize(
+    "name,id",
+    [
+        ("base", "appLkNDICXNqxSDhG"),
+        ("workspace", "wspmhESAta6clCCwF"),
+    ],
+)
+def test_remove_collaborator(api, name, id, requests_mock, sample_json):
+    """
+    Test that we can call collaborators().remove() to revoke permissions
+    from a user or group to a base or workspace.
+    """
+    target = getattr(api, name)(id)
+    grp = fake_id("grp")
+    obj = sample_json(f"{name.capitalize()}Collaborators")
+    requests_mock.get(api.build_url(f"meta/{name}s/{id}"), json=obj)
+    m = requests_mock.delete(api.build_url(f"meta/{name}s/{id}/collaborators/{grp}"))
+    target.collaborators().remove(grp)
+    assert m.call_count == 1
+    assert m.last_request.body is None
