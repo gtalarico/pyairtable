@@ -67,7 +67,7 @@ def test_find_in_collection(clsname, method, id_or_name, sample_json):
         "UserInfo.is_two_factor_auth_enabled": False,
         "UserInfo.name": "foo baz",
         "WorkspaceCollaborators.base_ids": ["appLkNDICXNqxSDhG", "appSW9R5uCNmRmfl6"],
-        "WorkspaceCollaborators.invite_links.base_invite_links[0].id": "invJiqaXmPqq6Ec87",
+        "WorkspaceCollaborators.invite_links.via_base[0].id": "invJiqaXmPqq6Ec87",
     }.items(),
     ids=itemgetter(0),
 )
@@ -207,3 +207,35 @@ def test_remove_collaborator(api, name, id, requests_mock, sample_json):
     target.collaborators().remove(grp)
     assert m.call_count == 1
     assert m.last_request.body is None
+
+
+@pytest.mark.parametrize("kind", ["base", "workspace"])
+@pytest.mark.parametrize("via", ["base", "workspace"])
+def test_collaborators_invite_link__delete(
+    api, kind, via, base, workspace, requests_mock, sample_json
+):
+    """
+    Test that we can revoke an invite link against a base or a workspace
+    if it comes from either base.collaborators() or workspace.collaborators()
+    """
+    # obj/kind => the object we're using to get invite links
+    obj = locals()[kind]
+    # via => the pathway through which the invite link was created
+    via_id = locals()[via].id
+
+    # ensure .collaborators() gets the right kind of data back
+    requests_mock.get(
+        api.build_url(f"meta/{kind}s/{obj.id}"),
+        json=sample_json(f"{kind.capitalize()}Collaborators"),
+    )
+    invite_link = getattr(obj.collaborators().invite_links, f"via_{via}")[0]
+
+    # construct the URL we expect InviteLink.delete() to call
+    url = api.build_url(f"meta/{via}s/{via_id}/invites/{invite_link.id}")
+    endpoint = requests_mock.delete(url)
+    print(f"{kind=} {via=} {url=}")
+
+    # test that it happens
+    invite_link.delete()
+    assert endpoint.call_count == 1
+    assert endpoint.last_request.method == "DELETE"

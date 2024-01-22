@@ -102,8 +102,8 @@ def cascade_api(
     # If it's a ModelNamedThis, the key will be model_named_this.
     context = {**context, _context_name(obj): obj}
 
-    # This is what we came here for
     if isinstance(obj, RestfulModel):
+        # This is what we came here for; set the API and URL on the RESTful model.
         obj._set_api(api, context=context)
 
     # Find and apply API/context to nested models in every Pydantic field.
@@ -136,8 +136,12 @@ class RestfulModel(AirtableModel):
         Set a link to the API and build the REST URL used for this resource.
         """
         self._api = api
-        self._url = self.__url_pattern.format(**context, self=self)
         self._url_context = context
+        try:
+            self._url = self.__url_pattern.format(**context, self=self)
+        except (KeyError, AttributeError) as exc:
+            exc.args = (*exc.args, context)
+            raise
         if self._url and not self._url.startswith("http"):
             self._url = api.build_url(self._url)
 

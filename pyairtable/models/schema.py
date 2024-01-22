@@ -1,3 +1,4 @@
+import importlib
 from functools import partial
 from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
 
@@ -16,6 +17,18 @@ from ._base import (
 _T = TypeVar("_T", bound=Any)
 _FL = partial(pydantic.Field, default_factory=list)
 _FD = partial(pydantic.Field, default_factory=dict)
+
+
+def _F(classname: str, **kwargs: Any) -> Any:
+    def _create_default_from_classname() -> Any:
+        this_module = importlib.import_module(__name__)
+        obj = this_module
+        for segment in classname.split("."):
+            obj = getattr(obj, segment)
+        return obj
+
+    kwargs["default_factory"] = _create_default_from_classname
+    return pydantic.Field(**kwargs)
 
 
 def _find(collection: List[_T], id_or_name: str) -> _T:
@@ -79,7 +92,7 @@ class _Collaborators(RestfulModel):
 
         Args:
             collaborator_id: The user or group ID.
-            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+            permission_level: |kwarg_permission_level|
         """
         self._api.patch(
             f"{self._url}/collaborators/{collaborator_id}",
@@ -129,9 +142,9 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
     permission_level: str
     workspace_id: str
     interfaces: Dict[str, "BaseCollaborators.InterfaceCollaborators"] = _FD()
-    group_collaborators: Optional["BaseCollaborators.GroupCollaborators"]
-    individual_collaborators: Optional["BaseCollaborators.IndividualCollaborators"]
-    invite_links: Optional["BaseCollaborators.InviteLinks"]
+    group_collaborators: "BaseCollaborators.GroupCollaborators" = _F("BaseCollaborators.GroupCollaborators")  # fmt: skip
+    individual_collaborators: "BaseCollaborators.IndividualCollaborators" = _F("BaseCollaborators.IndividualCollaborators")  # fmt: skip
+    invite_links: "BaseCollaborators.InviteLinks" = _F("BaseCollaborators.InviteLinks")  # fmt: skip
 
     class InterfaceCollaborators(AirtableModel):
         created_time: str
@@ -145,13 +158,11 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
 
     class IndividualCollaborators(AirtableModel):
         via_base: List["IndividualCollaborator"] = _FL(alias="baseCollaborators")
-        via_workspace: List["IndividualCollaborator"] = _FL(
-            alias="workspaceCollaborators"
-        )
+        via_workspace: List["IndividualCollaborator"] = _FL(alias="workspaceCollaborators")  # fmt: skip
 
     class InviteLinks(AirtableModel):
-        base_invite_links: List["InviteLink"] = _FL()
-        workspace_invite_links: List["InviteLink"] = _FL()
+        via_base: List["InviteLink"] = _FL(alias="baseInviteLinks")
+        via_workspace: List["InviteLinkViaWorkspace"] = _FL(alias="workspaceInviteLinks")  # fmt: skip
 
 
 class BaseShares(AirtableModel):
@@ -301,7 +312,9 @@ class IndividualCollaborator(AirtableModel):
     permission_level: str
 
 
-class InviteLink(AirtableModel):
+class InviteLink(
+    CanDeleteModel, url="meta/bases/{base_collaborators.id}/invites/{self.id}"
+):
     id: str
     type: str
     created_time: str
@@ -309,6 +322,13 @@ class InviteLink(AirtableModel):
     referred_by_user_id: str
     permission_level: str
     restricted_to_email_domains: List[str] = _FL()
+
+
+class InviteLinkViaWorkspace(
+    InviteLink,
+    url="meta/workspaces/{base_collaborators.workspace_id}/invites/{self.id}",
+):
+    pass
 
 
 class BaseIndividualCollaborator(IndividualCollaborator):
@@ -319,8 +339,18 @@ class BaseGroupCollaborator(GroupCollaborator):
     base_id: str
 
 
-class BaseInviteLink(InviteLink):
+class BaseInviteLink(
+    InviteLink,
+    url="meta/bases/{self.base_id}/invites/{self.id}",
+):
     base_id: str
+
+
+class WorkspaceInviteLink(
+    InviteLink,
+    url="meta/workspaces/{workspace_collaborators.id}/invites/{self.id}",
+):
+    pass
 
 
 class EnterpriseInfo(AirtableModel):
@@ -355,25 +385,27 @@ class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
     created_time: str
     base_ids: List[str]
     restrictions: "WorkspaceCollaborators.Restrictions" = pydantic.Field(alias="workspaceRestrictions")  # fmt: skip
-    group_collaborators: Optional["WorkspaceCollaborators.GroupCollaborators"] = None
-    individual_collaborators: Optional["WorkspaceCollaborators.IndividualCollaborators"] = None  # fmt: skip
-    invite_links: Optional["WorkspaceCollaborators.InviteLinks"] = None
+    group_collaborators: "WorkspaceCollaborators.GroupCollaborators" = _F("WorkspaceCollaborators.GroupCollaborators")  # fmt: skip
+    individual_collaborators: "WorkspaceCollaborators.IndividualCollaborators" = _F("WorkspaceCollaborators.IndividualCollaborators")  # fmt: skip
+    invite_links: "WorkspaceCollaborators.InviteLinks" = _F("WorkspaceCollaborators.InviteLinks")  # fmt: skip
 
     class Restrictions(AirtableModel):
         invite_creation: str = pydantic.Field(alias="inviteCreationRestriction")
         share_creation: str = pydantic.Field(alias="shareCreationRestriction")
 
     class GroupCollaborators(AirtableModel):
-        base_collaborators: List["BaseGroupCollaborator"]
-        workspace_collaborators: List["GroupCollaborator"]
+        via_base: List["BaseGroupCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: List["GroupCollaborator"] = _FL(alias="workspaceCollaborators")
 
     class IndividualCollaborators(AirtableModel):
-        base_collaborators: List["BaseIndividualCollaborator"]
-        workspace_collaborators: List["IndividualCollaborator"]
+        via_base: List["BaseIndividualCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: List["IndividualCollaborator"] = _FL(
+            alias="workspaceCollaborators"
+        )
 
     class InviteLinks(AirtableModel):
-        base_invite_links: List["BaseInviteLink"]
-        workspace_invite_links: List["InviteLink"]
+        via_base: List["BaseInviteLink"] = _FL(alias="baseInviteLinks")
+        via_workspace: List["WorkspaceInviteLink"] = _FL(alias="workspaceInviteLinks")
 
 
 class NestedId(AirtableModel):

@@ -59,7 +59,7 @@ def test_repr(api, kwargs, expected):
 
 
 def test_url(base):
-    assert base.url == "https://api.airtable.com/v0/appJMY16gZDQrMWpA"
+    assert base.url == "https://api.airtable.com/v0/appLkNDICXNqxSDhG"
 
 
 def test_schema(base: Base, mock_tables_endpoint):

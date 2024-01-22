@@ -9,7 +9,7 @@ import pytest
 from mock import Mock
 from requests import HTTPError
 
-from pyairtable.api import Api, Base, Table
+from pyairtable import Api, Base, Table, Workspace
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def url_builder():
 def constants():
     return dict(
         API_KEY="FakeApiKey",
-        BASE_ID="appJMY16gZDQrMWpA",
+        BASE_ID="appLkNDICXNqxSDhG",
         TABLE_NAME="Table Name",
     )
 
@@ -54,6 +54,16 @@ def base(api: Api, base_id) -> Base:
 @pytest.fixture()
 def table(base: Base, constants) -> Table:
     return base.table(constants["TABLE_NAME"])
+
+
+@pytest.fixture
+def workspace_id() -> str:
+    return "wspmhESAta6clCCwF"  # see WorkspaceCollaborators.json
+
+
+@pytest.fixture
+def workspace(api: Api, workspace_id) -> Workspace:
+    return api.workspace(workspace_id)
 
 
 @pytest.fixture

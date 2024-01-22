@@ -78,7 +78,7 @@ def test_invalid_constructor(api, base):
 
 
 def test_repr(table: Table):
-    assert repr(table) == "<Table base='appJMY16gZDQrMWpA' name='Table Name'>"
+    assert repr(table) == "<Table base='appLkNDICXNqxSDhG' name='Table Name'>"
 
 
 def test_schema(base, requests_mock, sample_json):
