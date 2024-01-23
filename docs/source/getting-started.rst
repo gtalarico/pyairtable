@@ -53,7 +53,7 @@ records in Airtable:
             "createdTime": "2017-03-14T22:04:31.000Z",
             "fields": {
                 "Name": "Alice",
-                "Exail": "alice@example.com"
+                "Email": "alice@example.com"
             }
         }
     ]
