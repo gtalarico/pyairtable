@@ -1,3 +1,4 @@
+import os
 import uuid
 
 import pytest
@@ -6,6 +7,14 @@ from requests import HTTPError
 import pyairtable
 
 pytestmark = [pytest.mark.integration]
+
+
+@pytest.fixture
+def enterprise(api):
+    try:
+        return api.enterprise(os.environ["AIRTABLE_ENTERPRISE_ID"])
+    except KeyError:
+        pytest.skip("test requires AIRTABLE_ENTERPRISE_ID")
 
 
 @pytest.fixture
@@ -36,6 +45,31 @@ def blank_base(workspace: pyairtable.Workspace):
         yield base
     finally:
         base.delete()
+
+
+def test_user(enterprise: pyairtable.Enterprise):
+    """
+    Test that we can retrieve information about the current logged-in user.
+    """
+    user_id = enterprise.api.whoami()["id"]
+    assert user_id == enterprise.user(user_id).id
+
+
+def test_user__invalid(enterprise):
+    with pytest.raises(HTTPError):
+        enterprise.user("invalidUserId")
+
+
+def test_users(enterprise: pyairtable.Enterprise):
+    """
+    Test that we can retrieve information about an enterprise
+    and retrieve user information by ID or by email.
+    """
+    user_ids = enterprise.info().user_ids[:5]
+    users_from_ids = enterprise.users(user_ids)
+    assert {u.id for u in users_from_ids} == set(user_ids)
+    users_from_emails = enterprise.users(u.email for u in users_from_ids)
+    assert {u.id for u in users_from_emails} == set(user_ids)
 
 
 def test_create_table(blank_base: pyairtable.Base):
