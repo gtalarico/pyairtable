@@ -13,19 +13,17 @@ def enterprise(api):
 
 @pytest.fixture
 def enterprise_mocks(enterprise, requests_mock, sample_json):
-    user_json = sample_json("UserInfo")
-    group_json = sample_json("UserGroup")
     m = Mock()
-    m.user_id = user_json["id"]
-    m.get_info = requests_mock.get(
-        enterprise.url,
-        json=sample_json("EnterpriseInfo"),
-    )
-    m.get_users_json = {"users": [sample_json("UserInfo")]}
-    m.get_users = requests_mock.get(f"{enterprise.url}/users", json=m.get_users_json)
+    m.json_user = sample_json("UserInfo")
+    m.json_users = {"users": [m.json_user]}
+    m.json_group = sample_json("UserGroup")
+    m.user_id = m.json_user["id"]
+    m.group_id = m.json_group["id"]
+    m.get_info = requests_mock.get(enterprise.url, json=sample_json("EnterpriseInfo"))
+    m.get_users = requests_mock.get(f"{enterprise.url}/users", json=m.json_users)
     m.get_group = requests_mock.get(
-        enterprise.api.build_url(f"meta/groups/{group_json['id']}"),
-        json=group_json,
+        enterprise.api.build_url(f"meta/groups/{m.json_group['id']}"),
+        json=m.json_group,
     )
     return m
 
@@ -45,7 +43,6 @@ def test_user(enterprise, enterprise_mocks):
     user = enterprise.user(enterprise_mocks.user_id)
     assert isinstance(user, UserInfo)
     assert enterprise_mocks.get_users.call_count == 1
-
     assert user.collaborations
     assert "appLkNDICXNqxSDhG" in user.collaborations.bases
     assert "pbdyGA3PsOziEHPDE" in user.collaborations.interfaces
@@ -53,13 +50,12 @@ def test_user(enterprise, enterprise_mocks):
 
 
 def test_user__no_collaboration(enterprise, enterprise_mocks):
-    del enterprise_mocks.get_users_json["users"][0]["collaborations"]
+    del enterprise_mocks.json_users["users"][0]["collaborations"]
 
     user = enterprise.user(enterprise_mocks.user_id, collaborations=False)
     assert isinstance(user, UserInfo)
     assert enterprise_mocks.get_users.call_count == 1
     assert not enterprise_mocks.get_users.last_request.qs.get("include")
-
     assert not user.collaborations  # test for Collaborations.__bool__
     assert not user.collaborations.bases
     assert not user.collaborations.interfaces
@@ -83,9 +79,26 @@ def test_users(enterprise, enterprise_mocks, search_for):
 
 
 def test_group(enterprise, enterprise_mocks):
-    info = enterprise.group("ugp1mKGb3KXUyQfOZ")
+    grp = enterprise.group("ugp1mKGb3KXUyQfOZ")
     assert enterprise_mocks.get_group.call_count == 1
-    assert isinstance(info, UserGroup)
-    assert info.id == "ugp1mKGb3KXUyQfOZ"
-    assert info.name == "Group name"
-    assert info.members[0].email == "foo@bar.com"
+    assert isinstance(grp, UserGroup)
+    assert grp.id == "ugp1mKGb3KXUyQfOZ"
+    assert grp.name == "Group name"
+    assert grp.members[0].email == "foo@bar.com"
+    assert grp.collaborations
+    assert "appLkNDICXNqxSDhG" in grp.collaborations.bases
+    assert "pbdyGA3PsOziEHPDE" in grp.collaborations.interfaces
+    assert "wspmhESAta6clCCwF" in grp.collaborations.workspaces
+
+
+def test_group__no_collaboration(enterprise, enterprise_mocks):
+    del enterprise_mocks.json_group["collaborations"]
+
+    grp = enterprise.group(enterprise_mocks.group_id, collaborations=False)
+    assert isinstance(grp, UserGroup)
+    assert enterprise_mocks.get_group.call_count == 1
+    assert not enterprise_mocks.get_group.last_request.qs.get("include")
+    assert not grp.collaborations  # test for Collaborations.__bool__
+    assert not grp.collaborations.bases
+    assert not grp.collaborations.interfaces
+    assert not grp.collaborations.workspaces

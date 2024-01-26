@@ -32,8 +32,8 @@ class Enterprise:
         payload = self.api.request("GET", self.url, params=params)
         return EnterpriseInfo.parse_obj(payload)
 
-    def group(self, group_id: str) -> UserGroup:
-        params = {"include": ["collaborations"]}
+    def group(self, group_id: str, collaborations: bool = True) -> UserGroup:
+        params = {"include": ["collaborations"] if collaborations else []}
         url = self.api.build_url(f"meta/groups/{group_id}")
         payload = self.api.request("GET", url, params=params)
         return UserGroup.parse_obj(payload)
