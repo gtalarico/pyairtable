@@ -558,11 +558,11 @@ def ABS(value: Any, /) -> FunctionCall:  # pragma: no cover
     return FunctionCall('ABS', value)
 
 
-def AVERAGE(number1: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
+def AVERAGE(number: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``AVERAGE()``
     """
-    return FunctionCall('AVERAGE', number1, *numbers)
+    return FunctionCall('AVERAGE', number, *numbers)
 
 
 def BLANK() -> FunctionCall:  # pragma: no cover
@@ -579,32 +579,32 @@ def CEILING(value: Any, significance: Optional[Any] = None, /) -> FunctionCall: 
     return FunctionCall('CEILING', value, *(v for v in [significance] if v is not None))
 
 
-def CONCATENATE(text1: Any, /, *texts: Any) -> FunctionCall:  # pragma: no cover
+def CONCATENATE(text: Any, /, *texts: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``CONCATENATE()``
     """
-    return FunctionCall('CONCATENATE', text1, *texts)
+    return FunctionCall('CONCATENATE', text, *texts)
 
 
-def COUNT(number1: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
+def COUNT(number: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``COUNT()``
     """
-    return FunctionCall('COUNT', number1, *numbers)
+    return FunctionCall('COUNT', number, *numbers)
 
 
-def COUNTA(text_or_number1: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
+def COUNTA(value: Any, /, *values: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``COUNTA()``
     """
-    return FunctionCall('COUNTA', text_or_number1, *numbers)
+    return FunctionCall('COUNTA', value, *values)
 
 
-def COUNTALL(text_or_number1: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
+def COUNTALL(value: Any, /, *values: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``COUNTALL()``
     """
-    return FunctionCall('COUNTALL', text_or_number1, *numbers)
+    return FunctionCall('COUNTALL', value, *values)
 
 
 def CREATED_TIME() -> FunctionCall:  # pragma: no cover
@@ -719,11 +719,11 @@ def HOUR(datetime: Any, /) -> FunctionCall:  # pragma: no cover
     return FunctionCall('HOUR', datetime)
 
 
-def IF(expression: Any, value1: Any, value2: Any, /) -> FunctionCall:  # pragma: no cover
+def IF(expression: Any, if_true: Any, if_false: Any, /) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``IF()``
     """
-    return FunctionCall('IF', expression, value1, value2)
+    return FunctionCall('IF', expression, if_true, if_false)
 
 
 def INT(value: Any, /) -> FunctionCall:  # pragma: no cover
@@ -796,11 +796,11 @@ def LOWER(string: Any, /) -> FunctionCall:  # pragma: no cover
     return FunctionCall('LOWER', string)
 
 
-def MAX(number1: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
+def MAX(number: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``MAX()``
     """
-    return FunctionCall('MAX', number1, *numbers)
+    return FunctionCall('MAX', number, *numbers)
 
 
 def MID(string: Any, where_to_start: Any, count: Any, /) -> FunctionCall:  # pragma: no cover
@@ -810,11 +810,11 @@ def MID(string: Any, where_to_start: Any, count: Any, /) -> FunctionCall:  # pra
     return FunctionCall('MID', string, where_to_start, count)
 
 
-def MIN(number1: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
+def MIN(number: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``MIN()``
     """
-    return FunctionCall('MIN', number1, *numbers)
+    return FunctionCall('MIN', number, *numbers)
 
 
 def MINUTE(datetime: Any, /) -> FunctionCall:  # pragma: no cover
@@ -824,11 +824,11 @@ def MINUTE(datetime: Any, /) -> FunctionCall:  # pragma: no cover
     return FunctionCall('MINUTE', datetime)
 
 
-def MOD(value1: Any, divisor: Any, /) -> FunctionCall:  # pragma: no cover
+def MOD(value: Any, divisor: Any, /) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``MOD()``
     """
-    return FunctionCall('MOD', value1, divisor)
+    return FunctionCall('MOD', value, divisor)
 
 
 def MONTH(date: Any, /) -> FunctionCall:  # pragma: no cover
@@ -971,11 +971,11 @@ def SUBSTITUTE(string: Any, old_text: Any, new_text: Any, index: Optional[Any] =
     return FunctionCall('SUBSTITUTE', string, old_text, new_text, *(v for v in [index] if v is not None))
 
 
-def SUM(number1: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
+def SUM(number: Any, /, *numbers: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``SUM()``
     """
-    return FunctionCall('SUM', number1, *numbers)
+    return FunctionCall('SUM', number, *numbers)
 
 
 def SWITCH(expression: Any, pattern: Any, result: Any, /, *pattern_results: Any) -> FunctionCall:  # pragma: no cover
@@ -985,11 +985,11 @@ def SWITCH(expression: Any, pattern: Any, result: Any, /, *pattern_results: Any)
     return FunctionCall('SWITCH', expression, pattern, result, *pattern_results)
 
 
-def T(value1: Any, /) -> FunctionCall:  # pragma: no cover
+def T(value: Any, /) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``T()``
     """
-    return FunctionCall('T', value1)
+    return FunctionCall('T', value)
 
 
 def TIMESTR(timestamp: Any, /) -> FunctionCall:  # pragma: no cover
@@ -1055,13 +1055,6 @@ def WEEKNUM(date: Any, start_day_of_week: Optional[Any] = None, /) -> FunctionCa
     return FunctionCall('WEEKNUM', date, *(v for v in [start_day_of_week] if v is not None))
 
 
-def WORKDAY_DIFF(start_date: Any, end_date: Any, holidays: Optional[Any] = None, /) -> FunctionCall:  # pragma: no cover
-    """
-    Produce a formula that calls ``WORKDAY_DIFF()``
-    """
-    return FunctionCall('WORKDAY_DIFF', start_date, end_date, *(v for v in [holidays] if v is not None))
-
-
 def WORKDAY(start_date: Any, num_days: Any, holidays: Optional[Any] = None, /) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``WORKDAY()``
@@ -1069,11 +1062,18 @@ def WORKDAY(start_date: Any, num_days: Any, holidays: Optional[Any] = None, /) -
     return FunctionCall('WORKDAY', start_date, num_days, *(v for v in [holidays] if v is not None))
 
 
-def XOR(expression1: Any, /, *expressions: Any) -> FunctionCall:  # pragma: no cover
+def WORKDAY_DIFF(start_date: Any, end_date: Any, holidays: Optional[Any] = None, /) -> FunctionCall:  # pragma: no cover
+    """
+    Produce a formula that calls ``WORKDAY_DIFF()``
+    """
+    return FunctionCall('WORKDAY_DIFF', start_date, end_date, *(v for v in [holidays] if v is not None))
+
+
+def XOR(expression: Any, /, *expressions: Any) -> FunctionCall:  # pragma: no cover
     """
     Produce a formula that calls ``XOR()``
     """
-    return FunctionCall('XOR', expression1, *expressions)
+    return FunctionCall('XOR', expression, *expressions)
 
 
 def YEAR(date: Any, /) -> FunctionCall:  # pragma: no cover
@@ -1083,5 +1083,5 @@ def YEAR(date: Any, /) -> FunctionCall:  # pragma: no cover
     return FunctionCall('YEAR', date)
 
 
-# [[[end]]] (checksum: 428ee7de15bc4cd4dd46f2d4eb8b4043)
+# [[[end]]] (checksum: 279778aec4334d54d1db5e21a9227b45)
 # fmt: on
