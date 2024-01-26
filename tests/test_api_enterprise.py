@@ -21,10 +21,8 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
         enterprise.url,
         json=sample_json("EnterpriseInfo"),
     )
-    m.get_users = requests_mock.get(
-        f"{enterprise.url}/users",
-        json={"users": [user_json]},
-    )
+    m.get_users_json = {"users": [sample_json("UserInfo")]}
+    m.get_users = requests_mock.get(f"{enterprise.url}/users", json=m.get_users_json)
     m.get_group = requests_mock.get(
         enterprise.api.build_url(f"meta/groups/{group_json['id']}"),
         json=group_json,
@@ -47,6 +45,25 @@ def test_user(enterprise, enterprise_mocks):
     user = enterprise.user(enterprise_mocks.user_id)
     assert isinstance(user, UserInfo)
     assert enterprise_mocks.get_users.call_count == 1
+
+    assert user.collaborations
+    assert "appLkNDICXNqxSDhG" in user.collaborations.bases
+    assert "pbdyGA3PsOziEHPDE" in user.collaborations.interfaces
+    assert "wspmhESAta6clCCwF" in user.collaborations.workspaces
+
+
+def test_user__no_collaboration(enterprise, enterprise_mocks):
+    del enterprise_mocks.get_users_json["users"][0]["collaborations"]
+
+    user = enterprise.user(enterprise_mocks.user_id, collaborations=False)
+    assert isinstance(user, UserInfo)
+    assert enterprise_mocks.get_users.call_count == 1
+    assert not enterprise_mocks.get_users.last_request.qs.get("include")
+
+    assert not user.collaborations  # test for Collaborations.__bool__
+    assert not user.collaborations.bases
+    assert not user.collaborations.interfaces
+    assert not user.collaborations.workspaces
 
 
 @pytest.mark.parametrize(

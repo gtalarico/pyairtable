@@ -38,16 +38,22 @@ class Enterprise:
         payload = self.api.request("GET", url, params=params)
         return UserGroup.parse_obj(payload)
 
-    def user(self, id_or_email: str) -> UserInfo:
+    def user(self, id_or_email: str, collaborations: bool = True) -> UserInfo:
         """
         Retrieve information on a single user with the given ID or email.
 
         Args:
             id_or_email: A user ID (``usrQBq2RGdihxl3vU``) or email address.
+            collaborations: If ``False``, no collaboration data will be requested
+                from Airtable. This may result in faster responses.
         """
-        return self.users([id_or_email])[0]
+        return self.users([id_or_email], collaborations=collaborations)[0]
 
-    def users(self, ids_or_emails: Iterable[str]) -> List[UserInfo]:
+    def users(
+        self,
+        ids_or_emails: Iterable[str],
+        collaborations: bool = True,
+    ) -> List[UserInfo]:
         """
         Retrieve information on the users with the given IDs or emails.
 
@@ -56,6 +62,8 @@ class Enterprise:
         Args:
             ids_or_emails: A sequence of user IDs (``usrQBq2RGdihxl3vU``)
                 or email addresses (or both).
+            collaborations: If ``False``, no collaboration data will be requested
+                from Airtable. This may result in faster responses.
         """
         user_ids: List[str] = []
         emails: List[str] = []
@@ -68,7 +76,7 @@ class Enterprise:
             params={
                 "id": user_ids,
                 "email": emails,
-                "include": ["collaborations"],
+                "include": ["collaborations"] if collaborations else [],
             },
         )
         # key by user ID to avoid returning duplicates

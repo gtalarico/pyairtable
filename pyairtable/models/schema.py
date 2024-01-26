@@ -319,28 +319,6 @@ class NestedFieldId(AirtableModel):
     field_id: str
 
 
-class UserInfo(AirtableModel):
-    """
-    Detailed information about a user.
-
-    See https://airtable.com/developers/web/api/get-user-by-id
-    """
-
-    id: str
-    name: str
-    email: str
-    state: str
-    is_sso_required: bool
-    is_two_factor_auth_enabled: bool
-    last_activity_time: Optional[str]
-    created_time: Optional[str]
-    enterprise_user_type: Optional[str]
-    invited_to_airtable_by_user_id: Optional[str]
-    is_managed: bool = False
-    collaborations: "Collaborations"
-    groups: List[NestedId] = pydantic.Field(default_factory=list)
-
-
 class Collaborations(AirtableModel):
     """
     The full set of collaborations granted to a user or user group.
@@ -348,9 +326,16 @@ class Collaborations(AirtableModel):
     See https://airtable.com/developers/web/api/model/collaborations
     """
 
-    base_collaborations: List["Collaborations.BaseCollaboration"]
-    interface_collaborations: List["Collaborations.InterfaceCollaboration"]
-    workspace_collaborations: List["Collaborations.WorkspaceCollaboration"]
+    base_collaborations: List["Collaborations.BaseCollaboration"] = _FL()
+    interface_collaborations: List["Collaborations.InterfaceCollaboration"] = _FL()
+    workspace_collaborations: List["Collaborations.WorkspaceCollaboration"] = _FL()
+
+    def __bool__(self) -> bool:
+        return bool(
+            self.base_collaborations
+            or self.interface_collaborations
+            or self.workspace_collaborations
+        )
 
     @property
     def bases(self) -> Dict[str, "Collaborations.BaseCollaboration"]:
@@ -389,6 +374,28 @@ class Collaborations(AirtableModel):
         permission_level: str
 
 
+class UserInfo(AirtableModel):
+    """
+    Detailed information about a user.
+
+    See https://airtable.com/developers/web/api/get-user-by-id
+    """
+
+    id: str
+    name: str
+    email: str
+    state: str
+    is_sso_required: bool
+    is_two_factor_auth_enabled: bool
+    last_activity_time: Optional[str]
+    created_time: Optional[str]
+    enterprise_user_type: Optional[str]
+    invited_to_airtable_by_user_id: Optional[str]
+    is_managed: bool = False
+    groups: List[NestedId] = _FL()
+    collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
+
+
 class UserGroup(AirtableModel):
     """
     Detailed information about a user group and its members.
@@ -402,7 +409,7 @@ class UserGroup(AirtableModel):
     created_time: str
     updated_time: str
     members: List["UserGroup.Member"]
-    collaborations: "Collaborations"
+    collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
 
     class Member(AirtableModel):
         user_id: str
