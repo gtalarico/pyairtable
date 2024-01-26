@@ -2,6 +2,22 @@
 Changelog
 =========
 
+2.2.2 (2023-01-28)
+------------------------
+
+* Enterprise methods :meth:`~pyairtable.Enterprise.user`,
+  :meth:`~pyairtable.Enterprise.users`, and :meth:`~pyairtable.Enterprise.group`
+  now return collaborations by default.
+  - `PR #332 <https://github.com/gtalarico/pyairtable/pull/332>`_.
+* Added more helper functions for formulas:
+  :func:`~pyairtable.formulas.LESS`,
+  :func:`~pyairtable.formulas.LESS_EQUAL`,
+  :func:`~pyairtable.formulas.GREATER`,
+  :func:`~pyairtable.formulas.GREATER_EQUAL`,
+  and
+  :func:`~pyairtable.formulas.NOT_EQUAL`.
+  - `PR #323 <https://github.com/gtalarico/pyairtable/pull/323>`_.
+
 2.2.1 (2023-11-28)
 ------------------------
 
