@@ -33,6 +33,14 @@ class Enterprise:
         return EnterpriseInfo.parse_obj(payload)
 
     def group(self, group_id: str, collaborations: bool = True) -> UserGroup:
+        """
+        Retrieve information on a single user group with the given ID.
+
+        Args:
+            group_id: A user group ID (``grpQBq2RGdihxl3vU``).
+            collaborations: If ``False``, no collaboration data will be requested
+                from Airtable. This may result in faster responses.
+        """
         params = {"include": ["collaborations"] if collaborations else []}
         url = self.api.build_url(f"meta/groups/{group_id}")
         payload = self.api.request("GET", url, params=params)
