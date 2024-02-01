@@ -105,6 +105,7 @@ class Api:
         base_id: str,
         *,
         validate: bool = False,
+        force: bool = False,
     ) -> "pyairtable.api.base.Base":
         """
         Return a new :class:`Base` instance that uses this instance of :class:`Api`.
@@ -112,13 +113,14 @@ class Api:
         Args:
             base_id: |arg_base_id|
             validate: |kwarg_validate_metadata|
+            force: |kwarg_force_metadata|
 
         Raises:
-            KeyError: if ``fetch=True`` and the given base ID does not exist.
+            KeyError: if ``validate=True`` and the given base ID does not exist.
         """
         if validate:
-            bases = {base.id: base for base in self.bases(force=True)}
-            return bases[base_id]
+            info = self._base_info(force=force).base(base_id)
+            return self._base_from_info(info)
         return pyairtable.api.base.Base(self, base_id)
 
     @cache_unless_forced
@@ -137,6 +139,14 @@ class Api:
             }
         )
 
+    def _base_from_info(self, base_info: Bases.Info) -> "pyairtable.api.base.Base":
+        return pyairtable.api.base.Base(
+            self,
+            base_info.id,
+            name=base_info.name,
+            permission_level=base_info.permission_level,
+        )
+
     def bases(self, *, force: bool = False) -> List["pyairtable.api.base.Base"]:
         """
         Retrieve the base's schema and return a list of :class:`Base` instances.
@@ -152,13 +162,7 @@ class Api:
             ]
         """
         return [
-            pyairtable.api.base.Base(
-                self,
-                info.id,
-                name=info.name,
-                permission_level=info.permission_level,
-            )
-            for info in self._base_info(force=force).bases
+            self._base_from_info(info) for info in self._base_info(force=force).bases
         ]
 
     def create_base(
@@ -180,11 +184,25 @@ class Api:
         """
         return self.workspace(workspace_id).create_base(name, tables)
 
-    def table(self, base_id: str, table_name: str) -> "pyairtable.api.table.Table":
+    def table(
+        self,
+        base_id: str,
+        table_name: str,
+        *,
+        validate: bool = False,
+        force: bool = False,
+    ) -> "pyairtable.api.table.Table":
         """
         Build a new :class:`Table` instance that uses this instance of :class:`Api`.
+
+        Args:
+            base_id: |arg_base_id|
+            table_name: The Airtable table's ID or name.
+            validate: |kwarg_validate_metadata|
+            force: |kwarg_force_metadata|
         """
-        return self.base(base_id).table(table_name)
+        base = self.base(base_id, validate=validate, force=force)
+        return base.table(table_name, validate=validate, force=force)
 
     def build_url(self, *components: str) -> str:
         """

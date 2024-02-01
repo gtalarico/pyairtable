@@ -7,6 +7,11 @@ from pyairtable import Base, Table
 from pyairtable.testing import fake_id
 
 
+@pytest.fixture
+def mock_tables_endpoint(base, requests_mock, sample_json):
+    return requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+
+
 def test_constructor(api):
     base = Base(api, "base_id")
     assert base.api == api
@@ -57,17 +62,16 @@ def test_url(base):
     assert base.url == "https://api.airtable.com/v0/appJMY16gZDQrMWpA"
 
 
-def test_schema(base: Base, requests_mock, sample_json):
-    m = requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+def test_schema(base: Base, mock_tables_endpoint):
     table_schema = base.schema().table("tbltp8DGLhqbUmjK1")
     assert table_schema.name == "Apartments"
-    assert m.call_count == 1
+    assert mock_tables_endpoint.call_count == 1
 
     # Test that we cache the result unless force=True
     base.schema()
-    assert m.call_count == 1
+    assert mock_tables_endpoint.call_count == 1
     base.schema(force=True)
-    assert m.call_count == 2
+    assert mock_tables_endpoint.call_count == 2
 
 
 def test_table(base: Base, requests_mock):
@@ -79,25 +83,30 @@ def test_table(base: Base, requests_mock):
     assert rv.url == f"https://api.airtable.com/v0/{base.id}/tablename"
 
 
-def test_table_validate(base: Base, requests_mock, sample_json):
+def test_table_validate(base: Base, mock_tables_endpoint):
     """
     Test that Base.table(..., validate=True) allows us to look up a table
     by either ID or name and get the correct properties.
     """
-    m = requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+    # It will reuse the cached schema when validate=True is called multiple times...
     base.table("tbltp8DGLhqbUmjK1", validate=True)
     base.table("Apartments", validate=True)
-    assert m.call_count == 2
-    # ...and will raise an exception if called with an invalid ID/name:
+    assert mock_tables_endpoint.call_count == 1
+    # ...unless we also pass force=True
+    base.table("Apartments", validate=True, force=True)
+    assert mock_tables_endpoint.call_count == 2
+
+
+def test_table__invalid(base, mock_tables_endpoint):
+    # validate=True will raise an exception if called with an invalid ID/name:
     with pytest.raises(KeyError):
         base.table("DoesNotExist", validate=True)
 
 
-def test_tables(base: Base, requests_mock, sample_json):
+def test_tables(base: Base, mock_tables_endpoint):
     """
     Test that Base.tables() returns a list of validated Base instances.
     """
-    requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
     result = base.tables()
     assert len(result) == 2
     assert result[0].name == "Apartments"
@@ -199,25 +208,43 @@ def test_name(api, base, requests_mock):
         assert Base("tok", "app", name="Base Name").name == "Base Name"
 
 
-def test_create_table(base, requests_mock, sample_json):
+def test_create_table(base, requests_mock, mock_tables_endpoint):
     """
     Test that Base.create_table() makes two calls, one to create the table,
     and another to re-retrieve the entire base's schema.
     """
-    schema = sample_json("BaseSchema")
-    url = base.meta_url("tables")
-    m = requests_mock.post(url, json={"id": "tbltp8DGLhqbUmjK1"})
-    m_get = requests_mock.get(url + "?include=visibleFieldIds", json=schema)
-    table = base.create_table(
-        "Table Name", [{"name": "Whatever"}], description="Description"
+    m = requests_mock.post(mock_tables_endpoint._url, json={"id": "tblWasJustCreated"})
+    mock_tables_endpoint._responses[0]._params["json"]["tables"].append(
+        {
+            "id": "tblWasJustCreated",
+            "name": "Table Name",
+            "primaryFieldId": "fldWasJustCreated",
+            "fields": [
+                {
+                    "id": "fldWasJustCreated",
+                    "name": "Whatever",
+                    "type": "singleLineText",
+                }
+            ],
+            "views": [],
+        }
     )
-    assert isinstance(table, Table)
-    assert m.call_count == m_get.call_count == 1
+    table = base.create_table(
+        "Table Name",
+        fields=[{"name": "Whatever"}],
+        description="Description",
+    )
+    assert m.call_count == 1
     assert m.request_history[-1].json() == {
         "name": "Table Name",
         "description": "Description",
         "fields": [{"name": "Whatever"}],
     }
+
+    assert isinstance(table, Table)
+    assert table.id == "tblWasJustCreated"
+    assert table.name == "Table Name"
+    assert table.schema().primary_field_id == "fldWasJustCreated"
 
 
 def test_delete(base, requests_mock):

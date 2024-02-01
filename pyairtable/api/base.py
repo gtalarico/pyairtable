@@ -59,7 +59,10 @@ class Base:
 
         Args:
             api: An instance of :class:`Api` or an Airtable access token.
-            base_id: |arg_base_id|
+            base_id: An Airtable base ID.
+            name: The name of the Airtable base, if known.
+            permission_level: The permission level the current authenticated user
+                has upon the Airtable base, if known.
         """
         if isinstance(api, str):
             warnings.warn(
@@ -98,6 +101,7 @@ class Base:
         id_or_name: str,
         *,
         validate: bool = False,
+        force: bool = False,
     ) -> "pyairtable.api.table.Table":
         """
         Build a new :class:`Table` instance using this instance of :class:`Base`.
@@ -106,13 +110,14 @@ class Base:
             id_or_name: An Airtable table ID or name. Table name should be unencoded,
                 as shown on browser.
             validate: |kwarg_validate_metadata|
+            force: |kwarg_force_metadata|
 
         Usage:
             >>> base.table('Apartments')
             <Table base='appLkNDICXNqxSDhG' name='Apartments'>
         """
         if validate:
-            schema = self.schema(force=True).table(id_or_name)
+            schema = self.schema(force=force).table(id_or_name)
             return pyairtable.api.table.Table(None, self, schema)
         return pyairtable.api.table.Table(None, self, id_or_name)
 

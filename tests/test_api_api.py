@@ -1,6 +1,13 @@
 from unittest import mock
 
+import pytest
+
 from pyairtable import Api, Base, Table  # noqa
+
+
+@pytest.fixture
+def mock_bases_endpoint(api, requests_mock, sample_json):
+    return requests_mock.get(api.build_url("meta/bases"), json=sample_json("Bases"))
 
 
 def test_repr(api):
@@ -61,19 +68,43 @@ def test_whoami(api, requests_mock):
     assert api.whoami() == payload
 
 
-def test_bases(api, requests_mock, sample_json):
-    m = requests_mock.get(api.build_url("meta/bases"), json=sample_json("Bases"))
+@pytest.mark.parametrize("base_id", ("appLkNDICXNqxSDhG", "Apartment Hunting"))
+def test_base(api, base_id, mock_bases_endpoint):
+    # test behavior without validation
+    base = api.base(base_id)
+    assert base.id == base_id
+    assert base.name is None
+    assert base.permission_level is None
+    assert mock_bases_endpoint.call_count == 0
+
+    # test behavior with validation
+    base = api.base(base_id, validate=True)
+    assert base.id == "appLkNDICXNqxSDhG"
+    assert base.name == "Apartment Hunting"
+    assert base.permission_level == "create"
+    assert mock_bases_endpoint.call_count == 1
+
+    # calling a second time uses cached information...
+    api.base(base_id, validate=True)
+    assert mock_bases_endpoint.call_count == 1
+
+    # ...unless we also pass force=True
+    base = api.base(base_id, validate=True, force=True)
+    assert mock_bases_endpoint.call_count == 2
+
+
+def test_bases(api, mock_bases_endpoint):
     base_ids = [base.id for base in api.bases()]
-    assert m.call_count == 1
+    assert mock_bases_endpoint.call_count == 1
     assert base_ids == ["appLkNDICXNqxSDhG", "appSW9R5uCNmRmfl6"]
 
     # Should not make a second API call...
     assert [base.id for base in api.bases()] == base_ids
-    assert m.call_count == 1
+    assert mock_bases_endpoint.call_count == 1
     # ....unless we force it:
     reloaded = api.bases(force=True)
     assert [base.id for base in reloaded] == base_ids
-    assert m.call_count == 2
+    assert mock_bases_endpoint.call_count == 2
 
 
 def test_iterate_requests(api: Api, requests_mock):
