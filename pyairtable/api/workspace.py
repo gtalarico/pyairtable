@@ -46,7 +46,7 @@ class Workspace:
         url = self.api.build_url("meta/bases")
         payload = {"name": name, "workspaceId": self.id, "tables": list(tables)}
         response = self.api.request("POST", url, json=payload)
-        return self.api.base(response["id"], validate=True)
+        return self.api.base(response["id"], validate=True, force=True)
 
     # Everything below here requires .info() and is therefore Enterprise-only
 

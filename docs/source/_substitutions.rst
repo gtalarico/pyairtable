@@ -1,6 +1,6 @@
-.. |arg_base_id| replace:: An Airtable base id.
+.. |arg_base_id| replace:: An Airtable base ID.
 
-.. |arg_record_id| replace:: An Airtable record id.
+.. |arg_record_id| replace:: An Airtable record ID.
 
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.

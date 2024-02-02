@@ -2,6 +2,18 @@
 Changelog
 =========
 
+2.3.0 (TBD)
+------------------------
+
+* :meth:`Api.base <pyairtable.Api.base>`,
+  :meth:`Api.table <pyairtable.Api.table>`,
+  and :meth:`Base.table <pyairtable.Base.table>`
+  will use cached base metadata when called multiple times with ``validate=True``,
+  unless the caller passes a new keyword argument ``force=True``.
+  This allows callers to validate the IDs/names of many bases or tables at once
+  without having to perform expensive network overhead each time.
+  - `PR #336 <https://github.com/gtalarico/pyairtable/pull/336>`_.
+
 2.2.2 (2023-01-28)
 ------------------------
 
