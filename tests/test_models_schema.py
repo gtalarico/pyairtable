@@ -8,6 +8,14 @@ from pyairtable.models._base import AirtableModel
 from pyairtable.testing import fake_id
 
 
+@pytest.fixture
+def mock_base_metadata(api, base, sample_json, requests_mock):
+    base_json = sample_json("BaseCollaborators")
+    requests_mock.get(base.meta_url(), json=base_json)
+    for pbd_id, pbd_json in base_json["interfaces"].items():
+        requests_mock.get(base.meta_url("interfaces", pbd_id), json=pbd_json)
+
+
 @pytest.mark.parametrize(
     "clsname",
     [
@@ -126,12 +134,13 @@ def test_find():
         ("group", "ugpR8ZT9KtIgp8Bh3"),
     ],
 )
-def test_base_collaborators__add(base, kind, id, requests_mock, sample_json):
+def test_base_collaborators__add(
+    base, kind, id, requests_mock, sample_json, mock_base_metadata
+):
     """
     Test that we can call base.collaborators().add_{user,group}
     to grant access to the base.
     """
-    requests_mock.get(base.meta_url(), json=sample_json("BaseCollaborators"))
     m = requests_mock.post(base.meta_url("collaborators"), body="")
     method = getattr(base.collaborators(), f"add_{kind}")
     method(id, "read")
@@ -239,3 +248,47 @@ def test_collaborators_invite_link__delete(
     invite_link.delete()
     assert endpoint.call_count == 1
     assert endpoint.last_request.method == "DELETE"
+
+
+@pytest.fixture
+def interface_url(base):
+    return base.meta_url("interfaces", "pbdLkNDICXNqxSDhG")
+
+
+@pytest.mark.parametrize("kind", ("user", "group"))
+def test_add_interface_collaborator(
+    base, kind, requests_mock, interface_url, mock_base_metadata
+):
+    m = requests_mock.post(f"{interface_url}/collaborators", body="")
+    interface_schema = base.collaborators().interfaces["pbdLkNDICXNqxSDhG"]
+    method = getattr(interface_schema, f"add_{kind}")
+    method("testObjectId", "read")
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "collaborators": [
+            {
+                kind: {"id": "testObjectId"},
+                "permissionLevel": "read",
+            }
+        ]
+    }
+
+
+def test_update_interface_collaborator(
+    base, interface_url, requests_mock, mock_base_metadata
+):
+    m = requests_mock.patch(f"{interface_url}/collaborators/testObjectId")
+    interface_schema = base.collaborators().interfaces["pbdLkNDICXNqxSDhG"]
+    interface_schema.update("testObjectId", "read")
+    assert m.call_count == 1
+    assert m.last_request.json() == {"permissionLevel": "read"}
+
+
+def test_remove_interface_collaborator(
+    base, interface_url, requests_mock, mock_base_metadata
+):
+    m = requests_mock.delete(f"{interface_url}/collaborators/testObjectId")
+    interface_schema = base.collaborators().interfaces["pbdLkNDICXNqxSDhG"]
+    interface_schema.remove("testObjectId")
+    assert m.call_count == 1
+    assert m.last_request.body is None

@@ -1,10 +1,11 @@
 import importlib
 from functools import partial
-from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Literal, Optional, TypeVar, Union, cast
 
 from typing_extensions import TypeAlias
 
 from pyairtable._compat import pydantic
+from pyairtable.api.types import AddCollaboratorDict
 
 from ._base import (
     AirtableModel,
@@ -52,39 +53,66 @@ class _Collaborators(RestfulModel):
     Mixin for use with RestfulModel subclasses that have a /collaborators endpoint.
     """
 
-    def _add_collaborator(
-        self, collaborator_type: str, collaborator_id: str, permission_level: str
-    ) -> None:
-        payload = {
-            "collaborators": [
-                {
-                    collaborator_type: {"id": collaborator_id},
-                    "permissionLevel": permission_level,
-                }
-            ]
-        }
-        self._api.post(f"{self._url}/collaborators", json=payload)
-        self._reload()
-
     def add_user(self, user_id: str, permission_level: str) -> None:
         """
-        Add a user as a collaborator.
+        Add a user as a collaborator to this Airtable object.
 
         Args:
             user_id: The user ID.
-            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+            permission_level: |kwarg_permission_level|
         """
-        self._add_collaborator("user", user_id, permission_level)
+        self.add_collaborator("user", user_id, permission_level)
 
     def add_group(self, group_id: str, permission_level: str) -> None:
         """
-        Add a group as a collaborator.
+        Add a group as a collaborator to this Airtable object.
 
         Args:
             group_id: The group ID.
-            permission_level: See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+            permission_level: |kwarg_permission_level|
         """
-        self._add_collaborator("group", group_id, permission_level)
+        self.add_collaborator("group", group_id, permission_level)
+
+    def add_collaborator(
+        self,
+        collaborator_type: str,
+        collaborator_id: str,
+        permission_level: str,
+    ) -> None:
+        """
+        Add a user or group as a collaborator to this Airtable object.
+
+        Args:
+            collaborator_type: Either ``'user'`` or ``'group'``.
+            collaborator_id: The user or group ID.
+            permission_level: |kwarg_permission_level|
+        """
+        if collaborator_type not in ("user", "group"):
+            raise ValueError("collaborator_type must be 'user' or 'group'")
+        self.add_collaborators(
+            [
+                cast(
+                    AddCollaboratorDict,
+                    {
+                        collaborator_type: {"id": collaborator_id},
+                        "permissionLevel": permission_level,
+                    },
+                )
+            ]
+        )
+
+    def add_collaborators(self, collaborators: Iterable[AddCollaboratorDict]) -> None:
+        """
+        Add multiple collaborators to this Airtable object.
+
+        Args:
+            collaborators: A list of ``dict`` that conform to the specification
+                laid out in the `Add base collaborator <https://airtable.com/developers/web/api/add-base-collaborator#request-collaborators>`__
+                API documentation.
+        """
+        payload = {"collaborators": list(collaborators)}
+        self._api.post(f"{self._url}/collaborators", json=payload)
+        self._reload()
 
     def update(self, collaborator_id: str, permission_level: str) -> None:
         """
@@ -146,7 +174,10 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
     individual_collaborators: "BaseCollaborators.IndividualCollaborators" = _F("BaseCollaborators.IndividualCollaborators")  # fmt: skip
     invite_links: "BaseCollaborators.InviteLinks" = _F("BaseCollaborators.InviteLinks")  # fmt: skip
 
-    class InterfaceCollaborators(AirtableModel):
+    class InterfaceCollaborators(
+        _Collaborators,
+        url="meta/bases/{base.id}/interfaces/{key}",
+    ):
         created_time: str
         group_collaborators: List["GroupCollaborator"] = _FL()
         individual_collaborators: List["IndividualCollaborator"] = _FL()

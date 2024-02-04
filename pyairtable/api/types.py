@@ -2,6 +2,7 @@
 pyAirtable provides a number of type aliases and TypedDicts which are used as inputs
 and return values to various pyAirtable methods.
 """
+
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
@@ -23,6 +24,10 @@ Timestamp: TypeAlias = str
 #: An alias for ``str`` used internally for disambiguation.
 #: Field names can be any valid string.
 FieldName: TypeAlias = str
+
+
+class NestedIdDict(TypedDict):
+    id: str
 
 
 class AITextDict(TypedDict, total=False):
@@ -177,6 +182,29 @@ class CollaboratorEmailDict(TypedDict):
     """
 
     email: str
+
+
+class AddUserCollaboratorDict(TypedDict):
+    """
+    Used to add a user as a collaborator to a base, workspace, or interface.
+    """
+
+    user: NestedIdDict
+    permissionLevel: str
+
+
+class AddGroupCollaboratorDict(TypedDict):
+    """
+    Used to add a group as a collaborator to a base, workspace, or interface.
+    """
+
+    group: NestedIdDict
+    permissionLevel: str
+
+
+AddCollaboratorDict: TypeAlias = Union[
+    AddUserCollaboratorDict, AddGroupCollaboratorDict
+]
 
 
 #: Represents the types of values that we might receive from the API.

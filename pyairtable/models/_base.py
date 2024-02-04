@@ -93,8 +93,8 @@ def cascade_api(
         for value in obj:
             cascade_api(value, api, context=context)
     if isinstance(obj, dict):
-        for value in obj.values():
-            cascade_api(value, api, context=context)
+        for key, value in obj.items():
+            cascade_api(value, api, context={**context, "key": key})
     if not isinstance(obj, AirtableModel):
         return
 

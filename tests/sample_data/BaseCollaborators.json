@@ -61,6 +61,33 @@
       }
     ]
   },
+  "interfaces": {
+    "pbdLkNDICXNqxSDhG": {
+      "createdTime": "2024-02-04T02:28:06.000Z",
+      "firstPublishTime": "2024-02-04T02:28:12.000Z",
+      "groupCollaborators": [
+        {
+          "createdTime": "2024-02-04T02:28:20.184Z",
+          "grantedByUserId": "usrL2PNC5o3H4lBEi",
+          "groupId": "ugpR8ZT9KtIgp8Bh3",
+          "name": "Test Interface",
+          "permissionLevel": "read"
+        }
+      ],
+      "id": "pbdLkNDICXNqxSDhG",
+      "individualCollaborators": [
+        {
+          "createdTime": "2024-02-04T04:00:00.749Z",
+          "email": "test@example.com",
+          "grantedByUserId": "usrL2PNC5o3H4lBEi",
+          "permissionLevel": "edit",
+          "userId": "usrR8ZT9KtIgp8Bh3"
+        }
+      ],
+      "inviteLinks": [],
+      "name": "Interface"
+    }
+  },
   "inviteLinks": {
     "baseInviteLinks": [
       {
