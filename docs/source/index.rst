@@ -27,9 +27,9 @@ pyAirtable
    getting-started
    tables
    orm
-   webhooks
    metadata
-   migrations
+   webhooks
+   enterprise
    api
 
 
@@ -37,6 +37,7 @@ pyAirtable
    :caption: More
    :hidden:
 
+   migrations
    about
    changelog
    contributing

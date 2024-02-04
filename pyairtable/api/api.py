@@ -293,6 +293,7 @@ class Api:
         url: str,
         fallback: Optional[Tuple[str, str]] = None,
         options: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
         offset_field: str = "offset",
     ) -> Iterator[Any]:
         """
@@ -311,18 +312,35 @@ class Api:
             fallback: The method and URL to use if we have to convert a GET to a POST.
             options: Airtable-specific query params to use while fetching records.
                 See :ref:`Parameters` for valid options.
+            params: Additional query params to append to the URL as-is.
             offset_field: The key to use in the API response to determine whether
                 there are additional pages to retrieve.
         """
         options = options or {}
+        params = params or {}
+
+        def _get_offset_field(response: Dict[str, Any]) -> Optional[str]:
+            value = response.get("pagination") or response  # see Enterprise.audit_log
+            field_names = offset_field.split(".")
+            while field_names:
+                if not (value := value.get(field_names.pop(0))):
+                    return None
+            return str(value)
+
         while True:
-            response = self.request(method, url, fallback=fallback, options=options)
+            response = self.request(
+                method=method,
+                url=url,
+                fallback=fallback,
+                options=options,
+                params=params,
+            )
             yield response
             if not isinstance(response, dict):
                 return
-            if not (offset := response.get(offset_field)):
+            if not (offset := _get_offset_field(response)):
                 return
-            options = {**options, offset_field: offset}
+            params = {**params, offset_field: offset}
 
     def chunked(self, iterable: Sequence[T]) -> Iterator[Sequence[T]]:
         """

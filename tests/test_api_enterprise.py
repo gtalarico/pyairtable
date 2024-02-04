@@ -1,9 +1,11 @@
-from unittest.mock import Mock
+import datetime
+from unittest.mock import Mock, call, patch
 
 import pytest
 
 from pyairtable.api.enterprise import Enterprise
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
+from pyairtable.testing import fake_id
 
 
 @pytest.fixture
@@ -11,7 +13,11 @@ def enterprise(api):
     return Enterprise(api, "entUBq2RGdihxl3vU")
 
 
-@pytest.fixture
+N_AUDIT_PAGES = 15
+N_AUDIT_PAGE_SIZE = 10
+
+
+@pytest.fixture(autouse=True)
 def enterprise_mocks(enterprise, requests_mock, sample_json):
     m = Mock()
     m.json_user = sample_json("UserInfo")
@@ -25,7 +31,46 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
         enterprise.api.build_url(f"meta/groups/{m.json_group['id']}"),
         json=m.json_group,
     )
+    m.get_audit_log = requests_mock.get(
+        enterprise.api.build_url(
+            f"meta/enterpriseAccounts/{enterprise.id}/auditLogEvents"
+        ),
+        response_list=[
+            {
+                "json": {
+                    "events": fake_audit_log_events(n),
+                    "pagination": (
+                        None if n == N_AUDIT_PAGES - 1 else {"previous": "dummy"}
+                    ),
+                }
+            }
+            for n in range(N_AUDIT_PAGES)
+        ],
+    )
     return m
+
+
+def fake_audit_log_events(counter, page_size=N_AUDIT_PAGE_SIZE):
+    return [
+        {
+            "id": str(counter * 1000 + n),
+            "timestamp": datetime.datetime.now().isoformat(),
+            "action": "viewBase",
+            "actor": {"type": "anonymousUser"},
+            "model_id": (base_id := fake_id("app")),
+            "model_type": "base",
+            "payload": {"name": "The Base Name"},
+            "payloadVersion": "1.0",
+            "context": {
+                "baseId": base_id,
+                "actionId": fake_id("act"),
+                "enterpriseAccountId": fake_id("ent"),
+                "workspaceId": fake_id("wsp"),
+            },
+            "origin": {"ipAddress": "8.8.8.8", "userAgent": "Internet Explorer"},
+        }
+        for n in range(page_size)
+    ]
 
 
 def test_info(enterprise, enterprise_mocks):
@@ -70,7 +115,7 @@ def test_user__no_collaboration(enterprise, enterprise_mocks):
         ["usrL2PNC5o3H4lBEi", "foo@bar.com"],  # should not return duplicates
     ),
 )
-def test_users(enterprise, enterprise_mocks, search_for):
+def test_users(enterprise, search_for):
     results = enterprise.users(search_for)
     assert len(results) == 1
     assert isinstance(user := results[0], UserInfo)
@@ -102,3 +147,66 @@ def test_group__no_collaboration(enterprise, enterprise_mocks):
     assert not grp.collaborations.bases
     assert not grp.collaborations.interfaces
     assert not grp.collaborations.workspaces
+
+
+@pytest.mark.parametrize(
+    "fncall,expected_size",
+    [
+        (call(), N_AUDIT_PAGES * N_AUDIT_PAGE_SIZE),
+        (call(page_limit=1), N_AUDIT_PAGE_SIZE),
+    ],
+)
+def test_audit_log(enterprise, fncall, expected_size):
+    """
+    Test that we iterate through multiple pages of the audit log. correctly
+    """
+    events = [
+        event
+        for page in enterprise.audit_log(*fncall.args, **fncall.kwargs)
+        for event in page.events
+    ]
+    assert len(events) == expected_size
+
+
+def test_audit_log__no_loop(enterprise, requests_mock):
+    """
+    Test that an empty page of events does not cause an infinite loop.
+    """
+    requests_mock.get(
+        enterprise.api.build_url(
+            f"meta/enterpriseAccounts/{enterprise.id}/auditLogEvents"
+        ),
+        json={
+            "events": [],
+            "pagination": {"previous": "dummy"},
+        },
+    )
+    events = [event for page in enterprise.audit_log() for event in page.events]
+    assert len(events) == 0
+
+
+@pytest.mark.parametrize(
+    "fncall,sortorder,offset_field",
+    [
+        (call(), "descending", "previous"),
+        (call(sort_asc=True), "ascending", "next"),
+    ],
+)
+def test_audit_log__sortorder(
+    api,
+    enterprise,
+    enterprise_mocks,
+    fncall,
+    sortorder,
+    offset_field,
+):
+    """
+    Test that we calculate sortorder and offset_field correctly
+    dpeending on whether we're ascending or descending.
+    """
+    with patch.object(api, "iterate_requests", wraps=api.iterate_requests) as m:
+        list(enterprise.audit_log(*fncall.args, **fncall.kwargs))
+
+    request = enterprise_mocks.get_audit_log.last_request
+    assert request.qs["sortorder"] == [sortorder]
+    assert m.mock_calls[-1].kwargs["offset_field"] == offset_field
