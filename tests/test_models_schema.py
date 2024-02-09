@@ -1,11 +1,37 @@
-from operator import attrgetter, itemgetter
-from typing import List, Optional
+from operator import attrgetter
+from typing import Any, List, Optional
 
+import mock
 import pytest
 
 import pyairtable.models.schema
 from pyairtable.models._base import AirtableModel
 from pyairtable.testing import fake_id
+
+
+@pytest.fixture
+def schema_obj(api, sample_json):
+    """
+    Test fixture that provides a callable function which retrieves
+    an object generated from tests/sample_data, and optionally
+    retrieves an attribute of that object.
+    """
+
+    def _get_schema_obj(name: str, *, context: Any = None) -> Any:
+        obj_name, _, obj_path = name.partition(".")
+        obj_data = sample_json(obj_name)
+        obj_cls = getattr(pyairtable.models.schema, obj_name)
+
+        if context:
+            obj = obj_cls.from_api(obj_data, api, context=context)
+        else:
+            obj = obj_cls.parse_obj(obj_data)
+
+        if obj_path:
+            obj = eval(f"obj.{obj_path}", None, {"obj": obj})
+        return obj
+
+    return _get_schema_obj
 
 
 @pytest.fixture
@@ -56,7 +82,7 @@ def test_find_in_collection(clsname, method, id_or_name, sample_json):
 
 
 @pytest.mark.parametrize(
-    "test_case",
+    "obj_path, expected_value",
     {
         "BaseCollaborators.individual_collaborators.via_base[0].permission_level": "create",
         "BaseCollaborators.individual_collaborators.via_base[0].user_id": "usrsOEchC9xuwRgKk",
@@ -77,19 +103,13 @@ def test_find_in_collection(clsname, method, id_or_name, sample_json):
         "WorkspaceCollaborators.base_ids": ["appLkNDICXNqxSDhG", "appSW9R5uCNmRmfl6"],
         "WorkspaceCollaborators.invite_links.via_base[0].id": "invJiqaXmPqq6Ec87",
     }.items(),
-    ids=itemgetter(0),
 )
-def test_deserialized_values(test_case, sample_json):
+def test_deserialized_values(obj_path, expected_value, schema_obj):
     """
     Spot check that certain values get loaded correctly from JSON into Python.
     This is not intended to be comprehensive, just another chance to catch regressions.
     """
-    clsname_attr, expected = test_case
-    clsname = clsname_attr.split(".")[0]
-    cls = attrgetter(clsname)(pyairtable.models.schema)
-    obj = cls.parse_obj(sample_json(clsname))
-    val = eval(clsname_attr, None, {clsname: obj})
-    assert val == expected
+    assert schema_obj(obj_path) == expected_value
 
 
 class Outer(AirtableModel):
@@ -292,3 +312,67 @@ def test_remove_interface_collaborator(
     interface_schema.remove("testObjectId")
     assert m.call_count == 1
     assert m.last_request.body is None
+
+
+@pytest.mark.parametrize(
+    "target_path",
+    (
+        "BaseCollaborators",
+        "WorkspaceCollaborators",
+        "BaseCollaborators.interfaces['pbdLkNDICXNqxSDhG']",
+    ),
+)
+@pytest.mark.parametrize("kind", ("user", "group"))
+def test_add_collaborator(
+    target_path,
+    kind,
+    schema_obj,
+    requests_mock,  # ensures no network traffic
+):
+    target = schema_obj(target_path)
+    with mock.patch.object(target.__class__, "add_collaborators") as m:
+        target.add(kind, "testId", "read")
+        m.assert_called_once_with([{kind: {"id": "testId"}, "permissionLevel": "read"}])
+
+
+@pytest.mark.parametrize(
+    "target_path",
+    (
+        "BaseCollaborators",
+        "WorkspaceCollaborators",
+        "BaseCollaborators.interfaces['pbdLkNDICXNqxSDhG']",
+    ),
+)
+def test_add_collaborator__invalid_kind(
+    target_path,
+    schema_obj,
+    requests_mock,  # ensures no network traffic
+):
+    target = schema_obj(target_path)
+    with mock.patch.object(target.__class__, "add_collaborators") as m:
+        with pytest.raises(ValueError):
+            target.add("asdf", "testId", "read")
+        assert m.call_count == 0
+
+
+@pytest.mark.parametrize(
+    "target_path",
+    (
+        "BaseCollaborators",
+        "WorkspaceCollaborators",
+        "BaseCollaborators.interfaces['pbdLkNDICXNqxSDhG']",
+    ),
+)
+def test_add_collaborators(
+    target_path,
+    schema_obj,
+    base,
+    workspace,
+    requests_mock,
+):
+    target = schema_obj(target_path, context={"base": base, "workspace": workspace})
+    requests_mock.get(target._url, json=target._raw)
+    m = requests_mock.post(target._url + "/collaborators")
+    target.add_collaborators([1, 2, 3, 4])
+    assert m.call_count == 1
+    assert m.last_request.json() == {"collaborators": [1, 2, 3, 4]}

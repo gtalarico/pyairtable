@@ -140,7 +140,10 @@ class RestfulModel(AirtableModel):
         try:
             self._url = self.__url_pattern.format(**context, self=self)
         except (KeyError, AttributeError) as exc:
-            exc.args = (*exc.args, context)
+            exc.args = (
+                *exc.args,
+                {k: v for (k, v) in context.items() if k != "__visited__"},
+            )
             raise
         if self._url and not self._url.startswith("http"):
             self._url = api.build_url(self._url)

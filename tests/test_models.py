@@ -6,6 +6,7 @@ from pyairtable.models._base import (
     AirtableModel,
     CanDeleteModel,
     CanUpdateModel,
+    RestfulModel,
     update_forward_refs,
 )
 
@@ -247,3 +248,33 @@ def test_update_forward_refs():
 
     # This will cause RecursionError if we're not careful
     update_forward_refs(Outer)
+
+
+def test_restfulmodel__set_url(api, base):
+    """
+    Test that the RestfulModel class generates a URL based on API context.
+    Also test that RestfulModel puts the full URL context into certain types
+    of exceptions that occur during URL formatting.
+    """
+
+    class Dummy(RestfulModel, url="{base.id}/{dummy.one}/{dummy.two}"):
+        one: int
+        two: str
+
+    data = {"one": 1, "two": "2"}
+
+    d = Dummy.from_api(data, api, context={"base": base})
+    assert d._url == api.build_url(f"{base.id}/1/2")
+
+    with pytest.raises(KeyError) as exc_info:
+        Dummy.from_api(data, api)
+
+    assert exc_info.match(r"\('base', \{'dummy': .*\}\)")
+
+    with pytest.raises(AttributeError) as exc_info:
+        Dummy.from_api(data, api, context={"base": None})
+
+    assert exc_info.match(
+        r'"\'NoneType\' object has no attribute \'id\'"'
+        r", \{'base': None, 'dummy': Dummy\(.*\)\}"
+    )

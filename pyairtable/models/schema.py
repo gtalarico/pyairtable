@@ -61,7 +61,7 @@ class _Collaborators(RestfulModel):
             user_id: The user ID.
             permission_level: |kwarg_permission_level|
         """
-        self.add_collaborator("user", user_id, permission_level)
+        self.add("user", user_id, permission_level)
 
     def add_group(self, group_id: str, permission_level: str) -> None:
         """
@@ -71,9 +71,9 @@ class _Collaborators(RestfulModel):
             group_id: The group ID.
             permission_level: |kwarg_permission_level|
         """
-        self.add_collaborator("group", group_id, permission_level)
+        self.add("group", group_id, permission_level)
 
-    def add_collaborator(
+    def add(
         self,
         collaborator_type: str,
         collaborator_id: str,
