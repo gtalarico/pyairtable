@@ -181,7 +181,7 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
         created_time: str
         group_collaborators: List["GroupCollaborator"] = _FL()
         individual_collaborators: List["IndividualCollaborator"] = _FL()
-        invite_links: List["InviteLink"] = _FL()
+        invite_links: List["InterfaceInviteLink"] = _FL()
 
     class GroupCollaborators(AirtableModel):
         via_base: List["GroupCollaborator"] = _FL(alias="baseCollaborators")
@@ -191,9 +191,9 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
         via_base: List["IndividualCollaborator"] = _FL(alias="baseCollaborators")
         via_workspace: List["IndividualCollaborator"] = _FL(alias="workspaceCollaborators")  # fmt: skip
 
-    class InviteLinks(AirtableModel):
+    class InviteLinks(RestfulModel, url="{base_collaborators._url}/invites"):
         via_base: List["InviteLink"] = _FL(alias="baseInviteLinks")
-        via_workspace: List["InviteLinkViaWorkspace"] = _FL(alias="workspaceInviteLinks")  # fmt: skip
+        via_workspace: List["WorkspaceInviteLink"] = _FL(alias="workspaceInviteLinks")  # fmt: skip
 
 
 class BaseShares(AirtableModel):
@@ -343,9 +343,21 @@ class IndividualCollaborator(AirtableModel):
     permission_level: str
 
 
-class InviteLink(
-    CanDeleteModel, url="meta/bases/{base_collaborators.id}/invites/{self.id}"
-):
+class BaseIndividualCollaborator(IndividualCollaborator):
+    base_id: str
+
+
+class BaseGroupCollaborator(GroupCollaborator):
+    base_id: str
+
+
+# URL generation for an InviteLink assumes that it is nested within
+# a RestfulModel class named "InviteLink" that provides URL context.
+class InviteLink(CanDeleteModel, url="{invite_links._url}/{self.id}"):
+    """
+    Represents an `invite link <https://airtable.com/developers/web/api/model/invite-link>`__.
+    """
+
     id: str
     type: str
     created_time: str
@@ -355,33 +367,35 @@ class InviteLink(
     restricted_to_email_domains: List[str] = _FL()
 
 
-class InviteLinkViaWorkspace(
-    InviteLink,
-    url="meta/workspaces/{base_collaborators.workspace_id}/invites/{self.id}",
-):
-    pass
-
-
-class BaseIndividualCollaborator(IndividualCollaborator):
-    base_id: str
-
-
-class BaseGroupCollaborator(GroupCollaborator):
-    base_id: str
-
-
 class BaseInviteLink(
     InviteLink,
     url="meta/bases/{self.base_id}/invites/{self.id}",
 ):
+    """
+    Represents a `base invite link <https://airtable.com/developers/web/api/model/base-invite-link>`__.
+    """
+
     base_id: str
 
 
 class WorkspaceInviteLink(
     InviteLink,
-    url="meta/workspaces/{workspace_collaborators.id}/invites/{self.id}",
+    url="meta/workspaces/{base_collaborators.workspace_id}/invites/{self.id}",
 ):
-    pass
+    """
+    Represents an `invite link <https://airtable.com/developers/web/api/model/invite-link>`__
+    to a workspace that was returned within a base schema.
+    """
+
+
+class InterfaceInviteLink(
+    InviteLink,
+    url="{interface_collaborators._url}/invites/{self.id}",
+):
+    """
+    Represents an `invite link <https://airtable.com/developers/web/api/model/invite-link>`__
+    to an interface that was returned within a base schema.
+    """
 
 
 class EnterpriseInfo(AirtableModel):
@@ -434,9 +448,9 @@ class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
             alias="workspaceCollaborators"
         )
 
-    class InviteLinks(AirtableModel):
+    class InviteLinks(RestfulModel, url="{workspace_collaborators._url}/invites"):
         via_base: List["BaseInviteLink"] = _FL(alias="baseInviteLinks")
-        via_workspace: List["WorkspaceInviteLink"] = _FL(alias="workspaceInviteLinks")
+        via_workspace: List["InviteLink"] = _FL(alias="workspaceInviteLinks")
 
 
 class NestedId(AirtableModel):

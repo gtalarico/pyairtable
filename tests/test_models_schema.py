@@ -35,11 +35,18 @@ def schema_obj(api, sample_json):
 
 
 @pytest.fixture
-def mock_base_metadata(api, base, sample_json, requests_mock):
+def mock_base_metadata(base, sample_json, requests_mock):
     base_json = sample_json("BaseCollaborators")
     requests_mock.get(base.meta_url(), json=base_json)
+    requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
     for pbd_id, pbd_json in base_json["interfaces"].items():
         requests_mock.get(base.meta_url("interfaces", pbd_id), json=pbd_json)
+
+
+@pytest.fixture
+def mock_workspace_metadata(workspace, sample_json, requests_mock):
+    workspace_json = sample_json("WorkspaceCollaborators")
+    requests_mock.get(workspace.url, json=workspace_json)
 
 
 @pytest.mark.parametrize(
@@ -101,7 +108,7 @@ def test_find_in_collection(clsname, method, id_or_name, sample_json):
         "UserInfo.is_two_factor_auth_enabled": False,
         "UserInfo.name": "foo baz",
         "WorkspaceCollaborators.base_ids": ["appLkNDICXNqxSDhG", "appSW9R5uCNmRmfl6"],
-        "WorkspaceCollaborators.invite_links.via_base[0].id": "invJiqaXmPqq6Ec87",
+        "WorkspaceCollaborators.invite_links.via_base[0].id": "invJiqaXmPqqAPP99",
     }.items(),
 )
 def test_deserialized_values(obj_path, expected_value, schema_obj):
@@ -238,36 +245,27 @@ def test_remove_collaborator(api, name, id, requests_mock, sample_json):
     assert m.last_request.body is None
 
 
-@pytest.mark.parametrize("kind", ["base", "workspace"])
-@pytest.mark.parametrize("via", ["base", "workspace"])
-def test_collaborators_invite_link__delete(
-    api, kind, via, base, workspace, requests_mock, sample_json
+def test_invite_link__delete(
+    base,
+    workspace,
+    requests_mock,
+    mock_base_metadata,
+    mock_workspace_metadata,
 ):
     """
-    Test that we can revoke an invite link against a base or a workspace
-    if it comes from either base.collaborators() or workspace.collaborators()
+    Test that we can revoke an invite link.
     """
-    # obj/kind => the object we're using to get invite links
-    obj = locals()[kind]
-    # via => the pathway through which the invite link was created
-    via_id = locals()[via].id
-
-    # ensure .collaborators() gets the right kind of data back
-    requests_mock.get(
-        api.build_url(f"meta/{kind}s/{obj.id}"),
-        json=sample_json(f"{kind.capitalize()}Collaborators"),
-    )
-    invite_link = getattr(obj.collaborators().invite_links, f"via_{via}")[0]
-
-    # construct the URL we expect InviteLink.delete() to call
-    url = api.build_url(f"meta/{via}s/{via_id}/invites/{invite_link.id}")
-    endpoint = requests_mock.delete(url)
-    print(f"{kind=} {via=} {url=}")
-
-    # test that it happens
-    invite_link.delete()
-    assert endpoint.call_count == 1
-    assert endpoint.last_request.method == "DELETE"
+    for invite_link in [
+        base.collaborators().invite_links.via_base[0],
+        base.collaborators().invite_links.via_workspace[0],
+        base.collaborators().interfaces["pbdLkNDICXNqxSDhG"].invite_links[0],
+        workspace.collaborators().invite_links.via_base[0],
+        workspace.collaborators().invite_links.via_workspace[0],
+    ]:
+        endpoint = requests_mock.delete(invite_link._url)
+        invite_link.delete()
+        assert endpoint.call_count == 1
+        assert endpoint.last_request.method == "DELETE"
 
 
 @pytest.fixture
@@ -327,7 +325,7 @@ def test_add_collaborator(
     target_path,
     kind,
     schema_obj,
-    requests_mock,  # ensures no network traffic
+    requests_mock,  # unused; ensures no network traffic
 ):
     target = schema_obj(target_path)
     with mock.patch.object(target.__class__, "add_collaborators") as m:
@@ -346,7 +344,7 @@ def test_add_collaborator(
 def test_add_collaborator__invalid_kind(
     target_path,
     schema_obj,
-    requests_mock,  # ensures no network traffic
+    requests_mock,  # unused; ensures no network traffic
 ):
     target = schema_obj(target_path)
     with mock.patch.object(target.__class__, "add_collaborators") as m:
@@ -376,3 +374,65 @@ def test_add_collaborators(
     target.add_collaborators([1, 2, 3, 4])
     assert m.call_count == 1
     assert m.last_request.json() == {"collaborators": [1, 2, 3, 4]}
+
+
+@pytest.mark.parametrize(
+    "expr,expected_url",
+    [
+        (
+            "base.collaborators()",
+            "meta/bases/appLkNDICXNqxSDhG",
+        ),
+        (
+            "base.collaborators().interfaces['pbdLkNDICXNqxSDhG']",
+            "meta/bases/appLkNDICXNqxSDhG/interfaces/pbdLkNDICXNqxSDhG",
+        ),
+        (
+            "base.collaborators().invite_links.via_base[0]",
+            "meta/bases/appLkNDICXNqxSDhG/invites/invJiqaXmPqq6Ec87",
+        ),
+        (
+            "base.collaborators().invite_links.via_workspace[0]",
+            "meta/workspaces/wspmhESAta6clCCwF/invites/invJiqaXmPqq6Ec99",
+        ),
+        (
+            "base.collaborators().interfaces['pbdLkNDICXNqxSDhG'].invite_links[0]",
+            "meta/bases/appLkNDICXNqxSDhG/interfaces/pbdLkNDICXNqxSDhG/invites/invJiqaXmPqq6ABCD",
+        ),
+        (
+            "workspace.collaborators().invite_links.via_base[0]",
+            "meta/bases/appLkNDICXNqxSDhG/invites/invJiqaXmPqqAPP99",
+        ),
+        (
+            "workspace.collaborators().invite_links.via_workspace[0]",
+            "meta/workspaces/wspmhESAta6clCCwF/invites/invJiqaXmPqqWSP00",
+        ),
+        (
+            "table.schema()",
+            "meta/bases/appLkNDICXNqxSDhG/tables/tbltp8DGLhqbUmjK1",
+        ),
+        (
+            "table.schema().field('fld1VnoyuotSTyxW1')",
+            "meta/bases/appLkNDICXNqxSDhG/tables/tbltp8DGLhqbUmjK1/fields/fld1VnoyuotSTyxW1",
+        ),
+        (
+            "table.schema().view('viwQpsuEDqHFqegkp')",
+            "meta/bases/appLkNDICXNqxSDhG/views/viwQpsuEDqHFqegkp",
+        ),
+    ],
+)
+def test_restful_urls(
+    expr,
+    expected_url,
+    api,
+    base,
+    workspace,
+    mock_base_metadata,  # unused; ensures no network traffic
+    mock_workspace_metadata,  # unused; ensures no network traffic
+):
+    """
+    Test that the URLs for RestfulModels are generated correctly.
+    """
+    table = base.table("tbltp8DGLhqbUmjK1")
+    obj = eval(expr, None, {"base": base, "table": table, "workspace": workspace})
+    assert obj._url == api.build_url(expected_url)

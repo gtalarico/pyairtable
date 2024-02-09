@@ -84,7 +84,17 @@
           "userId": "usrR8ZT9KtIgp8Bh3"
         }
       ],
-      "inviteLinks": [],
+      "inviteLinks": [
+        {
+          "createdTime": "2019-01-03T12:33:12.421Z",
+          "id": "invJiqaXmPqq6ABCD",
+          "invitedEmail": "bam@bam.com",
+          "permissionLevel": "edit",
+          "referredByUserId": "usrL2PNC5o3H4lBEi",
+          "restrictedToEmailDomains": [],
+          "type": "singleUse"
+        }
+      ],
       "name": "Interface"
     }
   },
@@ -105,7 +115,7 @@
     "workspaceInviteLinks": [
       {
         "createdTime": "2019-01-03T12:33:12.421Z",
-        "id": "invJiqaXmPqq6Ec87",
+        "id": "invJiqaXmPqq6Ec99",
         "invitedEmail": "bam@bam.com",
         "permissionLevel": "edit",
         "referredByUserId": "usrL2PNC5o3H4lBEi",
