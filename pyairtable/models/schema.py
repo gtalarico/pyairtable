@@ -205,7 +205,13 @@ class BaseShares(AirtableModel):
 
     shares: List["BaseShares.Info"]
 
-    class Info(AirtableModel):
+    class Info(
+        CanUpdateModel,
+        CanDeleteModel,
+        url="meta/bases/{base.id}/shares/{self.share_id}",
+        writable=["state"],
+        reload_after_save=False,
+    ):
         state: str
         created_by_user_id: str
         created_time: str
@@ -216,6 +222,14 @@ class BaseShares(AirtableModel):
         restricted_to_email_domains: List[str] = _FL()
         view_id: Optional[str] = None
         effective_email_domain_allow_list: List[str] = _FL()
+
+        def enable(self) -> None:
+            self.state = "enabled"
+            self.save()
+
+        def disable(self) -> None:
+            self.state = "disabled"
+            self.save()
 
 
 class BaseSchema(AirtableModel):

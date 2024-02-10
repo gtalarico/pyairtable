@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 import mock
 import pytest
 
-import pyairtable.models.schema
+from pyairtable.models import schema
 from pyairtable.models._base import AirtableModel
 from pyairtable.testing import fake_id
 
@@ -20,7 +20,7 @@ def schema_obj(api, sample_json):
     def _get_schema_obj(name: str, *, context: Any = None) -> Any:
         obj_name, _, obj_path = name.partition(".")
         obj_data = sample_json(obj_name)
-        obj_cls = getattr(pyairtable.models.schema, obj_name)
+        obj_cls = getattr(schema, obj_name)
 
         if context:
             obj = obj_cls.from_api(obj_data, api, context=context)
@@ -39,6 +39,7 @@ def mock_base_metadata(base, sample_json, requests_mock):
     base_json = sample_json("BaseCollaborators")
     requests_mock.get(base.meta_url(), json=base_json)
     requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+    requests_mock.get(base.meta_url("shares"), json=sample_json("BaseShares"))
     for pbd_id, pbd_json in base_json["interfaces"].items():
         requests_mock.get(base.meta_url("interfaces", pbd_id), json=pbd_json)
 
@@ -60,11 +61,11 @@ def mock_workspace_metadata(workspace, sample_json, requests_mock):
     ],
 )
 def test_parse(sample_json, clsname):
-    cls = attrgetter(clsname)(pyairtable.models.schema)
+    cls = attrgetter(clsname)(schema)
     cls.parse_obj(sample_json(clsname))
 
 
-@pytest.mark.parametrize("cls", pyairtable.models.schema.FieldSchema.__args__)
+@pytest.mark.parametrize("cls", schema.FieldSchema.__args__)
 def test_parse_field(sample_json, cls):
     cls.parse_obj(sample_json("field_schema/" + cls.__name__))
 
@@ -83,7 +84,7 @@ def test_parse_field(sample_json, cls):
     ],
 )
 def test_find_in_collection(clsname, method, id_or_name, sample_json):
-    cls = attrgetter(clsname)(pyairtable.models.schema)
+    cls = attrgetter(clsname)(schema)
     obj = cls.parse_obj(sample_json(clsname))
     assert getattr(obj, method)(id_or_name)
 
@@ -128,7 +129,7 @@ class Outer(AirtableModel):
         deleted: Optional[bool] = None
 
     def find(self, id_or_name):
-        return pyairtable.models.schema._find(self.inners, id_or_name)
+        return schema._find(self.inners, id_or_name)
 
 
 def test_find():
@@ -436,3 +437,29 @@ def test_restful_urls(
     table = base.table("tbltp8DGLhqbUmjK1")
     obj = eval(expr, None, {"base": base, "table": table, "workspace": workspace})
     assert obj._url == api.build_url(expected_url)
+
+
+@pytest.fixture
+def base_share(base, mock_base_metadata) -> schema.BaseShares.Info:
+    return base.shares()[0]
+
+
+def test_share__enable(base_share, requests_mock):
+    m = requests_mock.patch(base_share._url)
+    base_share.enable()
+    assert m.call_count == 1
+    assert m.last_request.json() == {"state": "enabled"}
+
+
+def test_share__disable(base_share, requests_mock):
+    m = requests_mock.patch(base_share._url)
+    base_share.disable()
+    assert m.call_count == 1
+    assert m.last_request.json() == {"state": "disabled"}
+
+
+def test_share__delete(base_share, requests_mock):
+    m = requests_mock.delete(base_share._url)
+    base_share.delete()
+    assert m.call_count == 1
+    assert m.last_request.body is None

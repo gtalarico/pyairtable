@@ -198,6 +198,7 @@ class CanUpdateModel(RestfulModel):
     __writable: ClassVar[Optional[Iterable[str]]] = None
     __readonly: ClassVar[Optional[Iterable[str]]] = None
     __save_none: ClassVar[bool] = True
+    __reload_after_save: ClassVar[bool] = True
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         if "writable" in kwargs and "readonly" in kwargs:
@@ -205,6 +206,9 @@ class CanUpdateModel(RestfulModel):
         cls.__writable = kwargs.pop("writable", cls.__writable)
         cls.__readonly = kwargs.pop("readonly", cls.__readonly)
         cls.__save_none = bool(kwargs.pop("save_null_values", cls.__save_none))
+        cls.__reload_after_save = bool(
+            kwargs.pop("reload_after_save", cls.__reload_after_save)
+        )
         if cls.__writable:
             _append_docstring_text(
                 cls,
@@ -239,7 +243,8 @@ class CanUpdateModel(RestfulModel):
             exclude_none=(not self.__save_none),
         )
         response = self._api.request("PATCH", self._url, json=data)
-        self._reload(response)
+        if self.__reload_after_save:
+            self._reload(response)
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Prevents implementers from changing values on readonly or non-writable fields.
