@@ -198,6 +198,7 @@ class CanUpdateModel(RestfulModel):
     __writable: ClassVar[Optional[Iterable[str]]] = None
     __readonly: ClassVar[Optional[Iterable[str]]] = None
     __save_none: ClassVar[bool] = True
+    __save_http_method: ClassVar[str] = "PATCH"
     __reload_after_save: ClassVar[bool] = True
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -206,6 +207,7 @@ class CanUpdateModel(RestfulModel):
         cls.__writable = kwargs.pop("writable", cls.__writable)
         cls.__readonly = kwargs.pop("readonly", cls.__readonly)
         cls.__save_none = bool(kwargs.pop("save_null_values", cls.__save_none))
+        cls.__save_http_method = kwargs.pop("save_method", cls.__save_http_method)
         cls.__reload_after_save = bool(
             kwargs.pop("reload_after_save", cls.__reload_after_save)
         )
@@ -242,7 +244,7 @@ class CanUpdateModel(RestfulModel):
             exclude=exclude,
             exclude_none=(not self.__save_none),
         )
-        response = self._api.request("PATCH", self._url, json=data)
+        response = self._api.request(self.__save_http_method, self._url, json=data)
         if self.__reload_after_save:
             self._reload(response)
 

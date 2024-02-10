@@ -224,10 +224,16 @@ class BaseShares(AirtableModel):
         effective_email_domain_allow_list: List[str] = _FL()
 
         def enable(self) -> None:
+            """
+            Enable the base share.
+            """
             self.state = "enabled"
             self.save()
 
         def disable(self) -> None:
+            """
+            Disable the base share.
+            """
             self.state = "disabled"
             self.save()
 
@@ -448,7 +454,12 @@ class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
     individual_collaborators: "WorkspaceCollaborators.IndividualCollaborators" = _F("WorkspaceCollaborators.IndividualCollaborators")  # fmt: skip
     invite_links: "WorkspaceCollaborators.InviteLinks" = _F("WorkspaceCollaborators.InviteLinks")  # fmt: skip
 
-    class Restrictions(AirtableModel):
+    class Restrictions(
+        CanUpdateModel,
+        url="{workspace_collaborators._url}/updateRestrictions",
+        save_method="POST",
+        reload_after_save=False,
+    ):
         invite_creation: str = pydantic.Field(alias="inviteCreationRestriction")
         share_creation: str = pydantic.Field(alias="shareCreationRestriction")
 

@@ -266,7 +266,6 @@ def test_invite_link__delete(
         endpoint = requests_mock.delete(invite_link._url)
         invite_link.delete()
         assert endpoint.call_count == 1
-        assert endpoint.last_request.method == "DELETE"
 
 
 @pytest.fixture
@@ -463,3 +462,17 @@ def test_share__delete(base_share, requests_mock):
     base_share.delete()
     assert m.call_count == 1
     assert m.last_request.body is None
+
+
+def test_workspace_restrictions(workspace, mock_workspace_metadata, requests_mock):
+    restrictions = workspace.collaborators().restrictions
+    restrictions.invite_creation = "unrestricted"
+    restrictions.share_creation = "onlyOwners"
+
+    m = requests_mock.post(restrictions._url)
+    restrictions.save()
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "inviteCreationRestriction": "unrestricted",
+        "shareCreationRestriction": "onlyOwners",
+    }
