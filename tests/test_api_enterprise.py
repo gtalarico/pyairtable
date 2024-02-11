@@ -240,16 +240,28 @@ def test_remove_user(enterprise, enterprise_mocks, kwargs, expected):
     assert removed.shared.workspaces[0].user_id == "usrL2PNC5o3H4lBEi"
 
 
-def test_delete_user(enterprise, enterprise_mocks, requests_mock):
+@pytest.fixture
+def user_info(enterprise, enterprise_mocks):
     user_info = enterprise.user(enterprise_mocks.user_id)
-    m = requests_mock.delete(f"{enterprise.url}/users/{user_info.id}")
+    assert user_info._url == f"{enterprise.url}/users/{user_info.id}"
+    return user_info
+
+
+def test_delete_user(user_info, requests_mock):
+    m = requests_mock.delete(user_info._url)
     user_info.delete()
     assert m.call_count == 1
 
 
-def test_manage_user(enterprise, enterprise_mocks, requests_mock):
-    user_info = enterprise.user(enterprise_mocks.user_id)
-    m = requests_mock.patch(f"{enterprise.url}/users/{user_info.id}")
+def test_manage_user(user_info, requests_mock):
+    m = requests_mock.patch(user_info._url)
     user_info.save()
     assert m.call_count == 1
     assert m.last_request.json() == {"email": "foo@bar.com", "state": "provisioned"}
+
+
+def test_logout_user(user_info, requests_mock):
+    m = requests_mock.post(user_info._url + "/logout")
+    user_info.logout()
+    assert m.call_count == 1
+    assert m.last_request.body is None

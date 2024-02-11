@@ -567,6 +567,9 @@ class UserInfo(
     groups: List[NestedId] = _FL()
     collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
 
+    def logout(self) -> None:
+        self._api.post(self._url + "/logout")
+
 
 class UserGroup(AirtableModel):
     """
