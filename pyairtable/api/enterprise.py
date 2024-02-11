@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
 from pyairtable.models._base import AirtableModel, update_forward_refs
 from pyairtable.models.audit import AuditLogResponse
@@ -250,6 +250,33 @@ class Enterprise:
             payload["replacementOwnerId"] = replacement
         response = self.api.post(url, json=payload)
         return UserRemoved.from_api(response, self.api, context=self)
+
+    def claim_users(
+        self, users: Dict[str, Literal["managed", "unmanaged"]]
+    ) -> "ClaimUsersResponse":
+        """
+        Batch manage organizations enterprise account users. This endpoint allows you
+        to change a user's membership status from being unmanaged to being an
+        organization member, and vice versa.
+
+        See `Manage user membership <https://airtable.com/developers/web/api/manage-user-membership>`__
+        for more information.
+
+        Args:
+            users: A ``dict`` mapping user IDs or emails to the desired state,
+                either ``"managed"`` or ``"unmanaged"``.
+        """
+        payload = {
+            "users": [
+                {
+                    ("email" if "@" in key else "id"): key,
+                    "state": value,
+                }
+                for (key, value) in users.items()
+            ]
+        }
+        response = self.api.post(f"{self.url}/users/claim", json=payload)
+        return ClaimUsersResponse.from_api(response, self.api, context=self)
 
 
 class UserRemoved(AirtableModel):

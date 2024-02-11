@@ -5,7 +5,8 @@ Changelog
 2.3.0 (TBD)
 ------------------------
 
-* Added support for :ref:`managing permissions and shares`.
+* Added support for :ref:`managing permissions and shares`
+  and :ref:`managing users`.
   - `PR #337 <https://github.com/gtalarico/pyairtable/pull/337>`_.
 * Added :meth:`Enterprise.audit_log <pyairtable.Enterprise.audit_log>`
   to iterate page-by-page through `audit log events <https://airtable.com/developers/web/api/audit-logs-overview>`__.

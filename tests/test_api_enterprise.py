@@ -54,7 +54,10 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
         enterprise.url + f"/users/{m.user_id}/remove",
         json=sample_json("UserRemoved"),
     )
-
+    m.claim_users = requests_mock.post(
+        enterprise.url + "/users/claim",
+        json={"errors": []},
+    )
     return m
 
 
@@ -265,3 +268,19 @@ def test_logout_user(user_info, requests_mock):
     user_info.logout()
     assert m.call_count == 1
     assert m.last_request.body is None
+
+
+def test_claim_users(enterprise, enterprise_mocks):
+    enterprise.claim_users(
+        {
+            "usrFakeUserId": "managed",
+            "someone@example.com": "unmanaged",
+        }
+    )
+    assert enterprise_mocks.claim_users.call_count == 1
+    assert enterprise_mocks.claim_users.last_request.json() == {
+        "users": [
+            {"id": "usrFakeUserId", "state": "managed"},
+            {"email": "someone@example.com", "state": "unmanaged"},
+        ]
+    }

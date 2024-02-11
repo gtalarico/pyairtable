@@ -137,10 +137,6 @@ schema information, you might consider calling :meth:`~pyairtable.Api.request` d
 Managing users
 -------------------
 
-`Remove user from enterprise <https://airtable.com/developers/web/api/remove-user-from-enterprise>`__
-
-    >>> enterprise.remove_user("usrUserId", replacement="usrOtherUserId")
-
 `Manage user <https://airtable.com/developers/web/api/manage-user>`__
 
     >>> user = enterprise.user("usrUserId")
@@ -155,3 +151,11 @@ Managing users
 `Delete user by id <https://airtable.com/developers/web/api/delete-user-by-id>`__
 
     >>> user.delete()
+
+`Remove user from enterprise <https://airtable.com/developers/web/api/remove-user-from-enterprise>`__
+
+    >>> enterprise.remove_user("usrUserId", replacement="usrOtherUserId")
+
+`Manage user membership <https://airtable.com/developers/web/api/manage-user-membership>`__
+
+    >>> enterprise.claim_users({"userId": "managed"})
