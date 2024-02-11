@@ -300,3 +300,100 @@ def test_orm_field(methodname, op):
     formula = getattr(FakeModel.name, methodname)("Value")
     formula &= GTE(FakeModel.age, 21)
     assert F.to_formula_str(formula) == f"AND({{Name}}{op}'Value', {{Age}}>=21)"
+
+
+@pytest.mark.parametrize(
+    "fn,argcount",
+    [
+        ("ABS", 1),
+        ("AVERAGE", 2),
+        ("BLANK", 0),
+        ("CEILING", 2),
+        ("CONCATENATE", 2),
+        ("COUNT", 2),
+        ("COUNTA", 2),
+        ("COUNTALL", 2),
+        ("CREATED_TIME", 0),
+        ("DATEADD", 3),
+        ("DATESTR", 1),
+        ("DATETIME_DIFF", 3),
+        ("DATETIME_FORMAT", 2),
+        ("DATETIME_PARSE", 3),
+        ("DAY", 1),
+        ("ENCODE_URL_COMPONENT", 1),
+        ("ERROR", 0),
+        ("EVEN", 1),
+        ("EXP", 1),
+        ("FALSE", 0),
+        ("FIND", 3),
+        ("FLOOR", 2),
+        ("FROMNOW", 1),
+        ("HOUR", 1),
+        ("IF", 3),
+        ("INT", 1),
+        ("ISERROR", 1),
+        ("IS_AFTER", 2),
+        ("IS_BEFORE", 2),
+        ("IS_SAME", 3),
+        ("LAST_MODIFIED_TIME", 1),
+        ("LEFT", 2),
+        ("LEN", 1),
+        ("LOG", 2),
+        ("LOWER", 1),
+        ("MAX", 2),
+        ("MID", 3),
+        ("MIN", 2),
+        ("MINUTE", 1),
+        ("MOD", 2),
+        ("MONTH", 1),
+        ("NOW", 0),
+        ("ODD", 1),
+        ("POWER", 2),
+        ("RECORD_ID", 0),
+        ("REGEX_EXTRACT", 2),
+        ("REGEX_MATCH", 2),
+        ("REGEX_REPLACE", 3),
+        ("REPLACE", 4),
+        ("REPT", 2),
+        ("RIGHT", 2),
+        ("ROUND", 2),
+        ("ROUNDDOWN", 2),
+        ("ROUNDUP", 2),
+        ("SEARCH", 3),
+        ("SECOND", 1),
+        ("SET_LOCALE", 2),
+        ("SET_TIMEZONE", 2),
+        ("SQRT", 1),
+        ("SUBSTITUTE", 4),
+        ("SUM", 2),
+        ("SWITCH", 4),
+        ("T", 1),
+        ("TIMESTR", 1),
+        ("TODAY", 0),
+        ("TONOW", 1),
+        ("TRIM", 1),
+        ("TRUE", 0),
+        ("UPPER", 1),
+        ("VALUE", 1),
+        ("WEEKDAY", 2),
+        ("WEEKNUM", 2),
+        ("WORKDAY", 3),
+        ("WORKDAY_DIFF", 3),
+        ("XOR", 2),
+        ("YEAR", 1),
+    ],
+)
+def test_function_calls(fn, argcount):
+    """
+    Test that the function call shortcuts in the formulas module
+    all behave as expected with the given number of arguments.
+    """
+    args = tuple(f"arg{n}" for n in range(1, argcount + 1))
+    args_repr = ", ".join(repr(arg) for arg in args)
+    args_formula = ", ".join(F.to_formula_str(arg) for arg in args)
+    result = getattr(F, fn)(*args)
+    assert isinstance(result, F.FunctionCall)
+    assert result.name == fn
+    assert result.args == args
+    assert repr(result) == f"{fn}({args_repr})"
+    assert str(result) == f"{fn}({args_formula})"
