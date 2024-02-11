@@ -101,7 +101,7 @@ schema information, you might consider calling :meth:`~pyairtable.Api.request` d
 
 `Delete interface invite <https://airtable.com/developers/web/api/delete-interface-invite>`__
 
-    >>> base.collaborators().interfaces["pbdLkNDICXNqxSDhG"].invite_links[0].delete()
+    >>> base.collaborators().interfaces[pbd].invite_links[0].delete()
 
 `Delete workspace invite <https://airtable.com/developers/web/api/delete-workspace-invite>`__
 
@@ -110,17 +110,9 @@ schema information, you might consider calling :meth:`~pyairtable.Api.request` d
 
 `Manage share <https://airtable.com/developers/web/api/manage-share>`__
 
-    .. code-block:: python
-
-        >>> share = base.shares()[0]
-        >>> share.disable()
-        >>> share.enable()
-
-    :meth:`~pyairtable.models.schema.BaseShares.Info.disable` and
-    :meth:`~pyairtable.models.schema.BaseShares.Info.enable` are shortcuts for:
-
-        >>> share.state = "enabled"
-        >>> share.save()
+    >>> share = base.shares()[0]
+    >>> share.disable()
+    >>> share.enable()
 
 `Delete share <https://airtable.com/developers/web/api/delete-share>`__
 
@@ -137,11 +129,14 @@ schema information, you might consider calling :meth:`~pyairtable.Api.request` d
 Managing users
 -------------------
 
+You can use pyAirtable to manage an enterprise's users
+via the following methods.
+
 `Manage user <https://airtable.com/developers/web/api/manage-user>`__
 
     >>> user = enterprise.user("usrUserId")
     >>> user.state = "deactivated"
-    >>> user.email = u.email.replace("@", "+deactivated@")
+    >>> user.email = user.email.replace("@", "+deactivated@")
     >>> user.save()
 
 `Logout user <https://airtable.com/developers/web/api/logout-user>`__
@@ -159,3 +154,7 @@ Managing users
 `Manage user membership <https://airtable.com/developers/web/api/manage-user-membership>`__
 
     >>> enterprise.claim_users({"userId": "managed"})
+
+`Delete users by email <https://airtable.com/developers/web/api/delete-users-by-email>`__
+
+    >>> enterprise.delete_users(["foo@example.com", "bar@example.com"])

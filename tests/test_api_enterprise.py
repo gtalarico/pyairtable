@@ -3,7 +3,11 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
-from pyairtable.api.enterprise import Enterprise
+from pyairtable.api.enterprise import (
+    ClaimUsersResponse,
+    DeleteUsersResponse,
+    Enterprise,
+)
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.testing import fake_id
 
@@ -271,12 +275,13 @@ def test_logout_user(user_info, requests_mock):
 
 
 def test_claim_users(enterprise, enterprise_mocks):
-    enterprise.claim_users(
+    result = enterprise.claim_users(
         {
             "usrFakeUserId": "managed",
             "someone@example.com": "unmanaged",
         }
     )
+    assert isinstance(result, ClaimUsersResponse)
     assert enterprise_mocks.claim_users.call_count == 1
     assert enterprise_mocks.claim_users.last_request.json() == {
         "users": [
@@ -284,3 +289,24 @@ def test_claim_users(enterprise, enterprise_mocks):
             {"email": "someone@example.com", "state": "unmanaged"},
         ]
     }
+
+
+def test_delete_users(enterprise, requests_mock):
+    response = {
+        "deletedUsers": [{"email": "foo@bar.com", "id": "usrL2PNC5o3H4lBEi"}],
+        "errors": [
+            {
+                "email": "bar@bam.com",
+                "message": "Invalid permissions",
+                "type": "INVALID_PERMISSIONS",
+            }
+        ],
+    }
+    emails = [f"foo{n}@bar.com" for n in range(5)]
+    m = requests_mock.delete(enterprise.url + "/users", json=response)
+    parsed = enterprise.delete_users(emails)
+    assert m.call_count == 1
+    assert m.last_request.qs == {"email": emails}
+    assert isinstance(parsed, DeleteUsersResponse)
+    assert parsed.deleted_users[0].email == "foo@bar.com"
+    assert parsed.errors[0].type == "INVALID_PERMISSIONS"

@@ -278,8 +278,23 @@ class Enterprise:
         response = self.api.post(f"{self.url}/users/claim", json=payload)
         return ClaimUsersResponse.from_api(response, self.api, context=self)
 
+    def delete_users(self, emails: Iterable[str]) -> "DeleteUsersResponse":
+        """
+        Delete multiple users by email.
+
+        Args:
+            emails: A list or other iterable of email addresses.
+        """
+        response = self.api.delete(f"{self.url}/users", params={"email": list(emails)})
+        return DeleteUsersResponse.from_api(response, self.api, context=self)
+
 
 class UserRemoved(AirtableModel):
+    """
+    Returned from the `Remove user from enterprise <https://airtable.com/developers/web/api/remove-user-from-enterprise>`__
+    endpoint.
+    """
+
     was_user_removed_as_admin: bool
     shared: "UserRemoved.Shared"
     unshared: "UserRemoved.Unshared"
@@ -318,7 +333,31 @@ class UserRemoved(AirtableModel):
             workspace_name: str
 
 
+class DeleteUsersResponse(AirtableModel):
+    """
+    Returned from the `Delete users by email <https://airtable.com/developers/web/api/delete-users-by-email>`__
+    endpoint.
+    """
+
+    deleted_users: List["DeleteUsersResponse.UserInfo"]
+    errors: List["DeleteUsersResponse.Error"]
+
+    class UserInfo(AirtableModel):
+        id: str
+        email: str
+
+    class Error(AirtableModel):
+        type: str
+        email: str
+        message: Optional[str] = None
+
+
 class ClaimUsersResponse(AirtableModel):
+    """
+    Returned from the `Manage user membership <https://airtable.com/developers/web/api/manage-user-membership>`__
+    endpoint.
+    """
+
     errors: List["ClaimUsersResponse.Error"]
 
     class Error(AirtableModel):
