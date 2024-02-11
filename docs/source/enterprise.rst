@@ -140,3 +140,15 @@ Managing users
 `Remove user from enterprise <https://airtable.com/developers/web/api/remove-user-from-enterprise>`__
 
     >>> enterprise.remove_user("usrUserId", replacement="usrOtherUserId")
+
+`Manage user <https://airtable.com/developers/web/api/manage-user>`__
+
+    >>> u = enterprise.user("usrUserId")
+    >>> u.state = "deactivated"
+    >>> u.email = u.email.replace("@", "+deactivated@")
+    >>> u.save()
+
+`Delete user by id <https://airtable.com/developers/web/api/delete-user-by-id>`__
+
+    >>> u = enterprise.user("usrUserId")
+    >>> u.delete()

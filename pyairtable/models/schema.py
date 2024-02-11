@@ -541,7 +541,12 @@ class Collaborations(AirtableModel):
         permission_level: str
 
 
-class UserInfo(AirtableModel):
+class UserInfo(
+    CanUpdateModel,
+    CanDeleteModel,
+    url="{enterprise.url}/users/{self.id}",
+    writable=["state", "email", "first_name", "last_name"],
+):
     """
     Detailed information about a user.
 

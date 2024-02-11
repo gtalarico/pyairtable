@@ -26,6 +26,9 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
     m.user_id = m.json_user["id"]
     m.group_id = m.json_group["id"]
     m.get_info = requests_mock.get(enterprise.url, json=sample_json("EnterpriseInfo"))
+    m.get_user = requests_mock.get(
+        f"{enterprise.url}/users/{m.user_id}", json=m.json_user
+    )
     m.get_users = requests_mock.get(f"{enterprise.url}/users", json=m.json_users)
     m.get_group = requests_mock.get(
         enterprise.api.build_url(f"meta/groups/{m.json_group['id']}"),
@@ -235,3 +238,18 @@ def test_remove_user(enterprise, enterprise_mocks, kwargs, expected):
     assert enterprise_mocks.remove_user.call_count == 1
     assert enterprise_mocks.remove_user.last_request.json() == expected
     assert removed.shared.workspaces[0].user_id == "usrL2PNC5o3H4lBEi"
+
+
+def test_delete_user(enterprise, enterprise_mocks, requests_mock):
+    user_info = enterprise.user(enterprise_mocks.user_id)
+    m = requests_mock.delete(f"{enterprise.url}/users/{user_info.id}")
+    user_info.delete()
+    assert m.call_count == 1
+
+
+def test_manage_user(enterprise, enterprise_mocks, requests_mock):
+    user_info = enterprise.user(enterprise_mocks.user_id)
+    m = requests_mock.patch(f"{enterprise.url}/users/{user_info.id}")
+    user_info.save()
+    assert m.call_count == 1
+    assert m.last_request.json() == {"email": "foo@bar.com", "state": "provisioned"}
