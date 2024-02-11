@@ -2,7 +2,7 @@ import json
 from collections import OrderedDict
 from pathlib import Path
 from posixpath import join as urljoin
-from typing import Callable
+from typing import Any, Callable
 from urllib.parse import quote, urlencode
 
 import pytest
@@ -151,3 +151,30 @@ def sample_json(sample_data: Path) -> Callable:
             return json.load(fp)
 
     return _get_sample_json
+
+
+@pytest.fixture
+def schema_obj(api, sample_json):
+    """
+    Test fixture that provides a callable function which retrieves
+    an object generated from tests/sample_data, and optionally
+    retrieves an attribute of that object.
+    """
+
+    def _get_schema_obj(name: str, *, context: Any = None) -> Any:
+        from pyairtable.models import schema
+
+        obj_name, _, obj_path = name.partition(".")
+        obj_data = sample_json(obj_name)
+        obj_cls = getattr(schema, obj_name)
+
+        if context:
+            obj = obj_cls.from_api(obj_data, api, context=context)
+        else:
+            obj = obj_cls.parse_obj(obj_data)
+
+        if obj_path:
+            obj = eval(f"obj.{obj_path}", None, {"obj": obj})
+        return obj
+
+    return _get_schema_obj

@@ -1,5 +1,5 @@
 from operator import attrgetter
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import mock
 import pytest
@@ -7,31 +7,6 @@ import pytest
 from pyairtable.models import schema
 from pyairtable.models._base import AirtableModel
 from pyairtable.testing import fake_id
-
-
-@pytest.fixture
-def schema_obj(api, sample_json):
-    """
-    Test fixture that provides a callable function which retrieves
-    an object generated from tests/sample_data, and optionally
-    retrieves an attribute of that object.
-    """
-
-    def _get_schema_obj(name: str, *, context: Any = None) -> Any:
-        obj_name, _, obj_path = name.partition(".")
-        obj_data = sample_json(obj_name)
-        obj_cls = getattr(schema, obj_name)
-
-        if context:
-            obj = obj_cls.from_api(obj_data, api, context=context)
-        else:
-            obj = obj_cls.parse_obj(obj_data)
-
-        if obj_path:
-            obj = eval(f"obj.{obj_path}", None, {"obj": obj})
-        return obj
-
-    return _get_schema_obj
 
 
 @pytest.fixture

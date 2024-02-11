@@ -47,6 +47,11 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
             for n in range(N_AUDIT_PAGES)
         ],
     )
+    m.remove_user = requests_mock.post(
+        enterprise.url + f"/users/{m.user_id}/remove",
+        json=sample_json("UserRemoved"),
+    )
+
     return m
 
 
@@ -210,3 +215,23 @@ def test_audit_log__sortorder(
     request = enterprise_mocks.get_audit_log.last_request
     assert request.qs["sortorder"] == [sortorder]
     assert m.mock_calls[-1].kwargs["offset_field"] == offset_field
+
+
+@pytest.mark.parametrize(
+    "kwargs,expected",
+    [
+        (
+            {},
+            {"isDryRun": False},
+        ),
+        (
+            {"replacement": "otherUser"},
+            {"isDryRun": False, "replacementOwnerId": "otherUser"},
+        ),
+    ],
+)
+def test_remove_user(enterprise, enterprise_mocks, kwargs, expected):
+    removed = enterprise.remove_user(enterprise_mocks.user_id, **kwargs)
+    assert enterprise_mocks.remove_user.call_count == 1
+    assert enterprise_mocks.remove_user.last_request.json() == expected
+    assert removed.shared.workspaces[0].user_id == "usrL2PNC5o3H4lBEi"

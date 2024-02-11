@@ -132,3 +132,11 @@ schema information, you might consider calling :meth:`~pyairtable.Api.request` d
     >>> r.invite_creation = "unrestricted"
     >>> r.share_creation = "onlyOwners"
     >>> r.save()
+
+
+Managing users
+-------------------
+
+`Remove user from enterprise <https://airtable.com/developers/web/api/remove-user-from-enterprise>`__
+
+    >>> enterprise.remove_user("usrUserId", replacement="usrOtherUserId")

@@ -1,6 +1,7 @@
 import datetime
-from typing import Iterable, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
 
+from pyairtable.models._base import AirtableModel, update_forward_refs
 from pyairtable.models.audit import AuditLogResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.utils import (
@@ -223,6 +224,84 @@ class Enterprise:
                 return
             if page_limit is not None and count >= page_limit:
                 return
+
+    def remove_user(
+        self,
+        user_id: str,
+        replacement: Optional[str] = None,
+    ) -> "UserRemoved":
+        """
+        Unshare a user from all enterprise workspaces, bases, and interfaces.
+        If applicable, the user will also be removed from as an enterprise admin.
+
+        See `Remove user from enterprise <https://airtable.com/developers/web/api/remove-user-from-enterprise>`__
+        for more information.
+
+        Args:
+            user_id: The user ID.
+            replacement: If the user is the sole owner of any workspaces, you must
+                specify a replacement user ID to be added as the new owner of such
+                workspaces. If the user is not the sole owner of any workspaces,
+                this is optional and will be ignored if provided.
+        """
+        url = f"{self.url}/users/{user_id}/remove"
+        payload: Dict[str, Any] = {"isDryRun": False}
+        if replacement:
+            payload["replacementOwnerId"] = replacement
+        response = self.api.post(url, json=payload)
+        return UserRemoved.from_api(response, self.api, context=self)
+
+
+class UserRemoved(AirtableModel):
+    was_user_removed_as_admin: bool
+    shared: "UserRemoved.Shared"
+    unshared: "UserRemoved.Unshared"
+
+    class Shared(AirtableModel):
+        workspaces: List["UserRemoved.Shared.Workspace"]
+
+        class Workspace(AirtableModel):
+            permission_level: str
+            workspace_id: str
+            workspace_name: str
+            user_id: str = ""
+
+    class Unshared(AirtableModel):
+        bases: List["UserRemoved.Unshared.Base"]
+        interfaces: List["UserRemoved.Unshared.Interface"]
+        workspaces: List["UserRemoved.Unshared.Workspace"]
+
+        class Base(AirtableModel):
+            user_id: str
+            base_id: str
+            base_name: str
+            former_permission_level: str
+
+        class Interface(AirtableModel):
+            user_id: str
+            base_id: str
+            interface_id: str
+            interface_name: str
+            former_permission_level: str
+
+        class Workspace(AirtableModel):
+            user_id: str
+            former_permission_level: str
+            workspace_id: str
+            workspace_name: str
+
+
+class ClaimUsersResponse(AirtableModel):
+    errors: List["ClaimUsersResponse.Error"]
+
+    class Error(AirtableModel):
+        id: Optional[str] = None
+        email: Optional[str] = None
+        type: str
+        message: str
+
+
+update_forward_refs(vars())
 
 
 # These are at the bottom of the module to avoid circular imports

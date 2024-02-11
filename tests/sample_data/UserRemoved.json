@@ -1,0 +1,40 @@
+{
+  "shared": {
+    "workspaces": [
+      {
+        "permissionLevel": "owner",
+        "userId": "usrL2PNC5o3H4lBEi",
+        "workspaceId": "wsp00000000000000",
+        "workspaceName": "Workspace name"
+      }
+    ]
+  },
+  "unshared": {
+    "bases": [
+      {
+        "baseId": "app00000000000000",
+        "baseName": "Base name",
+        "formerPermissionLevel": "create",
+        "userId": "usr00000000000000"
+      }
+    ],
+    "interfaces": [
+      {
+        "baseId": "app00000000000000",
+        "formerPermissionLevel": "create",
+        "interfaceId": "pgb00000000000000",
+        "interfaceName": "Interface name",
+        "userId": "usr00000000000000"
+      }
+    ],
+    "workspaces": [
+      {
+        "formerPermissionLevel": "owner",
+        "userId": "usr00000000000000",
+        "workspaceId": "wsp00000000000000",
+        "workspaceName": "Workspace name"
+      }
+    ]
+  },
+  "wasUserRemovedAsAdmin": true
+}
