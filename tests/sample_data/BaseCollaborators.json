@@ -61,6 +61,43 @@
       }
     ]
   },
+  "interfaces": {
+    "pbdLkNDICXNqxSDhG": {
+      "createdTime": "2024-02-04T02:28:06.000Z",
+      "firstPublishTime": "2024-02-04T02:28:12.000Z",
+      "groupCollaborators": [
+        {
+          "createdTime": "2024-02-04T02:28:20.184Z",
+          "grantedByUserId": "usrL2PNC5o3H4lBEi",
+          "groupId": "ugpR8ZT9KtIgp8Bh3",
+          "name": "Test Interface",
+          "permissionLevel": "read"
+        }
+      ],
+      "id": "pbdLkNDICXNqxSDhG",
+      "individualCollaborators": [
+        {
+          "createdTime": "2024-02-04T04:00:00.749Z",
+          "email": "test@example.com",
+          "grantedByUserId": "usrL2PNC5o3H4lBEi",
+          "permissionLevel": "edit",
+          "userId": "usrR8ZT9KtIgp8Bh3"
+        }
+      ],
+      "inviteLinks": [
+        {
+          "createdTime": "2019-01-03T12:33:12.421Z",
+          "id": "invJiqaXmPqq6ABCD",
+          "invitedEmail": "bam@bam.com",
+          "permissionLevel": "edit",
+          "referredByUserId": "usrL2PNC5o3H4lBEi",
+          "restrictedToEmailDomains": [],
+          "type": "singleUse"
+        }
+      ],
+      "name": "Interface"
+    }
+  },
   "inviteLinks": {
     "baseInviteLinks": [
       {
@@ -78,7 +115,7 @@
     "workspaceInviteLinks": [
       {
         "createdTime": "2019-01-03T12:33:12.421Z",
-        "id": "invJiqaXmPqq6Ec87",
+        "id": "invJiqaXmPqq6Ec99",
         "invitedEmail": "bam@bam.com",
         "permissionLevel": "edit",
         "referredByUserId": "usrL2PNC5o3H4lBEi",

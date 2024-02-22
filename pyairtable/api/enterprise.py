@@ -1,6 +1,7 @@
 import datetime
-from typing import Iterable, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
+from pyairtable.models._base import AirtableModel, update_forward_refs
 from pyairtable.models.audit import AuditLogResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.utils import (
@@ -8,7 +9,6 @@ from pyairtable.utils import (
     coerce_iso_str,
     coerce_list_str,
     enterprise_only,
-    is_user_id,
 )
 
 
@@ -37,8 +37,8 @@ class Enterprise:
         Retrieve basic information about the enterprise, caching the result.
         """
         params = {"include": ["collaborators", "inviteLinks"]}
-        payload = self.api.request("GET", self.url, params=params)
-        return EnterpriseInfo.parse_obj(payload)
+        response = self.api.get(self.url, params=params)
+        return EnterpriseInfo.from_api(response, self.api)
 
     def group(self, group_id: str, collaborations: bool = True) -> UserGroup:
         """
@@ -51,7 +51,7 @@ class Enterprise:
         """
         params = {"include": ["collaborations"] if collaborations else []}
         url = self.api.build_url(f"meta/groups/{group_id}")
-        payload = self.api.request("GET", url, params=params)
+        payload = self.api.get(url, params=params)
         return UserGroup.parse_obj(payload)
 
     def user(self, id_or_email: str, collaborations: bool = True) -> UserInfo:
@@ -86,8 +86,7 @@ class Enterprise:
         for value in ids_or_emails:
             (emails if "@" in value else user_ids).append(value)
 
-        response = self.api.request(
-            method="GET",
+        response = self.api.get(
             url=f"{self.url}/users",
             params={
                 "id": user_ids,
@@ -225,6 +224,150 @@ class Enterprise:
                 return
             if page_limit is not None and count >= page_limit:
                 return
+
+    def remove_user(
+        self,
+        user_id: str,
+        replacement: Optional[str] = None,
+    ) -> "UserRemoved":
+        """
+        Unshare a user from all enterprise workspaces, bases, and interfaces.
+        If applicable, the user will also be removed from as an enterprise admin.
+
+        See `Remove user from enterprise <https://airtable.com/developers/web/api/remove-user-from-enterprise>`__
+        for more information.
+
+        Args:
+            user_id: The user ID.
+            replacement: If the user is the sole owner of any workspaces, you must
+                specify a replacement user ID to be added as the new owner of such
+                workspaces. If the user is not the sole owner of any workspaces,
+                this is optional and will be ignored if provided.
+        """
+        url = f"{self.url}/users/{user_id}/remove"
+        payload: Dict[str, Any] = {"isDryRun": False}
+        if replacement:
+            payload["replacementOwnerId"] = replacement
+        response = self.api.post(url, json=payload)
+        return UserRemoved.from_api(response, self.api, context=self)
+
+    def claim_users(
+        self, users: Dict[str, Literal["managed", "unmanaged"]]
+    ) -> "ClaimUsersResponse":
+        """
+        Batch manage organizations enterprise account users. This endpoint allows you
+        to change a user's membership status from being unmanaged to being an
+        organization member, and vice versa.
+
+        See `Manage user membership <https://airtable.com/developers/web/api/manage-user-membership>`__
+        for more information.
+
+        Args:
+            users: A ``dict`` mapping user IDs or emails to the desired state,
+                either ``"managed"`` or ``"unmanaged"``.
+        """
+        payload = {
+            "users": [
+                {
+                    ("email" if "@" in key else "id"): key,
+                    "state": value,
+                }
+                for (key, value) in users.items()
+            ]
+        }
+        response = self.api.post(f"{self.url}/users/claim", json=payload)
+        return ClaimUsersResponse.from_api(response, self.api, context=self)
+
+    def delete_users(self, emails: Iterable[str]) -> "DeleteUsersResponse":
+        """
+        Delete multiple users by email.
+
+        Args:
+            emails: A list or other iterable of email addresses.
+        """
+        response = self.api.delete(f"{self.url}/users", params={"email": list(emails)})
+        return DeleteUsersResponse.from_api(response, self.api, context=self)
+
+
+class UserRemoved(AirtableModel):
+    """
+    Returned from the `Remove user from enterprise <https://airtable.com/developers/web/api/remove-user-from-enterprise>`__
+    endpoint.
+    """
+
+    was_user_removed_as_admin: bool
+    shared: "UserRemoved.Shared"
+    unshared: "UserRemoved.Unshared"
+
+    class Shared(AirtableModel):
+        workspaces: List["UserRemoved.Shared.Workspace"]
+
+        class Workspace(AirtableModel):
+            permission_level: str
+            workspace_id: str
+            workspace_name: str
+            user_id: str = ""
+
+    class Unshared(AirtableModel):
+        bases: List["UserRemoved.Unshared.Base"]
+        interfaces: List["UserRemoved.Unshared.Interface"]
+        workspaces: List["UserRemoved.Unshared.Workspace"]
+
+        class Base(AirtableModel):
+            user_id: str
+            base_id: str
+            base_name: str
+            former_permission_level: str
+
+        class Interface(AirtableModel):
+            user_id: str
+            base_id: str
+            interface_id: str
+            interface_name: str
+            former_permission_level: str
+
+        class Workspace(AirtableModel):
+            user_id: str
+            former_permission_level: str
+            workspace_id: str
+            workspace_name: str
+
+
+class DeleteUsersResponse(AirtableModel):
+    """
+    Returned from the `Delete users by email <https://airtable.com/developers/web/api/delete-users-by-email>`__
+    endpoint.
+    """
+
+    deleted_users: List["DeleteUsersResponse.UserInfo"]
+    errors: List["DeleteUsersResponse.Error"]
+
+    class UserInfo(AirtableModel):
+        id: str
+        email: str
+
+    class Error(AirtableModel):
+        type: str
+        email: str
+        message: Optional[str] = None
+
+
+class ClaimUsersResponse(AirtableModel):
+    """
+    Returned from the `Manage user membership <https://airtable.com/developers/web/api/manage-user-membership>`__
+    endpoint.
+    """
+
+    errors: List["ClaimUsersResponse.Error"]
+
+    class Error(AirtableModel):
+        id: Optional[str] = None
+        email: Optional[str] = None
+        type: str
+        message: str
+
+
+update_forward_refs(vars())
 
 
 # These are at the bottom of the module to avoid circular imports

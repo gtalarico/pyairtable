@@ -70,6 +70,9 @@
     If ``True``, will fetch information from the metadata API and validate the ID/name exists,
     raising ``KeyError`` if it does not.
 
+.. |kwarg_permission_level| replace::
+    See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
+
 .. |warn| unicode:: U+26A0 .. WARNING SIGN
 
 .. |enterprise_only| replace:: |warn| This feature is only available on Enterprise billing plans.

@@ -1,9 +1,12 @@
+from typing import List
+
 import pytest
 
 from pyairtable.models._base import (
     AirtableModel,
     CanDeleteModel,
     CanUpdateModel,
+    RestfulModel,
     update_forward_refs,
 )
 
@@ -36,16 +39,29 @@ def create_instance(api, raw_data):
     return _creates_instance
 
 
-def test_raw(raw_data):
+def test_raw(api):
     """
-    Test that AirtableModel.parse_obj saves the raw value, so that developers
+    Test that AirtableModel.from_api saves the raw value, so that developers
     can access the exact payload we received from the API. This is mostly
-    in case Airtable adds new things to webhooks or webhook payloads in the future.
+    in case Airtable adds new things to webhooks or schemas in the future.
     """
-    obj = AirtableModel.parse_obj(raw_data)
+
+    class Grandchild(AirtableModel):
+        value: int
+
+    class Child(AirtableModel):
+        grandchild: Grandchild
+
+    class Parent(AirtableModel):
+        child: Child
+
+    raw = {"child": {"grandchild": {"value": 1}}, "foo": "FOO", "bar": "BAR"}
+    obj = Parent.from_api(raw, api)
     assert not hasattr(obj, "foo")
     assert not hasattr(obj, "bar")
-    assert obj._raw == raw_data
+    assert obj._raw == raw
+    assert obj.child._raw == raw["child"]
+    assert obj.child.grandchild._raw == raw["child"]["grandchild"]
 
 
 @pytest.mark.parametrize("prefix", ["https://api.airtable.com/v0/prefix", "prefix"])
@@ -98,6 +114,70 @@ def test_save_without_url(create_instance):
     obj = create_instance(url="")
     with pytest.raises(RuntimeError):
         obj.save()
+
+
+def test_save__nested_reload(requests_mock, api):
+    """
+    Test that reloading an object with nested models correctly reloads all of them,
+    while preserving those nested models' access to the API.
+    """
+
+    class Parent(CanUpdateModel, url="foo/{self.id}"):
+        id: int
+        name: str
+        children: List["Parent.Child"]  # noqa
+
+        class Child(CanUpdateModel, url="foo/{parent.id}/child/{child.id}"):
+            id: int
+            name: str
+
+    update_forward_refs(Parent)
+
+    parent_data = {
+        "id": 1,
+        "name": "One",
+        "children": [
+            (child2_data := {"id": 2, "name": "Two"}),
+            (child3_data := {"id": 3, "name": "Three"}),
+        ],
+    }
+    requests_mock.get(parent_url := api.build_url("foo/1"), json=parent_data)
+    requests_mock.get(child2_url := api.build_url("foo/1/child/2"), json=child2_data)
+    requests_mock.get(child3_url := api.build_url("foo/1/child/3"), json=child3_data)
+
+    parent = Parent.from_api(parent_data, api)
+    assert parent.name == "One"
+    assert parent.children[0].name == "Two"
+
+    # Test that we can still reload the parent object
+    m_parent_patch = requests_mock.patch(
+        parent_url,
+        json={
+            **parent_data,
+            "name": (parent_update := "One Updated"),
+        },
+    )
+    parent.name = parent_update
+    parent.save()
+    assert m_parent_patch.call_count == 1
+    assert m_parent_patch.last_request.json()["name"] == parent_update
+
+    # Test that we can still patch a nested object after its parent was reloaded,
+    # because we saved the URL context from `from_api()` and reused it on `_reload()`.
+    m_child2_patch = requests_mock.patch(child2_url, json=child2_data)
+    m_child3_patch = requests_mock.patch(
+        child3_url,
+        json={
+            **child3_data,
+            "name": (child3_update := "Three Updated"),
+        },
+    )
+    parent.children[1].name = child3_update
+    parent.children[1].save()
+    assert m_child3_patch.call_count == 1
+    assert m_child3_patch.last_request.json()["name"] == child3_update
+    assert parent.children[1].name == child3_update
+    assert m_child2_patch.call_count == 0  # just to be sure
 
 
 def test_delete(requests_mock, create_instance):
@@ -168,3 +248,33 @@ def test_update_forward_refs():
 
     # This will cause RecursionError if we're not careful
     update_forward_refs(Outer)
+
+
+def test_restfulmodel__set_url(api, base):
+    """
+    Test that the RestfulModel class generates a URL based on API context.
+    Also test that RestfulModel puts the full URL context into certain types
+    of exceptions that occur during URL formatting.
+    """
+
+    class Dummy(RestfulModel, url="{base.id}/{dummy.one}/{dummy.two}"):
+        one: int
+        two: str
+
+    data = {"one": 1, "two": "2"}
+
+    d = Dummy.from_api(data, api, context={"base": base})
+    assert d._url == api.build_url(f"{base.id}/1/2")
+
+    with pytest.raises(KeyError) as exc_info:
+        Dummy.from_api(data, api)
+
+    assert exc_info.match(r"\('base', \{'dummy': .*\}\)")
+
+    with pytest.raises(AttributeError) as exc_info:
+        Dummy.from_api(data, api, context={"base": None})
+
+    assert exc_info.match(
+        r'"\'NoneType\' object has no attribute \'id\'"'
+        r", \{'base': None, 'dummy': Dummy\(.*\)\}"
+    )

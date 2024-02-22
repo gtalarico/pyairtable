@@ -29,16 +29,14 @@ class AirtableModel(pydantic.BaseModel):
 
     _raw: Any = pydantic.PrivateAttr()
 
-    @classmethod
-    def parse_obj(cls, obj: Any) -> SelfType:
-        instance = super().parse_obj(obj)
-        instance._raw = obj
-        return instance
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        self._raw = data
 
     @classmethod
     def from_api(
         cls,
-        obj: Any,
+        obj: Dict[str, Any],
         api: "pyairtable.api.api.Api",
         *,
         context: Optional[Any] = None,
@@ -55,7 +53,7 @@ class AirtableModel(pydantic.BaseModel):
                 which will be used as arguments to ``str.format()`` when constructing
                 the URL for a :class:`~pyairtable.models._base.RestfulModel`.
         """
-        instance = cls.parse_obj(obj)
+        instance = cls(**obj)
         cascade_api(instance, api, context=context)
         return instance
 
@@ -95,8 +93,8 @@ def cascade_api(
         for value in obj:
             cascade_api(value, api, context=context)
     if isinstance(obj, dict):
-        for value in obj.values():
-            cascade_api(value, api, context=context)
+        for key, value in obj.items():
+            cascade_api(value, api, context={**context, "key": key})
     if not isinstance(obj, AirtableModel):
         return
 
@@ -104,9 +102,9 @@ def cascade_api(
     # If it's a ModelNamedThis, the key will be model_named_this.
     context = {**context, _context_name(obj): obj}
 
-    # This is what we came here for
     if isinstance(obj, RestfulModel):
-        obj.set_api(api, context=context)
+        # This is what we came here for; set the API and URL on the RESTful model.
+        obj._set_api(api, context=context)
 
     # Find and apply API/context to nested models in every Pydantic field.
     for field_name in type(obj).__fields__:
@@ -127,21 +125,39 @@ class RestfulModel(AirtableModel):
 
     _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
     _url: str = pydantic.PrivateAttr(default="")
+    _url_context: Any = None
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
         super().__init_subclass__()
 
-    def set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
+    def _set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
         """
-        Set a link to the API and builds the REST URL used for this resource.
-
-        :meta private:
+        Set a link to the API and build the REST URL used for this resource.
         """
         self._api = api
-        self._url = self.__url_pattern.format(**context, self=self)
+        self._url_context = context
+        try:
+            self._url = self.__url_pattern.format(**context, self=self)
+        except (KeyError, AttributeError) as exc:
+            exc.args = (
+                *exc.args,
+                {k: v for (k, v) in context.items() if k != "__visited__"},
+            )
+            raise
         if self._url and not self._url.startswith("http"):
             self._url = api.build_url(self._url)
+
+    def _reload(self, obj: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Reload the model's contents from the given object, or by making a GET request to the API.
+        """
+        if obj is None:
+            obj = self._api.get(self._url)
+        copyable = type(self).from_api(obj, self._api, context=self._url_context)
+        self.__dict__.update(
+            {key: copyable.__dict__.get(key) for key in type(self).__fields__}
+        )
 
 
 class CanDeleteModel(RestfulModel):
@@ -182,6 +198,8 @@ class CanUpdateModel(RestfulModel):
     __writable: ClassVar[Optional[Iterable[str]]] = None
     __readonly: ClassVar[Optional[Iterable[str]]] = None
     __save_none: ClassVar[bool] = True
+    __save_http_method: ClassVar[str] = "PATCH"
+    __reload_after_save: ClassVar[bool] = True
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         if "writable" in kwargs and "readonly" in kwargs:
@@ -189,6 +207,10 @@ class CanUpdateModel(RestfulModel):
         cls.__writable = kwargs.pop("writable", cls.__writable)
         cls.__readonly = kwargs.pop("readonly", cls.__readonly)
         cls.__save_none = bool(kwargs.pop("save_null_values", cls.__save_none))
+        cls.__save_http_method = kwargs.pop("save_method", cls.__save_http_method)
+        cls.__reload_after_save = bool(
+            kwargs.pop("reload_after_save", cls.__reload_after_save)
+        )
         if cls.__writable:
             _append_docstring_text(
                 cls,
@@ -222,15 +244,9 @@ class CanUpdateModel(RestfulModel):
             exclude=exclude,
             exclude_none=(not self.__save_none),
         )
-        response = self._api.request("PATCH", self._url, json=data)
-        copyable = type(self).parse_obj(response)
-        self.__dict__.update(
-            {
-                key: value
-                for (key, value) in copyable.__dict__.items()
-                if key in type(self).__fields__
-            }
-        )
+        response = self._api.request(self.__save_http_method, self._url, json=data)
+        if self.__reload_after_save:
+            self._reload(response)
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Prevents implementers from changing values on readonly or non-writable fields.

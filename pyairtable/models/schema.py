@@ -1,15 +1,35 @@
+import importlib
 from functools import partial
-from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Literal, Optional, TypeVar, Union, cast
 
 from typing_extensions import TypeAlias
 
 from pyairtable._compat import pydantic
+from pyairtable.api.types import AddCollaboratorDict
 
-from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, update_forward_refs
+from ._base import (
+    AirtableModel,
+    CanDeleteModel,
+    CanUpdateModel,
+    RestfulModel,
+    update_forward_refs,
+)
 
 _T = TypeVar("_T", bound=Any)
 _FL = partial(pydantic.Field, default_factory=list)
 _FD = partial(pydantic.Field, default_factory=dict)
+
+
+def _F(classname: str, **kwargs: Any) -> Any:
+    def _create_default_from_classname() -> Any:
+        this_module = importlib.import_module(__name__)
+        obj = this_module
+        for segment in classname.split("."):
+            obj = getattr(obj, segment)
+        return obj
+
+    kwargs["default_factory"] = _create_default_from_classname
+    return pydantic.Field(**kwargs)
 
 
 def _find(collection: List[_T], id_or_name: str) -> _T:
@@ -26,6 +46,95 @@ def _find(collection: List[_T], id_or_name: str) -> _T:
         items_by_name[item.name] = item
 
     return items_by_name[id_or_name]
+
+
+class _Collaborators(RestfulModel):
+    """
+    Mixin for use with RestfulModel subclasses that have a /collaborators endpoint.
+    """
+
+    def add_user(self, user_id: str, permission_level: str) -> None:
+        """
+        Add a user as a collaborator to this Airtable object.
+
+        Args:
+            user_id: The user ID.
+            permission_level: |kwarg_permission_level|
+        """
+        self.add("user", user_id, permission_level)
+
+    def add_group(self, group_id: str, permission_level: str) -> None:
+        """
+        Add a group as a collaborator to this Airtable object.
+
+        Args:
+            group_id: The group ID.
+            permission_level: |kwarg_permission_level|
+        """
+        self.add("group", group_id, permission_level)
+
+    def add(
+        self,
+        collaborator_type: str,
+        collaborator_id: str,
+        permission_level: str,
+    ) -> None:
+        """
+        Add a user or group as a collaborator to this Airtable object.
+
+        Args:
+            collaborator_type: Either ``'user'`` or ``'group'``.
+            collaborator_id: The user or group ID.
+            permission_level: |kwarg_permission_level|
+        """
+        if collaborator_type not in ("user", "group"):
+            raise ValueError("collaborator_type must be 'user' or 'group'")
+        self.add_collaborators(
+            [
+                cast(
+                    AddCollaboratorDict,
+                    {
+                        collaborator_type: {"id": collaborator_id},
+                        "permissionLevel": permission_level,
+                    },
+                )
+            ]
+        )
+
+    def add_collaborators(self, collaborators: Iterable[AddCollaboratorDict]) -> None:
+        """
+        Add multiple collaborators to this Airtable object.
+
+        Args:
+            collaborators: A list of ``dict`` that conform to the specification
+                laid out in the `Add base collaborator <https://airtable.com/developers/web/api/add-base-collaborator#request-collaborators>`__
+                API documentation.
+        """
+        payload = {"collaborators": list(collaborators)}
+        self._api.post(f"{self._url}/collaborators", json=payload)
+        self._reload()
+
+    def update(self, collaborator_id: str, permission_level: str) -> None:
+        """
+        Change the permission level granted to a user or group.
+
+        Args:
+            collaborator_id: The user or group ID.
+            permission_level: |kwarg_permission_level|
+        """
+        self._api.patch(
+            f"{self._url}/collaborators/{collaborator_id}",
+            json={"permissionLevel": permission_level},
+        )
+
+    def remove(self, collaborator_id: str) -> None:
+        """
+        Remove a user or group as a collaborator.
+
+        Args:
+            collaborator_id: The user or group ID.
+        """
+        self._api.delete(f"{self._url}/collaborators/{collaborator_id}")
 
 
 class Bases(AirtableModel):
@@ -49,7 +158,7 @@ class Bases(AirtableModel):
         permission_level: str
 
 
-class BaseCollaborators(AirtableModel):
+class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
     """
     Detailed information about who can access a base.
 
@@ -61,15 +170,18 @@ class BaseCollaborators(AirtableModel):
     permission_level: str
     workspace_id: str
     interfaces: Dict[str, "BaseCollaborators.InterfaceCollaborators"] = _FD()
-    group_collaborators: Optional["BaseCollaborators.GroupCollaborators"]
-    individual_collaborators: Optional["BaseCollaborators.IndividualCollaborators"]
-    invite_links: Optional["BaseCollaborators.InviteLinks"]
+    group_collaborators: "BaseCollaborators.GroupCollaborators" = _F("BaseCollaborators.GroupCollaborators")  # fmt: skip
+    individual_collaborators: "BaseCollaborators.IndividualCollaborators" = _F("BaseCollaborators.IndividualCollaborators")  # fmt: skip
+    invite_links: "BaseCollaborators.InviteLinks" = _F("BaseCollaborators.InviteLinks")  # fmt: skip
 
-    class InterfaceCollaborators(AirtableModel):
+    class InterfaceCollaborators(
+        _Collaborators,
+        url="meta/bases/{base.id}/interfaces/{key}",
+    ):
         created_time: str
         group_collaborators: List["GroupCollaborator"] = _FL()
         individual_collaborators: List["IndividualCollaborator"] = _FL()
-        invite_links: List["InviteLink"] = _FL()
+        invite_links: List["InterfaceInviteLink"] = _FL()
 
     class GroupCollaborators(AirtableModel):
         via_base: List["GroupCollaborator"] = _FL(alias="baseCollaborators")
@@ -77,13 +189,11 @@ class BaseCollaborators(AirtableModel):
 
     class IndividualCollaborators(AirtableModel):
         via_base: List["IndividualCollaborator"] = _FL(alias="baseCollaborators")
-        via_workspace: List["IndividualCollaborator"] = _FL(
-            alias="workspaceCollaborators"
-        )
+        via_workspace: List["IndividualCollaborator"] = _FL(alias="workspaceCollaborators")  # fmt: skip
 
-    class InviteLinks(AirtableModel):
-        base_invite_links: List["InviteLink"] = _FL()
-        workspace_invite_links: List["InviteLink"] = _FL()
+    class InviteLinks(RestfulModel, url="{base_collaborators._url}/invites"):
+        via_base: List["InviteLink"] = _FL(alias="baseInviteLinks")
+        via_workspace: List["WorkspaceInviteLink"] = _FL(alias="workspaceInviteLinks")  # fmt: skip
 
 
 class BaseShares(AirtableModel):
@@ -95,7 +205,13 @@ class BaseShares(AirtableModel):
 
     shares: List["BaseShares.Info"]
 
-    class Info(AirtableModel):
+    class Info(
+        CanUpdateModel,
+        CanDeleteModel,
+        url="meta/bases/{base.id}/shares/{self.share_id}",
+        writable=["state"],
+        reload_after_save=False,
+    ):
         state: str
         created_by_user_id: str
         created_time: str
@@ -106,6 +222,20 @@ class BaseShares(AirtableModel):
         restricted_to_email_domains: List[str] = _FL()
         view_id: Optional[str] = None
         effective_email_domain_allow_list: List[str] = _FL()
+
+        def enable(self) -> None:
+            """
+            Enable the base share.
+            """
+            self.state = "enabled"
+            self.save()
+
+        def disable(self) -> None:
+            """
+            Disable the base share.
+            """
+            self.state = "disabled"
+            self.save()
 
 
 class BaseSchema(AirtableModel):
@@ -233,7 +363,21 @@ class IndividualCollaborator(AirtableModel):
     permission_level: str
 
 
-class InviteLink(AirtableModel):
+class BaseIndividualCollaborator(IndividualCollaborator):
+    base_id: str
+
+
+class BaseGroupCollaborator(GroupCollaborator):
+    base_id: str
+
+
+# URL generation for an InviteLink assumes that it is nested within
+# a RestfulModel class named "InviteLink" that provides URL context.
+class InviteLink(CanDeleteModel, url="{invite_links._url}/{self.id}"):
+    """
+    Represents an `invite link <https://airtable.com/developers/web/api/model/invite-link>`__.
+    """
+
     id: str
     type: str
     created_time: str
@@ -243,16 +387,35 @@ class InviteLink(AirtableModel):
     restricted_to_email_domains: List[str] = _FL()
 
 
-class BaseIndividualCollaborator(IndividualCollaborator):
+class BaseInviteLink(
+    InviteLink,
+    url="meta/bases/{self.base_id}/invites/{self.id}",
+):
+    """
+    Represents a `base invite link <https://airtable.com/developers/web/api/model/base-invite-link>`__.
+    """
+
     base_id: str
 
 
-class BaseGroupCollaborator(GroupCollaborator):
-    base_id: str
+class WorkspaceInviteLink(
+    InviteLink,
+    url="meta/workspaces/{base_collaborators.workspace_id}/invites/{self.id}",
+):
+    """
+    Represents an `invite link <https://airtable.com/developers/web/api/model/invite-link>`__
+    to a workspace that was returned within a base schema.
+    """
 
 
-class BaseInviteLink(InviteLink):
-    base_id: str
+class InterfaceInviteLink(
+    InviteLink,
+    url="{interface_collaborators._url}/invites/{self.id}",
+):
+    """
+    Represents an `invite link <https://airtable.com/developers/web/api/model/invite-link>`__
+    to an interface that was returned within a base schema.
+    """
 
 
 class EnterpriseInfo(AirtableModel):
@@ -275,7 +438,7 @@ class EnterpriseInfo(AirtableModel):
         is_sso_required: bool
 
 
-class WorkspaceCollaborators(AirtableModel):
+class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
     """
     Detailed information about who can access a workspace.
 
@@ -286,29 +449,33 @@ class WorkspaceCollaborators(AirtableModel):
     name: str
     created_time: str
     base_ids: List[str]
-    # We really don't need black to wrap these lines of text.
-    # fmt: off
-    restrictions: "WorkspaceCollaborators.Restrictions" = pydantic.Field(alias="workspaceRestrictions")
-    group_collaborators: Optional["WorkspaceCollaborators.GroupCollaborators"] = None
-    individual_collaborators: Optional["WorkspaceCollaborators.IndividualCollaborators"] = None
-    invite_links: Optional["WorkspaceCollaborators.InviteLinks"] = None
-    # fmt: on
+    restrictions: "WorkspaceCollaborators.Restrictions" = pydantic.Field(alias="workspaceRestrictions")  # fmt: skip
+    group_collaborators: "WorkspaceCollaborators.GroupCollaborators" = _F("WorkspaceCollaborators.GroupCollaborators")  # fmt: skip
+    individual_collaborators: "WorkspaceCollaborators.IndividualCollaborators" = _F("WorkspaceCollaborators.IndividualCollaborators")  # fmt: skip
+    invite_links: "WorkspaceCollaborators.InviteLinks" = _F("WorkspaceCollaborators.InviteLinks")  # fmt: skip
 
-    class Restrictions(AirtableModel):
+    class Restrictions(
+        CanUpdateModel,
+        url="{workspace_collaborators._url}/updateRestrictions",
+        save_method="POST",
+        reload_after_save=False,
+    ):
         invite_creation: str = pydantic.Field(alias="inviteCreationRestriction")
         share_creation: str = pydantic.Field(alias="shareCreationRestriction")
 
     class GroupCollaborators(AirtableModel):
-        base_collaborators: List["BaseGroupCollaborator"]
-        workspace_collaborators: List["GroupCollaborator"]
+        via_base: List["BaseGroupCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: List["GroupCollaborator"] = _FL(alias="workspaceCollaborators")
 
     class IndividualCollaborators(AirtableModel):
-        base_collaborators: List["BaseIndividualCollaborator"]
-        workspace_collaborators: List["IndividualCollaborator"]
+        via_base: List["BaseIndividualCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: List["IndividualCollaborator"] = _FL(
+            alias="workspaceCollaborators"
+        )
 
-    class InviteLinks(AirtableModel):
-        base_invite_links: List["BaseInviteLink"]
-        workspace_invite_links: List["InviteLink"]
+    class InviteLinks(RestfulModel, url="{workspace_collaborators._url}/invites"):
+        via_base: List["BaseInviteLink"] = _FL(alias="baseInviteLinks")
+        via_workspace: List["InviteLink"] = _FL(alias="workspaceInviteLinks")
 
 
 class NestedId(AirtableModel):
@@ -374,7 +541,12 @@ class Collaborations(AirtableModel):
         permission_level: str
 
 
-class UserInfo(AirtableModel):
+class UserInfo(
+    CanUpdateModel,
+    CanDeleteModel,
+    url="{enterprise.url}/users/{self.id}",
+    writable=["state", "email", "first_name", "last_name"],
+):
     """
     Detailed information about a user.
 
@@ -394,6 +566,9 @@ class UserInfo(AirtableModel):
     is_managed: bool = False
     groups: List[NestedId] = _FL()
     collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
+
+    def logout(self) -> None:
+        self._api.post(self._url + "/logout")
 
 
 class UserGroup(AirtableModel):

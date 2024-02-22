@@ -45,7 +45,7 @@ class Workspace:
         """
         url = self.api.build_url("meta/bases")
         payload = {"name": name, "workspaceId": self.id, "tables": list(tables)}
-        response = self.api.request("POST", url, json=payload)
+        response = self.api.post(url, json=payload)
         return self.api.base(response["id"], validate=True, force=True)
 
     # Everything below here requires .info() and is therefore Enterprise-only
@@ -60,8 +60,8 @@ class Workspace:
         See https://airtable.com/developers/web/api/get-workspace-collaborators
         """
         params = {"include": ["collaborators", "inviteLinks"]}
-        payload = self.api.request("GET", self.url, params=params)
-        return WorkspaceCollaborators.parse_obj(payload)
+        payload = self.api.get(self.url, params=params)
+        return WorkspaceCollaborators.from_api(payload, self.api, context=self)
 
     @enterprise_only
     def bases(self) -> List["pyairtable.api.base.Base"]:
@@ -89,7 +89,7 @@ class Workspace:
             >>> ws = api.workspace("wspmhESAta6clCCwF")
             >>> ws.delete()
         """
-        self.api.request("DELETE", self.url)
+        self.api.delete(self.url)
 
     @enterprise_only
     def move_base(
@@ -114,7 +114,7 @@ class Workspace:
         if index is not None:
             payload["targetIndex"] = index
         url = self.url + "/moveBase"
-        self.api.request("POST", url, json=payload)
+        self.api.post(url, json=payload)
 
 
 # These are at the bottom of the module to avoid circular imports

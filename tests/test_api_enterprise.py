@@ -3,7 +3,11 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
-from pyairtable.api.enterprise import Enterprise
+from pyairtable.api.enterprise import (
+    ClaimUsersResponse,
+    DeleteUsersResponse,
+    Enterprise,
+)
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.testing import fake_id
 
@@ -26,6 +30,9 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
     m.user_id = m.json_user["id"]
     m.group_id = m.json_group["id"]
     m.get_info = requests_mock.get(enterprise.url, json=sample_json("EnterpriseInfo"))
+    m.get_user = requests_mock.get(
+        f"{enterprise.url}/users/{m.user_id}", json=m.json_user
+    )
     m.get_users = requests_mock.get(f"{enterprise.url}/users", json=m.json_users)
     m.get_group = requests_mock.get(
         enterprise.api.build_url(f"meta/groups/{m.json_group['id']}"),
@@ -46,6 +53,14 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
             }
             for n in range(N_AUDIT_PAGES)
         ],
+    )
+    m.remove_user = requests_mock.post(
+        enterprise.url + f"/users/{m.user_id}/remove",
+        json=sample_json("UserRemoved"),
+    )
+    m.claim_users = requests_mock.post(
+        enterprise.url + "/users/claim",
+        json={"errors": []},
     )
     return m
 
@@ -210,3 +225,88 @@ def test_audit_log__sortorder(
     request = enterprise_mocks.get_audit_log.last_request
     assert request.qs["sortorder"] == [sortorder]
     assert m.mock_calls[-1].kwargs["offset_field"] == offset_field
+
+
+@pytest.mark.parametrize(
+    "kwargs,expected",
+    [
+        (
+            {},
+            {"isDryRun": False},
+        ),
+        (
+            {"replacement": "otherUser"},
+            {"isDryRun": False, "replacementOwnerId": "otherUser"},
+        ),
+    ],
+)
+def test_remove_user(enterprise, enterprise_mocks, kwargs, expected):
+    removed = enterprise.remove_user(enterprise_mocks.user_id, **kwargs)
+    assert enterprise_mocks.remove_user.call_count == 1
+    assert enterprise_mocks.remove_user.last_request.json() == expected
+    assert removed.shared.workspaces[0].user_id == "usrL2PNC5o3H4lBEi"
+
+
+@pytest.fixture
+def user_info(enterprise, enterprise_mocks):
+    user_info = enterprise.user(enterprise_mocks.user_id)
+    assert user_info._url == f"{enterprise.url}/users/{user_info.id}"
+    return user_info
+
+
+def test_delete_user(user_info, requests_mock):
+    m = requests_mock.delete(user_info._url)
+    user_info.delete()
+    assert m.call_count == 1
+
+
+def test_manage_user(user_info, requests_mock):
+    m = requests_mock.patch(user_info._url)
+    user_info.save()
+    assert m.call_count == 1
+    assert m.last_request.json() == {"email": "foo@bar.com", "state": "provisioned"}
+
+
+def test_logout_user(user_info, requests_mock):
+    m = requests_mock.post(user_info._url + "/logout")
+    user_info.logout()
+    assert m.call_count == 1
+    assert m.last_request.body is None
+
+
+def test_claim_users(enterprise, enterprise_mocks):
+    result = enterprise.claim_users(
+        {
+            "usrFakeUserId": "managed",
+            "someone@example.com": "unmanaged",
+        }
+    )
+    assert isinstance(result, ClaimUsersResponse)
+    assert enterprise_mocks.claim_users.call_count == 1
+    assert enterprise_mocks.claim_users.last_request.json() == {
+        "users": [
+            {"id": "usrFakeUserId", "state": "managed"},
+            {"email": "someone@example.com", "state": "unmanaged"},
+        ]
+    }
+
+
+def test_delete_users(enterprise, requests_mock):
+    response = {
+        "deletedUsers": [{"email": "foo@bar.com", "id": "usrL2PNC5o3H4lBEi"}],
+        "errors": [
+            {
+                "email": "bar@bam.com",
+                "message": "Invalid permissions",
+                "type": "INVALID_PERMISSIONS",
+            }
+        ],
+    }
+    emails = [f"foo{n}@bar.com" for n in range(5)]
+    m = requests_mock.delete(enterprise.url + "/users", json=response)
+    parsed = enterprise.delete_users(emails)
+    assert m.call_count == 1
+    assert m.last_request.qs == {"email": emails}
+    assert isinstance(parsed, DeleteUsersResponse)
+    assert parsed.deleted_users[0].email == "foo@bar.com"
+    assert parsed.errors[0].type == "INVALID_PERMISSIONS"

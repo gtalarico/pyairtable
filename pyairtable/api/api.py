@@ -1,4 +1,5 @@
 import posixpath
+from functools import partialmethod
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import requests
@@ -129,15 +130,14 @@ class Api:
         Return a schema object that represents all bases available via the API.
         """
         url = self.build_url("meta/bases")
-        return Bases.parse_obj(
-            {
-                "bases": [
-                    base_info
-                    for page in self.iterate_requests("GET", url)
-                    for base_info in page["bases"]
-                ]
-            }
-        )
+        data = {
+            "bases": [
+                base_info
+                for page in self.iterate_requests("GET", url)
+                for base_info in page["bases"]
+            ]
+        }
+        return Bases.from_api(data, self)
 
     def _base_from_info(self, base_info: Bases.Info) -> "pyairtable.api.base.Base":
         return pyairtable.api.base.Base(
@@ -267,6 +267,11 @@ class Api:
 
         response = self.session.send(prepared, timeout=self.timeout)
         return self._process_response(response)
+
+    get = partialmethod(request, "GET")
+    post = partialmethod(request, "POST")
+    patch = partialmethod(request, "PATCH")
+    delete = partialmethod(request, "DELETE")
 
     def _process_response(self, response: requests.Response) -> Any:
         try:

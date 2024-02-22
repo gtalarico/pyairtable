@@ -199,7 +199,7 @@ class Table:
             user_locale: |kwarg_user_locale|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
-        record = self.api.request("get", self.record_url(record_id), options=options)
+        record = self.api.get(self.record_url(record_id), options=options)
         return assert_typed_dict(RecordDict, record)
 
     def iterate(self, **options: Any) -> Iterator[List[RecordDict]]:
@@ -304,8 +304,7 @@ class Table:
             typecast: |kwarg_typecast|
             return_fields_by_field_id: |kwarg_return_fields_by_field_id|
         """
-        created = self.api.request(
-            method="post",
+        created = self.api.post(
             url=self.url,
             json={
                 "fields": fields,
@@ -350,8 +349,7 @@ class Table:
 
         for chunk in self.api.chunked(records):
             new_records = [{"fields": fields} for fields in chunk]
-            response = self.api.request(
-                method="post",
+            response = self.api.post(
                 url=self.url,
                 json={
                     "records": new_records,
@@ -523,7 +521,7 @@ class Table:
         """
         return assert_typed_dict(
             RecordDeletedDict,
-            self.api.request("delete", self.record_url(record_id)),
+            self.api.delete(self.record_url(record_id)),
         )
 
     def batch_delete(self, record_ids: Iterable[RecordId]) -> List[RecordDeletedDict]:
@@ -548,7 +546,7 @@ class Table:
         record_ids = list(record_ids)
 
         for chunk in self.api.chunked(record_ids):
-            result = self.api.request("delete", self.url, params={"records[]": chunk})
+            result = self.api.delete(self.url, params={"records[]": chunk})
             deleted_records += assert_typed_dicts(RecordDeletedDict, result["records"])
 
         return deleted_records
@@ -615,7 +613,7 @@ class Table:
             text: The text of the comment. Use ``@[usrIdentifier]`` to mention users.
         """
         url = self.record_url(record_id, "comments")
-        response = self.api.request("POST", url, json={"text": text})
+        response = self.api.post(url, json={"text": text})
         return pyairtable.models.Comment.from_api(
             response, self.api, context={"record_url": self.record_url(record_id)}
         )
@@ -663,11 +661,11 @@ class Table:
             request["description"] = description
         if options:
             request["options"] = options
-        response = self.api.request("POST", self.meta_url("fields"), json=request)
+        response = self.api.post(self.meta_url("fields"), json=request)
         # This hopscotch ensures that the FieldSchema object we return has an API and a URL,
         # and that developers don't need to reload our schema to be able to access it.
         field_schema = parse_field_schema(response)
-        field_schema.set_api(
+        field_schema._set_api(
             self.api,
             context={
                 "base": self.base,
