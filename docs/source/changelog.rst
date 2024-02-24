@@ -2,7 +2,7 @@
 Changelog
 =========
 
-2.3.0 (TBD)
+2.3.0 (2024-02-25)
 ------------------------
 
 * Added support for :ref:`managing permissions and shares`
@@ -20,7 +20,7 @@ Changelog
   without having to perform expensive network overhead each time.
   - `PR #336 <https://github.com/gtalarico/pyairtable/pull/336>`_.
 
-2.2.2 (2023-01-28)
+2.2.2 (2024-01-28)
 ------------------------
 
 * Enterprise methods :meth:`~pyairtable.Enterprise.user`,
