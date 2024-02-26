@@ -178,3 +178,19 @@ def schema_obj(api, sample_json):
         return obj
 
     return _get_schema_obj
+
+
+@pytest.fixture
+def mock_base_metadata(base, sample_json, requests_mock):
+    base_json = sample_json("BaseCollaborators")
+    requests_mock.get(base.meta_url(), json=base_json)
+    requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+    requests_mock.get(base.meta_url("shares"), json=sample_json("BaseShares"))
+    for pbd_id, pbd_json in base_json["interfaces"].items():
+        requests_mock.get(base.meta_url("interfaces", pbd_id), json=pbd_json)
+
+
+@pytest.fixture
+def mock_workspace_metadata(workspace, sample_json, requests_mock):
+    workspace_json = sample_json("WorkspaceCollaborators")
+    requests_mock.get(workspace.url, json=workspace_json)

@@ -10,13 +10,26 @@ import sys
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional
 
-import click
 from typing_extensions import ParamSpec, TypeVar
 
 from pyairtable.api.api import Api
 from pyairtable.api.base import Base
 from pyairtable.models._base import AirtableModel
 from pyairtable.orm.generate import ModelFileBuilder
+
+try:
+    import click
+except ImportError:  # pragma: no cover
+    print(
+        "You are missing the 'click' library, which means you did not install\n"
+        "the optional dependencies required for the pyairtable command line.\n"
+        "Try again after running:\n\n"
+        "   % pip install 'pyairtable[cli]'",
+        "\n",
+        file=sys.stderr,
+    )
+    raise
+
 
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
