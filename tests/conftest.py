@@ -183,6 +183,7 @@ def schema_obj(api, sample_json):
 @pytest.fixture
 def mock_base_metadata(base, sample_json, requests_mock):
     base_json = sample_json("BaseCollaborators")
+    requests_mock.get(base.api.build_url("meta/bases"), json=sample_json("Bases"))
     requests_mock.get(base.meta_url(), json=base_json)
     requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
     requests_mock.get(base.meta_url("shares"), json=sample_json("BaseShares"))

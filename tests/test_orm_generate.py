@@ -13,6 +13,7 @@ from pyairtable.testing import fake_id
         ("Ice Cold Slushees", "IceColdSlushee"),
         ("Table 5.6", "Table5_6"),
         ("53rd Avenue", "_53rdAvenue"),
+        ("(53rd Avenue)", "_53rdAvenue"),
     ],
 )
 def test_table_class_name(value, expected):
@@ -26,9 +27,11 @@ def test_table_class_name(value, expected):
         ("Apartment", "apartment"),
         ("Ice Cold Slushees", "ice_cold_slushees"),
         ("Checked?", "checked"),
+        ("Is checked?", "is_checked"),
         ("* Something weird (but kinda long!)", "something_weird_but_kinda_long"),
         ("Section 5.6", "section_5_6"),
         ("53rd Avenue", "_53rd_avenue"),
+        ("(53rd Avenue)", "_53rd_avenue"),
     ],
 )
 def test_field_variable_name(value, expected):
@@ -112,8 +115,8 @@ def test_field_builder(schema_data, expected):
 def test_generate(base, mock_base_metadata):
     builder = generate.ModelFileBuilder(base)
     code = str(builder)
-    assert code.endswith(
-        r"""
+    assert code == (
+        """\
 from __future__ import annotations
 
 import os
@@ -151,15 +154,22 @@ __all__ = [
     )
 
 
-def test_generate__table_names(base, mock_base_metadata):
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"table_names": ["Apartments"]},
+        {"table_ids": ["tbltp8DGLhqbUmjK1"]},
+    ],
+)
+def test_generate__table_names(base, kwargs, mock_base_metadata):
     """
     Test that we can generate only some tables, and link fields
     will reflect the fact that some tables are not represented.
     """
-    builder = generate.ModelFileBuilder(base, table_names=["Apartments"])
+    builder = generate.ModelFileBuilder(base, **kwargs)
     code = str(builder)
-    assert code.endswith(
-        r"""
+    assert code == (
+        """\
 from __future__ import annotations
 
 import os
