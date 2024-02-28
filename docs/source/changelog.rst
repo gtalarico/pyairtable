@@ -5,6 +5,8 @@ Changelog
 2.3.0 (2024-02-25)
 ------------------------
 
+* A breaking API change was accidentally introduced.
+  Read more in :ref:`Migrating from 2.2 to 2.3`.
 * Added support for :ref:`managing permissions and shares`
   and :ref:`managing users`.
   - `PR #337 <https://github.com/gtalarico/pyairtable/pull/337>`_.
