@@ -6,6 +6,31 @@ Migration Guide
 *****************
 
 
+Migrating from 2.2 to 2.3
+============================
+
+A breaking API change was accidentally introduced into the 2.3 minor release
+by renaming some nested fields of :class:`~pyairtable.models.schema.BaseCollaborators`
+and :class:`~pyairtable.models.schema.WorkspaceCollaborators`.
+
+    * - | ``base.collaborators().invite_links.base_invite_links``
+        | has become ``base.collaborators().invite_links.via_base``
+    * - | ``base.collaborators().invite_links.workspace_invite_links``
+        | has become ``base.collaborators().invite_links.via_workspace``
+    * - | ``ws.collaborators().invite_links.base_invite_links``
+        | has become ``ws.collaborators().invite_links.via_base``
+    * - | ``ws.collaborators().invite_links.workspace_invite_links``
+        | has become ``ws.collaborators().invite_links.via_workspace``
+    * - | ``ws.collaborators().individual_collaborators.base_collaborators``
+        | has become ``ws.collaborators().individual_collaborators.via_base``
+    * - | ``ws.collaborators().individual_collaborators.workspace_collaborators``
+        | has become ``ws.collaborators().individual_collaborators.via_workspace``
+    * - | ``ws.collaborators().group_collaborators.base_collaborators``
+        | has become ``ws.collaborators().group_collaborators.via_base``
+    * - | ``ws.collaborators().group_collaborators.workspace_collaborators``
+        | has become ``ws.collaborators().group_collaborators.via_workspace``
+
+
 Migrating from 1.x to 2.0
 ============================
 
