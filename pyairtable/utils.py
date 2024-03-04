@@ -192,11 +192,9 @@ def _append_docstring_text(obj: Any, text: str) -> None:
 
 
 class FetchMethod(Protocol, Generic[R]):
-    def __get__(self, instance: Any, owner: Any) -> Callable[..., R]:
-        ...  # pragma: no cover
+    def __get__(self, instance: Any, owner: Any) -> Callable[..., R]: ...
 
-    def __call__(self_, self: Any, *, force: bool = False) -> R:
-        ...  # pragma: no cover
+    def __call__(self_, self: Any, *, force: bool = False) -> R: ...
 
 
 def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:

@@ -97,7 +97,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         [
             "time_zone",
             "America/Chicago",
-            "?timeZone=America%2FChicago"
+            "?timeZone=America%2FChicago",
             # '?timeZone=America/Chicago'
         ],
         ["return_fields_by_field_id", True, "?returnFieldsByFieldId=1"],
