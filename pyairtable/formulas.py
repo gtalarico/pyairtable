@@ -318,7 +318,7 @@ class CircularDependency(RecursionError):
     """
 
 
-def match(field_values: Fields, *, match_any: bool = False) -> Optional[Formula]:
+def match(field_values: Fields, *, match_any: bool = False) -> Formula:
     r"""
     Create one or more equality expressions for each provided value,
     treating keys as field names and values as values (not formula expressions).
@@ -348,7 +348,6 @@ def match(field_values: Fields, *, match_any: bool = False) -> Optional[Formula]
     Args:
         field_values: mapping of column names to values
             (or to 2-tuples of the format ``(operator, value)``).
-
         match_any:
             If ``True``, matches if *any* of the provided values match.
             Otherwise, all values must match.
@@ -363,7 +362,9 @@ def match(field_values: Fields, *, match_any: bool = False) -> Optional[Formula]
         expressions.append(cmp(Field(key), val))
 
     if len(expressions) == 0:
-        return None
+        raise ValueError(
+            "match() requires at least one field-value pair or keyword argument"
+        )
     if len(expressions) == 1:
         return expressions[0]
     if match_any:

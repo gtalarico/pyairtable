@@ -250,7 +250,6 @@ def test_to_formula(input, expected):
 @pytest.mark.parametrize(
     "sig,expected",
     [
-        (call({}), "None"),
         (call({"Field": "value"}), "{Field}='value'"),
         (call({"A": ("=", 123), "B": ("!=", 123)}), "AND({A}=123, {B}!=123)"),
         (call({"A": 123, "B": 123}, match_any=True), "OR({A}=123, {B}=123)"),
@@ -262,6 +261,11 @@ def test_to_formula(input, expected):
 )
 def test_match(sig, expected):
     assert str(F.match(*sig.args, **sig.kwargs)) == expected
+
+
+def test_match__exception():
+    with pytest.raises(ValueError):
+        F.match({})
 
 
 def test_function_call():

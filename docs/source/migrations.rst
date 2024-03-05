@@ -21,6 +21,9 @@ The full list of breaking changes is below:
 
     * - Function
       - Changes
+    * - :func:`~pyairtable.formulas.match`
+      - This now raises ``ValueError`` on empty input,
+        instead of returning ``None``.
     * - ``to_airtable_value()``
       - Removed. Use :func:`~pyairtable.formulas.to_formula_str` instead.
     * - ``EQUAL()``
