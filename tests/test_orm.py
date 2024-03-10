@@ -114,7 +114,11 @@ def test_from_record():
         m_get.return_value = {
             "id": "recwnBLPIeQJoYVt4",
             "createdTime": "",
-            "fields": {"First Name": "X", "Created At": "2014-09-05T12:34:56.000Z"},
+            "fields": {
+                "First Name": "X",
+                "Birthday": None,
+                "Created At": "2014-09-05T12:34:56.000Z",
+            },
         }
         contact = Contact.from_id("recwnBLPIeQJoYVt4")
 
