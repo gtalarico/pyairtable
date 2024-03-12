@@ -160,7 +160,7 @@ class Base:
         if description:
             payload["description"] = description
         response = self.api.post(url, json=payload)
-        return self.table(response["id"], validate=True)
+        return self.table(response["id"], validate=False)
 
     @property
     def url(self) -> str:
