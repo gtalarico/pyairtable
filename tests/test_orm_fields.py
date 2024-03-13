@@ -679,3 +679,51 @@ def test_datetime_timezones(requests_mock):
     obj.dt = datetime.datetime(2024, 3, 1, 11, 22, 33)
     obj.save()
     assert m.last_request.json()["fields"]["dt"] == "2024-03-01T11:22:33.000"
+
+
+@pytest.mark.parametrize(
+    "classinfo,expected",
+    [
+        (str, ""),
+        ((str, bool), ""),
+        ((((str,),),), ""),
+        (bool, False),
+    ],
+)
+def test_missing_value(classinfo, expected):
+    """
+    Test that _FieldWithTypedDefaultValue._missing_value finds the first
+    valid type and calls it to create the "missing from Airtable" value.
+    """
+
+    class F(f._FieldWithTypedDefaultValue):
+        valid_types = classinfo
+
+    class T:
+        the_field = F("Field Name")
+
+    assert T().the_field == expected
+
+
+@pytest.mark.parametrize(
+    "classinfo,exc_class",
+    [
+        ((), RuntimeError),
+        ((((), str), bool), RuntimeError),
+    ],
+)
+def test_missing_value__invalid_classinfo(classinfo, exc_class):
+    """
+    Test that _FieldWithTypedDefaultValue._missing_value raises an exception
+    if the class's valid_types is set to an invalid value.
+    """
+
+    class F(f._FieldWithTypedDefaultValue):
+        valid_types = classinfo
+
+    class T:
+        the_field = F("Field Name")
+
+    obj = T()
+    with pytest.raises(exc_class):
+        obj.the_field

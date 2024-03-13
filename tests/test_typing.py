@@ -71,7 +71,7 @@ if TYPE_CHECKING:
         name = orm.fields.TextField("Name")
         logins = orm.fields.MultipleCollaboratorsField("Logins")
 
-    assert_type(Actor().name, Optional[str])
+    assert_type(Actor().name, str)
     assert_type(Actor().logins, List[T.CollaboratorDict])
 
     class Movie(orm.Model):
@@ -81,11 +81,11 @@ if TYPE_CHECKING:
         actors = orm.fields.LinkField("Actors", Actor)
 
     movie = Movie()
-    assert_type(movie.name, Optional[str])
+    assert_type(movie.name, str)
     assert_type(movie.rating, Optional[int])
     assert_type(movie.actors, List[Actor])
     assert_type(movie.prequels, List[Movie])
-    assert_type(movie.actors[0].name, Optional[str])
+    assert_type(movie.actors[0].name, str)
 
     class EveryField(orm.Model):
         aitext = orm.fields.AITextField("AI Generated Text")
@@ -123,7 +123,7 @@ if TYPE_CHECKING:
     assert_type(record.autonumber, Optional[int])
     assert_type(record.barcode, Optional[T.BarcodeDict])
     assert_type(record.button, Optional[T.ButtonDict])
-    assert_type(record.checkbox, Optional[bool])
+    assert_type(record.checkbox, bool)
     assert_type(record.collaborator, Optional[T.CollaboratorDict])
     assert_type(record.count, Optional[int])
     assert_type(record.created_by, Optional[T.CollaboratorDict])
@@ -132,7 +132,7 @@ if TYPE_CHECKING:
     assert_type(record.date, Optional[datetime.date])
     assert_type(record.datetime, Optional[datetime.datetime])
     assert_type(record.duration, Optional[datetime.timedelta])
-    assert_type(record.email, Optional[str])
+    assert_type(record.email, str)
     assert_type(record.float, Optional[float])
     assert_type(record.integer, Optional[int])
     assert_type(record.last_modified_by, Optional[T.CollaboratorDict])
@@ -141,8 +141,8 @@ if TYPE_CHECKING:
     assert_type(record.multi_select, List[str])
     assert_type(record.number, Optional[Union[int, float]])
     assert_type(record.percent, Optional[Union[int, float]])
-    assert_type(record.phone, Optional[str])
+    assert_type(record.phone, str)
     assert_type(record.rating, Optional[int])
-    assert_type(record.rich_text, Optional[str])
-    assert_type(record.select, Optional[str])
-    assert_type(record.url, Optional[str])
+    assert_type(record.rich_text, str)
+    assert_type(record.select, str)
+    assert_type(record.url, str)
