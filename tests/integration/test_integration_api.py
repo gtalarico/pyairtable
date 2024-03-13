@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -223,10 +223,11 @@ def test_batch_upsert(table: Table, cols):
 
 
 def test_integration_formula_datetime(table: Table, cols):
-    VALUE = datetime.utcnow()
-    str_value = fo.to_airtable_value(VALUE)
+    value = datetime.utcnow().replace(tzinfo=timezone.utc)
+    str_value = fo.to_airtable_value(value)
+    formula = fo.match({cols.DATETIME: str_value})
     rv_create = table.create({cols.DATETIME: str_value})
-    rv_first = table.first(formula=fo.match({cols.DATETIME: str_value}))
+    rv_first = table.first(formula=formula)
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 

@@ -1,22 +1,29 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+from functools import partial
 
 import pytest
 
 from pyairtable import utils
 
+utc_tz = partial(datetime, tzinfo=timezone.utc)
+
 
 @pytest.mark.parametrize(
-    "datetime_obj,datetime_str",
+    "dt_obj,dt_str",
     [
-        (datetime(2000, 1, 2, 3, 4, 5, 0), "2000-01-02T03:04:05.000Z"),
-        (datetime(2025, 12, 31, 23, 59, 59, 0), "2025-12-31T23:59:59.000Z"),
-        (datetime(2025, 12, 31, 23, 59, 59, 5_000), "2025-12-31T23:59:59.005Z"),
-        (datetime(2025, 12, 31, 23, 59, 59, 555_000), "2025-12-31T23:59:59.555Z"),
+        (datetime(2000, 1, 2, 3, 4, 5, 0), "2000-01-02T03:04:05.000"),
+        (datetime(2025, 12, 31, 23, 59, 59, 0), "2025-12-31T23:59:59.000"),
+        (datetime(2025, 12, 31, 23, 59, 59, 5_000), "2025-12-31T23:59:59.005"),
+        (datetime(2025, 12, 31, 23, 59, 59, 555_000), "2025-12-31T23:59:59.555"),
+        (utc_tz(2000, 1, 2, 3, 4, 5, 0), "2000-01-02T03:04:05.000Z"),
+        (utc_tz(2025, 12, 31, 23, 59, 59, 0), "2025-12-31T23:59:59.000Z"),
+        (utc_tz(2025, 12, 31, 23, 59, 59, 5_000), "2025-12-31T23:59:59.005Z"),
+        (utc_tz(2025, 12, 31, 23, 59, 59, 555_000), "2025-12-31T23:59:59.555Z"),
     ],
 )
-def test_datetime_utils(datetime_obj, datetime_str):
-    assert utils.datetime_to_iso_str(datetime_obj) == datetime_str
-    assert utils.datetime_from_iso_str(datetime_str) == datetime_obj
+def test_datetime_utils(dt_obj, dt_str):
+    assert utils.datetime_to_iso_str(dt_obj) == dt_str
+    assert utils.datetime_from_iso_str(dt_str) == dt_obj
 
 
 @pytest.mark.parametrize(
