@@ -4,6 +4,7 @@ import re
 from unittest import mock
 
 import pytest
+from requests_mock import NoMockAddress
 
 from pyairtable.formulas import OR, RECORD_ID
 from pyairtable.orm import fields as f
@@ -706,6 +707,48 @@ def test_single_link_field__raise_if_many():
     book = Book.from_record(fake_record(Author=[fake_id(), fake_id()]))
     with pytest.raises(f.MultipleValues):
         book.author
+
+
+@pytest.mark.parametrize("field_type", (f.LinkField, f.SingleLinkField))
+def test_link_field__populate(field_type, requests_mock):
+    """
+    Test that implementers can use Model.link_field.populate(instance) to control
+    whether loading happens lazy or non-lazy at runtime.
+    """
+
+    class Linked(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class T(Model):
+        Meta = fake_meta()
+        link = field_type("Link", Linked)
+
+    links = [fake_record(id=n, Name=f"link{n}") for n in range(1, 4)]
+    link_ids = [link["id"] for link in links]
+    obj = T.from_record(fake_record(Link=link_ids[:]))
+    assert obj._fields.get("Link") == link_ids
+    assert obj._fields.get("Link") is not link_ids
+
+    # calling the record directly will attempt network traffic
+    with pytest.raises(NoMockAddress):
+        obj.link
+
+    # on a non-lazy field, we can still call .populate() to load it lazily
+    T.link.populate(obj, lazy=True)
+
+    if field_type is f.SingleLinkField:
+        assert isinstance(obj.link, Linked)
+        assert obj.link.id == links[0]["id"]
+        assert obj.link.name == ""
+    else:
+        assert isinstance(obj.link[0], Linked)
+        assert link_ids == [link.id for link in obj.link]
+        assert all(link.name == "" for link in obj.link)
+
+    # calling .populate() on the wrong model raises an exception
+    with pytest.raises(RuntimeError):
+        T.link.populate(Linked())
 
 
 def test_lookup_field():

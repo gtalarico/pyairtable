@@ -586,15 +586,35 @@ class LinkField(_ListField[RecordId, T_Linked]):
             ("lazy", self._lazy),
         ]
 
-    def _get_list_value(self, instance: "Model") -> List[T_Linked]:
+    def populate(self, instance: "Model", lazy: Optional[bool] = None) -> None:
         """
-        Unlike most other field classes, LinkField does not store its internal
-        representation (T_ORM) in instance._fields after Model.from_record().
-        Instead, we defer creating objects until they're requested for the first
-        time, so we can avoid infinite recursion during to_internal_value().
+        Populates the field's value for the given instance. This allows you to
+        selectively load models in either lazy or non-lazy fashion, depending on
+        your need, without having to decide at the time of field construction.
+
+        Usage:
+
+            .. code-block:: python
+
+                from pyairtable.orm import Model, fields as F
+
+                class Book(Model):
+                    class Meta: ...
+
+                class Author(Model):
+                    class Meta: ...
+                    books = F.LinkField("Books", Book)
+
+                author = Author.from_id("reculZ6qSLw0OCA61")
+                Author.books.populate(author, lazy=True)
         """
+        if self._model and not isinstance(instance, self._model):
+            raise RuntimeError(
+                f"populate() got {type(instance)}; expected {self._model}"
+            )
+        lazy = lazy if lazy is not None else self._lazy
         if not (records := super()._get_list_value(instance)):
-            return records
+            return
         # If there are any values which are IDs rather than instances,
         # retrieve their values in bulk, and store them keyed by ID
         # so we can maintain the order we received from the API.
@@ -604,7 +624,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
                 record.id: record
                 for record in self.linked_model.from_ids(
                     cast(List[RecordId], new_record_ids),
-                    fetch=(not self._lazy),
+                    fetch=(not lazy),
                 )
             }
         # If the list contains record IDs, replace the contents with instances.
@@ -614,7 +634,18 @@ class LinkField(_ListField[RecordId, T_Linked]):
             new_records[cast(RecordId, value)] if isinstance(value, RecordId) else value
             for value in records
         ]
-        return records
+
+    def _get_list_value(self, instance: "Model") -> List[T_Linked]:
+        """
+        Unlike most other field classes, LinkField does not store its internal
+        representation (T_ORM) in instance._fields after Model.from_record().
+        They will first be stored as a list of IDs.
+
+        We defer creating Model objects until they're requested for the first
+        time, so we can avoid infinite recursion during to_internal_value().
+        """
+        self.populate(instance)
+        return super()._get_list_value(instance)
 
     def to_record_value(self, value: Union[List[str], List[T_Linked]]) -> List[str]:
         """
@@ -775,6 +806,9 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
             ("lazy", self._link_field._lazy),
             ("raise_if_many", self._raise_if_many),
         ]
+
+    def populate(self, instance: "Model", lazy: Optional[bool] = None) -> None:
+        self._link_field.populate(instance, lazy=lazy)
 
     @property
     def linked_model(self) -> Type[T_Linked]:
