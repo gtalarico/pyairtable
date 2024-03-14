@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.3.1 (2024-03-14)
+------------------------
+
+* Fixed a bug affecting how timezones are parsed by :class:`~pyairtable.orm.fields.DatetimeField`.
+  - `PR #342 <https://github.com/gtalarico/pyairtable/pull/342>`_.
+* Fixed a bug affecting :meth:`~pyairtable.Base.create_table`.
+  - `PR #345 <https://github.com/gtalarico/pyairtable/pull/345>`_.
+
 2.3.0 (2024-02-25)
 ------------------------
 
