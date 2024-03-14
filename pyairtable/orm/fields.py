@@ -539,7 +539,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
             readonly: If ``True``, any attempt to write a value to this field will
                 raise an ``AttributeError``. This will not, however, prevent any
                 modification of the list object returned by this field.
-            lazy: If ``True``, this field will return empty objects with oly IDs;
+            lazy: If ``True``, this field will return empty objects with only IDs;
                 call :meth:`~pyairtable.orm.Model.fetch` to retrieve values.
         """
         from pyairtable.orm import Model  # noqa, avoid circular import
@@ -640,6 +640,151 @@ class LinkField(_ListField[RecordId, T_Linked]):
         for obj in value:
             if not isinstance(obj, self.linked_model):
                 raise TypeError(f"expected {self.linked_model}; got {type(obj)}")
+
+
+class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
+    """
+    Represents a MultipleRecordLinks field which we assume will only ever contain one link.
+    Returns and accepts a single instance of the linked model, which will be converted to/from
+    a list of IDs when communicating with the Airtable API.
+
+    See `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__.
+
+    .. warning::
+
+        If Airtable returns multiple IDs for a SingleLinkField and you modify the field value,
+        only the first ID will be saved to the API once you call ``.save()``. The other IDs will be lost.
+
+    By default, a SingleLinkField will ignore the 2nd...Nth IDs if it receives multiple IDs from the API.
+    This behavior can be overridden by passing ``raise_if_many=True`` to the constructor.
+
+    .. code-block:: python
+
+        from pyairtable.orm import Model, fields as F
+
+        class Book(Model):
+            class Meta: ...
+
+            author = F.SingleLinkField("Author", Person)
+            editor = F.SingleLinkField("Editor", Person, raise_if_many=True)
+
+    Given the model configuration above and the data below,
+    one field will silently return a single value,
+    while the other field will throw an exception.
+
+    .. code-block:: python
+
+        >>> book = Book.from_record({
+        ...     "id": "recZ6qSLw0OCA61ul",
+        ...     "createdTime": ...,
+        ...     "fields": {
+        ...         "Author": ["reculZ6qSLw0OCA61", "rec61ulZ6qSLw0OCA"],
+        ...         "Editor": ["recLw0OCA61ulZ6qS", "recOCA61ulZ6qSLw0"],
+        ...     }
+        ... })
+        >>> book.author
+        <Person id='reculZ6qSLw0OCA61'>
+        >>> book.editor
+        Traceback (most recent call last):
+          ...
+        MultipleValues: Book.editor got more than one linked record
+
+    """
+
+    def __init__(
+        self,
+        field_name: str,
+        model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]],
+        validate_type: bool = True,
+        readonly: Optional[bool] = None,
+        lazy: bool = False,
+        raise_if_many: bool = False,
+    ):
+        """
+        Args:
+            field_name: Name of the Airtable field.
+            model:
+                Model class representing the linked table. There are a few options:
+
+                1. You can provide a ``str`` that is the fully qualified module and class name.
+                   For example, ``"your.module.Model"`` will import ``Model`` from ``your.module``.
+                2. You can provide a ``str`` that is *just* the class name, and it will be imported
+                   from the same module as the model class.
+                3. You can provide the sentinel value :data:`~LinkSelf`, and the link field
+                   will point to the same model where the link field is created.
+
+            validate_type: Whether to raise a TypeError if attempting to write
+                an object of an unsupported type as a field value. If ``False``, you
+                may encounter unpredictable behavior from the Airtable API.
+            readonly: If ``True``, any attempt to write a value to this field will
+                raise an ``AttributeError``. This will not, however, prevent any
+                modification of the list object returned by this field.
+            lazy: If ``True``, this field will return empty objects with only IDs;
+                call :meth:`~pyairtable.orm.Model.fetch` to retrieve values.
+            raise_if_many: If ``True``, this field will raise a
+                :class:`~pyairtable.orm.fields.MultipleValues` exception upon
+                being accessed if the underlying field contains multiple values.
+        """
+        super().__init__(field_name, validate_type=validate_type, readonly=readonly)
+        self._raise_if_many = raise_if_many
+        # composition is easier than inheritance in this case ¯\_(ツ)_/¯
+        self._link_field = LinkField[T_Linked](
+            field_name,
+            model,
+            validate_type=validate_type,
+            readonly=readonly,
+            lazy=lazy,
+        )
+
+    @overload
+    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
+
+    @overload
+    def __get__(self, instance: "Model", owner: Type[Any]) -> Optional[T_Linked]: ...
+
+    def __get__(
+        self, instance: Optional["Model"], owner: Type[Any]
+    ) -> Union[SelfType, Optional[T_Linked]]:
+        if not instance:
+            return self
+        if self._raise_if_many and len(instance._fields.get(self.field_name) or []) > 1:
+            raise MultipleValues(f"{self._description} got more than one linked record")
+        links = self._link_field.__get__(instance, owner)
+        try:
+            return links[0]
+        except IndexError:
+            return self._missing_value()
+
+    def __set__(self, instance: "Model", value: Optional[T_Linked]) -> None:
+        self._raise_if_readonly()
+        values = None if value is None else [value]
+        self._link_field.__set__(instance, values)
+
+    def __set_name__(self, owner: Any, name: str) -> None:
+        super().__set_name__(owner, name)
+        self._link_field.__set_name__(owner, name)
+
+    def to_record_value(self, value: Union[List[str], List[T_Linked]]) -> List[str]:
+        return self._link_field.to_record_value(value)
+
+    def _repr_fields(self) -> List[Tuple[str, Any]]:
+        return [
+            ("model", self._link_field._linked_model),
+            ("validate_type", self.validate_type),
+            ("readonly", self.readonly),
+            ("lazy", self._link_field._lazy),
+            ("raise_if_many", self._raise_if_many),
+        ]
+
+    @property
+    def linked_model(self) -> Type[T_Linked]:
+        return self._link_field.linked_model
+
+
+class MultipleValues(ValueError):
+    """
+    SingleLinkField received more than one value from either Airtable or calling code.
+    """
 
 
 # Many of these are "passthrough" subclasses for now. E.g. there is no real
@@ -993,6 +1138,7 @@ __all__ = [
     "RatingField",
     "RichTextField",
     "SelectField",
+    "SingleLinkField",
     "TextField",
     "UrlField",
     "ALL_FIELDS",
@@ -1001,7 +1147,7 @@ __all__ = [
     "FIELD_CLASSES_TO_TYPES",
     "LinkSelf",
 ]
-# [[[end]]] (checksum: 2aa36f4e76db73f3d0b741b6be6c9e9e)
+# [[[end]]] (checksum: 314db7bbb782c156d620305a1c42dfef)
 
 
 # Delayed import to avoid circular dependency

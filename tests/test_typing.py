@@ -79,12 +79,14 @@ if TYPE_CHECKING:
         rating = orm.fields.RatingField("Star Rating")
         prequels = orm.fields.LinkField["Movie"]("Prequels", "path.to.Movie")
         actors = orm.fields.LinkField("Actors", Actor)
+        prequel = orm.fields.SingleLinkField["Movie"]("Prequels", orm.fields.LinkSelf)
 
     movie = Movie()
     assert_type(movie.name, str)
     assert_type(movie.rating, Optional[int])
     assert_type(movie.actors, List[Actor])
     assert_type(movie.prequels, List[Movie])
+    assert_type(movie.prequel, Optional[Movie])
     assert_type(movie.actors[0].name, str)
 
     class EveryField(orm.Model):
