@@ -247,6 +247,41 @@ def test_create_table(base, requests_mock, mock_tables_endpoint):
     assert table.schema().primary_field_id == "fldWasJustCreated"
 
 
+def test_schema_refresh(base, requests_mock, mock_tables_endpoint):
+    """
+    Test that base.schema() is forced to refresh on table create.
+    """
+
+    schema_id = id(base.schema())
+
+    m = requests_mock.post(mock_tables_endpoint._url, json={"id": "tblWasJustCreated"})
+    mock_tables_endpoint._responses[0]._params["json"]["tables"].append(
+        {
+            "id": "tblWasJustCreated",
+            "name": "Table Name",
+            "primaryFieldId": "fldWasJustCreated",
+            "fields": [
+                {
+                    "id": "fldWasJustCreated",
+                    "name": "Whatever",
+                    "type": "singleLineText",
+                }
+            ],
+            "views": [],
+        }
+    )
+
+    table = base.create_table(
+        "Table Name",
+        fields=[{"name": "Whatever"}],
+        description="Description",
+    )
+
+    assert m.call_count == 1
+    assert table.id == "tblWasJustCreated"
+    assert not id(base.schema()) == schema_id
+
+
 def test_delete(base, requests_mock):
     """
     Test that Base.delete() hits the right endpoint.
