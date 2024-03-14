@@ -7,7 +7,7 @@ repos:
         name: cog
         language: python
         additional_dependencies: [cogapp]
-        entry: python -m cogapp -cr --verbosity=1 --markers="[[[cog]]] [[[out]]] [[[end]]]"
+        entry: 'python -m cogapp -cr --verbosity=1 --markers="[[[cog]]] [[[out]]] [[[end]]]"'
         files: \.py$
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

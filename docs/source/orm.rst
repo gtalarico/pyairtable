@@ -183,6 +183,34 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Phone <https://airtable.com/developers/web/api/field-model#phone>`__
    * - :class:`~pyairtable.orm.fields.RatingField`
      - `Rating <https://airtable.com/developers/web/api/field-model#rating>`__
+   * - :class:`~pyairtable.orm.fields.RequiredAITextField` 🔒
+     - `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`__
+   * - :class:`~pyairtable.orm.fields.RequiredBarcodeField`
+     - `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`__
+   * - :class:`~pyairtable.orm.fields.RequiredCollaboratorField`
+     - `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`__
+   * - :class:`~pyairtable.orm.fields.RequiredCountField` 🔒
+     - `Count <https://airtable.com/developers/web/api/field-model#count>`__
+   * - :class:`~pyairtable.orm.fields.RequiredCurrencyField`
+     - `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredDateField`
+     - `Date <https://airtable.com/developers/web/api/field-model#dateonly>`__
+   * - :class:`~pyairtable.orm.fields.RequiredDatetimeField`
+     - `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__
+   * - :class:`~pyairtable.orm.fields.RequiredDurationField`
+     - `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredFloatField`
+     - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredIntegerField`
+     - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredNumberField`
+     - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredPercentField`
+     - `Percent <https://airtable.com/developers/web/api/field-model#percentnumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredRatingField`
+     - `Rating <https://airtable.com/developers/web/api/field-model#rating>`__
+   * - :class:`~pyairtable.orm.fields.RequiredSelectField`
+     - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
    * - :class:`~pyairtable.orm.fields.RichTextField`
      - `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__
    * - :class:`~pyairtable.orm.fields.SelectField`
@@ -193,7 +221,7 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.UrlField`
      - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
-.. [[[end]]] (checksum: afd0edeabb06937f2a3afd73a7bac32e)
+.. [[[end]]]
 
 
 Formula, Rollup, and Lookup Fields
