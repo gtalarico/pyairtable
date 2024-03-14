@@ -944,10 +944,10 @@ import re
 with open(cog.inFile) as fp:
     src = fp.read()
 
-classes = re.findall(r"class ([A-Z]\w+Field)", src)
-constants = re.findall(r"^([A-Z][A-Z_+]) = ", src)
+classes = re.findall(r"class ((?:[A-Z]\w+)?Field)", src)
+constants = re.findall(r"^(?!T_)([A-Z][A-Z_]+) = ", src, re.MULTILINE)
 extras = ["LinkSelf"]
-names = sorted(classes + constants + extras)
+names = sorted(classes) + constants + extras
 
 cog.outl("\n\n__all__ = [")
 for name in ["Field", *names]:
@@ -974,12 +974,12 @@ __all__ = [
     "DurationField",
     "EmailField",
     "ExternalSyncSourceField",
+    "Field",
     "FloatField",
     "IntegerField",
     "LastModifiedByField",
     "LastModifiedTimeField",
     "LinkField",
-    "LinkSelf",
     "LookupField",
     "MultipleCollaboratorsField",
     "MultipleSelectField",
@@ -991,8 +991,13 @@ __all__ = [
     "SelectField",
     "TextField",
     "UrlField",
+    "ALL_FIELDS",
+    "READONLY_FIELDS",
+    "FIELD_TYPES_TO_CLASSES",
+    "FIELD_CLASSES_TO_TYPES",
+    "LinkSelf",
 ]
-# [[[end]]] (checksum: 3fa8c12315457baf170f9766fd8c9f8e)
+# [[[end]]] (checksum: 2aa36f4e76db73f3d0b741b6be6c9e9e)
 
 
 # Delayed import to avoid circular dependency
