@@ -247,6 +247,25 @@ def test_create_table(base, requests_mock, mock_tables_endpoint):
     assert table.schema().primary_field_id == "fldWasJustCreated"
 
 
+def test_duplicate_table(base, requests_mock, mock_tables_endpoint):
+    """
+    Test that Base.duplicate_table() makes appropriate calls to duplicate a table,
+    including an optional step of copying records if specified.
+    """
+
+    table = base.create_table(
+        "Table Name",
+        fields=[{"name": "Whatever"}],
+        description="Description",
+    )
+
+    duped_table = base.duplicate_table(table)
+
+    assert table.schema().dict() == duped_table.schema().dict()
+    assert table.name + " copy" == duped_table.name
+    assert len(duped_table.all()) == 0
+
+
 def test_delete(base, requests_mock):
     """
     Test that Base.delete() hits the right endpoint.

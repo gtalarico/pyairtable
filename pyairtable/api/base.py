@@ -162,6 +162,49 @@ class Base:
         response = self.api.post(url, json=payload)
         return self.table(response["id"], validate=True, force=True)
 
+    def duplicate_table(
+        self,
+        table: "pyairtable.api.table.Table",
+        new_name: str = None,
+        copy_records: bool = False,
+    ) -> "pyairtable.api.table.Table":
+        """
+        Duplicate a table in the given base. Copies the existing table's schema into the new table.
+
+        Args:
+            table: The table to duplicate.
+            new_name: The duplicate table name. "copy {# of duplicates}" will be appended if the name is not unique.
+            copy_records: If set to ``True`` will copy records from the existing table into the new table.
+        """
+
+        fields = [field.dict() for field in table.schema().fields]
+
+        for field in fields:
+            del field["id"]
+            if not field["description"]:
+                del field["description"]
+
+        table_names = [tbl.name for tbl in self.tables(force=True)]
+
+        if not new_name:
+            new_name = table.name
+
+        ndupes = 1
+        table_name = f"{new_name} copy"
+
+        while table_name in table_names:
+            ndupes += 1
+            table_name = f"{table.name} copy {ndupes}"
+
+        new_table = self.create_table(name=table_name, fields=fields)
+
+        if copy_records:
+            new_table.batch_create(
+                records=[record["fields"] for record in table.all()], typecast=True
+            )
+
+        return new_table
+
     @property
     def url(self) -> str:
         return self.api.build_url(self.id)

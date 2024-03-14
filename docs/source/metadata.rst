@@ -68,6 +68,9 @@ The following methods allow creating bases, tables, or fields:
 .. automethod:: pyairtable.Base.create_table
     :noindex:
 
+.. automethod:: pyairtable.Base.duplicate_table
+    :noindex:
+
 .. automethod:: pyairtable.Table.create_field
     :noindex:
 
