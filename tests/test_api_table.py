@@ -5,6 +5,7 @@ from requests import Request
 from requests_mock import Mocker
 
 from pyairtable import Api, Base, Table
+from pyairtable.metadata import get_table_schema
 from pyairtable.models.schema import TableSchema
 from pyairtable.testing import fake_id, fake_record
 from pyairtable.utils import chunked
@@ -439,6 +440,26 @@ def test_delete_view(table, mock_schema, requests_mock):
     m = requests_mock.delete(view._url)
     view.delete()
     assert m.call_count == 1
+
+
+def test_deprecated_get_schema_by_id(base: Base, api, requests_mock, sample_json):
+    """
+    Tests the ability to get a table schema by `id` using the deprecated `pyairtable.metadata.get_table_schema`
+    """
+    mock_create = requests_mock.get(
+        base.meta_url("tables"),
+        json=sample_json("BaseSchema"),
+    )
+
+    # Test fetching schema by id
+    table = api.table(base.id, base.tables()[0].id)
+
+    # Deprecated method for getting table's schema
+    table_schema = get_table_schema(table)
+
+    assert table_schema is None
+    assert table_schema["id"] == table.id
+    assert mock_create.call_count == 2
 
 
 # Helpers
