@@ -14,6 +14,7 @@ from pyairtable.testing import (
     fake_record,
     fake_user,
 )
+from pyairtable.utils import datetime_to_iso_str
 
 DATE_S = "2023-01-01"
 DATE_V = datetime.date(2023, 1, 1)
@@ -651,7 +652,7 @@ def test_datetime_timezones(requests_mock):
     def patch_callback(request, context):
         return {
             "id": obj.id,
-            "createdTime": obj.created_time,
+            "createdTime": datetime_to_iso_str(obj.created_time),
             "fields": request.json()["fields"],
         }
 

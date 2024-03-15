@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from operator import itemgetter
 from unittest import mock
 
@@ -10,6 +10,9 @@ from pyairtable import Table
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
 from pyairtable.testing import fake_meta, fake_record
+from pyairtable.utils import datetime_to_iso_str
+
+NOW = datetime.utcnow().isoformat() + "Z"
 
 
 class Address(Model):
@@ -44,11 +47,12 @@ def test_model_basics():
 
     # save
     with mock.patch.object(Table, "create") as m_save:
-        m_save.return_value = {"id": "id", "createdTime": "time"}
+        m_save.return_value = {"id": "id", "createdTime": NOW}
         contact.save()
 
     assert m_save.called
     assert contact.id == "id"
+    assert contact.created_time.tzinfo is timezone.utc
 
     # delete
     with mock.patch.object(Table, "delete") as m_delete:
@@ -63,7 +67,7 @@ def test_model_basics():
 
     record = contact.to_record()
     assert record["id"] == contact.id
-    assert record["createdTime"] == contact.created_time
+    assert record["createdTime"] == datetime_to_iso_str(contact.created_time)
     assert record["fields"]["First Name"] == contact.first_name
 
 
@@ -89,7 +93,7 @@ def test_first():
     with mock.patch.object(Table, "first") as m_first:
         m_first.return_value = {
             "id": "recwnBLPIeQJoYVt4",
-            "createdTime": "",
+            "createdTime": NOW,
             "fields": {
                 "First Name": "X",
                 "Created At": "2014-09-05T12:34:56.000Z",
@@ -113,7 +117,7 @@ def test_from_record():
     with mock.patch.object(Table, "get") as m_get:
         m_get.return_value = {
             "id": "recwnBLPIeQJoYVt4",
-            "createdTime": "",
+            "createdTime": NOW,
             "fields": {
                 "First Name": "X",
                 "Birthday": None,
@@ -162,7 +166,7 @@ def test_readonly_field_not_saved():
 
 
 def test_linked_record():
-    record = {"id": "recFake", "createdTime": "", "fields": {"Street": "A"}}
+    record = {"id": "recFake", "createdTime": NOW, "fields": {"Street": "A"}}
     address = Address.from_id("recFake", fetch=False)
 
     # Id Reference
