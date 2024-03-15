@@ -165,7 +165,7 @@ class Base:
     def duplicate_table(
         self,
         table: "pyairtable.api.table.Table",
-        new_name: str = None,
+        name: str = None,
         copy_records: bool = False,
     ) -> "pyairtable.api.table.Table":
         """
@@ -173,7 +173,7 @@ class Base:
 
         Args:
             table: The table to duplicate.
-            new_name: The duplicate table name. "copy {# of duplicates}" will be appended if the name is not unique.
+            name: The table name for the created table. "copy {# of duplicates}" will be appended if the name is not unique.
             copy_records: If set to ``True`` will copy records from the existing table into the new table.
         """
 
@@ -184,19 +184,7 @@ class Base:
             if not field["description"]:
                 del field["description"]
 
-        table_names = [tbl.name for tbl in self.tables(force=True)]
-
-        if not new_name:
-            new_name = table.name
-
-        ndupes = 1
-        table_name = f"{new_name} copy"
-
-        while table_name in table_names:
-            ndupes += 1
-            table_name = f"{table.name} copy {ndupes}"
-
-        new_table = self.create_table(name=table_name, fields=fields)
+        new_table = self.create_table(name=name, fields=fields)
 
         if copy_records:
             new_table.batch_create(

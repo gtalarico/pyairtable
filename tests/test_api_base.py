@@ -247,23 +247,49 @@ def test_create_table(base, requests_mock, mock_tables_endpoint):
     assert table.schema().primary_field_id == "fldWasJustCreated"
 
 
-def test_duplicate_table(base, requests_mock, mock_tables_endpoint):
+def test_duplicate_table(
+    table, base, requests_mock, mock_tables_endpoint, mock_records
+):
     """
-    Test that Base.duplicate_table() makes appropriate calls to duplicate a table,
-    including an optional step of copying records if specified.
+    Test that Base.duplicate_table() copies schema and records to new table
     """
 
-    table = base.create_table(
-        "Table Name",
-        fields=[{"name": "Whatever"}],
-        description="Description",
+    requests_mock.post(mock_tables_endpoint._url, json={"id": "tblWasJustCreated"})
+    mock_tables_endpoint._responses[0]._params["json"]["tables"].append(
+        {
+            "id": "tblWasJustCreated",
+            "name": "Table Name",
+            "primaryFieldId": "fldWasJustCreated",
+            "fields": [
+                {
+                    "id": "fldWasJustCreated",
+                    "name": "Whatever",
+                    "type": "singleLineText",
+                }
+            ],
+            "views": [],
+        }
     )
 
-    duped_table = base.duplicate_table(table)
+    # Mock duplicate table, without copying records (copy_records == False)
+    duped_table = base.duplicate_table(table, name="Duplicated Table")
+    mock_get_records = requests_mock.get(duped_table.url, json={"records": []})
 
     assert table.schema().dict() == duped_table.schema().dict()
-    assert table.name + " copy" == duped_table.name
     assert len(duped_table.all()) == 0
+    assert mock_get_records.call_count == 1
+
+    # Duplicate table and copy records (copy_records == True)
+    duped_table = base.duplicate_table(
+        table, name="Duplicated Table", copy_records=True
+    )
+    mock_get_records = requests_mock.get(
+        duped_table.url, json={"records": mock_records}
+    )
+
+    assert table.schema().dict() == duped_table.schema().dict()
+    assert not len(duped_table.all()) == 0
+    assert mock_get_records.call_count == 1
 
 
 def test_delete(base, requests_mock):
