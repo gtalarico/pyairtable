@@ -442,7 +442,7 @@ def test_delete_view(table, mock_schema, requests_mock):
     assert m.call_count == 1
 
 
-def test_deprecated_get_schema_by_id(base: Base, api, requests_mock, sample_json):
+def test_deprecated_get_schema_by_id(base, api, requests_mock, sample_json):
     """
     Tests the ability to get a table schema by `id` using the deprecated `pyairtable.metadata.get_table_schema`
     """
