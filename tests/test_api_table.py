@@ -457,7 +457,7 @@ def test_deprecated_get_schema_by_id(base, api, requests_mock, sample_json):
     # Deprecated method for getting table's schema
     table_schema = get_table_schema(table)
 
-    assert table_schema is None
+    assert table_schema is not None
     assert table_schema["id"] == table.id
     assert mock_create.call_count == 2
 
