@@ -146,4 +146,6 @@ def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:  # pragma: no co
         assert isinstance(table_record, dict)
         if table.name == table_record["name"]:
             return table_record
+        if table.id == table_record["id"]:
+            return table_record
     return None
