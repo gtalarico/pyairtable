@@ -846,12 +846,15 @@ class RichTextField(TextField):
     """
 
 
-class SelectField(TextField):
+class SelectField(Field[str, str, None]):
     """
-    Equivalent to :class:`~TextField`.
+    Represents a single select dropdown field. This will return ``None`` if no value is set,
+    and will only return ``""`` if an empty dropdown option is available and selected.
 
     See `Single select <https://airtable.com/developers/web/api/field-model#select>`__.
     """
+
+    valid_types = str
 
 
 class UrlField(TextField):

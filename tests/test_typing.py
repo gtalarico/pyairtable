@@ -144,5 +144,5 @@ if TYPE_CHECKING:
     assert_type(record.phone, str)
     assert_type(record.rating, Optional[int])
     assert_type(record.rich_text, str)
-    assert_type(record.select, str)
+    assert_type(record.select, Optional[str])
     assert_type(record.url, str)

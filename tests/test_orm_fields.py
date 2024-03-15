@@ -1,6 +1,7 @@
 import datetime
 import operator
 import re
+from unittest import mock
 
 import pytest
 
@@ -727,3 +728,29 @@ def test_missing_value__invalid_classinfo(classinfo, exc_class):
     obj = T()
     with pytest.raises(exc_class):
         obj.the_field
+
+
+@pytest.mark.parametrize(
+    "fields,expected",
+    [
+        ({}, None),
+        ({"Field": None}, None),
+        ({"Field": ""}, ""),
+        ({"Field": "xyz"}, "xyz"),
+    ],
+)
+def test_select_field(fields, expected):
+    """
+    Test that select field distinguishes between empty string and None.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = f.SelectField("Field")
+
+    obj = T.from_record(fake_record(**fields))
+    assert obj.the_field == expected
+
+    with mock.patch("pyairtable.Table.update", return_value=obj.to_record()) as m:
+        obj.save()
+        m.assert_called_once_with(obj.id, fields, typecast=True)
