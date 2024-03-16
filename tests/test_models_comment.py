@@ -80,7 +80,7 @@ def test_save(comment, requests_mock):
     """
     new_text = "This was changed!"
     mentions = {}
-    modified = dict(comment.dict(by_alias=True), mentioned=mentions, text=new_text)
+    modified = dict(comment._raw, mentioned=mentions, text=new_text)
     m = requests_mock.patch(comment._url, json=modified)
 
     comment.text = "Whatever"

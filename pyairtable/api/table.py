@@ -562,7 +562,7 @@ class Table:
                 Comment(
                     id='comdVMNxslc6jG0Xe',
                     text='Hello, @[usrVMNxslc6jG0Xed]!',
-                    created_time='2023-06-07T17:46:24.435891',
+                    created_time=datetime.datetime(...),
                     last_updated_time=None,
                     mentioned={
                         'usrVMNxslc6jG0Xed': Mentioned(

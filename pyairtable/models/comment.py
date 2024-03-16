@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, Optional
 
 from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, update_forward_refs
@@ -19,7 +20,7 @@ class Comment(
         Comment(
             id='comdVMNxslc6jG0Xe',
             text='Hello, @[usrVMNxslc6jG0Xed]!',
-            created_time='2023-06-07T17:46:24.435891',
+            created_time=datetime.datetime(...),
             last_updated_time=None,
             mentioned={
                 'usrVMNxslc6jG0Xed': Mentioned(
@@ -48,7 +49,7 @@ class Comment(
     text: str
 
     #: The ISO 8601 timestamp of when the comment was created.
-    created_time: str
+    created_time: datetime
 
     #: The ISO 8601 timestamp of when the comment was last edited.
     last_updated_time: Optional[str]

@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime
 from functools import partial
 from hmac import HMAC
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
@@ -30,7 +31,7 @@ class Webhook(CanDeleteModel, url="bases/{base.id}/webhooks/{self.id}"):
     CreateWebhookResponse(
         id='ach00000000000001',
         mac_secret_base64='c3VwZXIgZHVwZXIgc2VjcmV0',
-        expiration_time='2023-07-01T00:00:00.000Z'
+        expiration_time=datetime.datetime(...)
     )
     >>> webhooks = base.webhooks()
     >>> webhooks[0]
@@ -42,7 +43,7 @@ class Webhook(CanDeleteModel, url="bases/{base.id}/webhooks/{self.id}"):
         last_successful_notification_time=None,
         notification_url="https://example.com",
         last_notification_result=None,
-        expiration_time="2023-07-01T00:00:00.000Z",
+        expiration_time=datetime.datetime(...),
         specification: WebhookSpecification(...)
     )
     >>> webhooks[0].disable_notifications()
@@ -110,7 +111,7 @@ class Webhook(CanDeleteModel, url="bases/{base.id}/webhooks/{self.id}"):
             >>> iter_payloads = webhook.payloads()
             >>> next(iter_payloads)
             WebhookPayload(
-                timestamp="2022-02-01T21:25:05.663Z",
+                timestamp=datetime.datetime(...),
                 base_transaction_number=4,
                 payload_format="v0",
                 action_metadata=ActionMetadata(
@@ -204,7 +205,7 @@ class WebhookNotification(AirtableModel):
 
     base: _NestedId
     webhook: _NestedId
-    timestamp: str
+    timestamp: datetime
 
     @classmethod
     def from_request(
@@ -241,7 +242,7 @@ class WebhookNotification(AirtableModel):
 
 class WebhookNotificationResult(AirtableModel):
     success: bool
-    completion_timestamp: str
+    completion_timestamp: datetime
     duration_ms: float
     retry_number: int
     will_be_retried: Optional[bool] = None
@@ -300,7 +301,7 @@ class CreateWebhookResponse(AirtableModel):
     mac_secret_base64: str
 
     #: The timestamp when the webhook will expire and be deleted.
-    expiration_time: Optional[str]
+    expiration_time: Optional[datetime]
 
 
 class WebhookPayload(AirtableModel):
@@ -309,7 +310,7 @@ class WebhookPayload(AirtableModel):
     `Webhooks payload <https://airtable.com/developers/web/api/model/webhooks-payload>`_.
     """
 
-    timestamp: str
+    timestamp: datetime
     base_transaction_number: int
     payload_format: str
     action_metadata: Optional["WebhookPayload.ActionMetadata"]
@@ -372,7 +373,7 @@ class WebhookPayload(AirtableModel):
         cell_values_by_field_id: Dict[str, Any]
 
     class RecordCreated(AirtableModel):
-        created_time: str
+        created_time: datetime
         cell_values_by_field_id: Dict[str, Any]
 
 
