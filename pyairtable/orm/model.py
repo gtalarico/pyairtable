@@ -201,7 +201,9 @@ class Model:
 
     @classmethod
     def _typecast(cls) -> bool:
-        return bool(cls._get_meta("typecast", default=True))
+        _ = bool(cls._get_meta("typecast", default=True))
+        print(f"Typecast: {_}")
+        return _
 
     def exists(self) -> bool:
         """
@@ -261,6 +263,7 @@ class Model:
         return [cls.from_record(record) for record in table.all(**kwargs)]
 
     @classmethod
+    @modify_kwargs
     def first(cls, **kwargs: Any) -> Optional[SelfType]:
         """
         Retrieve the first record for this model. For all supported
@@ -283,7 +286,6 @@ class Model:
             "time_zone",
             "return_fields_by_field_id",
         ]
-        print("running union")
         args_union = {
             attr: cls._get_meta(attr) for attr in meta_keys if cls._get_meta(attr)
         }
