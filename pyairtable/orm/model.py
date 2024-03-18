@@ -170,6 +170,19 @@ class Model:
                 )
             )
 
+    def modify_kwargs(func):
+        """Decorator to modify the kwargs by calling _kwargs_union method."""
+        from functools import wraps
+
+        @wraps(func)
+        def wrapper(cls, *args, **kwargs):
+            # Modify kwargs by calling the _kwargs_union method on the class.
+            if hasattr(cls, "_kwargs_union"):
+                kwargs = cls._kwargs_union(kwargs)
+            return func(cls, *args, **kwargs)
+
+        return wrapper
+
     @classmethod
     @lru_cache
     def get_api(cls) -> Api:
@@ -238,6 +251,7 @@ class Model:
         return bool(result["deleted"])
 
     @classmethod
+    @modify_kwargs
     def all(cls, **kwargs: Any) -> List[SelfType]:
         """
         Retrieve all records for this model. For all supported
@@ -256,6 +270,25 @@ class Model:
         if record := table.first(**kwargs):
             return cls.from_record(record)
         return None
+
+    @classmethod
+    def _kwargs_union(cls, request_args: dict):
+        meta_keys = [
+            "view",
+            "fields",
+            "sort",
+            "formula",
+            "cell_format",
+            "user_locale",
+            "time_zone",
+            "return_fields_by_field_id",
+        ]
+        print("running union")
+        args_union = {
+            attr: cls._get_meta(attr) for attr in meta_keys if cls._get_meta(attr)
+        }
+        args_union.update(request_args)
+        return args_union
 
     def to_record(self, only_writable: bool = False) -> RecordDict:
         """
