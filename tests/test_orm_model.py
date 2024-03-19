@@ -146,21 +146,30 @@ def test_from_id(mock_get):
     assert contact.name == "Alice"
 
 
-@mock.patch("pyairtable.Table.all")
-def test_from_ids(mock_all):
+@mock.patch("pyairtable.Api.iterate_requests")
+def test_from_ids(mock_api):
     fake_records = [fake_record() for _ in range(10)]
-    mock_all.return_value = fake_records
+    mock_api.return_value = [{"records": fake_records}]
 
     fake_ids = [record["id"] for record in fake_records]
     contacts = FakeModel.from_ids(fake_ids)
-    mock_all.assert_called_once()
+    mock_api.assert_called_once_with(
+        method="get",
+        url=FakeModel.get_table().url,
+        fallback=("post", FakeModel.get_table().url + "/listRecords"),
+        options={
+            "formula": "OR(%s)" % ", ".join(f"RECORD_ID()='{id}'" for id in fake_ids)
+        },
+    )
     assert len(contacts) == len(fake_records)
     assert {c.id for c in contacts} == {r["id"] for r in fake_records}
 
+
+@mock.patch("pyairtable.Table.all")
+def test_from_ids__invalid_id(mock_all):
     # Should raise KeyError because of the invalid ID
-    mock_all.reset_mock()
     with pytest.raises(KeyError):
-        FakeModel.from_ids(fake_ids + ["recDefinitelyNotValid"])
+        FakeModel.from_ids(["recDefinitelyNotValid"])
     mock_all.assert_called_once()
 
 
@@ -171,6 +180,18 @@ def test_from_ids__no_fetch(mock_all):
     assert mock_all.call_count == 0
     assert len(contacts) == 10
     assert set(contact.id for contact in contacts) == set(fake_ids)
+
+
+@pytest.mark.parametrize("methodname", ("all", "first"))
+def test_passthrough(methodname):
+    """
+    Test that .all() and .first() pass through whatever they get.
+    """
+    with mock.patch(f"pyairtable.Table.{methodname}") as mock_endpoint:
+        method = getattr(FakeModel, methodname)
+        method(a=1, b=2, c=3)
+
+    mock_endpoint.assert_called_once_with(a=1, b=2, c=3)
 
 
 def test_dynamic_model_meta():

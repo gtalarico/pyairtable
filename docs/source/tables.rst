@@ -152,32 +152,21 @@ This library will return records as :class:`~pyairtable.api.types.RecordDict`.
 Formulas
 ********
 
-The :mod:`pyairtable.formulas` module provides functionality to help you compose
-`Airtable formulas <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_.
+Methods like :meth:`~pyairtable.Table.all` or :meth:`~pyairtable.Table.first`
+accept a ``formula=`` keyword argument so you can filter results using an
+`Airtable formula <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_.
 
-* :func:`~pyairtable.formulas.match` checks field values from a Python ``dict``:
+The simplest option is to pass your formula as a string; however, if your use case
+is complex and you want to avoid lots of f-strings and escaping, use
+:func:`~pyairtable.formulas.match` to check field values from a ``dict``:
 
   .. code-block:: python
 
       >>> from pyairtable.formulas import match
-      >>> formula = match({"First Name": "John", "Age": 21})
-      >>> formula
-      "AND({First Name}='John',{Age}=21)"
-      >>> table.first(formula=formula)
+      >>> table.first(formula=match({"First Name": "John", "Age": 21}))
       {"id": "recUwKa6lbNSMsetH", "fields": {"First Name": "John", "Age": 21}}
 
-* :func:`~pyairtable.formulas.to_airtable_value` converts a Python value
-  to an expression that can be included in a formula:
-
-  .. code-block:: python
-
-      >>> from pyairtable.formulas import to_airtable_value
-      >>> to_airtable_value(1)
-      1
-      >>> to_airtable_value(datetime.date.today())
-      '2023-06-13'
-
-For more on generating formulas, look over the :mod:`pyairtable.formulas` API reference.
+For more on generating formulas, read the :doc:`formulas` documentation.
 
 
 Retries

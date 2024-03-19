@@ -2,6 +2,12 @@
 Changelog
 =========
 
+3.0 (TBD)
+------------------------
+
+* Rewrite of :mod:`pyairtable.formulas` module.
+  - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_.
+
 2.3.2 (2024-03-18)
 ------------------------
 

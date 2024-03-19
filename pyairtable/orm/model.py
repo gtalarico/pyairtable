@@ -13,7 +13,7 @@ from pyairtable.api.types import (
     UpdateRecordDict,
     WritableFields,
 )
-from pyairtable.formulas import OR, STR_VALUE
+from pyairtable.formulas import EQ, OR, RECORD_ID
 from pyairtable.models import Comment
 from pyairtable.orm.fields import AnyField, Field
 
@@ -350,14 +350,12 @@ class Model:
         record_ids = list(record_ids)
         if not fetch:
             return [cls.from_id(record_id, fetch=False) for record_id in record_ids]
-        formula = OR(
-            *[f"RECORD_ID()={STR_VALUE(record_id)}" for record_id in record_ids]
-        )
-        records = [
-            cls.from_record(record) for record in cls.get_table().all(formula=formula)
-        ]
-        records_by_id = {record.id: record for record in records}
+        # There's no endpoint to query multiple IDs at once, but we can use a formula.
+        formula = OR(EQ(RECORD_ID(), record_id) for record_id in record_ids)
+        record_data = cls.get_table().all(formula=formula)
+        records = [cls.from_record(record) for record in record_data]
         # Ensure we return records in the same order, and raise KeyError if any are missing
+        records_by_id = {record.id: record for record in records}
         return [records_by_id[record_id] for record_id in record_ids]
 
     @classmethod
