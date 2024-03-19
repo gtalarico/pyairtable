@@ -12,7 +12,7 @@ from pyairtable.orm import fields as f
 from pyairtable.testing import fake_meta, fake_record
 from pyairtable.utils import datetime_to_iso_str
 
-NOW = datetime.utcnow().isoformat() + "Z"
+NOW = datetime.now().isoformat() + "Z"
 
 
 class Address(Model):
@@ -146,7 +146,7 @@ def test_readonly_field_not_saved():
 
     record = {
         "id": "recwnBLPIeQJoYVt4",
-        "createdTime": datetime.utcnow().isoformat(),
+        "createdTime": datetime.now(timezone.utc).isoformat(),
         "fields": {
             "Birthday": "1970-01-01",
             "Age": 57,
@@ -284,7 +284,7 @@ def test_batch_save(mock_update, mock_create):
     addr3 = Address.from_record(
         {
             "id": "recExistingRecord",
-            "createdTime": datetime.utcnow().isoformat(),
+            "createdTime": datetime.now(timezone.utc).isoformat(),
             "fields": {"Number": 789, "Street": "Fake St"},
         }
     )
