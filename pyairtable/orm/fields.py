@@ -511,6 +511,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
     """
 
     _linked_model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]]
+    _max_retrieve: Optional[int] = None
 
     def __init__(
         self,
@@ -619,7 +620,9 @@ class LinkField(_ListField[RecordId, T_Linked]):
         # retrieve their values in bulk, and store them keyed by ID
         # so we can maintain the order we received from the API.
         new_records = {}
-        if new_record_ids := [v for v in records if isinstance(v, RecordId)]:
+        if new_record_ids := [
+            v for v in records[: self._max_retrieve] if isinstance(v, RecordId)
+        ]:
             new_records = {
                 record.id: record
                 for record in self.linked_model.from_ids(
@@ -630,9 +633,9 @@ class LinkField(_ListField[RecordId, T_Linked]):
         # If the list contains record IDs, replace the contents with instances.
         # Other code may already have references to this specific list, so
         # we replace the existing list's values.
-        records[:] = [
+        records[: self._max_retrieve] = [
             new_records[cast(RecordId, value)] if isinstance(value, RecordId) else value
-            for value in records
+            for value in records[: self._max_retrieve]
         ]
 
     def _get_list_value(self, instance: "Model") -> List[T_Linked]:
@@ -647,7 +650,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
         self.populate(instance)
         return super()._get_list_value(instance)
 
-    def to_record_value(self, value: Union[List[str], List[T_Linked]]) -> List[str]:
+    def to_record_value(self, value: List[Union[str, T_Linked]]) -> List[str]:
         """
         Build the list of record IDs which should be persisted to the API.
         """
@@ -656,15 +659,17 @@ class LinkField(_ListField[RecordId, T_Linked]):
         # When persisting this model back to the API, we can just write those IDs.
         if all(isinstance(v, str) for v in value):
             return cast(List[str], value)
-        # From here on, we assume we're dealing with models, not record IDs.
-        records = cast(List[T_Linked], value)
+
+        # Validate any items in our list which are not record IDs
+        records = [v for v in value if not isinstance(v, str)]
         self.valid_or_raise(records)
-        # We could *try* to recursively save models that don't have an ID yet,
-        # but that requires us to second-guess the implementers' intentions.
-        # Better to just raise an exception.
         if not all(record.exists() for record in records):
+            # We could *try* to recursively save models that don't have an ID yet,
+            # but that requires us to second-guess the implementers' intentions.
+            # Better to just raise an exception.
             raise ValueError(f"{self._description} contains an unsaved record")
-        return [record.id for record in records]
+
+        return [v if isinstance(v, str) else v.id for v in value]
 
     def valid_or_raise(self, value: Any) -> None:
         super().valid_or_raise(value)
@@ -766,6 +771,16 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
             readonly=readonly,
             lazy=lazy,
         )
+        self._link_field._max_retrieve = 1
+
+    def _repr_fields(self) -> List[Tuple[str, Any]]:
+        return [
+            ("model", self._link_field._linked_model),
+            ("validate_type", self.validate_type),
+            ("readonly", self.readonly),
+            ("lazy", self._link_field._lazy),
+            ("raise_if_many", self._raise_if_many),
+        ]
 
     @overload
     def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
@@ -787,7 +802,6 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
             return self._missing_value()
 
     def __set__(self, instance: "Model", value: Optional[T_Linked]) -> None:
-        self._raise_if_readonly()
         values = None if value is None else [value]
         self._link_field.__set__(instance, values)
 
@@ -795,17 +809,8 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
         super().__set_name__(owner, name)
         self._link_field.__set_name__(owner, name)
 
-    def to_record_value(self, value: Union[List[str], List[T_Linked]]) -> List[str]:
+    def to_record_value(self, value: List[Union[str, T_Linked]]) -> List[str]:
         return self._link_field.to_record_value(value)
-
-    def _repr_fields(self) -> List[Tuple[str, Any]]:
-        return [
-            ("model", self._link_field._linked_model),
-            ("validate_type", self.validate_type),
-            ("readonly", self.readonly),
-            ("lazy", self._link_field._lazy),
-            ("raise_if_many", self._raise_if_many),
-        ]
 
     def populate(self, instance: "Model", lazy: Optional[bool] = None) -> None:
         self._link_field.populate(instance, lazy=lazy)

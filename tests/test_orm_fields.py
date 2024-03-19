@@ -666,17 +666,15 @@ def test_single_link_field__multiple_values():
     records = [fake_record(Name=f"Author {n+1}") for n in range(3)]
     a1, a2, a3 = [r["id"] for r in records]
 
-    # if Airtable sends back multiple IDs, we'll retrieve all of them,
-    # but we will only return the first one from the field descriptor.
+    # if Airtable sends back multiple IDs, we'll only retrieve the first one.
     book = Book.from_record(fake_record(Author=[a1, a2, a3]))
     with mock.patch("pyairtable.Table.all", return_value=records) as m:
         book.author
-        m.assert_called_once_with(
-            formula=OR(RECORD_ID().eq(r["id"]) for r in records),
-        )
+        m.assert_called_once_with(formula=OR(RECORD_ID().eq(records[0]["id"])))
 
     assert book.author.id == a1
     assert book.author.name == "Author 1"
+    assert book._fields["Author"][1:] == [a2, a3]  # not converted to models
 
     # if no modifications made, the entire list will be sent back to the API
     with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
