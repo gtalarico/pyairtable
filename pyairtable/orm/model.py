@@ -286,10 +286,14 @@ class Model:
         # Convert Column Names into model field names
         field_values = {
             # Use field's to_internal_value to cast into model fields
-            field: name_field_map[field].to_internal_value(value)
+            field: (
+                name_field_map[field].to_internal_value(value)
+                if value is not None
+                else None
+            )
             for (field, value) in record["fields"].items()
             # Silently proceed if Airtable returns fields we don't recognize
-            if field in name_field_map and value is not None
+            if field in name_field_map
         }
         # Since instance(**field_values) will perform validation and fail on
         # any readonly fields, instead we directly set instance._fields.
