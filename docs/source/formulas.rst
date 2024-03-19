@@ -71,7 +71,7 @@ You can also use Python operators to modify and combine formulas:
        :header-rows: 1
 
        * - Python operator
-         - `Airtable equivexpressionalent <https://support.airtable.com/docs/formula-field-reference#logical-operators-and-functions-in-airtable>`__
+         - `Airtable expression <https://support.airtable.com/docs/formula-field-reference#logical-operators-and-functions-in-airtable>`__
        * - ``lval & rval``
          - ``AND(lval, rval)``
        * - ``lval | rval``
