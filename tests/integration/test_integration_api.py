@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -223,7 +223,7 @@ def test_batch_upsert(table: Table, cols):
 
 
 def test_integration_formula_datetime(table: Table, cols):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     formula = fo.match({cols.DATETIME: now})
     rv_create = table.create({cols.DATETIME: datetime_to_iso_str(now)})
     rv_first = table.first(formula=formula)
@@ -231,7 +231,7 @@ def test_integration_formula_datetime(table: Table, cols):
 
 
 def test_integration_formula_date_filter(table: Table, cols):
-    dt = datetime.utcnow()
+    dt = datetime.now(timezone.utc)
     dt_str = datetime_to_iso_str(dt)
     date = dt.date()
     date_str = date_to_iso_str(date)

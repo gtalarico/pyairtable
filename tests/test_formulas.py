@@ -1,4 +1,4 @@
-import datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from fractions import Fraction
 
@@ -125,7 +125,7 @@ def test_compound_equivalence():
     ],
 )
 def test_compound_constructors(cmp, call_args):
-    if type(call_args) != type(call):
+    if type(call_args) is not type(call):
         call_args = call_args()
     compound = cmp(*call_args.args, **call_args.kwargs)
     expected = cmp(EQ("foo", 1), EQ(F.Field("bar"), 2))
@@ -230,11 +230,15 @@ def test_not():
         ({1, 2, 3}, TypeError),
         ({1: 2, 3: 4}, TypeError),
         (
-            datetime.date(2023, 12, 1),
+            date(2023, 12, 1),
             "DATETIME_PARSE('2023-12-01')",
         ),
         (
-            datetime.datetime(2023, 12, 1, 12, 34, 56),
+            datetime(2023, 12, 1, 12, 34, 56),
+            "DATETIME_PARSE('2023-12-01T12:34:56.000')",
+        ),
+        (
+            datetime(2023, 12, 1, 12, 34, 56, tzinfo=timezone.utc),
             "DATETIME_PARSE('2023-12-01T12:34:56.000Z')",
         ),
     ],

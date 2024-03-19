@@ -50,8 +50,7 @@ class Table:
         timeout: Optional["pyairtable.api.api.TimeoutTuple"] = None,
         retry_strategy: Optional[Retry] = None,
         endpoint_url: str = "https://api.airtable.com",
-    ):
-        ...
+    ): ...
 
     @overload
     def __init__(
@@ -59,8 +58,7 @@ class Table:
         api_key: None,
         base_id: "pyairtable.api.base.Base",
         table_name: str,
-    ):
-        ...
+    ): ...
 
     @overload
     def __init__(
@@ -68,8 +66,7 @@ class Table:
         api_key: None,
         base_id: "pyairtable.api.base.Base",
         table_name: TableSchema,
-    ):
-        ...
+    ): ...
 
     def __init__(
         self,

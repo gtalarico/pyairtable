@@ -289,7 +289,7 @@ class Model:
             field: name_field_map[field].to_internal_value(value)
             for (field, value) in record["fields"].items()
             # Silently proceed if Airtable returns fields we don't recognize
-            if field in name_field_map
+            if field in name_field_map and value is not None
         }
         # Since instance(**field_values) will perform validation and fail on
         # any readonly fields, instead we directly set instance._fields.

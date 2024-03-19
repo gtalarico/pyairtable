@@ -35,7 +35,7 @@ def datetime_to_iso_str(value: datetime) -> str:
     Args:
         value: datetime object
     """
-    return value.isoformat(timespec="milliseconds") + "Z"
+    return value.isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def datetime_from_iso_str(value: str) -> datetime:
@@ -45,7 +45,9 @@ def datetime_from_iso_str(value: str) -> datetime:
     Args:
         value: datetime string, e.g. "2014-09-05T07:00:00.000Z"
     """
-    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    return datetime.fromisoformat(value)
 
 
 def date_to_iso_str(value: Union[date, datetime]) -> str:
@@ -192,11 +194,9 @@ def _append_docstring_text(obj: Any, text: str) -> None:
 
 
 class FetchMethod(Protocol, Generic[R]):
-    def __get__(self, instance: Any, owner: Any) -> Callable[..., R]:
-        ...  # pragma: no cover
+    def __get__(self, instance: Any, owner: Any) -> Callable[..., R]: ...
 
-    def __call__(self_, self: Any, *, force: bool = False) -> R:
-        ...  # pragma: no cover
+    def __call__(self_, self: Any, *, force: bool = False) -> R: ...
 
 
 def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:

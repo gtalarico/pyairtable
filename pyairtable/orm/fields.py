@@ -24,6 +24,7 @@ which allows us to define methods and type annotations for getting and setting a
     }
 }
 """
+
 import abc
 import importlib
 from datetime import date, datetime, timedelta
@@ -144,13 +145,11 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
 
     # Model.field will call __get__(instance=None, owner=Model)
     @overload
-    def __get__(self, instance: None, owner: Type[Any]) -> SelfType:
-        ...
+    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
 
     # obj.field will call __get__(instance=obj, owner=Model)
     @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> Optional[T_ORM]:
-        ...
+    def __get__(self, instance: "Model", owner: Type[Any]) -> Optional[T_ORM]: ...
 
     def __get__(
         self, instance: Optional["Model"], owner: Type[Any]
@@ -432,12 +431,10 @@ class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM]]):
     # have to overload the type annotations for __get__
 
     @overload
-    def __get__(self, instance: None, owner: Type[Any]) -> SelfType:
-        ...
+    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
 
     @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> List[T_ORM]:
-        ...
+    def __get__(self, instance: "Model", owner: Type[Any]) -> List[T_ORM]: ...
 
     def __get__(
         self, instance: Optional["Model"], owner: Type[Any]

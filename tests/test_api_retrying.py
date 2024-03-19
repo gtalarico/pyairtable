@@ -3,6 +3,7 @@ For these tests Mocker cannot be used because Retry is operating on a lower leve
 Instead we use a real HTTP server running in a separate thread, which we can program
 to respond with various HTTP status codes.
 """
+
 import json
 import threading
 import time

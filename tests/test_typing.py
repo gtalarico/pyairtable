@@ -1,6 +1,7 @@
 """
 Tests that pyairtable.api functions/methods return appropriately typed responses.
 """
+
 import datetime
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 

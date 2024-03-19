@@ -17,7 +17,7 @@ from pyairtable.testing import (
 DATE_S = "2023-01-01"
 DATE_V = datetime.date(2023, 1, 1)
 DATETIME_S = "2023-04-12T09:30:00.000Z"
-DATETIME_V = datetime.datetime(2023, 4, 12, 9, 30, 0)
+DATETIME_V = datetime.datetime(2023, 4, 12, 9, 30, 0, tzinfo=datetime.timezone.utc)
 
 
 def test_field():
@@ -634,3 +634,48 @@ def test_rating_field():
 
     with pytest.raises(ValueError):
         T().rating = 0
+
+
+def test_datetime_timezones(requests_mock):
+    """
+    Test that DatetimeField handles time zones properly.
+    """
+
+    class M(Model):
+        Meta = fake_meta()
+        dt = f.DatetimeField("dt")
+
+    obj = M.from_record(fake_record(dt="2024-02-29T12:34:56Z"))
+
+    def patch_callback(request, context):
+        return {
+            "id": obj.id,
+            "createdTime": obj.created_time,
+            "fields": request.json()["fields"],
+        }
+
+    m = requests_mock.patch(M.get_table().record_url(obj.id), json=patch_callback)
+
+    # Test that we parse the "Z" into UTC correctly
+    assert obj.dt.date() == datetime.date(2024, 2, 29)
+    assert obj.dt.tzinfo is datetime.timezone.utc
+    obj.save()
+    assert m.last_request.json()["fields"]["dt"] == "2024-02-29T12:34:56.000Z"
+
+    # Test that we can set a UTC timezone and it will be saved as-is.
+    obj.dt = datetime.datetime(2024, 3, 1, 11, 22, 33, tzinfo=datetime.timezone.utc)
+    obj.save()
+    assert m.last_request.json()["fields"]["dt"] == "2024-03-01T11:22:33.000Z"
+
+    # Test that we can set a local timezone and it will be sent to Airtable.
+    pacific = datetime.timezone(datetime.timedelta(hours=-8))
+    obj.dt = datetime.datetime(2024, 3, 1, 11, 22, 33, tzinfo=pacific)
+    obj.save()
+    assert m.last_request.json()["fields"]["dt"] == "2024-03-01T11:22:33.000-08:00"
+
+    # Test that a timezone-unaware datetime is passed as-is to Airtable.
+    # This behavior will vary depending on how the field is configured.
+    # See https://airtable.com/developers/web/api/field-model#dateandtime
+    obj.dt = datetime.datetime(2024, 3, 1, 11, 22, 33)
+    obj.save()
+    assert m.last_request.json()["fields"]["dt"] == "2024-03-01T11:22:33.000"
