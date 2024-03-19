@@ -2,6 +2,12 @@
 Changelog
 =========
 
+2.3.2 (2024-03-18)
+------------------------
+
+* Fixed a bug affecting :func:`pyairtable.metadata.get_table_schema`.
+  - `PR #349 <https://github.com/gtalarico/pyairtable/pull/349>`_.
+
 2.3.1 (2024-03-14)
 ------------------------
 
