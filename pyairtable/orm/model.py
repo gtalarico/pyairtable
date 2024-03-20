@@ -177,11 +177,22 @@ class Model:
         @wraps(func)
         def wrapper(cls, *args, **kwargs):
             # Modify kwargs by calling the _kwargs_union method on the class.
-            if hasattr(cls, "_kwargs_union"):
-                kwargs = cls._kwargs_union(kwargs)
+            kwargs = cls._kwargs_union(kwargs)
             return func(cls, *args, **kwargs)
 
         return wrapper
+
+    @classmethod
+    def _kwargs_union(cls, request_args: dict):
+        disallowed_args = (
+            "cell_format",
+            "return_fields_by_field_id",
+        )
+        args_union = {k: v for k, v in request_args.items() if k not in disallowed_args}
+        use_field_ids = cls._get_meta("use_field_ids")
+        if use_field_ids:
+            args_union["return_fields_by_field_id"] = True
+        return args_union
 
     @classmethod
     @lru_cache
@@ -273,15 +284,6 @@ class Model:
         if record := table.first(**kwargs):
             return cls.from_record(record)
         return None
-
-    @classmethod
-    def _kwargs_union(cls, request_args: dict):
-        disallowed_args = (
-            "cell_format",
-            "return_fields_by_field_id",
-        )
-        args_union = {k: v for k, v in request_args.items() if k not in disallowed_args}
-        return args_union
 
     def to_record(self, only_writable: bool = False) -> RecordDict:
         """
