@@ -31,6 +31,7 @@ class Model:
         * ``table_name`` (required) - Table ID or name.
         * ``timeout`` - A tuple indicating a connect and read timeout. Defaults to no timeout.
         * ``typecast`` - |kwarg_typecast| Defaults to ``True``.
+        * ``use_field_ids`` - |kwarg_use_field_ids| Defaults to ``False``.
 
     .. code-block:: python
 
@@ -46,6 +47,7 @@ class Model:
                 api_key = "keyapikey"
                 timeout = (5, 5)
                 typecast = True
+                use_field_ids = True
 
     You can implement meta attributes as callables if certain values
     need to be dynamically provided or are unavailable at import time:
