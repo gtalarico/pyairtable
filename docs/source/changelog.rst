@@ -2,6 +2,22 @@
 Changelog
 =========
 
+3.0 (TBD)
+------------------------
+
+* ORM fields :class:`~pyairtable.orm.fields.TextField` and
+  :class:`~pyairtable.orm.fields.CheckboxField` will no longer
+  return ``None`` when the field is empty.
+  - `PR #347 <https://github.com/gtalarico/pyairtable/pull/347>`_.
+* Rewrite of :mod:`pyairtable.formulas` module.
+  - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_.
+
+2.3.2 (2024-03-18)
+------------------------
+
+* Fixed a bug affecting :func:`pyairtable.metadata.get_table_schema`.
+  - `PR #349 <https://github.com/gtalarico/pyairtable/pull/349>`_.
+
 2.3.1 (2024-03-14)
 ------------------------
 

@@ -26,6 +26,7 @@ pyAirtable
 
    getting-started
    tables
+   formulas
    orm
    metadata
    webhooks

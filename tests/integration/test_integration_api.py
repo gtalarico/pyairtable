@@ -5,7 +5,7 @@ import pytest
 
 from pyairtable import Table
 from pyairtable import formulas as fo
-from pyairtable.utils import attachment
+from pyairtable.utils import attachment, date_to_iso_str, datetime_to_iso_str
 
 pytestmark = [pytest.mark.integration]
 
@@ -223,26 +223,27 @@ def test_batch_upsert(table: Table, cols):
 
 
 def test_integration_formula_datetime(table: Table, cols):
-    value = datetime.utcnow().replace(tzinfo=timezone.utc)
-    str_value = fo.to_airtable_value(value)
-    formula = fo.match({cols.DATETIME: str_value})
-    rv_create = table.create({cols.DATETIME: str_value})
+    now = datetime.now(timezone.utc)
+    formula = fo.match({cols.DATETIME: now})
+    rv_create = table.create({cols.DATETIME: datetime_to_iso_str(now)})
     rv_first = table.first(formula=formula)
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 
 def test_integration_formula_date_filter(table: Table, cols):
-    dt = datetime.utcnow()
+    dt = datetime.now(timezone.utc)
+    dt_str = datetime_to_iso_str(dt)
     date = dt.date()
-    date_str = fo.to_airtable_value(date)
+    date_str = date_to_iso_str(date)
 
     created = []
     for _ in range(2):
-        rec = table.create({cols.DATETIME: fo.to_airtable_value(dt)})
+        rec = table.create({cols.DATETIME: dt_str})
         created.append(rec)
 
-    formula = fo.FIND(fo.STR_VALUE(date_str), fo.FIELD(cols.DATETIME))
+    formula = fo.FIND(date_str, fo.Field(cols.DATETIME))
     rv_all = table.all(formula=formula)
+    print("repr", repr(formula), "\nstr", str(formula))
     assert rv_all
     assert set([r["id"] for r in rv_all]) == set([r["id"] for r in created])
 
@@ -266,11 +267,9 @@ def test_integration_formula_composition(table: Table, cols):
     rv_create = table.create({cols.TEXT: text, cols.NUM: num, cols.BOOL: bool_})
 
     formula = fo.AND(
-        fo.EQUAL(fo.FIELD(cols.TEXT), fo.to_airtable_value(text)),
-        fo.EQUAL(fo.FIELD(cols.NUM), fo.to_airtable_value(num)),
-        fo.EQUAL(
-            fo.FIELD(cols.BOOL), fo.to_airtable_value(bool_)
-        ),  # not needs to be int()
+        fo.EQ(fo.Field(cols.TEXT), text),
+        fo.EQ(fo.Field(cols.NUM), num),
+        fo.EQ(fo.Field(cols.BOOL), bool_),  # not needs to be int()
     )
     rv_first = table.first(formula=formula)
 

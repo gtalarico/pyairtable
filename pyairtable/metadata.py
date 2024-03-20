@@ -142,8 +142,11 @@ def get_table_schema(table: Table) -> Optional[Dict[Any, Any]]:  # pragma: no co
         stacklevel=2,
     )
     base_schema = get_base_schema(table)
+    by_id: Dict[str, Dict[Any, Any]] = {}
     for table_record in base_schema.get("tables", {}):
         assert isinstance(table_record, dict)
+        by_id[table_record["id"]] = table_record
         if table.name == table_record["name"]:
             return table_record
-    return None
+    # if lookup by name fails, perhaps table.name is actually an ID
+    return by_id.get(table.name)
