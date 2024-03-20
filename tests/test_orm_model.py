@@ -173,6 +173,27 @@ def test_from_ids__no_fetch(mock_all):
     assert set(contact.id for contact in contacts) == set(fake_ids)
 
 
+def test_disallowed_args():
+    """
+    Test the argument sanitizer, `use_field_ids` attribute, and disallowed kwargs
+    """
+    obj = FakeModel()
+
+    FakeModel.Meta.use_field_ids = True
+    with mock.patch("pyairtable.Table.all") as mock_all:
+        obj.all(fields=["one", "two"])
+    assert obj._get_meta("use_field_ids")
+    assert "return_fields_by_field_id" in mock_all.call_args.kwargs
+    assert "fields" in mock_all.call_args.kwargs
+
+    FakeModel.Meta.use_field_ids = False
+    with mock.patch("pyairtable.Table.all") as mock_all:
+        obj.all(fields=["one", "two"], return_fields_by_field_id=True)
+    assert not obj._get_meta("use_field_ids")
+    assert "return_fields_by_field_id" not in mock_all.call_args.kwargs
+    assert "fields" in mock_all.call_args.kwargs
+
+
 def test_dynamic_model_meta():
     """
     Test that we can provide callables in our Meta class to provide
