@@ -276,20 +276,11 @@ class Model:
 
     @classmethod
     def _kwargs_union(cls, request_args: dict):
-        meta_keys = [
-            "view",
-            "fields",
-            "sort",
-            "formula",
+        disallowed_args = (
             "cell_format",
-            "user_locale",
-            "time_zone",
             "return_fields_by_field_id",
-        ]
-        args_union = {
-            attr: cls._get_meta(attr) for attr in meta_keys if cls._get_meta(attr)
-        }
-        args_union.update(request_args)
+        )
+        args_union = {k: v for k, v in request_args.items() if k not in disallowed_args}
         return args_union
 
     def to_record(self, only_writable: bool = False) -> RecordDict:
