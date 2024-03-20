@@ -1,4 +1,4 @@
-from functools import lru_cache
+from functools import lru_cache, wraps
 from typing import Any, Dict, Iterable, List, Optional
 
 from typing_extensions import Self as SelfType
@@ -173,26 +173,25 @@ class Model:
             )
 
     def modify_kwargs(func):
-        """Decorator to modify the kwargs by calling _kwargs_union method."""
-        from functools import wraps
+        # Modifies kwargs passed to Model.all and Model.first
+        # If Meta.use_field_ids, kwargs['return_fields_by_field_id']=True.
 
         @wraps(func)
         def wrapper(cls, *args, **kwargs):
-            # Modify kwargs by calling the _kwargs_union method on the class.
-            kwargs = cls._kwargs_union(kwargs)
+            kwargs = cls._kwargs_all_first(kwargs)
             return func(cls, *args, **kwargs)
 
         return wrapper
 
     @classmethod
-    def _kwargs_union(cls, request_args: dict):
+    def _kwargs_all_first(cls, request_args: dict):
+        # Called by modify_kwargs to modify kwargs passed to `all()` & `first()`.
         disallowed_args = (
             "cell_format",
             "return_fields_by_field_id",
         )
         args_union = {k: v for k, v in request_args.items() if k not in disallowed_args}
-        use_field_ids = cls._get_meta("use_field_ids")
-        if use_field_ids:
+        if cls._get_meta("use_field_ids"):
             args_union["return_fields_by_field_id"] = True
         return args_union
 
