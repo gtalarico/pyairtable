@@ -1,4 +1,4 @@
-from functools import lru_cache, wraps
+from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional
 
 from typing_extensions import Self as SelfType
@@ -172,19 +172,8 @@ class Model:
                 )
             )
 
-    def modify_kwargs(func):
-        # Modifies kwargs passed to Model.all and Model.first
-        # If Meta.use_field_ids, kwargs['return_fields_by_field_id']=True.
-
-        @wraps(func)
-        def wrapper(cls, *args, **kwargs):
-            kwargs = cls._kwargs_all_first(kwargs)
-            return func(cls, *args, **kwargs)
-
-        return wrapper
-
     @classmethod
-    def _kwargs_all_first(cls, request_args: dict):
+    def _get_meta_request_kwargs(cls, request_args: dict):
         # Called by modify_kwargs to modify kwargs passed to `all()` & `first()`.
         disallowed_args = (
             "cell_format",
@@ -214,7 +203,6 @@ class Model:
     @classmethod
     def _typecast(cls) -> bool:
         _ = bool(cls._get_meta("typecast", default=True))
-        print(f"Typecast: {_}")
         return _
 
     def exists(self) -> bool:
@@ -265,22 +253,22 @@ class Model:
         return bool(result["deleted"])
 
     @classmethod
-    @modify_kwargs
     def all(cls, **kwargs: Any) -> List[SelfType]:
         """
         Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
         """
+        kwargs.update(cls._get_meta_request_kwargs(kwargs))
         table = cls.get_table()
         return [cls.from_record(record) for record in table.all(**kwargs)]
 
     @classmethod
-    @modify_kwargs
     def first(cls, **kwargs: Any) -> Optional[SelfType]:
         """
         Retrieve the first record for this model. For all supported
         keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
         """
+        kwargs.update(cls._get_meta_request_kwargs(kwargs))
         table = cls.get_table()
         if record := table.first(**kwargs):
             return cls.from_record(record)
