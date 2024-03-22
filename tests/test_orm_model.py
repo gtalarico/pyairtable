@@ -51,6 +51,22 @@ def test_model_empty_meta():
             street = f.TextField("Street")
 
 
+def test_model_empty_meta_with_callable():
+    """
+    Test that we throw an exception when a required Meta attribute is
+    defined as a callable which returns None.
+    """
+
+    class Address(Model):
+        Meta = fake_meta(api_key=lambda: None)
+        street = f.TextField("Street")
+
+    with mock.patch("pyairtable.Table.first", return_value=fake_record()) as m:
+        with pytest.raises(ValueError):
+            Address.first()
+        m.assert_not_called()
+
+
 @pytest.mark.parametrize("name", ("exists", "id"))
 def test_model_overlapping(name):
     """
@@ -197,7 +213,8 @@ def test_passthrough(methodname):
 def test_dynamic_model_meta():
     """
     Test that we can provide callables in our Meta class to provide
-    the access token, base ID, and table name at runtime.
+    the access token, base ID, and table name at runtime. Also ensure
+    that callable Meta attributes don't get called until they're needed.
     """
     data = {
         "api_key": "FakeApiKey",
@@ -209,12 +226,12 @@ def test_dynamic_model_meta():
         class Meta:
             api_key = lambda: data["api_key"]  # noqa
             base_id = partial(data.get, "base_id")
-
-            @staticmethod
-            def table_name():
-                return data["table_name"]
+            table_name = mock.Mock(return_value=data["table_name"])
 
     f = Fake()
+    Fake.Meta.table_name.assert_not_called()
+
     assert f._get_meta("api_key") == data["api_key"]
     assert f._get_meta("base_id") == data["base_id"]
     assert f._get_meta("table_name") == data["table_name"]
+    Fake.Meta.table_name.assert_called_once()
