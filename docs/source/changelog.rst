@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.3.3 (2024-03-22)
+------------------------
+
+* Fixed a bug affecting ORM Meta values which are computed at runtime.
+  - `PR #357 <https://github.com/gtalarico/pyairtable/pull/357>`_.
+* Fixed documentation for the ORM module.
+  - `PR #356 <https://github.com/gtalarico/pyairtable/pull/356>`_.
+
 2.3.2 (2024-03-18)
 ------------------------
 
