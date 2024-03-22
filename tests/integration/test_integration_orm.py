@@ -219,7 +219,7 @@ def test_every_field(Everything):
 
     # The ORM won't refresh the model's field values after save()
     assert record.formula_integer is None
-    assert record.formula_nan is None
+    assert record.formula_nan == ""
     assert record.link_count is None
     assert record.lookup_error == []
     assert record.lookup_integer == []

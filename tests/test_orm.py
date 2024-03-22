@@ -15,7 +15,7 @@ from pyairtable.testing import fake_meta, fake_record
 class Address(Model):
     Meta = fake_meta(table_name="Address")
     street = f.TextField("Street")
-    number = f.TextField("Number")
+    number = f.IntegerField("Number")
 
 
 class Contact(Model):
@@ -73,7 +73,7 @@ def test_unsupplied_fields():
     """
     a = Address()
     assert a.number is None
-    assert a.street is None
+    assert a.street == ""
 
 
 def test_null_fields():
@@ -188,7 +188,7 @@ def test_linked_record_can_be_saved(requests_mock, access_linked_records):
     record IDs into instances of the model. This could interfere with save(),
     so this test ensures we don't regress the capability.
     """
-    address_json = fake_record(Number="123", Street="Fake St")
+    address_json = fake_record(Number=123, Street="Fake St")
     address_id = address_json["id"]
     address_url_re = re.escape(Address.get_table().url + "?filterByFormula=")
     contact_json = fake_record(Email="alice@example.com", Link=[address_id])
@@ -246,7 +246,7 @@ def test_undeclared_field(requests_mock, test_case):
     """
 
     record = fake_record(
-        Number="123",
+        Number=123,
         Street="Fake St",
         City="Springfield",
         State="IL",
@@ -265,7 +265,7 @@ def test_undeclared_field(requests_mock, test_case):
 
     _, get_model_instance = test_case
     instance = get_model_instance(Address, record["id"])
-    assert instance.to_record()["fields"] == {"Number": "123", "Street": "Fake St"}
+    assert instance.to_record()["fields"] == {"Number": 123, "Street": "Fake St"}
 
 
 @mock.patch("pyairtable.Table.batch_create")
@@ -275,19 +275,19 @@ def test_batch_save(mock_update, mock_create):
     Test that we can pass multiple unsaved Model instances (or dicts) to batch_save
     and it will create or update them all in as few requests as possible.
     """
-    addr1 = Address(number="123", street="Fake St")
-    addr2 = Address(number="456", street="Fake St")
+    addr1 = Address(number=123, street="Fake St")
+    addr2 = Address(number=456, street="Fake St")
     addr3 = Address.from_record(
         {
             "id": "recExistingRecord",
             "createdTime": datetime.utcnow().isoformat(),
-            "fields": {"Number": "789", "Street": "Fake St"},
+            "fields": {"Number": 789, "Street": "Fake St"},
         }
     )
 
     mock_create.return_value = [
-        fake_record(id="abc", Number="123", Street="Fake St"),
-        fake_record(id="def", Number="456", Street="Fake St"),
+        fake_record(id="abc", Number=123, Street="Fake St"),
+        fake_record(id="def", Number=456, Street="Fake St"),
     ]
 
     # Just like model.save(), Model.batch_save() will set IDs on new records.
@@ -298,8 +298,8 @@ def test_batch_save(mock_update, mock_create):
 
     mock_create.assert_called_once_with(
         [
-            {"Number": "123", "Street": "Fake St"},
-            {"Number": "456", "Street": "Fake St"},
+            {"Number": 123, "Street": "Fake St"},
+            {"Number": 456, "Street": "Fake St"},
         ],
         typecast=True,
     )
@@ -307,7 +307,7 @@ def test_batch_save(mock_update, mock_create):
         [
             {
                 "id": "recExistingRecord",
-                "fields": {"Number": "789", "Street": "Fake St"},
+                "fields": {"Number": 789, "Street": "Fake St"},
             },
         ],
         typecast=True,
@@ -366,8 +366,8 @@ def test_batch_delete__unsaved_record(mock_delete):
     receives any models which have not been created yet.
     """
     addresses = [
-        Address.from_record(fake_record(Number="1", Street="Fake St")),
-        Address(number="2", street="Fake St"),
+        Address.from_record(fake_record(Number=1, Street="Fake St")),
+        Address(number=2, street="Fake St"),
     ]
     with pytest.raises(ValueError):
         Address.batch_delete(addresses)

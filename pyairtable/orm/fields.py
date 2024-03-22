@@ -1,5 +1,5 @@
 """
-Field are used to define the Airtable column type for your pyAirtable models.
+Fields define how you'll interact with your data when using the :doc:`orm`.
 
 Internally these are implemented as `descriptors <https://docs.python.org/3/howto/descriptor.html>`_,
 which allows us to define methods and type annotations for getting and setting attribute values.
@@ -64,19 +64,22 @@ if TYPE_CHECKING:
 
 _ClassInfo: TypeAlias = Union[type, Tuple["_ClassInfo", ...]]
 T = TypeVar("T")
-T_Linked = TypeVar("T_Linked", bound="Model")
+T_Linked = TypeVar("T_Linked", bound="Model")  # used by LinkField
 T_API = TypeVar("T_API")  # type used to exchange values w/ Airtable API
 T_ORM = TypeVar("T_ORM")  # type used to store values internally
+T_Missing = TypeVar("T_Missing")  # type returned when Airtable has no value
 
 
-class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
+class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
     """
     A generic class for an Airtable field descriptor that will be
     included in an ORM model.
 
-    Type-checked subclasses should provide two type parameters,
-    ``T_API`` and ``T_ORM``, which indicate the type returned
-    by the API and the type used to store values internally.
+    Type-checked subclasses should provide three type parameters:
+
+        * ``T_API``, indicating the JSON-serializable type returned by the API
+        * ``T_ORM``, indicating the type used to store values internally
+        * ``T_Missing``, indicating the type of value returned if the field is empty
 
     Subclasses should also define ``valid_types`` as a type
     or tuple of types, which will be used to validate the type
@@ -149,11 +152,13 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
 
     # obj.field will call __get__(instance=obj, owner=Model)
     @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> Optional[T_ORM]: ...
+    def __get__(
+        self, instance: "Model", owner: Type[Any]
+    ) -> Union[T_ORM, T_Missing]: ...
 
     def __get__(
         self, instance: Optional["Model"], owner: Type[Any]
-    ) -> Union[SelfType, Optional[T_ORM]]:
+    ) -> Union[SelfType, T_ORM, T_Missing]:
         # allow calling Model.field to get the field object instead of a value
         if not instance:
             return self
@@ -173,8 +178,12 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
     def __delete__(self, instance: "Model") -> None:
         raise AttributeError(f"cannot delete {self._description}")
 
-    def _missing_value(self) -> Optional[T_ORM]:
-        return None
+    @classmethod
+    def _missing_value(cls) -> T_Missing:
+        # This assumes Field[T_API, T_ORM, None]. If a subclass defines T_Missing as
+        # something different, it needs to override _missing_value.
+        # This can be tidied in 3.13 with T_Missing(default=None). See PEP-696.
+        return cast(T_Missing, None)
 
     def to_record_value(self, value: Any) -> Any:
         """
@@ -212,18 +221,73 @@ class Field(Generic[T_API, T_ORM], metaclass=abc.ABCMeta):
             ("validate_type", self.validate_type),
         ]
 
+    def eq(self, value: Any) -> "formulas.Comparison":
+        """
+        Build an :class:`~pyairtable.formulas.EQ` comparison using this field.
+        """
+        return formulas.EQ(self, value)
 
-#: A generic Field whose internal and API representations are the same type.
-_BasicField: TypeAlias = Field[T, T]
+    def ne(self, value: Any) -> "formulas.Comparison":
+        """
+        Build an :class:`~pyairtable.formulas.NE` comparison using this field.
+        """
+        return formulas.NE(self, value)
+
+    def gt(self, value: Any) -> "formulas.Comparison":
+        """
+        Build a :class:`~pyairtable.formulas.GT` comparison using this field.
+        """
+        return formulas.GT(self, value)
+
+    def lt(self, value: Any) -> "formulas.Comparison":
+        """
+        Build an :class:`~pyairtable.formulas.LT` comparison using this field.
+        """
+        return formulas.LT(self, value)
+
+    def gte(self, value: Any) -> "formulas.Comparison":
+        """
+        Build a :class:`~pyairtable.formulas.GTE` comparison using this field.
+        """
+        return formulas.GTE(self, value)
+
+    def lte(self, value: Any) -> "formulas.Comparison":
+        """
+        Build an :class:`~pyairtable.formulas.LTE` comparison using this field.
+        """
+        return formulas.LTE(self, value)
+
+
+class _FieldWithTypedDefaultValue(Generic[T], Field[T, T, T]):
+    """
+    A generic Field with default value of the same type as internal and API representations.
+
+    For now this is used for TextField and CheckboxField, because Airtable stores the empty
+    values for those types ("" and False) internally as None.
+    """
+
+    @classmethod
+    def _missing_value(cls) -> T:
+        first_type = cls.valid_types
+        while isinstance(first_type, tuple):
+            if not first_type:
+                raise RuntimeError(f"{cls.__qualname__}.valid_types is malformed")
+            first_type = first_type[0]
+        return cast(T, first_type())
+
+
+#: A generic Field with internal and API representations that are the same type.
+_BasicField: TypeAlias = Field[T, T, None]
 
 
 #: An alias for any type of Field.
-AnyField: TypeAlias = _BasicField[Any]
+AnyField: TypeAlias = Field[Any, Any, Any]
 
 
-class TextField(_BasicField[str]):
+class TextField(_FieldWithTypedDefaultValue[str]):
     """
-    Used for all Airtable text fields. Accepts ``str``.
+    Accepts ``str``.
+    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
 
     See `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
     and `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
@@ -293,8 +357,9 @@ class RatingField(IntegerField):
             raise ValueError("rating cannot be below 1")
 
 
-class CheckboxField(_BasicField[bool]):
+class CheckboxField(_FieldWithTypedDefaultValue[bool]):
     """
+    Accepts ``bool``.
     Returns ``False`` instead of ``None`` if the field is empty on the Airtable base.
 
     See `Checkbox <https://airtable.com/developers/web/api/field-model#checkbox>`__.
@@ -302,11 +367,8 @@ class CheckboxField(_BasicField[bool]):
 
     valid_types = bool
 
-    def _missing_value(self) -> bool:
-        return False
 
-
-class DatetimeField(Field[str, datetime]):
+class DatetimeField(Field[str, datetime, None]):
     """
     DateTime field. Accepts only `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_ values.
 
@@ -328,7 +390,7 @@ class DatetimeField(Field[str, datetime]):
         return utils.datetime_from_iso_str(value)
 
 
-class DateField(Field[str, date]):
+class DateField(Field[str, date, None]):
     """
     Date field. Accepts only `date <https://docs.python.org/3/library/datetime.html#date-objects>`_ values.
 
@@ -350,7 +412,7 @@ class DateField(Field[str, date]):
         return utils.date_from_iso_str(value)
 
 
-class DurationField(Field[int, timedelta]):
+class DurationField(Field[int, timedelta, None]):
     """
     Duration field. Accepts only `timedelta <https://docs.python.org/3/library/datetime.html#timedelta-objects>`_ values.
 
@@ -382,7 +444,7 @@ class _DictField(Generic[T], _BasicField[T]):
     valid_types = dict
 
 
-class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM]]):
+class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM], List[T_ORM]]):
     """
     Generic type for a field that stores a list of values. Can be used
     to refer to a lookup field that might return more than one value.
@@ -417,11 +479,6 @@ class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM]]):
             # set this empty list as the field's value.
             if not self.readonly:
                 instance._fields[self.field_name] = value
-        return value
-
-    def to_internal_value(self, value: Optional[List[T_ORM]]) -> List[T_ORM]:
-        if value is None:
-            value = []
         return value
 
 
@@ -789,12 +846,15 @@ class RichTextField(TextField):
     """
 
 
-class SelectField(TextField):
+class SelectField(Field[str, str, None]):
     """
-    Equivalent to :class:`~TextField`.
+    Represents a single select dropdown field. This will return ``None`` if no value is set,
+    and will only return ``""`` if an empty dropdown option is available and selected.
 
     See `Single select <https://airtable.com/developers/web/api/field-model#select>`__.
     """
+
+    valid_types = str
 
 
 class UrlField(TextField):
@@ -887,19 +947,20 @@ import re
 with open(cog.inFile) as fp:
     src = fp.read()
 
-classes = re.findall(r"class ([A-Z]\w+Field)", src)
-constants = re.findall(r"^([A-Z][A-Z_+]) = ", src)
+classes = re.findall(r"class ((?:[A-Z]\w+)?Field)", src)
+constants = re.findall(r"^(?!T_)([A-Z][A-Z_]+) = ", src, re.MULTILINE)
 extras = ["LinkSelf"]
-names = sorted(classes + constants + extras)
+names = sorted(classes) + constants + extras
 
 cog.outl("\n\n__all__ = [")
-for name in names:
+for name in ["Field", *names]:
     cog.outl(f'    "{name}",')
 cog.outl("]")
 [[[out]]]"""
 
 
 __all__ = [
+    "Field",
     "AITextField",
     "AttachmentsField",
     "AutoNumberField",
@@ -916,12 +977,12 @@ __all__ = [
     "DurationField",
     "EmailField",
     "ExternalSyncSourceField",
+    "Field",
     "FloatField",
     "IntegerField",
     "LastModifiedByField",
     "LastModifiedTimeField",
     "LinkField",
-    "LinkSelf",
     "LookupField",
     "MultipleCollaboratorsField",
     "MultipleSelectField",
@@ -933,5 +994,14 @@ __all__ = [
     "SelectField",
     "TextField",
     "UrlField",
+    "ALL_FIELDS",
+    "READONLY_FIELDS",
+    "FIELD_TYPES_TO_CLASSES",
+    "FIELD_CLASSES_TO_TYPES",
+    "LinkSelf",
 ]
-# [[[end]]] (checksum: 4722c0951e598ac999d3c16ebd3d8c1c)
+# [[[end]]] (checksum: 2aa36f4e76db73f3d0b741b6be6c9e9e)
+
+
+# Delayed import to avoid circular dependency
+from pyairtable import formulas  # noqa

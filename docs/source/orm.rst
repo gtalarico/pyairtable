@@ -28,9 +28,13 @@ The :class:`~pyairtable.orm.Model` class allows you create ORM-style classes for
             api_key = "keyapikey"
 
 
-Once you have a model, you can create new objects to represent your
-Airtable records. Call :meth:`~pyairtable.orm.Model.save` to save the
-newly created object to the Airtable API.
+Once you have a model, you can query for existing records using the
+``first()`` and ``all()`` methods, which take the same arguments as
+:meth:`Table.first <pyairtable.Table.first>` and :meth:`Table.all <pyairtable.Table.all>`.
+
+You can also create new objects to represent Airtable records you wish
+to create and save. Call :meth:`~pyairtable.orm.Model.save` to save the
+newly created object back to Airtable.
 
     >>> contact = Contact(
     ...     first_name="Mike",
@@ -47,7 +51,6 @@ newly created object to the Airtable API.
     >>> contact.id
     'recS6qSLw0OCA6Xul'
 
-
 You can read and modify attributes, then call :meth:`~pyairtable.orm.Model.save`
 when you're ready to save your changes to the API.
 
@@ -63,7 +66,7 @@ To refresh a record from the API, use :meth:`~pyairtable.orm.Model.fetch`:
     >>> contact.is_registered
     True
 
-Finally, you can use :meth:`~pyairtable.orm.Model.delete` to delete the record:
+Use :meth:`~pyairtable.orm.Model.delete` to delete the record:
 
     >>> contact.delete()
     True
@@ -76,6 +79,21 @@ create, modify, or delete several records at once:
     >>> contacts.append(Contact(first_name="Alice", email="alice@example.com"))
     >>> Contact.batch_save(contacts)
     >>> Contact.batch_delete(contacts)
+
+You can use your model's fields in :doc:`formula expressions <formulas>`.
+ORM models' fields also provide shortcut methods
+:meth:`~pyairtable.orm.fields.Field.eq`,
+:meth:`~pyairtable.orm.fields.Field.ne`,
+:meth:`~pyairtable.orm.fields.Field.gt`,
+:meth:`~pyairtable.orm.fields.Field.gte`,
+:meth:`~pyairtable.orm.fields.Field.lt`, and
+:meth:`~pyairtable.orm.fields.Field.lte`:
+
+    >>> formula = Contact.last_name.eq("Smith") & Contact.is_registered
+    >>> str(formula)
+    "AND({Last Name}='Smith', {Registered})"
+    >>> results = Contact.all(formula=formula)
+    [...]
 
 
 Supported Field Types
@@ -176,7 +194,7 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
 .. [[[end]]] (checksum: 01c5696293e7571ac8250c4e8a2453e8)
 
 
-Formulas, Rollups, and Lookups
+Formula, Rollup, and Lookup Fields
 ----------------------------------
 
 The data type of "formula", "rollup", and "lookup" fields will depend on the underlying fields
