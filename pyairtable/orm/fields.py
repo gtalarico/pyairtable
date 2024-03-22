@@ -886,7 +886,7 @@ READONLY_FIELDS = {cls for cls in ALL_FIELDS if cls.readonly}
 
 #: Mapping of Airtable field type names to their ORM classes.
 #: See https://airtable.com/developers/web/api/field-model
-#: and :ref:`Formulas, Rollups, and Lookups`.
+#: and :ref:`Formula, Rollup, and Lookup Fields`.
 #:
 #: The data type of "formula" and "rollup" fields will depend
 #: on the underlying fields they reference, so it is not practical
@@ -941,22 +941,23 @@ FIELD_CLASSES_TO_TYPES = {
 
 
 # Auto-generate __all__ to explicitly exclude any imported values
-r"""[[[cog]]]
-import re
-
-with open(cog.inFile) as fp:
-    src = fp.read()
-
-classes = re.findall(r"class ((?:[A-Z]\w+)?Field)", src)
-constants = re.findall(r"^(?!T_)([A-Z][A-Z_]+) = ", src, re.MULTILINE)
-extras = ["LinkSelf"]
-names = sorted(classes) + constants + extras
-
-cog.outl("\n\n__all__ = [")
-for name in ["Field", *names]:
-    cog.outl(f'    "{name}",')
-cog.outl("]")
-[[[out]]]"""
+#
+# [[[cog]]]
+# import re
+#
+# with open(cog.inFile) as fp:
+#     src = fp.read()
+#
+# classes = re.findall(r"class ((?:[A-Z]\w+)?Field)", src)
+# constants = re.findall(r"^(?!T_)([A-Z][A-Z_]+) = ", src, re.MULTILINE)
+# extras = ["LinkSelf"]
+# names = sorted(classes) + constants + extras
+#
+# cog.outl("\n\n__all__ = [")
+# for name in ["Field", *names]:
+#     cog.outl(f'    "{name}",')
+# cog.outl("]")
+# [[[out]]]
 
 
 __all__ = [
