@@ -14,11 +14,8 @@ hooks:
 release:
 	@zsh -c "./scripts/release.sh"
 
-.PHONY: test test-e2e coverage lint format docs clean
+.PHONY: test coverage lint format docs clean
 test:
-	tox -- -m 'not integration'
-
-test-e2e:
 	tox
 
 coverage:
