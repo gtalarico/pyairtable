@@ -1,4 +1,4 @@
-__version__ = "2.3.2"
+__version__ = "3.0.0a1"
 
 from .api import Api, Base, Table
 from .api.enterprise import Enterprise
