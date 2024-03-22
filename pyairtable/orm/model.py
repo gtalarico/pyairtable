@@ -142,13 +142,25 @@ class Model:
             setattr(self, key, value)
 
     @classmethod
-    def _get_meta(cls, name: str, default: Any = None, required: bool = False) -> Any:
+    def _get_meta(
+        cls, name: str, default: Any = None, required: bool = False, call: bool = True
+    ) -> Any:
+        """
+        Retrieves the value of a Meta attribute.
+
+        Args:
+            default: The default value to return if the attribute is not set.
+            required: Raise an exception if the attribute is not set.
+            call: If the value is callable, call it before returning a result.
+        """
         if not hasattr(cls, "Meta"):
             raise AttributeError(f"{cls.__name__}.Meta must be defined")
-        if required and not hasattr(cls.Meta, name):
-            raise ValueError(f"{cls.__name__}.Meta.{name} must be defined")
-        value = getattr(cls.Meta, name, default)
-        if callable(value):
+        if not hasattr(cls.Meta, name):
+            if required:
+                raise ValueError(f"{cls.__name__}.Meta.{name} must be defined")
+            return default
+        value = getattr(cls.Meta, name)
+        if call and callable(value):
             value = value()
         if required and value is None:
             raise ValueError(f"{cls.__name__}.Meta.{name} cannot be None")
@@ -156,10 +168,10 @@ class Model:
 
     @classmethod
     def _validate_class(cls) -> None:
-        # Verify required Meta attributes were set
-        assert cls._get_meta("api_key", required=True)
-        assert cls._get_meta("base_id", required=True)
-        assert cls._get_meta("table_name", required=True)
+        # Verify required Meta attributes were set (but don't call any callables)
+        assert cls._get_meta("api_key", required=True, call=False)
+        assert cls._get_meta("base_id", required=True, call=False)
+        assert cls._get_meta("table_name", required=True, call=False)
 
         model_attributes = [a for a in cls.__dict__.keys() if not a.startswith("__")]
         overridden = set(model_attributes).intersection(Model.__dict__.keys())
@@ -174,17 +186,17 @@ class Model:
     @lru_cache
     def get_api(cls) -> Api:
         return Api(
-            api_key=cls._get_meta("api_key"),
+            api_key=cls._get_meta("api_key", required=True),
             timeout=cls._get_meta("timeout"),
         )
 
     @classmethod
     def get_base(cls) -> Base:
-        return cls.get_api().base(cls._get_meta("base_id"))
+        return cls.get_api().base(cls._get_meta("base_id", required=True))
 
     @classmethod
     def get_table(cls) -> Table:
-        return cls.get_base().table(cls._get_meta("table_name"))
+        return cls.get_base().table(cls._get_meta("table_name", required=True))
 
     @classmethod
     def _typecast(cls) -> bool:
