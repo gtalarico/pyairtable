@@ -197,15 +197,14 @@ def test_passthrough(methodname):
     with mock.patch(f"pyairtable.Table.{methodname}") as mock_endpoint:
         method = getattr(FakeModel, methodname)
         method(a=1, b=2, c=3)
-
     mock_endpoint.assert_called_once_with(
         a=1,
         b=2,
         c=3,
-        time_zone=None,
+        return_fields_by_field_id=getattr(FakeModel.Meta, "use_field_ids", False),
         user_locale=None,
+        time_zone=None,
         cell_format="json",
-        return_fields_by_field_id=False,
     )
 
 
@@ -225,7 +224,7 @@ def test_get_fields_by_id(fake_records_by_id):
     """
     with Mocker() as mock:
         mock.get(
-            f"{FakeModelByIds.get_table().url}?&returnFieldsByFieldId=1",
+            f"{FakeModelByIds.get_table().url}?&returnFieldsByFieldId=1&cellFormat=json",
             json=fake_records_by_id,
             complete_qs=True,
             status_code=200,

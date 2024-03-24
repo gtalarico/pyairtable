@@ -177,6 +177,7 @@ class Model:
         # Called by modify_kwargs to modify kwargs passed to `all()` & `first()`.
         return {
             "user_locale": None,
+            "cell_format": "json",
             "time_zone": None,
             "return_fields_by_field_id": (
                 cls._get_meta("use_field_ids")
