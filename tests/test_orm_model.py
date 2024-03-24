@@ -6,7 +6,7 @@ from requests_mock import Mocker
 
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
-from pyairtable.testing import fake_id, fake_meta, fake_record
+from pyairtable.testing import fake_id, fake_meta, fake_meta_from_ids, fake_record
 
 
 @pytest.fixture(autouse=True)
@@ -73,6 +73,12 @@ class FakeModel(Model):
     Meta = fake_meta()
     one = f.TextField("one")
     two = f.TextField("two")
+
+
+class FakeModelByIds(Model):
+    Meta = fake_meta_from_ids()
+    Name = f.TextField("fld1VnoyuotSTyxW1")
+    Age = f.NumberField("fld2VnoyuotSTy4g6")
 
 
 def test_repr():
@@ -203,35 +209,37 @@ def test_passthrough(methodname):
     )
 
 
-def test_disallowed_args(sample_json, mock_response_list):
+@pytest.fixture
+def fake_records_by_id():
+    return {
+        "records": [
+            fake_record(fld1VnoyuotSTyxW1="Alice", fld2VnoyuotSTy4g6=25),
+            fake_record(Name="Jack", Age=30),
+        ]
+    }
+
+
+def test_get_fields_by_id(fake_records_by_id):
     """
-    Test the argument sanitizer, `use_field_ids` attribute, and disallowed kwargs
+    Test that we can get fields by their field ID.
     """
-    obj = FakeModel()
-    FakeModel.Meta.use_field_ids = True
-    assert obj._get_meta("use_field_ids")
-    from pyairtable.models import schema
-
-    obj_name = "BaseSchema"
-    obj_data = sample_json(obj_name)
-    obj_cls = getattr(schema, obj_name)
-
-    mobj = obj_cls.parse_obj(obj_data)
-    table = mobj.tables[0]
-
-    obj.Meta.table_name = table.name
-    obj.Meta.api_key = "patFakePersonalAccessToken"
-
-    # Mock response for .all()
     with Mocker() as mock:
         mock.get(
-            "https://api.airtable.com/v0/appFakeTestingApp/Apartments?cellFormat=json&returnFieldsByFieldId=1&pageSize=1&maxRecords=1",
-            status_code=200,
-            json=mock_response_list[0],
+            f"{FakeModelByIds.get_table().url}?&returnFieldsByFieldId=1",
+            json=fake_records_by_id,
             complete_qs=True,
+            status_code=200,
         )
-        response = obj.first()
-        print(response._field_name_descriptor_map())
+        fake_models = FakeModelByIds.all()
+
+    assert fake_models[0].Name == "Alice"
+    assert fake_models[0].Age == 25
+
+    assert fake_models[1].Name != "Jack"
+    assert fake_models[1].Age != 30
+
+    with pytest.raises(KeyError):
+        _ = getattr(fake_models[1], fake_records_by_id[0]["Age"])
 
 
 def test_dynamic_model_meta():
@@ -247,7 +255,9 @@ def test_dynamic_model_meta():
 
     class Fake(Model):
         class Meta:
-            api_key = lambda: data["api_key"]  # noqa
+            def api_key():
+                return data["api_key"]  # noqa
+
             base_id = partial(data.get, "base_id")
 
             @staticmethod
