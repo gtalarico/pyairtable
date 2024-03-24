@@ -176,7 +176,6 @@ class Model:
     def _get_meta_request_kwargs(cls):
         # Called by modify_kwargs to modify kwargs passed to `all()` & `first()`.
         return {
-            "cell_format": "json",
             "user_locale": None,
             "time_zone": None,
             "return_fields_by_field_id": (
