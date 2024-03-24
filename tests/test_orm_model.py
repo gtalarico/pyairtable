@@ -2,6 +2,7 @@ from functools import partial
 from unittest import mock
 
 import pytest
+from requests_mock import Mocker
 
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
@@ -181,7 +182,7 @@ def test_from_ids__no_fetch(mock_all):
     assert len(contacts) == 10
     assert set(contact.id for contact in contacts) == set(fake_ids)
 
-    
+
 @pytest.mark.parametrize("methodname", ("all", "first"))
 def test_passthrough(methodname):
     """
@@ -191,28 +192,46 @@ def test_passthrough(methodname):
         method = getattr(FakeModel, methodname)
         method(a=1, b=2, c=3)
 
-    mock_endpoint.assert_called_once_with(a=1, b=2, c=3)
+    mock_endpoint.assert_called_once_with(
+        a=1,
+        b=2,
+        c=3,
+        time_zone=None,
+        user_locale=None,
+        cell_format="json",
+        return_fields_by_field_id=False,
+    )
 
-    
-def test_disallowed_args():
+
+def test_disallowed_args(sample_json, mock_response_list):
     """
     Test the argument sanitizer, `use_field_ids` attribute, and disallowed kwargs
     """
     obj = FakeModel()
-
     FakeModel.Meta.use_field_ids = True
-    with mock.patch("pyairtable.Table.all") as mock_all:
-        obj.all(fields=["one", "two"])
     assert obj._get_meta("use_field_ids")
-    assert "return_fields_by_field_id" in mock_all.call_args.kwargs
-    assert "fields" in mock_all.call_args.kwargs
+    from pyairtable.models import schema
 
-    FakeModel.Meta.use_field_ids = False
-    with mock.patch("pyairtable.Table.all") as mock_all:
-        obj.all(fields=["one", "two"], return_fields_by_field_id=True)
-    assert not obj._get_meta("use_field_ids")
-    assert "return_fields_by_field_id" not in mock_all.call_args.kwargs
-    assert "fields" in mock_all.call_args.kwargs
+    obj_name = "BaseSchema"
+    obj_data = sample_json(obj_name)
+    obj_cls = getattr(schema, obj_name)
+
+    mobj = obj_cls.parse_obj(obj_data)
+    table = mobj.tables[0]
+
+    obj.Meta.table_name = table.name
+    obj.Meta.api_key = "patFakePersonalAccessToken"
+
+    # Mock response for .all()
+    with Mocker() as mock:
+        mock.get(
+            "https://api.airtable.com/v0/appFakeTestingApp/Apartments?cellFormat=json&returnFieldsByFieldId=1&pageSize=1&maxRecords=1",
+            status_code=200,
+            json=mock_response_list[0],
+            complete_qs=True,
+        )
+        response = obj.first()
+        print(response._field_name_descriptor_map())
 
 
 def test_dynamic_model_meta():

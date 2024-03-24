@@ -173,16 +173,18 @@ class Model:
             )
 
     @classmethod
-    def _get_meta_request_kwargs(cls, request_args: dict):
+    def _get_meta_request_kwargs(cls):
         # Called by modify_kwargs to modify kwargs passed to `all()` & `first()`.
-        disallowed_args = (
-            "cell_format",
-            "return_fields_by_field_id",
-        )
-        args_union = {k: v for k, v in request_args.items() if k not in disallowed_args}
-        if cls._get_meta("use_field_ids"):
-            args_union["return_fields_by_field_id"] = True
-        return args_union
+        return {
+            "cell_format": "json",
+            "user_locale": None,
+            "time_zone": None,
+            "return_fields_by_field_id": (
+                cls._get_meta("use_field_ids")
+                if cls._get_meta("use_field_ids")
+                else False
+            ),
+        }
 
     @classmethod
     @lru_cache
@@ -258,7 +260,7 @@ class Model:
         Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
         """
-        kwargs.update(cls._get_meta_request_kwargs(kwargs))
+        kwargs.update(cls._get_meta_request_kwargs())
         table = cls.get_table()
         return [cls.from_record(record) for record in table.all(**kwargs)]
 
@@ -268,7 +270,7 @@ class Model:
         Retrieve the first record for this model. For all supported
         keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
         """
-        kwargs.update(cls._get_meta_request_kwargs(kwargs))
+        kwargs.update(cls._get_meta_request_kwargs())
         table = cls.get_table()
         if record := table.first(**kwargs):
             return cls.from_record(record)
