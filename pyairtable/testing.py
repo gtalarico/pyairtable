@@ -42,6 +42,24 @@ def fake_meta(
     return type("Meta", (), attrs)
 
 
+def fake_meta_from_ids(
+    base_id: str = "appFakeTestingApp",
+    table_name: str = "Apartments",
+    api_key: str = "patFakePersonalAccessToken",
+    use_field_ids: bool = True,
+) -> type:
+    """
+    Generate a ``Meta`` class for inclusion in a ``Model`` subclass.
+    """
+    attrs = {
+        "base_id": base_id,
+        "table_name": table_name,
+        "api_key": api_key,
+        "use_field_ids": use_field_ids,
+    }
+    return type("Meta", (), attrs)
+
+
 def fake_record(
     fields: Optional[Fields] = None,
     id: Optional[str] = None,
