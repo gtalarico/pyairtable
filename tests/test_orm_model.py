@@ -6,7 +6,7 @@ from requests_mock import Mocker
 
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
-from pyairtable.testing import fake_id, fake_meta, fake_meta_from_ids, fake_record
+from pyairtable.testing import fake_id, fake_meta, fake_record
 
 
 @pytest.fixture(autouse=True)
@@ -76,7 +76,7 @@ class FakeModel(Model):
 
 
 class FakeModelByIds(Model):
-    Meta = fake_meta_from_ids()
+    Meta = fake_meta(use_field_ids=True, table_name="Apartments")
     Name = f.TextField("fld1VnoyuotSTyxW1")
     Age = f.NumberField("fld2VnoyuotSTy4g6")
 
@@ -254,9 +254,7 @@ def test_dynamic_model_meta():
 
     class Fake(Model):
         class Meta:
-            def api_key():
-                return data["api_key"]  # noqa
-
+            api_key = lambda: data["api_key"]  # noqa
             base_id = partial(data.get, "base_id")
 
             @staticmethod

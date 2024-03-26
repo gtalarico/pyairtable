@@ -47,7 +47,6 @@ class Model:
                 api_key = "keyapikey"
                 timeout = (5, 5)
                 typecast = True
-                use_field_ids = True
 
     You can implement meta attributes as callables if certain values
     need to be dynamically provided or are unavailable at import time:
@@ -174,16 +173,11 @@ class Model:
 
     @classmethod
     def _get_meta_request_kwargs(cls):
-        # Called by modify_kwargs to modify kwargs passed to `all()` & `first()`.
         return {
             "user_locale": None,
             "cell_format": "json",
             "time_zone": None,
-            "return_fields_by_field_id": (
-                cls._get_meta("use_field_ids")
-                if cls._get_meta("use_field_ids")
-                else False
-            ),
+            "return_fields_by_field_id": cls._get_meta("use_field_ids", default=False),
         }
 
     @classmethod
@@ -204,8 +198,7 @@ class Model:
 
     @classmethod
     def _typecast(cls) -> bool:
-        _ = bool(cls._get_meta("typecast", default=True))
-        return _
+        return bool(cls._get_meta("typecast", default=True))
 
     def exists(self) -> bool:
         """
