@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -116,8 +116,8 @@ def test_integration_orm(Contact, Address):
         email="email@email.com",
         is_registered=True,
         address=[address],
-        birthday=datetime.utcnow().date(),
-        last_access=datetime.utcnow(),
+        birthday=datetime.now(timezone.utc).date(),
+        last_access=datetime.now(timezone.utc),
     )
 
     assert contact.first_name == "John"

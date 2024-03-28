@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from typing_extensions import TypeAlias
@@ -30,7 +31,7 @@ class AuditLogEvent(AirtableModel):
     """
 
     id: str
-    timestamp: str
+    timestamp: datetime
     action: str
     actor: "AuditLogActor"
     model_id: str

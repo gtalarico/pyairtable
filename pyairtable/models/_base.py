@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import partial
 from typing import Any, ClassVar, Dict, Iterable, Mapping, Optional, Set, Type, Union
 
@@ -5,7 +6,11 @@ import inflection
 from typing_extensions import Self as SelfType
 
 from pyairtable._compat import pydantic
-from pyairtable.utils import _append_docstring_text
+from pyairtable.utils import (
+    _append_docstring_text,
+    datetime_from_iso_str,
+    datetime_to_iso_str,
+)
 
 
 class AirtableModel(pydantic.BaseModel):
@@ -30,8 +35,16 @@ class AirtableModel(pydantic.BaseModel):
     _raw: Any = pydantic.PrivateAttr()
 
     def __init__(self, **data: Any) -> None:
+        self._raw = data.copy()
+        # Convert JSON-serializable input data to the types expected by our model.
+        # For now this only converts ISO 8601 strings to datetime objects.
+        for field_model in self.__fields__.values():
+            for name in {field_model.name, field_model.alias}:
+                if not (value := data.get(name)):
+                    continue
+                if isinstance(value, str) and field_model.type_ is datetime:
+                    data[name] = datetime_from_iso_str(value)
         super().__init__(**data)
-        self._raw = data
 
     @classmethod
     def from_api(
@@ -244,6 +257,10 @@ class CanUpdateModel(RestfulModel):
             exclude=exclude,
             exclude_none=(not self.__save_none),
         )
+        # This undoes the finagling we do in __init__, converting datetime back to str.
+        for key in data:
+            if isinstance(value := data.get(key), datetime):
+                data[key] = datetime_to_iso_str(value)
         response = self._api.request(self.__save_http_method, self._url, json=data)
         if self.__reload_after_save:
             self._reload(response)

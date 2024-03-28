@@ -205,12 +205,20 @@ def test_from_ids__no_fetch(mock_all):
     assert set(contact.id for contact in contacts) == set(fake_ids)
 
 
-@pytest.mark.parametrize("methodname", ("all", "first"))
-def test_passthrough(methodname):
+@pytest.mark.parametrize(
+    "methodname,returns",
+    (
+        ("all", [fake_record(), fake_record(), fake_record()]),
+        ("first", fake_record()),
+    ),
+)
+def test_passthrough(methodname, returns):
     """
     Test that .all() and .first() pass through whatever they get.
     """
-    with mock.patch(f"pyairtable.Table.{methodname}") as mock_endpoint:
+    with mock.patch(
+        f"pyairtable.Table.{methodname}", return_value=returns
+    ) as mock_endpoint:
         method = getattr(FakeModel, methodname)
         method(a=1, b=2, c=3)
     mock_endpoint.assert_called_once_with(

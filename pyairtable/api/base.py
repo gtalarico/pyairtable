@@ -210,7 +210,7 @@ class Base:
                     last_successful_notification_time=None,
                     notification_url="https://example.com",
                     last_notification_result=None,
-                    expiration_time="2023-07-01T00:00:00.000Z",
+                    expiration_time=datetime.datetime(...),
                     specification: WebhookSpecification(...)
                 )
             ]
@@ -264,7 +264,7 @@ class Base:
             CreateWebhookResponse(
                 id='ach00000000000001',
                 mac_secret_base64='c3VwZXIgZHVwZXIgc2VjcmV0',
-                expiration_time='2023-07-01T00:00:00.000Z'
+                expiration_time=datetime.datetime(...)
             )
 
         Raises:

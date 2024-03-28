@@ -189,7 +189,9 @@ def test_notification_from_request(secret):
     notification = WebhookNotification.from_request(body, header, secret)
     assert notification.base.id == "app00000000000000"
     assert notification.webhook.id == "ach00000000000000"
-    assert notification.timestamp == "2022-02-01T21:25:05.663Z"
+    assert notification.timestamp == datetime.datetime(
+        2022, 2, 1, 21, 25, 5, 663000, tzinfo=datetime.timezone.utc
+    )
 
     with pytest.raises(ValueError):
         WebhookNotification.from_request("[1,2,3]", header, secret)

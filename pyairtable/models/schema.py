@@ -1,4 +1,5 @@
 import importlib
+from datetime import datetime
 from functools import partial
 from typing import Any, Dict, Iterable, List, Literal, Optional, TypeVar, Union, cast
 
@@ -178,7 +179,7 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
         _Collaborators,
         url="meta/bases/{base.id}/interfaces/{key}",
     ):
-        created_time: str
+        created_time: datetime
         group_collaborators: List["GroupCollaborator"] = _FL()
         individual_collaborators: List["IndividualCollaborator"] = _FL()
         invite_links: List["InterfaceInviteLink"] = _FL()
@@ -214,7 +215,7 @@ class BaseShares(AirtableModel):
     ):
         state: str
         created_by_user_id: str
-        created_time: str
+        created_time: datetime
         share_id: str
         type: str
         is_password_protected: bool
@@ -348,7 +349,7 @@ class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):
 
 
 class GroupCollaborator(AirtableModel):
-    created_time: str
+    created_time: datetime
     granted_by_user_id: str
     group_id: str
     name: str
@@ -356,7 +357,7 @@ class GroupCollaborator(AirtableModel):
 
 
 class IndividualCollaborator(AirtableModel):
-    created_time: str
+    created_time: datetime
     granted_by_user_id: str
     user_id: str
     email: str
@@ -380,7 +381,7 @@ class InviteLink(CanDeleteModel, url="{invite_links._url}/{self.id}"):
 
     id: str
     type: str
-    created_time: str
+    created_time: datetime
     invited_email: Optional[str]
     referred_by_user_id: str
     permission_level: str
@@ -427,7 +428,7 @@ class EnterpriseInfo(AirtableModel):
     """
 
     id: str
-    created_time: str
+    created_time: datetime
     group_ids: List[str]
     user_ids: List[str]
     workspace_ids: List[str]
@@ -447,7 +448,7 @@ class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
 
     id: str
     name: str
-    created_time: str
+    created_time: datetime
     base_ids: List[str]
     restrictions: "WorkspaceCollaborators.Restrictions" = pydantic.Field(alias="workspaceRestrictions")  # fmt: skip
     group_collaborators: "WorkspaceCollaborators.GroupCollaborators" = _F("WorkspaceCollaborators.GroupCollaborators")  # fmt: skip
@@ -527,7 +528,7 @@ class Collaborations(AirtableModel):
 
     class BaseCollaboration(AirtableModel):
         base_id: str
-        created_time: str
+        created_time: datetime
         granted_by_user_id: str
         permission_level: str
 
@@ -536,7 +537,7 @@ class Collaborations(AirtableModel):
 
     class WorkspaceCollaboration(AirtableModel):
         workspace_id: str
-        created_time: str
+        created_time: datetime
         granted_by_user_id: str
         permission_level: str
 
@@ -559,8 +560,8 @@ class UserInfo(
     state: str
     is_sso_required: bool
     is_two_factor_auth_enabled: bool
-    last_activity_time: Optional[str]
-    created_time: Optional[str]
+    last_activity_time: Optional[datetime]
+    created_time: Optional[datetime]
     enterprise_user_type: Optional[str]
     invited_to_airtable_by_user_id: Optional[str]
     is_managed: bool = False
@@ -581,8 +582,8 @@ class UserGroup(AirtableModel):
     id: str
     name: str
     enterprise_account_id: str
-    created_time: str
-    updated_time: str
+    created_time: datetime
+    updated_time: datetime
     members: List["UserGroup.Member"]
     collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
 
@@ -592,7 +593,7 @@ class UserGroup(AirtableModel):
         first_name: str
         last_name: str
         role: str
-        created_time: str
+        created_time: datetime
 
 
 # The data model is a bit confusing here, but it's designed for maximum reuse.

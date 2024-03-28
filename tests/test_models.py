@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List
 
 import pytest
@@ -278,3 +279,23 @@ def test_restfulmodel__set_url(api, base):
         r'"\'NoneType\' object has no attribute \'id\'"'
         r", \{'base': None, 'dummy': Dummy\(.*\)\}"
     )
+
+
+def test_datetime_conversion(api, requests_mock):
+    """
+    Test that if an AirtableModel field is specified as a datetime,
+    and the input data is provided as a str, we'll convert to a datetime
+    and back to a str when saving.
+    """
+
+    class Dummy(CanUpdateModel, url="{self.id}", writable=["timestamp"]):
+        id: str
+        timestamp: datetime
+
+    data = {"id": "rec000", "timestamp": "2024-01-08T12:34:56Z"}
+    obj = Dummy.from_api(data, api)
+    assert obj.timestamp == datetime(2024, 1, 8, 12, 34, 56, tzinfo=timezone.utc)
+    m = requests_mock.patch(obj._url, json=data)
+    obj.save()
+    assert m.call_count == 1
+    assert m.request_history[0].json() == {"timestamp": "2024-01-08T12:34:56.000Z"}

@@ -1,3 +1,4 @@
+import datetime
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -16,6 +17,7 @@ from pyairtable.api.types import (
 from pyairtable.formulas import EQ, OR, RECORD_ID
 from pyairtable.models import Comment
 from pyairtable.orm.fields import AnyField, Field
+from pyairtable.utils import datetime_from_iso_str, datetime_to_iso_str
 
 
 class Model:
@@ -70,7 +72,7 @@ class Model:
     """
 
     id: str = ""
-    created_time: str = ""
+    created_time: Optional[datetime.datetime] = None
     _deleted: bool = False
     _fields: Dict[FieldName, Any]
 
@@ -241,7 +243,7 @@ class Model:
             did_create = False
 
         self.id = record["id"]
-        self.created_time = record["createdTime"]
+        self.created_time = datetime_from_iso_str(record["createdTime"])
         return did_create
 
     def delete(self) -> bool:
@@ -299,7 +301,8 @@ class Model:
             for field, value in self._fields.items()
             if not (map_[field].readonly and only_writable)
         }
-        return {"id": self.id, "createdTime": self.created_time, "fields": fields}
+        ct = datetime_to_iso_str(self.created_time) if self.created_time else ""
+        return {"id": self.id, "createdTime": ct, "fields": fields}
 
     @classmethod
     def from_record(cls, record: RecordDict) -> SelfType:
@@ -323,7 +326,7 @@ class Model:
         # any readonly fields, instead we directly set instance._fields.
         instance = cls(id=record["id"])
         instance._fields = field_values
-        instance.created_time = record["createdTime"]
+        instance.created_time = datetime_from_iso_str(record["createdTime"])
         return instance
 
     @classmethod
@@ -412,9 +415,9 @@ class Model:
         table = cls.get_table()
         table.batch_update(update_records, typecast=cls._typecast())
         created_records = table.batch_create(create_records, typecast=cls._typecast())
-        for model, created_record in zip(create_models, created_records):
-            model.id = created_record["id"]
-            model.created_time = created_record["createdTime"]
+        for model, record in zip(create_models, created_records):
+            model.id = record["id"]
+            model.created_time = datetime_from_iso_str(record["createdTime"])
 
     @classmethod
     def batch_delete(cls, models: List[SelfType]) -> None:
