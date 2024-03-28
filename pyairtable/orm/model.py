@@ -31,6 +31,7 @@ class Model:
         * ``table_name`` (required) - Table ID or name.
         * ``timeout`` - A tuple indicating a connect and read timeout. Defaults to no timeout.
         * ``typecast`` - |kwarg_typecast| Defaults to ``True``.
+        * ``use_field_ids`` - |kwarg_use_field_ids| Defaults to ``False``.
 
     .. code-block:: python
 
@@ -183,6 +184,15 @@ class Model:
             )
 
     @classmethod
+    def _get_meta_request_kwargs(cls):
+        return {
+            "user_locale": None,
+            "cell_format": "json",
+            "time_zone": None,
+            "return_fields_by_field_id": cls._get_meta("use_field_ids", default=False),
+        }
+
+    @classmethod
     @lru_cache
     def get_api(cls) -> Api:
         return Api(
@@ -255,6 +265,7 @@ class Model:
         Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
         """
+        kwargs.update(cls._get_meta_request_kwargs())
         table = cls.get_table()
         return [cls.from_record(record) for record in table.all(**kwargs)]
 
@@ -264,6 +275,7 @@ class Model:
         Retrieve the first record for this model. For all supported
         keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
         """
+        kwargs.update(cls._get_meta_request_kwargs())
         table = cls.get_table()
         if record := table.first(**kwargs):
             return cls.from_record(record)

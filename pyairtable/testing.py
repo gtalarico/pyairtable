@@ -34,11 +34,17 @@ def fake_meta(
     base_id: str = "appFakeTestingApp",
     table_name: str = "tblFakeTestingTbl",
     api_key: str = "patFakePersonalAccessToken",
+    use_field_ids: bool = False,
 ) -> type:
     """
     Generate a ``Meta`` class for inclusion in a ``Model`` subclass.
     """
-    attrs = {"base_id": base_id, "table_name": table_name, "api_key": api_key}
+    attrs = {
+        "base_id": base_id,
+        "table_name": table_name,
+        "api_key": api_key,
+        "use_field_ids": use_field_ids,
+    }
     return type("Meta", (), attrs)
 
 

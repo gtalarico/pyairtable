@@ -2,6 +2,7 @@ from functools import partial
 from unittest import mock
 
 import pytest
+from requests_mock import Mocker
 
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
@@ -88,6 +89,12 @@ class FakeModel(Model):
     Meta = fake_meta()
     one = f.TextField("one")
     two = f.TextField("two")
+
+
+class FakeModelByIds(Model):
+    Meta = fake_meta(use_field_ids=True, table_name="Apartments")
+    Name = f.TextField("fld1VnoyuotSTyxW1")
+    Age = f.NumberField("fld2VnoyuotSTy4g6")
 
 
 def test_repr():
@@ -206,8 +213,48 @@ def test_passthrough(methodname):
     with mock.patch(f"pyairtable.Table.{methodname}") as mock_endpoint:
         method = getattr(FakeModel, methodname)
         method(a=1, b=2, c=3)
+    mock_endpoint.assert_called_once_with(
+        a=1,
+        b=2,
+        c=3,
+        return_fields_by_field_id=getattr(FakeModel.Meta, "use_field_ids", False),
+        user_locale=None,
+        time_zone=None,
+        cell_format="json",
+    )
 
-    mock_endpoint.assert_called_once_with(a=1, b=2, c=3)
+
+@pytest.fixture
+def fake_records_by_id():
+    return {
+        "records": [
+            fake_record(fld1VnoyuotSTyxW1="Alice", fld2VnoyuotSTy4g6=25),
+            fake_record(Name="Jack", Age=30),
+        ]
+    }
+
+
+def test_get_fields_by_id(fake_records_by_id):
+    """
+    Test that we can get fields by their field ID.
+    """
+    with Mocker() as mock:
+        mock.get(
+            f"{FakeModelByIds.get_table().url}?&returnFieldsByFieldId=1&cellFormat=json",
+            json=fake_records_by_id,
+            complete_qs=True,
+            status_code=200,
+        )
+        fake_models = FakeModelByIds.all()
+
+    assert fake_models[0].Name == "Alice"
+    assert fake_models[0].Age == 25
+
+    assert fake_models[1].Name != "Jack"
+    assert fake_models[1].Age != 30
+
+    with pytest.raises(KeyError):
+        _ = getattr(fake_models[1], fake_records_by_id[0]["Age"])
 
 
 def test_dynamic_model_meta():
