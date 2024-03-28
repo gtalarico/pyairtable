@@ -278,6 +278,14 @@ def test_function_call():
     assert str(fc) == "IF(1, TRUE(), FALSE())"
 
 
+def test_function_call_equivalence():
+    assert F.TODAY() == F.TODAY()
+    assert F.TODAY() != F.NOW()
+    assert F.CEILING(1) == F.CEILING(1)
+    assert F.CEILING(1) != F.CEILING(2)
+    assert F.TODAY() != F.Formula("TODAY()")
+
+
 def test_field_name():
     assert F.field_name("First Name") == "{First Name}"
     assert F.field_name("Guest's Name") == "{Guest\\'s Name}"

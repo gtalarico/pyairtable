@@ -484,6 +484,11 @@ class FunctionCall(Formula):
         self.name = name
         self.args = args
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, FunctionCall):
+            return False
+        return (self.name, self.args) == (other.name, other.args)
+
     def __str__(self) -> str:
         joined_args = ", ".join(to_formula_str(v) for v in self.args)
         return f"{self.name}({joined_args})"
