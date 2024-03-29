@@ -186,7 +186,7 @@ class Model:
             )
 
     @classmethod
-    def _get_meta_request_kwargs(cls):
+    def _get_meta_request_kwargs(cls) -> Dict[str, Any]:
         return {
             "user_locale": None,
             "cell_format": "json",
