@@ -10,6 +10,7 @@ from typing import Any, Optional, Union
 from pyairtable.api import retrying
 from pyairtable.api.api import TimeoutTuple
 from pyairtable.api.types import AttachmentDict, CollaboratorDict, Fields, RecordDict
+from pyairtable.utils import is_airtable_id
 
 
 def fake_id(type: str = "rec", value: Any = None) -> str:
@@ -33,23 +34,27 @@ def fake_id(type: str = "rec", value: Any = None) -> str:
 
 
 def fake_meta(
-    base_id: str = "appFakeTestingApp",
-    table_name: str = "tblFakeTestingTbl",
+    base_id: str = "",
+    table_name: str = "",
     api_key: str = "patFakePersonalAccessToken",
     timeout: Optional[TimeoutTuple] = None,
     retry: Optional[Union[bool, retrying.Retry]] = None,
+    typecast: bool = True,
     use_field_ids: bool = False,
+    memoize: bool = False,
 ) -> type:
     """
     Generate a ``Meta`` class for inclusion in a ``Model`` subclass.
     """
     attrs = {
-        "base_id": base_id,
-        "table_name": table_name,
+        "base_id": base_id or fake_id("app"),
+        "table_name": table_name or fake_id("tbl"),
         "api_key": api_key,
         "timeout": timeout,
         "retry": retry,
+        "typecast": typecast,
         "use_field_ids": use_field_ids,
+        "memoize": memoize,
     }
     return type("Meta", (), attrs)
 
@@ -65,14 +70,17 @@ def fake_record(
     >>> fake_record({"Name": "Alice"})
     {'id': '...', 'createdTime': '...', 'fields': {'Name': 'Alice'}}
 
-    >>> fake_record(name='Alice', address='123 Fake St')
+    >>> fake_record(name="Alice", address="123 Fake St")
     {'id': '...', 'createdTime': '...', 'fields': {'name': 'Alice', 'address': '123 Fake St'}}
 
-    >>> fake_record(name='Alice', id='123')
+    >>> fake_record(name="Alice", id="123")
     {'id': 'rec00000000000123', 'createdTime': '...', 'fields': {'name': 'Alice'}}
+
+    >>> fake_record(name="Alice", id="recABC00000000123")
+    {'id': 'recABC00000000123', 'createdTime': '...', 'fields': {'name': 'Alice'}}
     """
     return {
-        "id": fake_id(value=id),
+        "id": str(id) if is_airtable_id(id, "rec") else fake_id(value=id),
         "createdTime": datetime.datetime.now().isoformat() + "Z",
         "fields": {**(fields or {}), **other_fields},
     }

@@ -50,7 +50,13 @@ class Model:
         * ``table_name`` (required) - Table ID or name.
         * ``timeout`` - A tuple indicating a connect and read timeout. Defaults to no timeout.
         * ``typecast`` - |kwarg_typecast| Defaults to ``True``.
-        * ``use_field_ids`` - |kwarg_use_field_ids| Defaults to ``False``.
+        * ``retry`` - An instance of `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_.
+                      If ``None`` or ``False``, requests will not be retried.
+                      If ``True``, the default strategy will be applied
+                      (see :func:`~pyairtable.retry_strategy` for details).
+        * ``use_field_ids`` - Whether fields will be defined by ID, rather than name. Defaults to ``False``.
+        * ``memoize`` - Whether the model should reuse models it creates between requests.
+                        See :ref:`ORM memoization` for more information.
 
     For example, the following two are equivalent:
 
@@ -117,10 +123,13 @@ class Model:
     meta: ClassVar["_Meta"]
 
     _deleted: bool = False
+    _fetched: bool = False
     _fields: Dict[FieldName, Any]
+    _memoized: ClassVar[Dict[RecordId, SelfType]]
 
     def __init_subclass__(cls, **kwargs: Any):
         cls.meta = _Meta(cls)
+        cls._memoized = {}
         cls._validate_class()
         super().__init_subclass__(**kwargs)
 
@@ -176,8 +185,10 @@ class Model:
         <Contact id='recWPqD9izdsNvlE'>
         """
 
-        if "id" in fields:
+        try:
             self.id = fields.pop("id")
+        except KeyError:
+            pass
 
         # Field values in internal (not API) representation
         self._fields = {}
@@ -252,23 +263,28 @@ class Model:
         return bool(result["deleted"])
 
     @classmethod
-    def all(cls, **kwargs: Any) -> List[SelfType]:
+    def all(cls, /, memoize: Optional[bool] = None, **kwargs: Any) -> List[SelfType]:
         """
         Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
         """
         kwargs.update(cls.meta.request_kwargs)
-        return [cls.from_record(record) for record in cls.meta.table.all(**kwargs)]
+        return [
+            cls.from_record(record, memoize=memoize)
+            for record in cls.meta.table.all(**kwargs)
+        ]
 
     @classmethod
-    def first(cls, **kwargs: Any) -> Optional[SelfType]:
+    def first(
+        cls, /, memoize: Optional[bool] = None, **kwargs: Any
+    ) -> Optional[SelfType]:
         """
         Retrieve the first record for this model. For all supported
         keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
         """
         kwargs.update(cls.meta.request_kwargs)
         if record := cls.meta.table.first(**kwargs):
-            return cls.from_record(record)
+            return cls.from_record(record, memoize=memoize)
         return None
 
     def to_record(self, only_writable: bool = False) -> RecordDict:
@@ -293,7 +309,9 @@ class Model:
         return {"id": self.id, "createdTime": ct, "fields": fields}
 
     @classmethod
-    def from_record(cls, record: RecordDict) -> SelfType:
+    def from_record(
+        cls, record: RecordDict, /, memoize: Optional[bool] = None
+    ) -> SelfType:
         """
         Create an instance from a record dict.
         """
@@ -314,14 +332,16 @@ class Model:
         # any readonly fields, instead we directly set instance._fields.
         instance = cls(id=record["id"])
         instance._fields = field_values
+        instance._fetched = True
         instance.created_time = datetime_from_iso_str(record["createdTime"])
+        memoize = cls.meta.memoize if memoize is None else memoize
+        if memoize:
+            cls._memoized[instance.id] = instance
         return instance
 
     @classmethod
     def from_id(
-        cls,
-        record_id: RecordId,
-        fetch: bool = True,
+        cls, record_id: RecordId, /, fetch: bool = True, memoize: Optional[bool] = None
     ) -> SelfType:
         """
         Create an instance from a record ID.
@@ -332,9 +352,15 @@ class Model:
                 updated. If ``False``, a new instance is created with the provided ID,
                 but field values are unset.
         """
-        instance = cls(id=record_id)
-        if fetch:
+        try:
+            instance = cast(SelfType, cls._memoized[record_id])
+        except KeyError:
+            instance = cls(id=record_id)
+        if fetch and not instance._fetched:
             instance.fetch()
+        memoize = cls.meta.memoize if memoize is None else memoize
+        if memoize:
+            cls._memoized[record_id] = instance
         return instance
 
     def fetch(self) -> None:
@@ -345,14 +371,17 @@ class Model:
             raise ValueError("cannot be fetched because instance does not have an id")
 
         record = self.meta.table.get(self.id)
-        unused = self.from_record(record)
+        unused = self.from_record(record, memoize=False)
         self._fields = unused._fields
+        self._fetched = True
         self.created_time = unused.created_time
 
     @classmethod
     def from_ids(
         cls,
         record_ids: Iterable[RecordId],
+        /,
+        memoize: Optional[bool] = None,
         fetch: bool = True,
     ) -> List[SelfType]:
         """
@@ -366,16 +395,31 @@ class Model:
                 updated. If ``False``, new instances are created with the provided IDs,
                 but field values are unset.
         """
-        record_ids = list(record_ids)
         if not fetch:
             return [cls.from_id(record_id, fetch=False) for record_id in record_ids]
-        # There's no endpoint to query multiple IDs at once, but we can use a formula.
-        formula = OR(EQ(RECORD_ID(), record_id) for record_id in record_ids)
-        record_data = cls.meta.table.all(formula=formula)
-        records = [cls.from_record(record) for record in record_data]
+
+        record_ids = list(record_ids)
+        by_id: Dict[RecordId, SelfType] = {}
+
+        if cls._memoized:
+            for record_id in record_ids:
+                try:
+                    by_id[record_id] = cast(SelfType, cls._memoized[record_id])
+                except KeyError:
+                    pass
+
+        if remaining := sorted(set(record_ids) - set(by_id)):
+            # Only retrieve records that aren't already memoized
+            formula = OR(EQ(RECORD_ID(), record_id) for record_id in sorted(remaining))
+            by_id.update(
+                {
+                    record["id"]: cls.from_record(record, memoize=memoize)
+                    for record in cls.meta.table.all(formula=formula)
+                }
+            )
+
         # Ensure we return records in the same order, and raise KeyError if any are missing
-        records_by_id = {record.id: record for record in records}
-        return [records_by_id[record_id] for record_id in record_ids]
+        return [by_id[record_id] for record_id in record_ids]
 
     @classmethod
     def batch_save(cls, models: List[SelfType]) -> None:
@@ -539,6 +583,10 @@ class _Meta:
     @property
     def use_field_ids(self) -> bool:
         return bool(self.get("use_field_ids", default=False))
+
+    @property
+    def memoize(self) -> bool:
+        return bool(self.get("memoize", default=False))
 
     @property
     def request_kwargs(self) -> Dict[str, Any]:

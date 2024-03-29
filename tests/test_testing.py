@@ -17,6 +17,11 @@ from pyairtable import testing as T
         ),
         (
             "fake_record",
+            call(id="recABC00000000123"),
+            {"id": "recABC00000000123", "createdTime": ANY, "fields": {}},
+        ),
+        (
+            "fake_record",
             call({"A": 1}, 123),
             {"id": "rec00000000000123", "createdTime": ANY, "fields": {"A": 1}},
         ),

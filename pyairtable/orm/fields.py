@@ -608,7 +608,13 @@ class LinkField(_ListField[RecordId, T_Linked]):
             ("lazy", self._lazy),
         ]
 
-    def populate(self, instance: "Model", lazy: Optional[bool] = None) -> None:
+    def populate(
+        self,
+        instance: "Model",
+        /,
+        lazy: Optional[bool] = None,
+        memoize: Optional[bool] = None,
+    ) -> None:
         """
         Populates the field's value for the given instance. This allows you to
         selectively load models in either lazy or non-lazy fashion, depending on
@@ -648,6 +654,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
                 record.id: record
                 for record in self.linked_model.from_ids(
                     cast(List[RecordId], new_record_ids),
+                    memoize=memoize,
                     fetch=(not lazy),
                 )
             }
@@ -833,8 +840,14 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
     def to_record_value(self, value: List[Union[str, T_Linked]]) -> List[str]:
         return self._link_field.to_record_value(value)
 
-    def populate(self, instance: "Model", lazy: Optional[bool] = None) -> None:
-        self._link_field.populate(instance, lazy=lazy)
+    def populate(
+        self,
+        instance: "Model",
+        /,
+        lazy: Optional[bool] = None,
+        memoize: Optional[bool] = None,
+    ) -> None:
+        self._link_field.populate(instance, lazy=lazy, memoize=memoize)
 
     @property
     def linked_model(self) -> Type[T_Linked]:

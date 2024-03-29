@@ -222,7 +222,9 @@ def test_from_ids(mock_api):
         url=FakeModel.meta.table.url,
         fallback=("post", FakeModel.meta.table.url + "/listRecords"),
         options={
-            "formula": "OR(%s)" % ", ".join(f"RECORD_ID()='{id}'" for id in fake_ids)
+            "formula": (
+                "OR(%s)" % ", ".join(f"RECORD_ID()='{id}'" for id in sorted(fake_ids))
+            )
         },
     )
     assert len(contacts) == len(fake_records)
@@ -306,6 +308,19 @@ def test_get_fields_by_id(fake_records_by_id):
         _ = getattr(fake_models[1], fake_records_by_id[0]["Age"])
 
 
+def test_meta_wrapper():
+    """
+    Test that Model subclasses have access to the _Meta wrapper.
+    """
+    original_meta = fake_meta(api_key="asdf")
+
+    class Dummy(Model):
+        Meta = original_meta
+
+    assert Dummy.meta.model is Dummy
+    assert Dummy.meta.api.api_key == "asdf"
+
+
 def test_dynamic_model_meta():
     """
     Test that we can provide callables in our Meta class to provide
@@ -327,7 +342,7 @@ def test_dynamic_model_meta():
     f = Fake()
     Fake.Meta.table_name.assert_not_called()
 
-    assert f.meta.get("api_key") == data["api_key"]
-    assert f.meta.get("base_id") == data["base_id"]
-    assert f.meta.get("table_name") == data["table_name"]
+    assert f.meta.api_key == data["api_key"]
+    assert f.meta.base_id == data["base_id"]
+    assert f.meta.table_name == data["table_name"]
     Fake.Meta.table_name.assert_called_once()
