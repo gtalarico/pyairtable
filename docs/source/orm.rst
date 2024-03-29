@@ -20,7 +20,7 @@ The :class:`~pyairtable.orm.Model` class allows you create ORM-style classes for
         last_name = F.TextField("Last Name")
         email = F.EmailField("Email")
         is_registered = F.CheckboxField("Registered")
-        company = F.LinkField("Company", Company, lazy=False)
+        company = F.SingleLinkField("Company", Company, lazy=False)
 
         class Meta:
             base_id = "appaPqizdsNHDvlEm"
@@ -187,11 +187,13 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__
    * - :class:`~pyairtable.orm.fields.SelectField`
      - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
+   * - :class:`~pyairtable.orm.fields.SingleLinkField`
+     - `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__
    * - :class:`~pyairtable.orm.fields.TextField`
      - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.UrlField`
      - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
-.. [[[end]]] (checksum: 01c5696293e7571ac8250c4e8a2453e8)
+.. [[[end]]] (checksum: afd0edeabb06937f2a3afd73a7bac32e)
 
 
 Formula, Rollup, and Lookup Fields
@@ -249,44 +251,48 @@ Linked Records
 ----------------
 
 In addition to standard data type fields, the :class:`~pyairtable.orm.fields.LinkField`
-class offers a special behaviour that can fetch linked records, so that you can
-traverse between related records.
+and :class:`~pyairtable.orm.fields.SingleLinkField` classes will fetch linked records
+upon access, so that you can traverse between related records.
 
 .. code-block:: python
 
     from pyairtable.orm import Model, fields as F
 
-    class Company(Model):
-        class Meta: ...
-
-        name = F.TextField("Name")
-
     class Person(Model):
         class Meta: ...
 
         name = F.TextField("Name")
-        company = F.LinkField("Company", Company)
+        company = F.SingleLinkField("Company", "Company")
+
+    class Company(Model):
+        class Meta: ...
+
+        name = F.TextField("Name")
+        people = F.LinkField("People", Person)
+
 
 .. code-block:: python
 
     >>> person = Person.from_id("recZ6qSLw0OCA61ul")
     >>> person.company
-    [<Company id='recqSk20OCrB13lZ7'>]
-    >>> person.company[0].name
+    <Company id='recqSk20OCrB13lZ7'>
+    >>> person.company.name
     'Acme Corp'
+    >>> person.company.people
+    [<Person id='recZ6qSLw0OCA61ul'>, ...]
 
 pyAirtable will not retrieve field values for a model's linked records until the
-first time you access that field. So in the example above, the fields for Company
-were loaded when ``person.company`` was called for the first time. After that,
-the Company models are persisted, and won't be refreshed until you call
+first time you access a field. So in the example above, the fields for Company
+were loaded when ``person.company`` was called for the first time. Linked models
+are persisted after being created, and won't be refreshed until you call
 :meth:`~pyairtable.orm.Model.fetch`.
 
 .. note::
     :class:`~pyairtable.orm.fields.LinkField` will always return a list of values,
     even if there is only a single value shown in the Airtable UI. It will not
     respect the `prefersSingleRecordLink <https://airtable.com/developers/web/api/field-model#foreignkey-fieldtype-options-preferssinglerecordlink>`_
-    field configuration option, because the API will *always* return linked fields
-    as a list of record IDs.
+    field configuration option. If you expect a field to only ever return a single
+    linked record, use :class:`~pyairtable.orm.fields.SingleLinkField`.
 
 
 Cyclical links
@@ -317,18 +323,18 @@ address this:
         class Meta: ...
 
         name = F.TextField("Name")
-        company = F.LinkField[Company]("Company", Company)
-        manager = F.LinkField["Person"]("Manager", "Person")  # option 2
+        company = F.SingleLinkField[Company]("Company", Company)
+        manager = F.SingleLinkField["Person"]("Manager", "Person")  # option 2
         reports = F.LinkField["Person"]("Reports", F.LinkSelf)  # option 3
 
 .. code-block:: python
 
     >>> person = Person.from_id("recZ6qSLw0OCA61ul")
     >>> person.manager
-    [<Person id='recSLw0OCA61ulZ6q'>]
-    >>> person.manager[0].reports
+    <Person id='recSLw0OCA61ulZ6q'>
+    >>> person.manager.reports
     [<Person id='recZ6qSLw0OCA61ul'>, ...]
-    >>> person.company[0].employees
+    >>> person.company.employees
     [<Person id='recZ6qSLw0OCA61ul'>, <Person id='recSLw0OCA61ulZ6q'>, ...]
 
 Breaking down the :class:`~pyairtable.orm.fields.LinkField` invocation above,
@@ -413,20 +419,23 @@ For example:
 
 .. code-block:: python
 
+    from pyairtable.orm import fields as F
+
     class Person(Model):
         class Meta: ...
 
         name = F.TextField("Name")
-        manager = F.LinkField["Person"]("Manager", "Person")
+        manager = F.SingleLinkField["Person"]("Manager", F.LinkSelf)
         # This field is a formula: {Manager} != BLANK()
         has_manager = F.IntegerField("Has Manager?", readonly=True)
 
 
     bob = Person.from_id("rec2AqNuHwWcnG871")
-    assert bob.manager == []
+    assert bob.manager is None
     assert bob.has_manager == 0
 
-    bob.manager = [alice]
+    alice = Person.from_id("recAB2AqNuHwWcnG8")
+    bob.manager = alice
     bob.save()
     assert bob.has_manager == 0
 

@@ -4,7 +4,9 @@ import re
 from unittest import mock
 
 import pytest
+from requests_mock import NoMockAddress
 
+from pyairtable.formulas import OR, RECORD_ID
 from pyairtable.orm import fields as f
 from pyairtable.orm.model import Model
 from pyairtable.testing import (
@@ -20,6 +22,10 @@ DATE_S = "2023-01-01"
 DATE_V = datetime.date(2023, 1, 1)
 DATETIME_S = "2023-04-12T09:30:00.000Z"
 DATETIME_V = datetime.datetime(2023, 4, 12, 9, 30, 0, tzinfo=datetime.timezone.utc)
+
+
+class Dummy(Model):
+    Meta = fake_meta()
 
 
 def test_field():
@@ -71,6 +77,12 @@ def test_description():
         (
             f.LinkField("Records", type("TestModel", (Model,), {"Meta": fake_meta()})),
             "LinkField('Records', model=<class 'test_orm_fields.TestModel'>, validate_type=True, readonly=False, lazy=False)",
+        ),
+        (
+            f.SingleLinkField(
+                "Records", type("TestModel", (Model,), {"Meta": fake_meta()})
+            ),
+            "SingleLinkField('Records', model=<class 'test_orm_fields.TestModel'>, validate_type=True, readonly=False, lazy=False, raise_if_many=False)",
         ),
     ],
 )
@@ -322,11 +334,13 @@ def test_completeness():
     assert_all_fields_tested_by(test_writable_fields, test_readonly_fields)
     assert_all_fields_tested_by(
         test_type_validation,
-        exclude=f.READONLY_FIELDS | {f.LinkField},
+        exclude=f.READONLY_FIELDS | {f.LinkField, f.SingleLinkField},
     )
 
 
-def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
+def assert_all_fields_tested_by(
+    *test_fns, exclude=(f.Field, f.LinkField, f.SingleLinkField)
+):
     """
     Allows meta-tests that fail if any new Field classes appear in pyairtable.orm.fields
     which are not covered by one of a few basic tests. This is intended to help remind
@@ -437,12 +451,13 @@ def test_list_field_with_string():
         t.items = "hello!"
 
 
-def test_link_field_must_link_to_model():
+@pytest.mark.parametrize("cls", (f.LinkField, f.SingleLinkField))
+def test_link_field_must_link_to_model(cls):
     """
     Tests that a LinkField cannot link to an arbitrary type.
     """
     with pytest.raises(TypeError):
-        f.LinkField("Field Name", model=dict)
+        cls("Field Name", model=dict)
 
 
 def test_link_field():
@@ -470,10 +485,6 @@ def test_link_field():
 
     with pytest.raises(TypeError):
         author.books = -1
-
-
-class Dummy(Model):
-    Meta = fake_meta()
 
 
 def test_link_field__linked_model():
@@ -589,6 +600,154 @@ def test_link_field__load_many(requests_mock):
     assert [friend.id for friend in person.friends] == friend_ids
     # Make sure we didn't keep calling the API on every `person.friends`
     assert mock_list.call_count == 2
+
+
+def test_single_link_field():
+    class Author(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class Book(Model):
+        Meta = fake_meta()
+        author = f.SingleLinkField("Author", Author, lazy=True)
+
+    assert Book.author.linked_model is Author
+
+    book = Book()
+    assert book.author is None
+
+    with pytest.raises(TypeError):
+        book.author = [Author()]
+
+    with pytest.raises(TypeError):
+        book.author = []
+
+    alice = Author.from_record(fake_record(Name="Alice"))
+    book.author = alice
+
+    with mock.patch("pyairtable.Table.get", return_value=alice.to_record()) as m:
+        book.author.fetch()
+        m.assert_called_once_with(alice.id)
+
+    assert book.author.id == alice.id
+    assert book.author.name == "Alice"
+
+    book.author = (bob := Author(name="Bob"))
+    assert not book.author.exists()
+    assert book.author.name == "Bob"
+
+    with mock.patch("pyairtable.Table.create", return_value=fake_record()) as m:
+        book.author.save()
+        m.assert_called_once_with({"Name": "Bob"}, typecast=True)
+
+    with mock.patch("pyairtable.Table.create", return_value=fake_record()) as m:
+        book.save()
+        m.assert_called_once_with({"Author": [bob.id]}, typecast=True)
+
+    with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
+        book.author = None
+        book.save()
+        m.assert_called_once_with(book.id, {"Author": None}, typecast=True)
+
+
+def test_single_link_field__multiple_values():
+    """
+    Test the behavior of SingleLinkField when the Airtable API
+    returns multiple values.
+    """
+
+    class Author(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class Book(Model):
+        Meta = fake_meta()
+        author = f.SingleLinkField("Author", Author)
+
+    records = [fake_record(Name=f"Author {n+1}") for n in range(3)]
+    a1, a2, a3 = [r["id"] for r in records]
+
+    # if Airtable sends back multiple IDs, we'll only retrieve the first one.
+    book = Book.from_record(fake_record(Author=[a1, a2, a3]))
+    with mock.patch("pyairtable.Table.all", return_value=records) as m:
+        book.author
+        m.assert_called_once_with(formula=OR(RECORD_ID().eq(records[0]["id"])))
+
+    assert book.author.id == a1
+    assert book.author.name == "Author 1"
+    assert book._fields["Author"][1:] == [a2, a3]  # not converted to models
+
+    # if no modifications made, the entire list will be sent back to the API
+    with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
+        book.save()
+        m.assert_called_once_with(book.id, {"Author": [a1, a2, a3]}, typecast=True)
+
+    # if we modify the field value, it will drop items 2-N
+    book.author = Author.from_record(fake_record())
+    with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
+        book.save()
+        m.assert_called_once_with(book.id, {"Author": [book.author.id]}, typecast=True)
+
+
+def test_single_link_field__raise_if_many():
+    """
+    Test that passing raise_if_many=True to SingleLinkField will cause an exception
+    to be raised if (1) the field receives multiple values and (2) is accessed.
+    """
+
+    class Author(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class Book(Model):
+        Meta = fake_meta()
+        author = f.SingleLinkField("Author", Author, raise_if_many=True)
+
+    book = Book.from_record(fake_record(Author=[fake_id(), fake_id()]))
+    with pytest.raises(f.MultipleValues):
+        book.author
+
+
+@pytest.mark.parametrize("field_type", (f.LinkField, f.SingleLinkField))
+def test_link_field__populate(field_type, requests_mock):
+    """
+    Test that implementers can use Model.link_field.populate(instance) to control
+    whether loading happens lazy or non-lazy at runtime.
+    """
+
+    class Linked(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class T(Model):
+        Meta = fake_meta()
+        link = field_type("Link", Linked)
+
+    links = [fake_record(id=n, Name=f"link{n}") for n in range(1, 4)]
+    link_ids = [link["id"] for link in links]
+    obj = T.from_record(fake_record(Link=link_ids[:]))
+    assert obj._fields.get("Link") == link_ids
+    assert obj._fields.get("Link") is not link_ids
+
+    # calling the record directly will attempt network traffic
+    with pytest.raises(NoMockAddress):
+        obj.link
+
+    # on a non-lazy field, we can still call .populate() to load it lazily
+    T.link.populate(obj, lazy=True)
+
+    if field_type is f.SingleLinkField:
+        assert isinstance(obj.link, Linked)
+        assert obj.link.id == links[0]["id"]
+        assert obj.link.name == ""
+    else:
+        assert isinstance(obj.link[0], Linked)
+        assert link_ids == [link.id for link in obj.link]
+        assert all(link.name == "" for link in obj.link)
+
+    # calling .populate() on the wrong model raises an exception
+    with pytest.raises(RuntimeError):
+        T.link.populate(Linked())
 
 
 def test_lookup_field():
