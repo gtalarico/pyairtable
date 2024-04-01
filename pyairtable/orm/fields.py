@@ -1367,8 +1367,6 @@ class CreatedTimeField(RequiredDatetimeField):
     See `Created time <https://airtable.com/developers/web/api/field-model#createdtime>`__.
 
     If the Airtable API returns ``null``, this field will raise :class:`~pyairtable.orm.fields.MissingValue`.
-
-    If the Airtable API returns ``null``, this field will raise :class:`~pyairtable.orm.fields.MissingValue`.
     """
 
     readonly = True
