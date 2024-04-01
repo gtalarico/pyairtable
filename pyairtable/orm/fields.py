@@ -89,6 +89,9 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
     #: Types that are allowed to be passed to this field.
     valid_types: ClassVar[_ClassInfo] = ()
 
+    #: The value to return when the field is missing
+    missing_value: ClassVar[Any] = None
+
     #: Whether to allow modification of the value in this field.
     readonly: bool = False
 
@@ -163,9 +166,12 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
         if not instance:
             return self
         try:
-            return cast(T_ORM, instance._fields[self.field_name])
+            value = instance._fields[self.field_name]
         except (KeyError, AttributeError):
-            return self._missing_value()
+            return cast(T_Missing, self.missing_value)
+        if value is None:
+            return cast(T_Missing, self.missing_value)
+        return cast(T_ORM, value)
 
     def __set__(self, instance: "Model", value: Optional[T_ORM]) -> None:
         self._raise_if_readonly()
@@ -177,13 +183,6 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
 
     def __delete__(self, instance: "Model") -> None:
         raise AttributeError(f"cannot delete {self._description}")
-
-    @classmethod
-    def _missing_value(cls) -> T_Missing:
-        # This assumes Field[T_API, T_ORM, None]. If a subclass defines T_Missing as
-        # something different, it needs to override _missing_value.
-        # This can be tidied in 3.13 with T_Missing(default=None). See PEP-696.
-        return cast(T_Missing, None)
 
     def to_record_value(self, value: Any) -> Any:
         """
@@ -258,25 +257,7 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
         return formulas.LTE(self, value)
 
 
-class _FieldWithTypedDefaultValue(Generic[T], Field[T, T, T]):
-    """
-    A generic Field with default value of the same type as internal and API representations.
-
-    For now this is used for TextField and CheckboxField, because Airtable stores the empty
-    values for those types ("" and False) internally as None.
-    """
-
-    @classmethod
-    def _missing_value(cls) -> T:
-        first_type = cls.valid_types
-        while isinstance(first_type, tuple):
-            if not first_type:
-                raise RuntimeError(f"{cls.__qualname__}.valid_types is malformed")
-            first_type = first_type[0]
-        return cast(T, first_type())
-
-
-class _FieldWithRequiredValue(Generic[T_API, T_ORM], Field[T_API, T_ORM, None]):
+class _FieldWithRequiredValue(Generic[T_API, T_ORM], Field[T_API, T_ORM, T_ORM]):
     """
     A mix-in for a Field class which indicates two things:
 
@@ -314,6 +295,7 @@ class MissingValue(ValueError):
 
 #: A generic Field with internal and API representations that are the same type.
 _BasicField: TypeAlias = Field[T, T, None]
+_BasicFieldWithMissingValue: TypeAlias = Field[T, T, T]
 _BasicFieldWithRequiredValue: TypeAlias = _FieldWithRequiredValue[T, T]
 
 
@@ -321,7 +303,7 @@ _BasicFieldWithRequiredValue: TypeAlias = _FieldWithRequiredValue[T, T]
 AnyField: TypeAlias = Field[Any, Any, Any]
 
 
-class TextField(_FieldWithTypedDefaultValue[str]):
+class TextField(_BasicFieldWithMissingValue[str]):
     """
     Accepts ``str``.
     Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
@@ -330,6 +312,7 @@ class TextField(_FieldWithTypedDefaultValue[str]):
     and `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
     """
 
+    missing_value = ""
     valid_types = str
 
 
@@ -394,7 +377,7 @@ class RatingField(IntegerField):
             raise ValueError("rating cannot be below 1")
 
 
-class CheckboxField(_FieldWithTypedDefaultValue[bool]):
+class CheckboxField(_BasicFieldWithMissingValue[bool]):
     """
     Accepts ``bool``.
     Returns ``False`` instead of ``None`` if the field is empty on the Airtable base.
@@ -402,6 +385,7 @@ class CheckboxField(_FieldWithTypedDefaultValue[bool]):
     See `Checkbox <https://airtable.com/developers/web/api/field-model#checkbox>`__.
     """
 
+    missing_value = False
     valid_types = bool
 
 
@@ -836,7 +820,7 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
         try:
             return links[0]
         except IndexError:
-            return self._missing_value()
+            return None
 
     def __set__(self, instance: "Model", value: Optional[T_Linked]) -> None:
         values = None if value is None else [value]
@@ -1055,16 +1039,18 @@ from collections import namedtuple
 with open(cog.inFile) as fp:
     src = "".join(fp.readlines()[:cog.firstLineNum])
 
-Match = namedtuple('Match', 'cls generic bases annotation doc readonly')
+Match = namedtuple('Match', 'cls generic bases annotation cls_kwargs doc readonly')
 expr = (
-    r'(?ms)'
-    r'class ([A-Z]\w+Field)'
+    r'(?m)'
+    r'^class ([A-Z]\w+Field)'
         r'\('
             # This particular regex will not pick up Field subclasses that have
             # multiple inheritance, which excludes anything using _NotNullField.
-            r'(?:(Generic\[.+?\]), )?([_A-Z][_A-Za-z]+)(?:\[(.+?)\])?'
+            r'(?:(Generic\[.+?\]), )?'
+            r'([_A-Z][_A-Za-z]+)(?:\[(.+?)\])?'
+            r'((?:, [a-z_]+=.+)+)?'
         r'\):\n'
-    r'    \"\"\"\n    (.+?)    \"\"\"(?:\n|    (?!readonly =)[^\n]*)*'
+    r'    \"\"\"\n    ((?:.|\n)+?)    \"\"\"(?:\n|    (?!readonly =).*)*'
     r'(    readonly = True)?'
 )
 classes = {

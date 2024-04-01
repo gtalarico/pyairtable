@@ -86,7 +86,7 @@ def test_null_fields():
     """
     a = Address(number=None, street=None)
     assert a.number is None
-    assert a.street is None
+    assert a.street == ""
 
 
 def test_first():
