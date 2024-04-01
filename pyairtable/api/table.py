@@ -195,7 +195,7 @@ class Table:
             cell_format: |kwarg_cell_format|
             time_zone: |kwarg_time_zone|
             user_locale: |kwarg_user_locale|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
         """
         record = self.api.get(self.record_url(record_id), options=options)
         return assert_typed_dict(RecordDict, record)
@@ -226,7 +226,7 @@ class Table:
             cell_format: |kwarg_cell_format|
             user_locale: |kwarg_user_locale|
             time_zone: |kwarg_time_zone|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
         """
         if isinstance(formula := options.get("formula"), Formula):
             options["formula"] = to_formula_str(formula)
@@ -258,7 +258,7 @@ class Table:
             cell_format: |kwarg_cell_format|
             user_locale: |kwarg_user_locale|
             time_zone: |kwarg_time_zone|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
         """
         return [record for page in self.iterate(**options) for record in page]
 
@@ -278,7 +278,7 @@ class Table:
             cell_format: |kwarg_cell_format|
             user_locale: |kwarg_user_locale|
             time_zone: |kwarg_time_zone|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
         """
         options.update(dict(page_size=1, max_records=1))
         for page in self.iterate(**options):
@@ -290,7 +290,7 @@ class Table:
         self,
         fields: WritableFields,
         typecast: bool = False,
-        return_fields_by_field_id: bool = False,
+        use_field_ids: bool = False,
     ) -> RecordDict:
         """
         Create a new record
@@ -302,14 +302,14 @@ class Table:
         Args:
             fields: Fields to insert. Must be a dict with field names or IDs as keys.
             typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
         """
         created = self.api.post(
             url=self.url,
             json={
                 "fields": fields,
                 "typecast": typecast,
-                "returnFieldsByFieldId": return_fields_by_field_id,
+                "returnFieldsByFieldId": use_field_ids,
             },
         )
         return assert_typed_dict(RecordDict, created)
@@ -318,7 +318,7 @@ class Table:
         self,
         records: Iterable[WritableFields],
         typecast: bool = False,
-        return_fields_by_field_id: bool = False,
+        use_field_ids: bool = False,
     ) -> List[RecordDict]:
         """
         Create a number of new records in batches.
@@ -340,7 +340,7 @@ class Table:
         Args:
             records: Iterable of dicts representing records to be created.
             typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
         """
         inserted_records = []
 
@@ -354,7 +354,7 @@ class Table:
                 json={
                     "records": new_records,
                     "typecast": typecast,
-                    "returnFieldsByFieldId": return_fields_by_field_id,
+                    "returnFieldsByFieldId": use_field_ids,
                 },
             )
             inserted_records += assert_typed_dicts(RecordDict, response["records"])
@@ -367,7 +367,7 @@ class Table:
         fields: WritableFields,
         replace: bool = False,
         typecast: bool = False,
-        return_fields_by_field_id: bool = False,
+        use_field_ids: bool = False,
     ) -> RecordDict:
         """
         Update a particular record ID with the given fields.
@@ -382,7 +382,7 @@ class Table:
             fields: Fields to update. Must be a dict with column names or IDs as keys.
             replace: |kwarg_replace|
             typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
         """
         method = "put" if replace else "patch"
         updated = self.api.request(
@@ -391,7 +391,7 @@ class Table:
             json={
                 "fields": fields,
                 "typecast": typecast,
-                "returnFieldsByFieldId": return_fields_by_field_id,
+                "returnFieldsByFieldId": use_field_ids,
             },
         )
         return assert_typed_dict(RecordDict, updated)
@@ -401,7 +401,7 @@ class Table:
         records: Iterable[UpdateRecordDict],
         replace: bool = False,
         typecast: bool = False,
-        return_fields_by_field_id: bool = False,
+        use_field_ids: bool = False,
     ) -> List[RecordDict]:
         """
         Update several records in batches.
@@ -410,7 +410,7 @@ class Table:
             records: Records to update.
             replace: |kwarg_replace|
             typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
 
         Returns:
             The list of updated records.
@@ -429,7 +429,7 @@ class Table:
                 json={
                     "records": chunk_records,
                     "typecast": typecast,
-                    "returnFieldsByFieldId": return_fields_by_field_id,
+                    "returnFieldsByFieldId": use_field_ids,
                 },
             )
             updated_records += assert_typed_dicts(RecordDict, response["records"])
@@ -442,7 +442,7 @@ class Table:
         key_fields: List[FieldName],
         replace: bool = False,
         typecast: bool = False,
-        return_fields_by_field_id: bool = False,
+        use_field_ids: bool = False,
     ) -> UpsertResultDict:
         """
         Update or create records in batches, either using ``id`` (if given) or using a set of
@@ -457,7 +457,7 @@ class Table:
                 records in the input with existing records on the server.
             replace: |kwarg_replace|
             typecast: |kwarg_typecast|
-            return_fields_by_field_id: |kwarg_return_fields_by_field_id|
+            use_field_ids: |kwarg_use_field_ids|
 
         Returns:
             Lists of created/updated record IDs, along with the list of all records affected.
@@ -494,7 +494,7 @@ class Table:
                 json={
                     "records": formatted_records,
                     "typecast": typecast,
-                    "returnFieldsByFieldId": return_fields_by_field_id,
+                    "returnFieldsByFieldId": use_field_ids,
                     "performUpsert": {"fieldsToMergeOn": key_fields},
                 },
             )

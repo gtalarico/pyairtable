@@ -225,7 +225,7 @@ def test_passthrough(methodname, returns):
         a=1,
         b=2,
         c=3,
-        return_fields_by_field_id=getattr(FakeModel.Meta, "use_field_ids", False),
+        use_field_ids=getattr(FakeModel.Meta, "use_field_ids", False),
         user_locale=None,
         time_zone=None,
         cell_format="json",

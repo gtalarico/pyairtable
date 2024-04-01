@@ -17,7 +17,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         "view": "View",
         "sort": ["Name"],
         "fields": ["Name", "Age"],
-        "return_fields_by_field_id": True,
+        "use_field_ids": True,
     }
     with Mocker() as m:
         url_params = (
@@ -100,9 +100,9 @@ def test_params_integration(table, mock_records, mock_response_iterator):
             "?timeZone=America%2FChicago",
             # '?timeZone=America/Chicago'
         ],
-        ["return_fields_by_field_id", True, "?returnFieldsByFieldId=1"],
-        ["return_fields_by_field_id", 1, "?returnFieldsByFieldId=1"],
-        ["return_fields_by_field_id", False, "?returnFieldsByFieldId=0"],
+        ["use_field_ids", True, "?returnFieldsByFieldId=1"],
+        ["use_field_ids", 1, "?returnFieldsByFieldId=1"],
+        ["use_field_ids", False, "?returnFieldsByFieldId=0"],
         # TODO
         # [
         #     {"sort": [("Name", "desc"), ("Phone", "asc")]},
@@ -163,9 +163,9 @@ def test_convert_options_to_params(option, value, url_params):
             },
         ],
         ["cell_format", "string", {"cellFormat": "string"}],
-        ["return_fields_by_field_id", True, {"returnFieldsByFieldId": True}],
-        ["return_fields_by_field_id", 1, {"returnFieldsByFieldId": True}],
-        ["return_fields_by_field_id", False, {"returnFieldsByFieldId": False}],
+        ["use_field_ids", True, {"returnFieldsByFieldId": True}],
+        ["use_field_ids", 1, {"returnFieldsByFieldId": True}],
+        ["use_field_ids", False, {"returnFieldsByFieldId": False}],
         # userLocale and timeZone are not supported via POST, so they return "spare params"
         ["user_locale", "en-US", ({}, {"userLocale": "en-US"})],
         ["time_zone", "America/Chicago", ({}, {"timeZone": "America/Chicago"})],

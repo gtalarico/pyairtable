@@ -70,7 +70,7 @@ OPTIONS_TO_PARAMETERS = {
     "max_records": "maxRecords",
     "offset": "offset",
     "page_size": "pageSize",
-    "return_fields_by_field_id": "returnFieldsByFieldId",
+    "use_field_ids": "returnFieldsByFieldId",
     "sort": "sort",
     "time_zone": "timeZone",
     "user_locale": "userLocale",

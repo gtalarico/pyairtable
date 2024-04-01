@@ -191,7 +191,7 @@ class Model:
             "user_locale": None,
             "cell_format": "json",
             "time_zone": None,
-            "return_fields_by_field_id": cls._get_meta("use_field_ids", default=False),
+            "use_field_ids": cls._get_meta("use_field_ids", default=False),
         }
 
     @classmethod
