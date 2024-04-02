@@ -50,38 +50,38 @@ def test_integration_table(table, cols):
     assert len(records) == COUNT
 
 
-def test_return_fields_by_field_id(table: Table, cols):
+def test_use_field_ids(table: Table, cols):
     """
     Test that we can get, create, and update records by field ID vs. name.
 
     See https://github.com/gtalarico/pyairtable/issues/194
     """
-    # Create one record with return_fields_by_field_id=True
-    record = table.create({cols.TEXT_ID: "Hello"}, return_fields_by_field_id=True)
+    # Create one record with use_field_ids=True
+    record = table.create({cols.TEXT_ID: "Hello"}, use_field_ids=True)
     assert record["fields"][cols.TEXT_ID] == "Hello"
 
-    # Update one record with return_fields_by_field_id=True
+    # Update one record with use_field_ids=True
     updated = table.update(
         record["id"],
         {cols.TEXT_ID: "Goodbye"},
-        return_fields_by_field_id=True,
+        use_field_ids=True,
     )
     assert updated["fields"][cols.TEXT_ID] == "Goodbye"
 
-    # Create multiple records with return_fields_by_field_id=True
+    # Create multiple records with use_field_ids=True
     records = table.batch_create(
         [
             {cols.TEXT_ID: "Alpha"},
             {cols.TEXT_ID: "Bravo"},
             {cols.TEXT_ID: "Charlie"},
         ],
-        return_fields_by_field_id=True,
+        use_field_ids=True,
     )
     assert records[0]["fields"][cols.TEXT_ID] == "Alpha"
     assert records[1]["fields"][cols.TEXT_ID] == "Bravo"
     assert records[2]["fields"][cols.TEXT_ID] == "Charlie"
 
-    # Update multiple records with return_fields_by_field_id=True
+    # Update multiple records with use_field_ids=True
     updates = [
         dict(
             record,
@@ -89,7 +89,7 @@ def test_return_fields_by_field_id(table: Table, cols):
         )
         for record in records
     ]
-    updated = table.batch_update(updates, return_fields_by_field_id=True)
+    updated = table.batch_update(updates, use_field_ids=True)
     assert updated[0]["fields"][cols.TEXT_ID] == "Hello, Alpha"
     assert updated[1]["fields"][cols.TEXT_ID] == "Hello, Bravo"
     assert updated[2]["fields"][cols.TEXT_ID] == "Hello, Charlie"
@@ -112,7 +112,7 @@ def test_get_records_options(table: Table, cols):
     assert table.all(sort=[cols.TEXT, cols.NUM]) == [rec]
     assert table.all(time_zone="utc") == [rec]
     assert table.all(user_locale="en-ie") == [rec]
-    assert table.all(return_fields_by_field_id=True) == [
+    assert table.all(use_field_ids=True) == [
         {
             "id": rec["id"],
             "createdTime": rec["createdTime"],
@@ -132,7 +132,7 @@ def test_get_records_options(table: Table, cols):
     assert table.all(formula=formula, sort=[cols.TEXT, cols.NUM]) == [rec]
     assert table.all(formula=formula, time_zone="utc") == [rec]
     assert table.all(formula=formula, user_locale="en-ie") == [rec]
-    assert table.all(formula=formula, return_fields_by_field_id=True) == [
+    assert table.all(formula=formula, use_field_ids=True) == [
         {
             "id": rec["id"],
             "createdTime": rec["createdTime"],
@@ -207,11 +207,11 @@ def test_batch_upsert(table: Table, cols):
     assert result["records"][2]["fields"] == {cols.TEXT: "Three", cols.NUM: 6}
     assert result["records"][3]["fields"] == {cols.NUM: 7}
 
-    # Test that batch_upsert passes along return_fields_by_field_id
+    # Test that batch_upsert passes along use_field_ids
     result = table.batch_upsert(
         [{"fields": {cols.TEXT: "Two", cols.NUM: 8}}],
         key_fields=[cols.TEXT],
-        return_fields_by_field_id=True,
+        use_field_ids=True,
     )
     assert result["records"] == [
         {

@@ -111,9 +111,8 @@ like :meth:`~pyairtable.Table.iterate` or :meth:`~pyairtable.Table.all`.
      - |kwarg_user_locale|
    * - ``time_zone``
      - |kwarg_time_zone|
-   * - ``return_fields_by_field_id``
-        .. versionadded:: 1.3.0
-     - |kwarg_return_fields_by_field_id|
+   * - ``use_field_ids``
+     - |kwarg_use_field_ids|
 
 
 Return Values

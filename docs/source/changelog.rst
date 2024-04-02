@@ -5,12 +5,24 @@ Changelog
 3.0 (TBD)
 ------------------------
 
+* Rewrite of :mod:`pyairtable.formulas` module.
+  - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_.
 * ORM fields :class:`~pyairtable.orm.fields.TextField` and
   :class:`~pyairtable.orm.fields.CheckboxField` will no longer
   return ``None`` when the field is empty.
   - `PR #347 <https://github.com/gtalarico/pyairtable/pull/347>`_.
-* Rewrite of :mod:`pyairtable.formulas` module.
-  - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_.
+* Changed the type of :data:`~pyairtable.orm.Model.created_time`
+  from ``str`` to ``datetime``, along with all other timestamp fields
+  used in :ref:`API: pyairtable.models`.
+  - `PR #352 <https://github.com/gtalarico/pyairtable/pull/352>`_.
+* Added ORM field type :class:`~pyairtable.orm.fields.SingleLinkField`
+  for record link fields that (generally) link to a single record.
+  - `PR #354 <https://github.com/gtalarico/pyairtable/pull/354>`_.
+* Renamed ``return_fields_by_field_id=`` to ``use_field_ids=``.
+* Support ``use_field_ids`` in the :ref:`ORM`.
+  - `PR #355 <https://github.com/gtalarico/pyairtable/pull/355>`_.
+* Removed the ``pyairtable.metadata`` module.
+  - `PR #360 <https://github.com/gtalarico/pyairtable/pull/360>`_.
 
 2.3.2 (2024-03-18)
 ------------------------
