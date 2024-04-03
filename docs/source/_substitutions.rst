@@ -69,6 +69,20 @@
     If ``True``, will fetch information from the metadata API and validate the ID/name exists,
     raising ``KeyError`` if it does not.
 
+.. |kwarg_orm_fetch| replace::
+    If ``True``, records will be fetched and field values will be
+    updated. If ``False``, new instances are created with the provided IDs,
+    but field values are unset.
+
+.. |kwarg_orm_memoize| replace::
+    If ``True``, any objects created will be memoized for future reuse.
+    If ``False``, objects created will *not* be memoized.
+    The default behavior is defined on the :class:`~pyairtable.orm.Model` subclass.
+
+.. |kwarg_orm_lazy| replace::
+    If ``True``, this field will return empty objects with only IDs;
+    call :meth:`~pyairtable.orm.Model.fetch` to retrieve values.
+
 .. |kwarg_permission_level| replace::
     See `application permission levels <https://airtable.com/developers/web/api/model/application-permission-levels>`__.
 

@@ -51,12 +51,12 @@ class Model:
         * ``timeout`` - A tuple indicating a connect and read timeout. Defaults to no timeout.
         * ``typecast`` - |kwarg_typecast| Defaults to ``True``.
         * ``retry`` - An instance of `urllib3.util.Retry <https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry>`_.
-                      If ``None`` or ``False``, requests will not be retried.
-                      If ``True``, the default strategy will be applied
-                      (see :func:`~pyairtable.retry_strategy` for details).
+          If ``None`` or ``False``, requests will not be retried.
+          If ``True``, the default strategy will be applied
+          (see :func:`~pyairtable.retry_strategy` for details).
         * ``use_field_ids`` - Whether fields will be defined by ID, rather than name. Defaults to ``False``.
         * ``memoize`` - Whether the model should reuse models it creates between requests.
-                        See :ref:`ORM memoization` for more information.
+          See :ref:`Memoization` for more information.
 
     For example, the following two are equivalent:
 
@@ -267,6 +267,9 @@ class Model:
         """
         Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
+
+        Args:
+            memoize: |kwarg_orm_memoize|
         """
         kwargs.update(cls.meta.request_kwargs)
         return [
@@ -281,6 +284,9 @@ class Model:
         """
         Retrieve the first record for this model. For all supported
         keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
+
+        Args:
+            memoize: |kwarg_orm_memoize|
         """
         kwargs.update(cls.meta.request_kwargs)
         if record := cls.meta.table.first(**kwargs):
@@ -314,6 +320,10 @@ class Model:
     ) -> SelfType:
         """
         Create an instance from a record dict.
+
+        Args:
+            record: The record data from the Airtable API.
+            memoize: |kwarg_orm_memoize|
         """
         name_field_map = cls._field_name_descriptor_map()
         # Convert Column Names into model field names
@@ -348,9 +358,8 @@ class Model:
 
         Args:
             record_id: |arg_record_id|
-            fetch: If ``True``, record will be fetched and field values will be
-                updated. If ``False``, a new instance is created with the provided ID,
-                but field values are unset.
+            fetch: |kwarg_orm_fetch|
+            memoize: |kwarg_orm_memoize|
         """
         try:
             instance = cast(SelfType, cls._memoized[record_id])
@@ -381,8 +390,8 @@ class Model:
         cls,
         record_ids: Iterable[RecordId],
         /,
-        memoize: Optional[bool] = None,
         fetch: bool = True,
+        memoize: Optional[bool] = None,
     ) -> List[SelfType]:
         """
         Create a list of instances from record IDs. If any record IDs returned
@@ -391,9 +400,8 @@ class Model:
 
         Args:
             record_ids: |arg_record_id|
-            fetch: If ``True``, records will be fetched and field values will be
-                updated. If ``False``, new instances are created with the provided IDs,
-                but field values are unset.
+            fetch: |kwarg_orm_fetch|
+            memoize: |kwarg_orm_memoize|
         """
         if not fetch:
             return [cls.from_id(record_id, fetch=False) for record_id in record_ids]

@@ -53,6 +53,8 @@ def fake_meta(
         "timeout": timeout,
         "retry": retry,
         "typecast": typecast,
+        "timeout": timeout,
+        "retry": retry,
         "use_field_ids": use_field_ids,
         "memoize": memoize,
     }

@@ -312,13 +312,42 @@ def test_meta_wrapper():
     """
     Test that Model subclasses have access to the _Meta wrapper.
     """
-    original_meta = fake_meta(api_key="asdf")
 
     class Dummy(Model):
-        Meta = original_meta
+        Meta = fake_meta(api_key="asdf")
 
     assert Dummy.meta.model is Dummy
     assert Dummy.meta.api.api_key == "asdf"
+
+
+def test_meta_dict():
+    """
+    Test that Meta can be a dict instead of a class.
+    """
+
+    class Dummy(Model):
+        Meta = {
+            "api_key": "asdf",
+            "base_id": "qwer",
+            "table_name": "zxcv",
+            "timeout": (1, 1),
+        }
+
+    assert Dummy.meta.model is Dummy
+    assert Dummy.meta.api.api_key == "asdf"
+
+
+@pytest.mark.parametrize("meta_kwargs", [{"timeout": 1}, {"retry": "asdf"}])
+def test_meta_type_check(meta_kwargs):
+    """
+    Test that we check types on certain Meta attributes.
+    """
+
+    class Dummy(Model):
+        Meta = fake_meta(**meta_kwargs)
+
+    with pytest.raises(TypeError):
+        Dummy.meta.api
 
 
 def test_dynamic_model_meta():

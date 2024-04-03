@@ -617,8 +617,13 @@ class LinkField(_ListField[RecordId, T_Linked]):
     ) -> None:
         """
         Populates the field's value for the given instance. This allows you to
-        selectively load models in either lazy or non-lazy fashion, depending on
-        your need, without having to decide at the time of field construction.
+        control how linked models are loaded, depending on your need, without
+        having to decide at the time of field or model construction.
+
+        Args:
+            instance: An instance of this field's :class:`~pyairtable.orm.Model` class.
+            lazy: |kwarg_orm_lazy|
+            memoize: |kwarg_orm_memoize|
 
         Usage:
 
@@ -634,7 +639,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
                     books = F.LinkField("Books", Book)
 
                 author = Author.from_id("reculZ6qSLw0OCA61")
-                Author.books.populate(author, lazy=True)
+                Author.books.populate(author, lazy=True, memoize=False)
         """
         if self._model and not isinstance(instance, self._model):
             raise RuntimeError(
@@ -755,6 +760,14 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
 
     """
 
+    @utils.docstring_from(
+        LinkField.__init__,
+        append="""
+            raise_if_many: If ``True``, this field will raise a
+                :class:`~pyairtable.orm.fields.MultipleValues` exception upon
+                being accessed if the underlying field contains multiple values.
+        """,
+    )
     def __init__(
         self,
         field_name: str,
@@ -764,31 +777,6 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
         lazy: bool = False,
         raise_if_many: bool = False,
     ):
-        """
-        Args:
-            field_name: Name of the Airtable field.
-            model:
-                Model class representing the linked table. There are a few options:
-
-                1. You can provide a ``str`` that is the fully qualified module and class name.
-                   For example, ``"your.module.Model"`` will import ``Model`` from ``your.module``.
-                2. You can provide a ``str`` that is *just* the class name, and it will be imported
-                   from the same module as the model class.
-                3. You can provide the sentinel value :data:`~LinkSelf`, and the link field
-                   will point to the same model where the link field is created.
-
-            validate_type: Whether to raise a TypeError if attempting to write
-                an object of an unsupported type as a field value. If ``False``, you
-                may encounter unpredictable behavior from the Airtable API.
-            readonly: If ``True``, any attempt to write a value to this field will
-                raise an ``AttributeError``. This will not, however, prevent any
-                modification of the list object returned by this field.
-            lazy: If ``True``, this field will return empty objects with only IDs;
-                call :meth:`~pyairtable.orm.Model.fetch` to retrieve values.
-            raise_if_many: If ``True``, this field will raise a
-                :class:`~pyairtable.orm.fields.MultipleValues` exception upon
-                being accessed if the underlying field contains multiple values.
-        """
         super().__init__(field_name, validate_type=validate_type, readonly=readonly)
         self._raise_if_many = raise_if_many
         # composition is easier than inheritance in this case ¯\_(ツ)_/¯
@@ -840,6 +828,7 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
     def to_record_value(self, value: List[Union[str, T_Linked]]) -> List[str]:
         return self._link_field.to_record_value(value)
 
+    @utils.docstring_from(LinkField.populate)
     def populate(
         self,
         instance: "Model",
@@ -850,6 +839,7 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
         self._link_field.populate(instance, lazy=lazy, memoize=memoize)
 
     @property
+    @utils.docstring_from(LinkField.linked_model)
     def linked_model(self) -> Type[T_Linked]:
         return self._link_field.linked_model
 

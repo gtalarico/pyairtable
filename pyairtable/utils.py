@@ -25,6 +25,7 @@ from pyairtable.api.types import CreateAttachmentDict
 P = ParamSpec("P")
 R = TypeVar("R", covariant=True)
 T = TypeVar("T")
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def datetime_to_iso_str(value: datetime) -> str:
@@ -141,9 +142,6 @@ is_field_id = partial(is_airtable_id, prefix="fld")
 is_user_id = partial(is_airtable_id, prefix="usr")
 
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
 def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
     """
     Wrap a function or method so that if Airtable returns a 404,
@@ -191,6 +189,14 @@ def _append_docstring_text(obj: Any, text: str) -> None:
     if has_leading_spaces := re.match(r"^\s+", doc):
         text = textwrap.indent(text, has_leading_spaces[0])
     obj.__doc__ = f"{doc}\n\n{text}"
+
+
+def docstring_from(obj: Any, append: str = "") -> Callable[[F], F]:
+    def _wrapper(func: F) -> F:
+        func.__doc__ = obj.__doc__ + append
+        return func
+
+    return _wrapper
 
 
 class FetchMethod(Protocol, Generic[R]):
