@@ -18,6 +18,13 @@ from pyairtable.testing import (
 )
 from pyairtable.utils import datetime_to_iso_str
 
+try:
+    from pytest import Mark as _PytestMark
+except ImportError:
+    # older versions of pytest don't expose pytest.Mark directly
+    from _pytest.mark import Mark as _PytestMark
+
+
 DATE_S = "2023-01-01"
 DATE_V = datetime.date(2023, 1, 1)
 DATETIME_S = "2023-04-12T09:30:00.000Z"
@@ -494,7 +501,7 @@ def assert_all_fields_tested_by(*test_fns, exclude=()):
     """
 
     def extract_fields(obj):
-        if isinstance(obj, pytest.Mark):
+        if isinstance(obj, _PytestMark):
             yield from [*extract_fields(obj.args), *extract_fields(obj.kwargs)]
         elif isinstance(obj, str):
             pass
@@ -511,7 +518,7 @@ def assert_all_fields_tested_by(*test_fns, exclude=()):
         field_class
         for test_function in test_fns
         for pytestmark in getattr(test_function, "pytestmark", [])
-        if isinstance(pytestmark, pytest.Mark) and pytestmark.name == "parametrize"
+        if isinstance(pytestmark, _PytestMark) and pytestmark.name == "parametrize"
         for field_class in extract_fields(pytestmark)
         if field_class not in exclude
     }
