@@ -67,7 +67,7 @@ class _Everything(Model):
     formula_nan = f.TextField("Formula NaN", readonly=True)
     addresses = f.LinkField("Address", _Address)
     link_count = f.CountField("Link to Self (Count)")
-    link_self = f.LinkField["_Everything"](
+    link_self = f.SingleLinkField["_Everything"](
         "Link to Self",
         model="test_integration_orm._Everything",
         lazy=False,
@@ -80,6 +80,24 @@ class _Everything(Model):
     created_by = f.CreatedByField("Created By")
     last_modified = f.LastModifiedTimeField("Last Modified")
     last_modified_by = f.LastModifiedByField("Last Modified By")
+    required_barcode = f.RequiredBarcodeField("Barcode")
+    required_collaborator = f.RequiredCollaboratorField("Assignee")
+    required_count = f.RequiredCountField("Count")
+    required_currency = f.RequiredCurrencyField("Dollars")
+    required_date = f.RequiredDateField("Date")
+    required_datetime = f.RequiredDatetimeField("DateTime")
+    required_duration = f.RequiredDurationField("Duration (h:mm)")
+    required_email = f.RequiredEmailField("Email")
+    required_float = f.RequiredFloatField("Decimal 1")
+    required_integer = f.RequiredIntegerField("Integer")
+    required_number = f.RequiredNumberField("Number")
+    required_percent = f.RequiredPercentField("Percent")
+    required_phone = f.RequiredPhoneNumberField("Phone")
+    required_rating = f.RequiredRatingField("Stars")
+    required_rich_text = f.RequiredRichTextField("Notes")
+    required_select = f.RequiredSelectField("Status")
+    required_text = f.RequiredTextField("Name")
+    required_url = f.RequiredUrlField("URL")
 
 
 def _model_fixture(cls, monkeypatch, make_meta):
@@ -180,7 +198,11 @@ def test_every_field(Everything):
         type(field) for field in vars(Everything).values() if isinstance(field, f.Field)
     }
     for field_class in f.ALL_FIELDS:
-        if field_class in {f.ExternalSyncSourceField, f.AITextField}:
+        if field_class in {
+            f.ExternalSyncSourceField,
+            f.AITextField,
+            f.RequiredAITextField,
+        }:
             continue
         assert field_class in classes_used
 
@@ -213,8 +235,8 @@ def test_every_field(Everything):
     record.save()
     assert record.id
     assert record.addresses == []
-    assert record.link_self == []
-    record.link_self = [record]
+    assert record.link_self is None
+    record.link_self = record
     record.save()
 
     # The ORM won't refresh the model's field values after save()
