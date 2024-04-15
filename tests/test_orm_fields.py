@@ -95,6 +95,7 @@ def test_repr(instance, expected):
     argvalues=[
         (f.Field, None),
         (f.CheckboxField, False),
+        (f.TextField, ""),
         (f.LookupField, []),
         (f.AttachmentsField, []),
         (f.MultipleCollaboratorsField, []),
@@ -114,10 +115,16 @@ def test_orm_missing_values(field_type, default_value):
     t = T()
     assert t.the_field == default_value
 
+    t = T.from_record(fake_record({"Field Name": None}))
+    assert t.the_field == default_value
+
 
 # Mapping from types to a test value for that type.
 TYPE_VALIDATION_TEST_VALUES = {
-    **{t: t() for t in (str, bool, list, dict)},
+    str: "some value",
+    bool: False,
+    list: [],
+    dict: {},
     int: 1,  # cannot use int() because RatingField requires value >= 1
     float: 1.0,  # cannot use float() because RatingField requires value >= 1
     datetime.date: datetime.date.today(),
@@ -130,28 +137,45 @@ TYPE_VALIDATION_TEST_VALUES = {
     "test_case",
     [
         (f.Field, tuple(TYPE_VALIDATION_TEST_VALUES)),
-        (f.TextField, str),
-        (f.IntegerField, int),
-        (f.RichTextField, str),
-        (f.DatetimeField, datetime.datetime),
-        (f.TextField, str),
-        (f.CheckboxField, bool),
-        (f.BarcodeField, dict),
-        (f.NumberField, (int, float)),
-        (f.PhoneNumberField, str),
-        (f.DurationField, datetime.timedelta),
-        (f.RatingField, int),
-        (f.UrlField, str),
-        (f.MultipleSelectField, list),
-        (f.PercentField, (int, float)),
-        (f.DateField, (datetime.date, datetime.datetime)),
-        (f.FloatField, float),
-        (f.CollaboratorField, dict),
-        (f.SelectField, str),
-        (f.EmailField, str),
         (f.AttachmentsField, list),
-        (f.MultipleCollaboratorsField, list),
+        (f.BarcodeField, dict),
+        (f.CheckboxField, bool),
+        (f.CollaboratorField, dict),
         (f.CurrencyField, (int, float)),
+        (f.DateField, (datetime.date, datetime.datetime)),
+        (f.DatetimeField, datetime.datetime),
+        (f.DurationField, datetime.timedelta),
+        (f.EmailField, str),
+        (f.FloatField, float),
+        (f.IntegerField, int),
+        (f.MultipleCollaboratorsField, list),
+        (f.MultipleSelectField, list),
+        (f.NumberField, (int, float)),
+        (f.PercentField, (int, float)),
+        (f.PhoneNumberField, str),
+        (f.RatingField, int),
+        (f.RichTextField, str),
+        (f.SelectField, str),
+        (f.TextField, str),
+        (f.TextField, str),
+        (f.UrlField, str),
+        (f.RequiredBarcodeField, dict),
+        (f.RequiredCollaboratorField, dict),
+        (f.RequiredCurrencyField, (int, float)),
+        (f.RequiredDateField, (datetime.date, datetime.datetime)),
+        (f.RequiredDatetimeField, datetime.datetime),
+        (f.RequiredDurationField, datetime.timedelta),
+        (f.RequiredFloatField, float),
+        (f.RequiredIntegerField, int),
+        (f.RequiredNumberField, (int, float)),
+        (f.RequiredPercentField, (int, float)),
+        (f.RequiredRatingField, int),
+        (f.RequiredSelectField, str),
+        (f.RequiredEmailField, str),
+        (f.RequiredPhoneNumberField, str),
+        (f.RequiredRichTextField, str),
+        (f.RequiredTextField, str),
+        (f.RequiredUrlField, str),
     ],
     ids=operator.itemgetter(0),
 )
@@ -242,6 +266,9 @@ def test_type_validation_LinkField():
         # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.CreatedTimeField, DATETIME_S, DATETIME_V),
         (f.LastModifiedTimeField, DATETIME_S, DATETIME_V),
+        # We also want to test the not-null versions of these fields
+        (f.RequiredAITextField, {"state": "empty", "isStale": True, "value": None}),
+        (f.RequiredCountField, 1),
     ],
     ids=operator.itemgetter(0),
 )
@@ -290,12 +317,31 @@ def test_readonly_fields(test_case):
         (f.PercentField, 0.5),
         (f.PhoneNumberField, "+49 40-349180"),
         (f.RichTextField, "Check out [Airtable](www.airtable.com)"),
+        (f.SelectField, ""),
         (f.SelectField, "any value"),
         (f.UrlField, "www.airtable.com"),
+        (f.RequiredNumberField, 1),
+        (f.RequiredNumberField, 1.5),
+        (f.RequiredIntegerField, 1),
+        (f.RequiredFloatField, 1.5),
+        (f.RequiredRatingField, 1),
+        (f.RequiredCurrencyField, 1.05),
+        (f.RequiredCollaboratorField, {"id": "usrFakeUserId", "email": "x@y.com"}),
+        (f.RequiredBarcodeField, {"type": "upce", "text": "084114125538"}),
+        (f.RequiredPercentField, 0.5),
+        (f.RequiredSelectField, "any value"),
+        (f.RequiredEmailField, "any value"),
+        (f.RequiredPhoneNumberField, "any value"),
+        (f.RequiredRichTextField, "any value"),
+        (f.RequiredTextField, "any value"),
+        (f.RequiredUrlField, "any value"),
         # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.DateField, DATE_S, DATE_V),
-        (f.DurationField, 100.5, datetime.timedelta(seconds=100, microseconds=500000)),
         (f.DatetimeField, DATETIME_S, DATETIME_V),
+        (f.DurationField, 100.5, datetime.timedelta(seconds=100, microseconds=500000)),
+        (f.RequiredDateField, DATE_S, DATE_V),
+        (f.RequiredDatetimeField, DATETIME_S, DATETIME_V),
+        (f.RequiredDurationField, 100, datetime.timedelta(seconds=100)),
     ],
     ids=operator.itemgetter(0),
 )
@@ -327,20 +373,120 @@ def test_writable_fields(test_case):
     assert existing_obj.the_field == orm_value
 
 
+@pytest.mark.parametrize(
+    "field_type",
+    [
+        f.Field,
+        f.AITextField,
+        f.AttachmentsField,
+        f.BarcodeField,
+        f.CheckboxField,
+        f.CollaboratorField,
+        f.CountField,
+        f.CurrencyField,
+        f.DateField,
+        f.DatetimeField,
+        f.DurationField,
+        f.EmailField,
+        f.ExternalSyncSourceField,
+        f.FloatField,
+        f.IntegerField,
+        f.LastModifiedByField,
+        f.LastModifiedTimeField,
+        f.LookupField,
+        f.MultipleCollaboratorsField,
+        f.MultipleSelectField,
+        f.NumberField,
+        f.NumberField,
+        f.PercentField,
+        f.PhoneNumberField,
+        f.RatingField,
+        f.RichTextField,
+        f.SelectField,
+        f.TextField,
+        f.UrlField,
+    ],
+)
+def test_accepts_null(field_type):
+    """
+    Test field types that allow null values from Airtable.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = field_type("Field Name")
+
+    obj = T()
+    assert not obj.the_field
+
+
+@pytest.mark.parametrize(
+    "field_type",
+    [
+        f.AutoNumberField,
+        f.ButtonField,
+        f.CreatedByField,
+        f.CreatedTimeField,
+        f.RequiredAITextField,
+        f.RequiredBarcodeField,
+        f.RequiredCollaboratorField,
+        f.RequiredCountField,
+        f.RequiredCurrencyField,
+        f.RequiredDateField,
+        f.RequiredDatetimeField,
+        f.RequiredDurationField,
+        f.RequiredEmailField,
+        f.RequiredFloatField,
+        f.RequiredIntegerField,
+        f.RequiredNumberField,
+        f.RequiredPercentField,
+        f.RequiredPhoneNumberField,
+        f.RequiredRatingField,
+        f.RequiredRichTextField,
+        f.RequiredSelectField,
+        f.RequiredTextField,
+        f.RequiredUrlField,
+    ],
+)
+def test_rejects_null(field_type):
+    """
+    Test field types that do not allow null values from Airtable.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = field_type("Field Name")
+
+    obj = T()
+    with pytest.raises(f.MissingValue):
+        obj.the_field
+    with pytest.raises(f.MissingValue):
+        obj.the_field = None
+    with pytest.raises(f.MissingValue):
+        T(the_field=None)
+
+
 def test_completeness():
     """
     Ensure that we test conversion of all readonly and writable fields.
     """
-    assert_all_fields_tested_by(test_writable_fields, test_readonly_fields)
+    assert_all_fields_tested_by(
+        test_writable_fields,
+        test_readonly_fields,
+        exclude=(f.LinkField, f.SingleLinkField),
+    )
     assert_all_fields_tested_by(
         test_type_validation,
         exclude=f.READONLY_FIELDS | {f.LinkField, f.SingleLinkField},
     )
+    assert_all_fields_tested_by(
+        test_accepts_null,
+        test_rejects_null,
+        exclude={f.LinkField, f.SingleLinkField},
+    )
 
 
-def assert_all_fields_tested_by(
-    *test_fns, exclude=(f.Field, f.LinkField, f.SingleLinkField)
-):
+def assert_all_fields_tested_by(*test_fns, exclude=()):
     """
     Allows meta-tests that fail if any new Field classes appear in pyairtable.orm.fields
     which are not covered by one of a few basic tests. This is intended to help remind
@@ -840,54 +986,6 @@ def test_datetime_timezones(requests_mock):
     obj.dt = datetime.datetime(2024, 3, 1, 11, 22, 33)
     obj.save()
     assert m.last_request.json()["fields"]["dt"] == "2024-03-01T11:22:33.000"
-
-
-@pytest.mark.parametrize(
-    "classinfo,expected",
-    [
-        (str, ""),
-        ((str, bool), ""),
-        ((((str,),),), ""),
-        (bool, False),
-    ],
-)
-def test_missing_value(classinfo, expected):
-    """
-    Test that _FieldWithTypedDefaultValue._missing_value finds the first
-    valid type and calls it to create the "missing from Airtable" value.
-    """
-
-    class F(f._FieldWithTypedDefaultValue):
-        valid_types = classinfo
-
-    class T:
-        the_field = F("Field Name")
-
-    assert T().the_field == expected
-
-
-@pytest.mark.parametrize(
-    "classinfo,exc_class",
-    [
-        ((), RuntimeError),
-        ((((), str), bool), RuntimeError),
-    ],
-)
-def test_missing_value__invalid_classinfo(classinfo, exc_class):
-    """
-    Test that _FieldWithTypedDefaultValue._missing_value raises an exception
-    if the class's valid_types is set to an invalid value.
-    """
-
-    class F(f._FieldWithTypedDefaultValue):
-        valid_types = classinfo
-
-    class T:
-        the_field = F("Field Name")
-
-    obj = T()
-    with pytest.raises(exc_class):
-        obj.the_field
 
 
 @pytest.mark.parametrize(
