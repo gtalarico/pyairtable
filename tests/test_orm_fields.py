@@ -823,7 +823,7 @@ def test_single_link_field__multiple_values():
     assert book.author.name == "Author 1"
     assert book._fields["Author"][1:] == [a2, a3]  # not converted to models
 
-    # if no modifications made, the entire list will be sent back to the API
+    # if book.author.__set__ not called, the entire list will be sent back to the API
     with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
         book.save()
         m.assert_called_once_with(book.id, {"Author": [a1, a2, a3]}, typecast=True)

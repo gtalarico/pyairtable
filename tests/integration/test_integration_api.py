@@ -279,7 +279,7 @@ def test_integration_formula_composition(table: Table, cols):
 def test_integration_attachment(table, cols, valid_img_url):
     rec = table.create({cols.ATTACHMENT: [attachment(valid_img_url)]})
     rv_get = table.get(rec["id"])
-    assert rv_get["fields"]["attachment"][0]["filename"] == "logo.png"
+    assert rv_get["fields"]["attachment"][0]["url"].endswith("logo.png")
 
 
 def test_integration_attachment_multiple(table, cols, valid_img_url):
