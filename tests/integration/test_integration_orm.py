@@ -101,9 +101,7 @@ class _Everything(Model):
 
 
 def _model_fixture(cls, monkeypatch, make_meta):
-    monkeypatch.setattr(
-        cls.meta, "model_meta", make_meta(cls.__name__.replace("_", ""))
-    )
+    monkeypatch.setattr(cls, "Meta", make_meta(cls.__name__.replace("_", "")))
     yield cls
     for page in cls.meta.table.iterate():
         cls.meta.table.batch_delete([record["id"] for record in page])

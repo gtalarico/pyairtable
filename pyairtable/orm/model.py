@@ -1,4 +1,5 @@
 import datetime
+from dataclasses import dataclass
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
@@ -7,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     Optional,
     Type,
     Union,
@@ -39,7 +41,7 @@ class Model:
     Supports creating ORM-style classes representing Airtable tables.
     For more details, see :ref:`orm`.
 
-    A nested class called ``Meta`` is required and can specify
+    A nested class or dict called ``Meta`` is required and can specify
     the following attributes:
 
         * ``api_key`` (required) - API key or personal access token.
@@ -49,20 +51,37 @@ class Model:
         * ``typecast`` - |kwarg_typecast| Defaults to ``True``.
         * ``use_field_ids`` - |kwarg_use_field_ids| Defaults to ``False``.
 
+    For example, the following two are equivalent:
+
     .. code-block:: python
 
         from pyairtable.orm import Model, fields
 
         class Contact(Model):
-            first_name = fields.TextField("First Name")
-            age = fields.IntegerField("Age")
-
             class Meta:
                 base_id = "appaPqizdsNHDvlEm"
                 table_name = "Contact"
                 api_key = "keyapikey"
                 timeout = (5, 5)
                 typecast = True
+
+            first_name = fields.TextField("First Name")
+            age = fields.IntegerField("Age")
+
+    .. code-block:: python
+
+        from pyairtable.orm import Model, fields
+
+        class Contact(Model):
+            Meta = {
+                "base_id": "appaPqizdsNHDvlEm",
+                "table_name": "Contact",
+                "api_key": "keyapikey",
+                "timeout": (5, 5),
+                "typecast": True,
+            }
+            first_name = fields.TextField("First Name")
+            age = fields.IntegerField("Age")
 
     You can implement meta attributes as callables if certain values
     need to be dynamically provided or are unavailable at import time:
@@ -73,9 +92,6 @@ class Model:
         from your_app.config import get_secret
 
         class Contact(Model):
-            first_name = fields.TextField("First Name")
-            age = fields.IntegerField("Age")
-
             class Meta:
                 base_id = "appaPqizdsNHDvlEm"
                 table_name = "Contact"
@@ -83,6 +99,9 @@ class Model:
                 @staticmethod
                 def api_key():
                     return get_secret("AIRTABLE_API_KEY")
+
+            first_name = fields.TextField("First Name")
+            age = fields.IntegerField("Age")
     """
 
     #: The Airtable record ID for this instance. If empty, the instance
@@ -416,17 +435,24 @@ class Model:
         return self.meta.table.add_comment(self.id, text)
 
 
+@dataclass
 class _Meta:
     """
     Wrapper around a Model.Meta class that provides easier, typed access to
     configuration values (which may or may not be defined in the original class).
     """
 
-    def __init__(self, model: Type[Model]) -> None:
-        if not (model_meta := getattr(model, "Meta", None)):
-            raise AttributeError(f"{model.__name__}.Meta must be defined")
-        self.model = model
-        self.model_meta = model_meta
+    model: Type[Model]
+
+    @property
+    def _config(self) -> Mapping[str, Any]:
+        if not (model_meta := getattr(self.model, "Meta", None)):
+            raise AttributeError(f"{self.model.__name__}.Meta must be defined")
+        if isinstance(model_meta, dict):
+            return model_meta
+        if isinstance(model_meta, type):
+            return model_meta.__dict__
+        raise TypeError(type(model_meta))
 
     def get(
         self,
@@ -447,9 +473,9 @@ class _Meta:
             check_types: If set, will raise a ``TypeError`` if the value is not
                          an instance of the given type(s).
         """
-        if required and not hasattr(self.model_meta, name):
+        if required and name not in self._config:
             raise ValueError(f"{self.model.__name__}.Meta.{name} must be defined")
-        value = getattr(self.model_meta, name, default)
+        value = self._config.get(name, default)
         if callable(value) and call:
             value = value()
         if required and value is None:
