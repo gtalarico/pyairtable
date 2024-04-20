@@ -68,6 +68,47 @@ def test_model_empty_meta_with_callable():
         m.assert_not_called()
 
 
+def test_model_meta_dict():
+    """
+    Test that we can define Meta as a dict rather than a class.
+    """
+
+    class Address(Model):
+        Meta = {
+            "api_key": "fake_api_key",
+            "base_id": "fake_base_id",
+            "table_name": "fake_table_name",
+            "timeout": (1, 1),
+            "retry": False,
+        }
+
+    assert Address.meta.api.api_key == "fake_api_key"
+
+
+@pytest.mark.parametrize("invalid_meta", ([1, 2, 3], "invalid", True))
+def test_model_invalid_meta(invalid_meta):
+    """
+    Test that model creation raises a TypeError if Meta is an invalid type.
+    """
+    with pytest.raises(TypeError):
+
+        class Address(Model):
+            Meta = invalid_meta
+
+
+@pytest.mark.parametrize("meta_kwargs", [{"timeout": 1}, {"retry": "sure"}])
+def test_model_meta_checks_types(meta_kwargs):
+    """
+    Test that accessing meta raises a TypeError if a value is an invalid type.
+    """
+
+    class Address(Model):
+        Meta = fake_meta(**meta_kwargs)
+
+    with pytest.raises(TypeError):
+        Address.meta.api
+
+
 @pytest.mark.parametrize("name", ("exists", "id"))
 def test_model_overlapping(name):
     """

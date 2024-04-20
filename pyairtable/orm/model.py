@@ -12,6 +12,7 @@ from typing import (
     Optional,
     Type,
     Union,
+    cast,
 )
 
 from typing_extensions import Self as SelfType
@@ -446,13 +447,16 @@ class _Meta:
 
     @property
     def _config(self) -> Mapping[str, Any]:
-        if not (model_meta := getattr(self.model, "Meta", None)):
+        if not (meta := getattr(self.model, "Meta", None)):
             raise AttributeError(f"{self.model.__name__}.Meta must be defined")
-        if isinstance(model_meta, dict):
-            return model_meta
-        if isinstance(model_meta, type):
-            return model_meta.__dict__
-        raise TypeError(type(model_meta))
+        if isinstance(meta, dict):
+            return meta
+        try:
+            return cast(Mapping[str, Any], meta.__dict__)
+        except AttributeError:
+            raise TypeError(
+                f"{self.model.__name__}.Meta must be a dict or class; got {type(meta)}"
+            )
 
     def get(
         self,
