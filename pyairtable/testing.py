@@ -5,8 +5,10 @@ Helper functions for writing tests that use the pyairtable library.
 import datetime
 import random
 import string
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
+from pyairtable.api import retrying
+from pyairtable.api.api import TimeoutTuple
 from pyairtable.api.types import AttachmentDict, CollaboratorDict, Fields, RecordDict
 
 
@@ -34,6 +36,8 @@ def fake_meta(
     base_id: str = "appFakeTestingApp",
     table_name: str = "tblFakeTestingTbl",
     api_key: str = "patFakePersonalAccessToken",
+    timeout: Optional[TimeoutTuple] = None,
+    retry: Optional[Union[bool, retrying.Retry]] = None,
     use_field_ids: bool = False,
 ) -> type:
     """
@@ -43,6 +47,8 @@ def fake_meta(
         "base_id": base_id,
         "table_name": table_name,
         "api_key": api_key,
+        "timeout": timeout,
+        "retry": retry,
         "use_field_ids": use_field_ids,
     }
     return type("Meta", (), attrs)

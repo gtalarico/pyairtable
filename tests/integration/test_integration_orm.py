@@ -103,9 +103,8 @@ class _Everything(Model):
 def _model_fixture(cls, monkeypatch, make_meta):
     monkeypatch.setattr(cls, "Meta", make_meta(cls.__name__.replace("_", "")))
     yield cls
-    table = cls.get_table()
-    for page in table.iterate():
-        table.batch_delete([record["id"] for record in page])
+    for page in cls.meta.table.iterate():
+        cls.meta.table.batch_delete([record["id"] for record in page])
 
 
 @pytest.fixture
@@ -171,7 +170,7 @@ def test_undeclared_fields(make_meta):
         first_name = f.TextField("First Name")
         last_name = f.TextField("Last Name")
 
-    table = Contact.get_table()
+    table = Contact.meta.table
     record = table.create(
         {
             "First Name": "Alice",

@@ -1,10 +1,24 @@
 import datetime
-from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional
+from dataclasses import dataclass
+from functools import cached_property
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from typing_extensions import Self as SelfType
 
-from pyairtable.api.api import Api
+from pyairtable.api import retrying
+from pyairtable.api.api import Api, TimeoutTuple
 from pyairtable.api.base import Base
 from pyairtable.api.table import Table
 from pyairtable.api.types import (
@@ -19,13 +33,16 @@ from pyairtable.models import Comment
 from pyairtable.orm.fields import AnyField, Field
 from pyairtable.utils import datetime_from_iso_str, datetime_to_iso_str
 
+if TYPE_CHECKING:
+    from builtins import _ClassInfo
+
 
 class Model:
     """
     Supports creating ORM-style classes representing Airtable tables.
     For more details, see :ref:`orm`.
 
-    A nested class called ``Meta`` is required and can specify
+    A nested class or dict called ``Meta`` is required and can specify
     the following attributes:
 
         * ``api_key`` (required) - API key or personal access token.
@@ -35,20 +52,37 @@ class Model:
         * ``typecast`` - |kwarg_typecast| Defaults to ``True``.
         * ``use_field_ids`` - |kwarg_use_field_ids| Defaults to ``False``.
 
+    For example, the following two are equivalent:
+
     .. code-block:: python
 
         from pyairtable.orm import Model, fields
 
         class Contact(Model):
-            first_name = fields.TextField("First Name")
-            age = fields.IntegerField("Age")
-
             class Meta:
                 base_id = "appaPqizdsNHDvlEm"
                 table_name = "Contact"
                 api_key = "keyapikey"
                 timeout = (5, 5)
                 typecast = True
+
+            first_name = fields.TextField("First Name")
+            age = fields.IntegerField("Age")
+
+    .. code-block:: python
+
+        from pyairtable.orm import Model, fields
+
+        class Contact(Model):
+            Meta = {
+                "base_id": "appaPqizdsNHDvlEm",
+                "table_name": "Contact",
+                "api_key": "keyapikey",
+                "timeout": (5, 5),
+                "typecast": True,
+            }
+            first_name = fields.TextField("First Name")
+            age = fields.IntegerField("Age")
 
     You can implement meta attributes as callables if certain values
     need to be dynamically provided or are unavailable at import time:
@@ -59,9 +93,6 @@ class Model:
         from your_app.config import get_secret
 
         class Contact(Model):
-            first_name = fields.TextField("First Name")
-            age = fields.IntegerField("Age")
-
             class Meta:
                 base_id = "appaPqizdsNHDvlEm"
                 table_name = "Contact"
@@ -69,14 +100,27 @@ class Model:
                 @staticmethod
                 def api_key():
                     return get_secret("AIRTABLE_API_KEY")
+
+            first_name = fields.TextField("First Name")
+            age = fields.IntegerField("Age")
     """
 
+    #: The Airtable record ID for this instance. If empty, the instance
+    #: has never been saved to the API.
     id: str = ""
+
+    #: The time when the Airtable record was created. If empty, the instance
+    #: has never been saved to (or fetched from) the API.
     created_time: Optional[datetime.datetime] = None
+
+    #: A wrapper allowing type-annotated access to ORM configuration.
+    meta: ClassVar["_Meta"]
+
     _deleted: bool = False
     _fields: Dict[FieldName, Any]
 
     def __init_subclass__(cls, **kwargs: Any):
+        cls.meta = _Meta(cls)
         cls._validate_class()
         super().__init_subclass__(**kwargs)
 
@@ -145,36 +189,11 @@ class Model:
             setattr(self, key, value)
 
     @classmethod
-    def _get_meta(
-        cls, name: str, default: Any = None, required: bool = False, call: bool = True
-    ) -> Any:
-        """
-        Retrieves the value of a Meta attribute.
-
-        Args:
-            default: The default value to return if the attribute is not set.
-            required: Raise an exception if the attribute is not set.
-            call: If the value is callable, call it before returning a result.
-        """
-        if not hasattr(cls, "Meta"):
-            raise AttributeError(f"{cls.__name__}.Meta must be defined")
-        if not hasattr(cls.Meta, name):
-            if required:
-                raise ValueError(f"{cls.__name__}.Meta.{name} must be defined")
-            return default
-        value = getattr(cls.Meta, name)
-        if call and callable(value):
-            value = value()
-        if required and value is None:
-            raise ValueError(f"{cls.__name__}.Meta.{name} cannot be None")
-        return value
-
-    @classmethod
     def _validate_class(cls) -> None:
         # Verify required Meta attributes were set (but don't call any callables)
-        assert cls._get_meta("api_key", required=True, call=False)
-        assert cls._get_meta("base_id", required=True, call=False)
-        assert cls._get_meta("table_name", required=True, call=False)
+        assert cls.meta.get("api_key", required=True, call=False)
+        assert cls.meta.get("base_id", required=True, call=False)
+        assert cls.meta.get("table_name", required=True, call=False)
 
         model_attributes = [a for a in cls.__dict__.keys() if not a.startswith("__")]
         overridden = set(model_attributes).intersection(Model.__dict__.keys())
@@ -184,35 +203,6 @@ class Model:
                     cls=cls.__name__, name=overridden
                 )
             )
-
-    @classmethod
-    def _get_meta_request_kwargs(cls) -> Dict[str, Any]:
-        return {
-            "user_locale": None,
-            "cell_format": "json",
-            "time_zone": None,
-            "use_field_ids": cls._get_meta("use_field_ids", default=False),
-        }
-
-    @classmethod
-    @lru_cache
-    def get_api(cls) -> Api:
-        return Api(
-            api_key=cls._get_meta("api_key", required=True),
-            timeout=cls._get_meta("timeout"),
-        )
-
-    @classmethod
-    def get_base(cls) -> Base:
-        return cls.get_api().base(cls._get_meta("base_id", required=True))
-
-    @classmethod
-    def get_table(cls) -> Table:
-        return cls.get_base().table(cls._get_meta("table_name", required=True))
-
-    @classmethod
-    def _typecast(cls) -> bool:
-        return bool(cls._get_meta("typecast", default=True))
 
     def exists(self) -> bool:
         """
@@ -232,14 +222,14 @@ class Model:
         """
         if self._deleted:
             raise RuntimeError(f"{self.id} was deleted")
-        table = self.get_table()
+        table = self.meta.table
         fields = self.to_record(only_writable=True)["fields"]
 
         if not self.id:
-            record = table.create(fields, typecast=self._typecast())
+            record = table.create(fields, typecast=self.meta.typecast)
             did_create = True
         else:
-            record = table.update(self.id, fields, typecast=self._typecast())
+            record = table.update(self.id, fields, typecast=self.meta.typecast)
             did_create = False
 
         self.id = record["id"]
@@ -255,7 +245,7 @@ class Model:
         """
         if not self.id:
             raise ValueError("cannot be deleted because it does not have id")
-        table = self.get_table()
+        table = self.meta.table
         result = table.delete(self.id)
         self._deleted = True
         # Is it even possible to get "deleted" False?
@@ -267,9 +257,8 @@ class Model:
         Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
         """
-        kwargs.update(cls._get_meta_request_kwargs())
-        table = cls.get_table()
-        return [cls.from_record(record) for record in table.all(**kwargs)]
+        kwargs.update(cls.meta.request_kwargs)
+        return [cls.from_record(record) for record in cls.meta.table.all(**kwargs)]
 
     @classmethod
     def first(cls, **kwargs: Any) -> Optional[SelfType]:
@@ -277,9 +266,8 @@ class Model:
         Retrieve the first record for this model. For all supported
         keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
         """
-        kwargs.update(cls._get_meta_request_kwargs())
-        table = cls.get_table()
-        if record := table.first(**kwargs):
+        kwargs.update(cls.meta.request_kwargs)
+        if record := cls.meta.table.first(**kwargs):
             return cls.from_record(record)
         return None
 
@@ -356,7 +344,7 @@ class Model:
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
 
-        record = self.get_table().get(self.id)
+        record = self.meta.table.get(self.id)
         unused = self.from_record(record)
         self._fields = unused._fields
         self.created_time = unused.created_time
@@ -383,7 +371,7 @@ class Model:
             return [cls.from_id(record_id, fetch=False) for record_id in record_ids]
         # There's no endpoint to query multiple IDs at once, but we can use a formula.
         formula = OR(EQ(RECORD_ID(), record_id) for record_id in record_ids)
-        record_data = cls.get_table().all(formula=formula)
+        record_data = cls.meta.table.all(formula=formula)
         records = [cls.from_record(record) for record in record_data]
         # Ensure we return records in the same order, and raise KeyError if any are missing
         records_by_id = {record.id: record for record in records}
@@ -412,9 +400,9 @@ class Model:
             if (record := model.to_record(only_writable=True))
         ]
 
-        table = cls.get_table()
-        table.batch_update(update_records, typecast=cls._typecast())
-        created_records = table.batch_create(create_records, typecast=cls._typecast())
+        table = cls.meta.table
+        table.batch_update(update_records, typecast=cls.meta.typecast)
+        created_records = table.batch_create(create_records, typecast=cls.meta.typecast)
         for model, record in zip(create_models, created_records):
             model.id = record["id"]
             model.created_time = datetime_from_iso_str(record["createdTime"])
@@ -431,18 +419,132 @@ class Model:
             raise ValueError("cannot delete an unsaved model")
         if not all(isinstance(model, cls) for model in models):
             raise TypeError(set(type(model) for model in models))
-        cls.get_table().batch_delete([model.id for model in models])
+        cls.meta.table.batch_delete([model.id for model in models])
 
     def comments(self) -> List[Comment]:
         """
         Return a list of comments on this record.
         See :meth:`Table.comments <pyairtable.Table.comments>`.
         """
-        return self.get_table().comments(self.id)
+        return self.meta.table.comments(self.id)
 
     def add_comment(self, text: str) -> Comment:
         """
         Add a comment to this record.
         See :meth:`Table.add_comment <pyairtable.Table.add_comment>`.
         """
-        return self.get_table().add_comment(self.id, text)
+        return self.meta.table.add_comment(self.id, text)
+
+
+@dataclass
+class _Meta:
+    """
+    Wrapper around a Model.Meta class that provides easier, typed access to
+    configuration values (which may or may not be defined in the original class).
+    """
+
+    model: Type[Model]
+
+    @property
+    def _config(self) -> Mapping[str, Any]:
+        if not (meta := getattr(self.model, "Meta", None)):
+            raise AttributeError(f"{self.model.__name__}.Meta must be defined")
+        if isinstance(meta, dict):
+            return meta
+        try:
+            return cast(Mapping[str, Any], meta.__dict__)
+        except AttributeError:
+            raise TypeError(
+                f"{self.model.__name__}.Meta must be a dict or class; got {type(meta)}"
+            )
+
+    def get(
+        self,
+        name: str,
+        default: Any = None,
+        required: bool = False,
+        call: bool = True,
+        check_types: Optional["_ClassInfo"] = None,
+    ) -> Any:
+        """
+        Given a name, retrieve the model configuration with that name.
+
+        Args:
+            default: The default value to use if the name is not defined.
+            required: If ``True``, raises ``ValueError`` if the name is undefined or None.
+            call: If ``False``, does not execute any callables to retrieve this value;
+                  it will consider the callable itself as the value.
+            check_types: If set, will raise a ``TypeError`` if the value is not
+                         an instance of the given type(s).
+        """
+        if required and name not in self._config:
+            raise ValueError(f"{self.model.__name__}.Meta.{name} must be defined")
+        value = self._config.get(name, default)
+        if callable(value) and call:
+            value = value()
+        if required and value is None:
+            raise ValueError(f"{self.model.__name__}.Meta.{name} cannot be None")
+        if check_types is not None and not isinstance(value, check_types):
+            raise TypeError(f"expected {check_types!r}; got {type(value)}")
+        return value
+
+    @property
+    def api_key(self) -> str:
+        return str(self.get("api_key", required=True))
+
+    @property
+    def timeout(self) -> Optional[TimeoutTuple]:
+        return self.get(  # type: ignore[no-any-return]
+            "timeout",
+            default=None,
+            check_types=(type(None), tuple),
+        )
+
+    @property
+    def retry_strategy(self) -> Optional[Union[bool, retrying.Retry]]:
+        return self.get(  # type: ignore[no-any-return]
+            "retry",
+            default=True,
+            check_types=(type(None), bool, retrying.Retry),
+        )
+
+    @cached_property
+    def api(self) -> Api:
+        return Api(
+            self.api_key,
+            timeout=self.timeout,
+            retry_strategy=self.retry_strategy,
+        )
+
+    @property
+    def base_id(self) -> str:
+        return str(self.get("base_id", required=True))
+
+    @property
+    def base(self) -> Base:
+        return self.api.base(self.base_id)
+
+    @property
+    def table_name(self) -> str:
+        return str(self.get("table_name", required=True))
+
+    @property
+    def table(self) -> Table:
+        return self.base.table(self.table_name)
+
+    @property
+    def typecast(self) -> bool:
+        return bool(self.get("typecast", default=True))
+
+    @property
+    def use_field_ids(self) -> bool:
+        return bool(self.get("use_field_ids", default=False))
+
+    @property
+    def request_kwargs(self) -> Dict[str, Any]:
+        return {
+            "user_locale": None,
+            "cell_format": "json",
+            "time_zone": None,
+            "use_field_ids": self.use_field_ids,
+        }
