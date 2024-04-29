@@ -611,7 +611,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
     def populate(
         self,
         instance: "Model",
-        /,
+        *,
         lazy: Optional[bool] = None,
         memoize: Optional[bool] = None,
     ) -> None:
@@ -832,7 +832,7 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
     def populate(
         self,
         instance: "Model",
-        /,
+        *,
         lazy: Optional[bool] = None,
         memoize: Optional[bool] = None,
     ) -> None:

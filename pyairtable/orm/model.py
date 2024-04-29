@@ -263,7 +263,7 @@ class Model:
         return bool(result["deleted"])
 
     @classmethod
-    def all(cls, /, memoize: Optional[bool] = None, **kwargs: Any) -> List[SelfType]:
+    def all(cls, *, memoize: Optional[bool] = None, **kwargs: Any) -> List[SelfType]:
         """
         Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
@@ -279,7 +279,7 @@ class Model:
 
     @classmethod
     def first(
-        cls, /, memoize: Optional[bool] = None, **kwargs: Any
+        cls, *, memoize: Optional[bool] = None, **kwargs: Any
     ) -> Optional[SelfType]:
         """
         Retrieve the first record for this model. For all supported
@@ -316,7 +316,7 @@ class Model:
 
     @classmethod
     def from_record(
-        cls, record: RecordDict, /, memoize: Optional[bool] = None
+        cls, record: RecordDict, *, memoize: Optional[bool] = None
     ) -> SelfType:
         """
         Create an instance from a record dict.
@@ -351,7 +351,11 @@ class Model:
 
     @classmethod
     def from_id(
-        cls, record_id: RecordId, /, fetch: bool = True, memoize: Optional[bool] = None
+        cls,
+        record_id: RecordId,
+        *,
+        fetch: bool = True,
+        memoize: Optional[bool] = None,
     ) -> SelfType:
         """
         Create an instance from a record ID.
@@ -389,7 +393,7 @@ class Model:
     def from_ids(
         cls,
         record_ids: Iterable[RecordId],
-        /,
+        *,
         fetch: bool = True,
         memoize: Optional[bool] = None,
     ) -> List[SelfType]:
