@@ -25,6 +25,7 @@ from pyairtable.api.types import CreateAttachmentDict
 P = ParamSpec("P")
 R = TypeVar("R", covariant=True)
 T = TypeVar("T")
+C = TypeVar("C", contravariant=True)
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -199,13 +200,13 @@ def docstring_from(obj: Any, append: str = "") -> Callable[[F], F]:
     return _wrapper
 
 
-class FetchMethod(Protocol, Generic[R]):
-    def __get__(self, instance: Any, owner: Any) -> Callable[..., R]: ...
+class FetchMethod(Protocol, Generic[C, R]):
+    def __get__(self, instance: C, owner: Any) -> Callable[..., R]: ...
 
-    def __call__(self_, self: Any, *, force: bool = False) -> R: ...
+    def __call__(self_, self: C, *, force: bool = False) -> R: ...
 
 
-def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
+def cache_unless_forced(func: Callable[[C], R]) -> FetchMethod[C, R]:
     """
     Wrap a method (e.g. ``Base.shares()``) in a decorator that will save
     a memoized version of the return value for future reuse, but will also
@@ -217,7 +218,7 @@ def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
         attr = "_cached_" + attr.lstrip("_")
 
     @wraps(func)
-    def _inner(self: Any, *, force: bool = False) -> R:
+    def _inner(self: C, *, force: bool = False) -> R:
         if force or getattr(self, attr, None) is None:
             setattr(self, attr, func(self))
         return cast(R, getattr(self, attr))
@@ -225,7 +226,7 @@ def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
     _inner.__annotations__["force"] = bool
     _append_docstring_text(_inner, "Args:\n\tforce: |kwarg_force_metadata|")
 
-    return _inner
+    return cast(FetchMethod[C, R], _inner)
 
 
 def coerce_iso_str(value: Any) -> Optional[str]:
