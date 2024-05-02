@@ -223,7 +223,7 @@ def test_audit_log__sortorder(
         list(enterprise.audit_log(*fncall.args, **fncall.kwargs))
 
     request = enterprise_mocks.get_audit_log.last_request
-    assert request.qs["sortorder"] == [sortorder]
+    assert request.qs["sortOrder"] == [sortorder]
     assert m.mock_calls[-1].kwargs["offset_field"] == offset_field
 
 
