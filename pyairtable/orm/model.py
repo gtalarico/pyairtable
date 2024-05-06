@@ -293,6 +293,15 @@ class Model:
             return cls.from_record(record, memoize=memoize)
         return None
 
+    @classmethod
+    def _maybe_memoize(cls, instance: SelfType, memoize: Optional[bool]) -> None:
+        """
+        If memoization is enabled, save the instance to the memoization cache.
+        """
+        memoize = cls.meta.memoize if memoize is None else memoize
+        if memoize:
+            cls._memoized[instance.id] = instance
+
     def to_record(self, only_writable: bool = False) -> RecordDict:
         """
         Build a :class:`~pyairtable.api.types.RecordDict` to represent this instance.
@@ -344,9 +353,7 @@ class Model:
         instance._fields = field_values
         instance._fetched = True
         instance.created_time = datetime_from_iso_str(record["createdTime"])
-        memoize = cls.meta.memoize if memoize is None else memoize
-        if memoize:
-            cls._memoized[instance.id] = instance
+        cls._maybe_memoize(instance, memoize)
         return instance
 
     @classmethod
@@ -371,9 +378,7 @@ class Model:
             instance = cls(id=record_id)
         if fetch and not instance._fetched:
             instance.fetch()
-        memoize = cls.meta.memoize if memoize is None else memoize
-        if memoize:
-            cls._memoized[record_id] = instance
+        cls._maybe_memoize(instance, memoize)
         return instance
 
     def fetch(self) -> None:
