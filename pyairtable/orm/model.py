@@ -56,7 +56,7 @@ class Model:
           (see :func:`~pyairtable.retry_strategy` for details).
         * ``use_field_ids`` - Whether fields will be defined by ID, rather than name. Defaults to ``False``.
         * ``memoize`` - Whether the model should reuse models it creates between requests.
-          See :ref:`Memoization` for more information.
+          See :ref:`Memoizing linked records` for more information.
 
     For example, the following two are equivalent:
 

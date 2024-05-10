@@ -506,6 +506,12 @@ This code will perform a series of API calls at the beginning to fetch
 all records from the Books and Authors tables, so that ``author.books``
 does not need to request linked records one at a time during the loop.
 
+.. note::
+    Memoization does not affect whether pyAirtable will make an API call.
+    It only affects whether pyAirtable will reuse a model instance that
+    was already created, or create a new one. For example, calling
+    ``model.all(memoize=True)`` N times will still result in N calls to the API.
+
 You can also set ``memoize = True`` in the ``Meta`` configuration for your model,
 which indicates that you always want to memoize models retrieved from the API:
 
@@ -520,8 +526,8 @@ which indicates that you always want to memoize models retrieved from the API:
         name = F.TextField("Name")
         books = F.LinkField("Books", Book)
 
-    Book.first()  # this will memoize the object it creates
-    Author.first().books  # this will memoize all objects created
+    Book.first()  # this will memoize the book it creates
+    Author.first().books  # this will memoize all books created
     Book.all(memoize=False)  # this will skip memoization
 
 The following methods support the ``memoize=`` keyword argument.
