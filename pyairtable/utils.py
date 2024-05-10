@@ -25,6 +25,8 @@ from pyairtable.api.types import CreateAttachmentDict
 P = ParamSpec("P")
 R = TypeVar("R", covariant=True)
 T = TypeVar("T")
+C = TypeVar("C", contravariant=True)
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def datetime_to_iso_str(value: datetime) -> str:
@@ -141,9 +143,6 @@ is_field_id = partial(is_airtable_id, prefix="fld")
 is_user_id = partial(is_airtable_id, prefix="usr")
 
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
 def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
     """
     Wrap a function or method so that if Airtable returns a 404,
@@ -193,13 +192,21 @@ def _append_docstring_text(obj: Any, text: str) -> None:
     obj.__doc__ = f"{doc}\n\n{text}"
 
 
-class FetchMethod(Protocol, Generic[R]):
-    def __get__(self, instance: Any, owner: Any) -> Callable[..., R]: ...
+def docstring_from(obj: Any, append: str = "") -> Callable[[F], F]:
+    def _wrapper(func: F) -> F:
+        func.__doc__ = obj.__doc__ + append
+        return func
 
-    def __call__(self_, self: Any, *, force: bool = False) -> R: ...
+    return _wrapper
 
 
-def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
+class FetchMethod(Protocol, Generic[C, R]):
+    def __get__(self, instance: C, owner: Any) -> Callable[..., R]: ...
+
+    def __call__(self_, self: C, *, force: bool = False) -> R: ...
+
+
+def cache_unless_forced(func: Callable[[C], R]) -> FetchMethod[C, R]:
     """
     Wrap a method (e.g. ``Base.shares()``) in a decorator that will save
     a memoized version of the return value for future reuse, but will also
@@ -211,7 +218,7 @@ def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
         attr = "_cached_" + attr.lstrip("_")
 
     @wraps(func)
-    def _inner(self: Any, *, force: bool = False) -> R:
+    def _inner(self: C, *, force: bool = False) -> R:
         if force or getattr(self, attr, None) is None:
             setattr(self, attr, func(self))
         return cast(R, getattr(self, attr))
@@ -219,7 +226,7 @@ def cache_unless_forced(func: Callable[P, R]) -> FetchMethod[R]:
     _inner.__annotations__["force"] = bool
     _append_docstring_text(_inner, "Args:\n\tforce: |kwarg_force_metadata|")
 
-    return _inner
+    return cast(FetchMethod[C, R], _inner)
 
 
 def coerce_iso_str(value: Any) -> Optional[str]:

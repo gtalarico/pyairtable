@@ -467,6 +467,82 @@ there are four components:
 4. The model class, the path to the model class, or :data:`~pyairtable.orm.fields.LinkSelf`
 
 
+Memoizing linked records
+"""""""""""""""""""""""""""""
+
+There are cases where your application may need to retrieve hundreds of nested
+models through the ORM, and you don't want to make hundreds of Airtable API calls.
+pyAirtable provides a way to pre-fetch and memoize instances for each record,
+which will then be reused later by record link fields.
+
+The usual way to do this is passing ``memoize=True`` to a retrieval method
+at the beginning of your code to pre-fetch any records you might need.
+For example, you might have the following:
+
+.. code-block:: python
+
+    from pyairtable.orm import Model, fields as F
+    from operator import attrgetter
+
+    class Book(Model):
+        class Meta: ...
+        title = F.TextField("Title")
+        published = F.DateField("Publication Date")
+
+    class Author(Model):
+        class Meta: ...
+        name = F.TextField("Name")
+        books = F.LinkField("Books", Book)
+
+    def main():
+        books = Book.all(memoize=True)
+        authors = Author.all(memoize=True)
+        for author in authors:
+            print(f"* {author.name}")
+            for book in sorted(author.books, key=attrgetter("published")):
+                print(f"  - {book.title} ({book.published.isoformat()})")
+
+This code will perform a series of API calls at the beginning to fetch
+all records from the Books and Authors tables, so that ``author.books``
+does not need to request linked records one at a time during the loop.
+
+.. note::
+    Memoization does not affect whether pyAirtable will make an API call.
+    It only affects whether pyAirtable will reuse a model instance that
+    was already created, or create a new one. For example, calling
+    ``model.all(memoize=True)`` N times will still result in N calls to the API.
+
+You can also set ``memoize = True`` in the ``Meta`` configuration for your model,
+which indicates that you always want to memoize models retrieved from the API:
+
+.. code-block:: python
+
+    class Book(Model):
+        Meta = {..., "memoize": True}
+        title = F.TextField("Title")
+
+    class Author(Model):
+        Meta = {...}
+        name = F.TextField("Name")
+        books = F.LinkField("Books", Book)
+
+    Book.first()  # this will memoize the book it creates
+    Author.first().books  # this will memoize all books created
+    Book.all(memoize=False)  # this will skip memoization
+
+The following methods support the ``memoize=`` keyword argument.
+You can pass ``memoize=False`` to override memoization that is
+enabled on the model configuration.
+
+   * :meth:`Model.all <pyairtable.orm.Model.all>`
+   * :meth:`Model.first <pyairtable.orm.Model.first>`
+   * :meth:`Model.from_record <pyairtable.orm.Model.from_record>`
+   * :meth:`Model.from_id <pyairtable.orm.Model.from_id>`
+   * :meth:`Model.from_ids <pyairtable.orm.Model.from_ids>`
+   * :meth:`LinkField.populate <pyairtable.orm.fields.LinkField.populate>`
+   * :meth:`SingleLinkField.populate <pyairtable.orm.fields.SingleLinkField.populate>`
+
+
 Comments
 ----------
 
