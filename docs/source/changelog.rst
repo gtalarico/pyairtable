@@ -27,7 +27,9 @@ Changelog
 * Added ORM fields that :ref:`require a non-null value <Required Values>`.
   - `PR #363 <https://github.com/gtalarico/pyairtable/pull/363>`_.
 * Refactored methods for accessing ORM model configuration.
+  - `PR #366 <https://github.com/gtalarico/pyairtable/pull/366>`_.
 * Added support for :ref:`memoization of ORM models <memoizing linked records>`.
+  - `PR #369 <https://github.com/gtalarico/pyairtable/pull/369>`_.
 
 2.3.3 (2024-03-22)
 ------------------------
