@@ -38,17 +38,17 @@ class Formula:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.value!r})"
 
-    def __and__(self, other: "Formula") -> "Formula":
-        return AND(self, other)
+    def __and__(self, other: Any) -> "Formula":
+        return AND(self, to_formula(other))
 
-    def __or__(self, other: "Formula") -> "Formula":
-        return OR(self, other)
+    def __or__(self, other: Any) -> "Formula":
+        return OR(self, to_formula(other))
 
-    def __xor__(self, other: "Formula") -> "Formula":
-        return XOR(self, other)
+    def __xor__(self, other: Any) -> "Formula":
+        return XOR(self, to_formula(other))
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Formula):
+        if not isinstance(other, type(self)):
             return False
         return other.value == self.value
 
@@ -56,41 +56,44 @@ class Formula:
         return NOT(self)
 
     def flatten(self) -> "Formula":
+        """
+        Return a new formula with nested boolean statements flattened.
+        """
         return self
 
     def eq(self, value: Any) -> "Comparison":
         """
-        Build an :class:`~pyairtable.formulas.EQ` comparison using this field.
+        Build an :class:`~pyairtable.formulas.EQ` comparison using this formula.
         """
         return EQ(self, value)
 
     def ne(self, value: Any) -> "Comparison":
         """
-        Build an :class:`~pyairtable.formulas.NE` comparison using this field.
+        Build an :class:`~pyairtable.formulas.NE` comparison using this formula.
         """
         return NE(self, value)
 
     def gt(self, value: Any) -> "Comparison":
         """
-        Build a :class:`~pyairtable.formulas.GT` comparison using this field.
+        Build a :class:`~pyairtable.formulas.GT` comparison using this formula.
         """
         return GT(self, value)
 
     def lt(self, value: Any) -> "Comparison":
         """
-        Build an :class:`~pyairtable.formulas.LT` comparison using this field.
+        Build an :class:`~pyairtable.formulas.LT` comparison using this formula.
         """
         return LT(self, value)
 
     def gte(self, value: Any) -> "Comparison":
         """
-        Build a :class:`~pyairtable.formulas.GTE` comparison using this field.
+        Build a :class:`~pyairtable.formulas.GTE` comparison using this formula.
         """
         return GTE(self, value)
 
     def lte(self, value: Any) -> "Comparison":
         """
-        Build an :class:`~pyairtable.formulas.LTE` comparison using this field.
+        Build an :class:`~pyairtable.formulas.LTE` comparison using this formula.
         """
         return LTE(self, value)
 
@@ -101,7 +104,7 @@ class Field(Formula):
     """
 
     def __str__(self) -> str:
-        return "{%s}" % escape_quotes(self.value)
+        return field_name(self.value)
 
 
 class Comparison(Formula):
@@ -372,6 +375,56 @@ def match(field_values: Fields, *, match_any: bool = False) -> Formula:
     return AND(*expressions)
 
 
+def to_formula(value: Any) -> Formula:
+    """
+    Converts the given value into a Formula object.
+
+    When given a Formula object, it returns the object as-is:
+
+    >>> to_formula(EQ(F.Formula("a"), "b"))
+    EQ(Formula('a'), 'b')
+
+    When given a scalar value, it simply wraps that value's string representation
+    in a Formula object:
+
+    >>> to_formula(1)
+    Formula('1')
+    >>> to_formula('foo')
+    Formula("'foo'")
+
+    Boolean and date values receive custom function calls:
+
+    >>> to_formula(True)
+    TRUE()
+    >>> to_formula(False)
+    FALSE()
+    >>> to_formula(datetime.date(2023, 12, 1))
+    DATETIME_PARSE('2023-12-01')
+    >>> to_formula(datetime.datetime(2023, 12, 1, 12, 34, 56))
+    DATETIME_PARSE('2023-12-01T12:34:56.000Z')
+    """
+    if isinstance(value, Formula):
+        return value
+    if isinstance(value, bool):
+        return TRUE() if value else FALSE()
+    if isinstance(value, (int, float, Decimal, Fraction)):
+        return Formula(str(value))
+    if isinstance(value, str):
+        return Formula(quoted(value))
+    if isinstance(value, datetime.datetime):
+        return DATETIME_PARSE(datetime_to_iso_str(value))
+    if isinstance(value, datetime.date):
+        return DATETIME_PARSE(date_to_iso_str(value))
+
+    # Runtime import to avoid circular dependency
+    import pyairtable.orm
+
+    if isinstance(value, pyairtable.orm.fields.Field):
+        return Field(value.field_name)
+
+    raise TypeError(value, type(value))
+
+
 def to_formula_str(value: Any) -> str:
     """
     Converts the given value into a string representation that can be used
@@ -400,24 +453,7 @@ def to_formula_str(value: Any) -> str:
     >>> to_formula_str(datetime.datetime(2023, 12, 1, 12, 34, 56))
     "DATETIME_PARSE('2023-12-01T12:34:56.000Z')"
     """
-    # Runtime import to avoid circular dependency
-    from pyairtable import orm
-
-    if isinstance(value, Formula):
-        return str(value)
-    if isinstance(value, bool):
-        return "TRUE()" if value else "FALSE()"
-    if isinstance(value, (int, float, Decimal, Fraction)):
-        return str(value)
-    if isinstance(value, str):
-        return "'{}'".format(escape_quotes(value))
-    if isinstance(value, datetime.datetime):
-        return str(DATETIME_PARSE(datetime_to_iso_str(value)))
-    if isinstance(value, datetime.date):
-        return str(DATETIME_PARSE(date_to_iso_str(value)))
-    if isinstance(value, orm.fields.Field):
-        return field_name(value.field_name)
-    raise TypeError(value, type(value))
+    return str(to_formula(value))
 
 
 def quoted(value: str) -> str:
@@ -463,7 +499,10 @@ def field_name(name: str) -> str:
         >>> field_name("Guest's Name")
         "{Guest\\'s Name}"
     """
-    return "{%s}" % escape_quotes(name)
+    # This will not actually work with field names that contain more
+    # than one closing curly brace; that's a limitation of Airtable.
+    # Our library will escape all closing braces, but the API will fail.
+    return "{%s}" % escape_quotes(name.replace("}", r"\}"))
 
 
 class FunctionCall(Formula):
