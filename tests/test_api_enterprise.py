@@ -4,9 +4,9 @@ from unittest.mock import Mock, call, patch
 import pytest
 
 from pyairtable.api.enterprise import (
-    ClaimUsersResponse,
     DeleteUsersResponse,
     Enterprise,
+    ManageUsersResponse,
 )
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.testing import fake_id
@@ -281,7 +281,7 @@ def test_claim_users(enterprise, enterprise_mocks):
             "someone@example.com": "unmanaged",
         }
     )
-    assert isinstance(result, ClaimUsersResponse)
+    assert isinstance(result, ManageUsersResponse)
     assert enterprise_mocks.claim_users.call_count == 1
     assert enterprise_mocks.claim_users.last_request.json() == {
         "users": [
@@ -310,3 +310,24 @@ def test_delete_users(enterprise, requests_mock):
     assert isinstance(parsed, DeleteUsersResponse)
     assert parsed.deleted_users[0].email == "foo@bar.com"
     assert parsed.errors[0].type == "INVALID_PERMISSIONS"
+
+
+@pytest.mark.parametrize("action", ["grant", "revoke"])
+def test_manage_admin_access(enterprise, enterprise_mocks, requests_mock, action):
+    user = enterprise.user(enterprise_mocks.user_id)
+    m = requests_mock.post(f"{enterprise.url}/users/{action}AdminAccess", json={})
+    method = getattr(enterprise, f"{action}_admin")
+    result = method(
+        fake_user_id := fake_id("usr"),
+        fake_email := "fake@example.com",
+        user,
+    )
+    assert isinstance(result, ManageUsersResponse)
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "users": [
+            {"id": fake_user_id},
+            {"email": fake_email},
+            {"id": user.id},
+        ]
+    }

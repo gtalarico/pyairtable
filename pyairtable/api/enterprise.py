@@ -1,6 +1,7 @@
 import datetime
 from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
+from pyairtable._compat import pydantic
 from pyairtable.models._base import AirtableModel, update_forward_refs
 from pyairtable.models.audit import AuditLogResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
@@ -253,7 +254,7 @@ class Enterprise:
 
     def claim_users(
         self, users: Dict[str, Literal["managed", "unmanaged"]]
-    ) -> "ClaimUsersResponse":
+    ) -> "ManageUsersResponse":
         """
         Batch manage organizations enterprise account users. This endpoint allows you
         to change a user's membership status from being unmanaged to being an
@@ -276,7 +277,7 @@ class Enterprise:
             ]
         }
         response = self.api.post(f"{self.url}/users/claim", json=payload)
-        return ClaimUsersResponse.from_api(response, self.api, context=self)
+        return ManageUsersResponse.from_api(response, self.api, context=self)
 
     def delete_users(self, emails: Iterable[str]) -> "DeleteUsersResponse":
         """
@@ -287,6 +288,41 @@ class Enterprise:
         """
         response = self.api.delete(f"{self.url}/users", params={"email": list(emails)})
         return DeleteUsersResponse.from_api(response, self.api, context=self)
+
+    def grant_admin(self, *users: Union[str, UserInfo]) -> "ManageUsersResponse":
+        """
+        Grant admin access to one or more users.
+
+        Args:
+            users: One or more user IDs, email addresses, or instances of
+                :class:`~pyairtable.models.schema.UserInfo`.
+        """
+        return self._post_admin_access("grant", users)
+
+    def revoke_admin(self, *users: Union[str, UserInfo]) -> "ManageUsersResponse":
+        """
+        Revoke admin access to one or more users.
+
+        Args:
+            users: One or more user IDs, email addresses, or instances of
+                :class:`~pyairtable.models.schema.UserInfo`.
+        """
+        return self._post_admin_access("revoke", users)
+
+    def _post_admin_access(
+        self, action: str, users: Iterable[Union[str, UserInfo]]
+    ) -> "ManageUsersResponse":
+        response = self.api.post(
+            f"{self.url}/users/{action}AdminAccess",
+            json={
+                "users": [
+                    {"email": user_id} if "@" in user_id else {"id": user_id}
+                    for user in users
+                    for user_id in [user.id if isinstance(user, UserInfo) else user]
+                ]
+            },
+        )
+        return ManageUsersResponse.from_api(response, self.api, context=self)
 
 
 class UserRemoved(AirtableModel):
@@ -352,13 +388,15 @@ class DeleteUsersResponse(AirtableModel):
         message: Optional[str] = None
 
 
-class ClaimUsersResponse(AirtableModel):
+class ManageUsersResponse(AirtableModel):
     """
-    Returned from the `Manage user membership <https://airtable.com/developers/web/api/manage-user-membership>`__
-    endpoint.
+    Returned from the `Manage user membership <https://airtable.com/developers/web/api/manage-user-membership>`__,
+    `Grant admin access <https://airtable.com/developers/web/api/grant-admin-access>`__, and
+    `Revoke admin access <https://airtable.com/developers/web/api/revoke-admin-access>`__
+    endpoints.
     """
 
-    errors: List["ClaimUsersResponse.Error"]
+    errors: List["ManageUsersResponse.Error"] = pydantic.Field(default_factory=list)
 
     class Error(AirtableModel):
         id: Optional[str] = None

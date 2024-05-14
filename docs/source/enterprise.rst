@@ -158,3 +158,15 @@ via the following methods.
 `Delete users by email <https://airtable.com/developers/web/api/delete-users-by-email>`__
 
     >>> enterprise.delete_users(["foo@example.com", "bar@example.com"])
+
+`Grant admin access <https://airtable.com/developers/web/api/grant-admin-access>`__
+
+    >>> enterprise.grant_admin("usrUserId")
+    >>> enterprise.grant_admin("user@example.com")
+    >>> enterprise.grant_admin(enterprise.user("usrUserId"))
+
+`Revoke admin access <https://airtable.com/developers/web/api/revoke-admin-access>`__
+
+    >>> enterprise.revoke_admin("usrUserId")
+    >>> enterprise.revoke_admin("user@example.com")
+    >>> enterprise.revoke_admin(enterprise.user("usrUserId"))
