@@ -216,6 +216,48 @@ def test_not():
 @pytest.mark.parametrize(
     "input,expected",
     [
+        (EQ(F.Formula("a"), "b"), EQ(F.Formula("a"), "b")),
+        (True, F.TRUE()),
+        (False, F.FALSE()),
+        (3, F.Formula("3")),
+        (3.5, F.Formula("3.5")),
+        (Decimal("3.14159265"), F.Formula("3.14159265")),
+        (Fraction("4/19"), F.Formula("4/19")),
+        ("asdf", F.Formula("'asdf'")),
+        ("Jane's", F.Formula("'Jane\\'s'")),
+        ([1, 2, 3], TypeError),
+        ((1, 2, 3), TypeError),
+        ({1, 2, 3}, TypeError),
+        ({1: 2, 3: 4}, TypeError),
+        (
+            date(2023, 12, 1),
+            F.DATETIME_PARSE("2023-12-01"),
+        ),
+        (
+            datetime(2023, 12, 1, 12, 34, 56),
+            F.DATETIME_PARSE("2023-12-01T12:34:56.000"),
+        ),
+        (
+            datetime(2023, 12, 1, 12, 34, 56, tzinfo=timezone.utc),
+            F.DATETIME_PARSE("2023-12-01T12:34:56.000Z"),
+        ),
+        (orm.fields.Field("Foo"), F.Field("Foo")),
+    ],
+)
+def test_to_formula(input, expected):
+    """
+    Test that certain values are not changed at all by to_formula()
+    """
+    if isinstance(expected, type) and issubclass(expected, Exception):
+        with pytest.raises(expected):
+            F.to_formula(input)
+    else:
+        assert F.to_formula(input) == expected
+
+
+@pytest.mark.parametrize(
+    "input,expected",
+    [
         (EQ(F.Formula("a"), "b"), "a='b'"),
         (True, "TRUE()"),
         (False, "FALSE()"),
@@ -241,9 +283,10 @@ def test_not():
             datetime(2023, 12, 1, 12, 34, 56, tzinfo=timezone.utc),
             "DATETIME_PARSE('2023-12-01T12:34:56.000Z')",
         ),
+        (orm.fields.Field("Foo"), "{Foo}"),
     ],
 )
-def test_to_formula(input, expected):
+def test_to_formula_str(input, expected):
     if isinstance(expected, type) and issubclass(expected, Exception):
         with pytest.raises(expected):
             F.to_formula_str(input)
@@ -286,14 +329,28 @@ def test_function_call_equivalence():
     assert F.TODAY() != F.Formula("TODAY()")
 
 
-def test_field_name():
-    assert F.field_name("First Name") == "{First Name}"
-    assert F.field_name("Guest's Name") == "{Guest\\'s Name}"
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        ("First Name", "{First Name}"),
+        ("Guest's Name", r"{Guest\'s Name}"),
+        ("With {Curly Braces}", r"{With {Curly Braces\}}"),
+    ],
+)
+def test_field_name(input, expected):
+    assert F.field_name(input) == expected
 
 
 def test_quoted():
     assert F.quoted("John") == "'John'"
     assert F.quoted("Guest's Name") == "'Guest\\'s Name'"
+
+
+class FakeModel(orm.Model):
+    Meta = fake_meta()
+    name = orm.fields.TextField("Name")
+    email = orm.fields.EmailField("Email")
+    phone = orm.fields.PhoneNumberField("Phone")
 
 
 @pytest.mark.parametrize(
@@ -307,15 +364,22 @@ def test_quoted():
         ("lte", "<="),
     ],
 )
-def test_orm_field(methodname, op):
-    class FakeModel(orm.Model):
-        Meta = fake_meta()
-        name = orm.fields.TextField("Name")
-        age = orm.fields.IntegerField("Age")
-
+def test_orm_field_comparison_shortcuts(methodname, op):
+    """
+    Test each shortcut method on an ORM field.
+    """
     formula = getattr(FakeModel.name, methodname)("Value")
-    formula &= GTE(FakeModel.age, 21)
-    assert F.to_formula_str(formula) == f"AND({{Name}}{op}'Value', {{Age}}>=21)"
+    assert F.to_formula_str(formula) == f"{{Name}}{op}'Value'"
+
+
+def test_orm_field_as_formula():
+    """
+    Test different ways of using an ORM field in a formula.
+    """
+    formula = FakeModel.email.ne(F.BLANK()) | NE(FakeModel.phone, F.BLANK())
+    formula &= FakeModel.name
+    result = F.to_formula_str(formula.flatten())
+    assert result == "AND(OR({Email}!=BLANK(), {Phone}!=BLANK()), {Name})"
 
 
 @pytest.mark.parametrize(
