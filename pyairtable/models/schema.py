@@ -565,6 +565,8 @@ class UserInfo(
     enterprise_user_type: Optional[str]
     invited_to_airtable_by_user_id: Optional[str]
     is_managed: bool = False
+    is_admin: bool = False
+    is_super_admin: bool = False
     groups: List[NestedId] = _FL()
     collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
 

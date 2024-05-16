@@ -73,6 +73,18 @@ The 3.0 release has changed the API for retrieving ORM model configuration:
     * - ``Model._get_meta(name)``
       - ``Model.meta.get(name)``
 
+Miscellaneous name changes
+---------------------------------------------
+
+.. list-table::
+    :header-rows: 1
+
+    * - Old name
+      - New name
+    * - :class:`~pyairtable.api.enterprise.ClaimUsersResponse`
+      - :class:`~pyairtable.api.enterprise.ManageUsersResponse`
+
+
 Migrating from 2.2 to 2.3
 ============================
 
