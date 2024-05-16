@@ -76,13 +76,16 @@ The 3.0 release has changed the API for retrieving ORM model configuration:
 Miscellaneous name changes
 ---------------------------------------------
 
-.. list-table::
-    :header-rows: 1
-
-    * - Old name
-      - New name
-    * - :class:`~pyairtable.api.enterprise.ClaimUsersResponse`
-      - :class:`~pyairtable.api.enterprise.ManageUsersResponse`
+    * - | ``pyairtable.api.enterprise.ClaimUsersResponse``
+        | has become :class:`pyairtable.api.enterprise.ManageUsersResponse`
+    * - | ``pyairtable.formulas.CircularDependency``
+        | has become :class:`pyairtable.exceptions.CircularFormulaError`
+    * - | ``pyairtable.params.InvalidParamException``
+        | has become :class:`pyairtable.exceptions.InvalidParameterError`
+    * - | ``pyairtable.orm.fields.MissingValue``
+        | has become :class:`pyairtable.exceptions.MissingValueError`
+    * - | ``pyairtable.orm.fields.MultipleValues``
+        | has become :class:`pyairtable.exceptions.MultipleValuesError`
 
 
 Migrating from 2.2 to 2.3

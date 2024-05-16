@@ -14,6 +14,7 @@ from typing import Any, ClassVar, Iterable, List, Optional, Set, Union
 from typing_extensions import Self as SelfType
 
 from pyairtable.api.types import Fields
+from pyairtable.exceptions import CircularFormulaError
 from pyairtable.utils import date_to_iso_str, datetime_to_iso_str
 
 
@@ -235,7 +236,7 @@ class Compound(Formula):
         flattened: List[Formula] = []
         for item in self.components:
             if id(item) in memo:
-                raise CircularDependency(item)
+                raise CircularFormulaError(item)
             if isinstance(item, Compound) and item.operator == self.operator:
                 flattened.extend(item.flatten(memo=memo).components)
             else:
@@ -313,12 +314,6 @@ def NOT(component: Optional[Formula] = None, /, **fields: Any) -> Compound:
     if (count := len(items)) != 1:
         raise ValueError(f"NOT() requires exactly one condition; got {count}")
     return Compound.build("NOT", items)
-
-
-class CircularDependency(RecursionError):
-    """
-    A circular dependency was encountered when flattening nested conditions.
-    """
 
 
 def match(field_values: Fields, *, match_any: bool = False) -> Formula:

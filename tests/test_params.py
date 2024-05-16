@@ -3,12 +3,12 @@ import requests
 from requests_mock import Mocker
 
 from pyairtable.api.params import (
-    InvalidParamException,
     dict_list_to_request_params,
     field_names_to_sorting_dict,
     options_to_json_and_params,
     options_to_params,
 )
+from pyairtable.exceptions import InvalidParameterError
 
 
 def test_params_integration(table, mock_records, mock_response_iterator):
@@ -178,7 +178,7 @@ def test_convert_options_to_json(option, value, expected):
 
 
 def test_process_params_invalid():
-    with pytest.raises(InvalidParamException):
+    with pytest.raises(InvalidParameterError):
         options_to_params({"ffields": "x"})
 
 
