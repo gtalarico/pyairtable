@@ -6,13 +6,20 @@
 pyAirtable will wrap certain API responses in type-annotated models,
 some of which will be deeply nested within each other. Models which
 implementers can interact with directly are documented below.
+Nested or internal models are documented in each submodule.
+
+Due to its complexity, the :mod:`pyairtable.models.schema` module is
+documented separately, and none of its classes are exposed here.
 """
 
+from .audit import AuditLogEvent, AuditLogResponse
 from .collaborator import Collaborator
 from .comment import Comment
 from .webhook import Webhook, WebhookNotification, WebhookPayload
 
 __all__ = [
+    "AuditLogResponse",
+    "AuditLogEvent",
     "Collaborator",
     "Comment",
     "Webhook",
