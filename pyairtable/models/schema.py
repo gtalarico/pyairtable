@@ -1345,7 +1345,11 @@ class _HasFieldSchema(AirtableModel):
     field_schema: FieldSchema
 
 
-def parse_field_schema(obj: Any) -> FieldSchema:
+def parse_field_schema(obj: Dict[str, Any]) -> FieldSchema:
+    """
+    Given a ``dict`` representing a field schema,
+    parse it into the appropriate FieldSchema subclass.
+    """
     return _HasFieldSchema.parse_obj({"field_schema": obj}).field_schema
 
 

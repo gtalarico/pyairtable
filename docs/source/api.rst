@@ -78,9 +78,6 @@ API: pyairtable.models.schema
 
 .. automodule:: pyairtable.models.schema
     :members:
-    :inherited-members: AirtableModel
-
-.. automethod:: pyairtable.models.schema.parse_field_schema
 
 
 API: pyairtable.models.webhook
