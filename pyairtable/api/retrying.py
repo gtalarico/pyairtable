@@ -74,5 +74,5 @@ class _RetryingSession(Session):
 
 __all__ = [
     "Retry",
-    "_RetryingSession",
+    "retry_strategy",
 ]

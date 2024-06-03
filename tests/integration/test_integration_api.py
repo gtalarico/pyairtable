@@ -313,7 +313,7 @@ def test_integration_comments(api, table: Table, cols):
     comments[0].text = "Never mind!"
     comments[0].save()
     assert whoami not in comments[0].text
-    assert comments[0].mentioned is None
+    assert not comments[0].mentioned
 
     # Test that we can delete the comment
     comments[0].delete()

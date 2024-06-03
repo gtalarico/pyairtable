@@ -27,10 +27,25 @@ API: pyairtable
 .. autofunction:: pyairtable.retry_strategy
 
 
+API: pyairtable.api.enterprise
+*******************************
+
+.. automodule:: pyairtable.api.enterprise
+    :members:
+    :exclude-members: Enterprise
+
+
 API: pyairtable.api.types
 *******************************
 
 .. automodule:: pyairtable.api.types
+    :members:
+
+
+API: pyairtable.exceptions
+*******************************
+
+.. automodule:: pyairtable.exceptions
     :members:
 
 
@@ -49,19 +64,28 @@ API: pyairtable.models
     :inherited-members: AirtableModel
 
 
-API: pyairtable.models.audit
-********************************
+API: pyairtable.models.comment
+-------------------------------
 
-.. automodule:: pyairtable.models.audit
+.. automodule:: pyairtable.models.comment
     :members:
+    :exclude-members: Comment
     :inherited-members: AirtableModel
 
 
 API: pyairtable.models.schema
-********************************
+-------------------------------
 
 .. automodule:: pyairtable.models.schema
     :members:
+
+
+API: pyairtable.models.webhook
+-------------------------------
+
+.. automodule:: pyairtable.models.webhook
+    :members:
+    :exclude-members: Webhook, WebhookNotification, WebhookPayload
     :inherited-members: AirtableModel
 
 
@@ -79,6 +103,13 @@ API: pyairtable.orm.fields
     :members:
     :exclude-members: valid_types, contains_type
     :no-inherited-members:
+
+
+API: pyairtable.testing
+*******************************
+
+.. automodule:: pyairtable.testing
+    :members:
 
 
 API: pyairtable.utils
