@@ -1,4 +1,5 @@
 import json
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -94,10 +95,10 @@ def test_whoami__keyfile(run, user_id, tmp_path):
     assert result == {"id": user_id}
 
 
-def test_bases(run):
+def test_bases(run, base):
     result = run.json("bases")
     assert len(result) == 2
-    assert result[0]["id"] == "appLkNDICXNqxSDhG"
+    assert result[0]["id"] == base.id
 
 
 def test_base(run):
@@ -105,14 +106,52 @@ def test_base(run):
     assert "Missing argument 'BASE_ID'" in result.output
 
 
+def test_base_orm(base, run):
+    result = run("base", base.id, "orm")
+    expected = str(pyairtable.orm.generate.ModelFileBuilder(base))
+    assert result.output.rstrip().endswith(expected)
+
+
 @pytest.mark.parametrize("extra_args", [[], ["schema"]])
-def test_base_schema(run, extra_args):
-    result = run.json("base", "appLkNDICXNqxSDhG", *extra_args)
+def test_base_schema(run, base, extra_args):
+    result = run.json("base", base.id, *extra_args)
     assert list(result) == ["tables"]
     assert result["tables"][0]["name"] == "Apartments"
 
 
-def test_base_orm(base, run):
-    result = run("base", "appLkNDICXNqxSDhG", "orm")
-    expected = str(pyairtable.orm.generate.ModelFileBuilder(base))
-    assert result.output.rstrip().endswith(expected)
+@pytest.mark.parametrize(
+    "extra_args,expected_kwargs",
+    [
+        ([], {}),
+        (["-f", "$formula"], {"formula": "$formula"}),
+        (["--formula", "$formula"], {"formula": "$formula"}),
+        (["-v", "$view"], {"view": "$view"}),
+        (["--view", "$view"], {"view": "$view"}),
+        (["-n", 10], {"max_records": 10}),
+        (["--limit", 10], {"max_records": 10}),
+        (["-F", "$fld1", "--field", "$fld2"], {"fields": ["$fld1", "$fld2"]}),
+        (["-S", "fld1", "--sort", "-fld2"], {"sort": ["fld1", "-fld2"]}),
+    ],
+)
+@mock.patch("pyairtable.Table.all")
+def test_base_table_records(mock_table_all, run, base, extra_args, expected_kwargs):
+    defaults = {
+        "formula": None,
+        "view": None,
+        "max_records": None,
+        "fields": [],
+        "sort": [],
+    }
+    expected = {**defaults, **expected_kwargs}
+    fake_ids = [fake_id() for _ in range(3)]
+    mock_table_all.return_value = [{"id": id} for id in fake_ids]
+    result = run.json("base", base.id, "table", "Apartments", "records", *extra_args)
+    mock_table_all.assert_called_once_with(**expected)
+    assert len(result) == 3
+    assert set(record["id"] for record in result) == set(fake_ids)
+
+
+@pytest.mark.parametrize("extra_args", [[], ["schema"]])
+def test_base_table_schema(run, base, extra_args):
+    result = run.json("base", base.id, "table", "Apartments", *extra_args)
+    assert result["fields"][0]["id"] == "fld1VnoyuotSTyxW1"
