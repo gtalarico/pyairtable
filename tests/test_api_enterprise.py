@@ -3,19 +3,9 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
-from pyairtable.api.enterprise import (
-    DeleteUsersResponse,
-    Enterprise,
-    ManageUsersResponse,
-)
+from pyairtable.api.enterprise import DeleteUsersResponse, ManageUsersResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.testing import fake_id
-
-
-@pytest.fixture
-def enterprise(api):
-    return Enterprise(api, "entUBq2RGdihxl3vU")
-
 
 N_AUDIT_PAGES = 15
 N_AUDIT_PAGE_SIZE = 10
