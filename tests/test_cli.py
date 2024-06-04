@@ -10,29 +10,49 @@ from pyairtable.testing import fake_id
 
 
 @pytest.fixture
-def user_id(api, requests_mock):
-    user_id = fake_id("usr")
-    requests_mock.get(api.build_url("meta/whoami"), json={"id": user_id})
-    return user_id
+def user_id():
+    return "usrL2PNC5o3H4lBEi"
 
 
 @pytest.fixture(autouse=True)
-def mock_metadata(user_id, mock_base_metadata, mock_workspace_metadata):
-    pass
+def mock_metadata(
+    api,
+    user_id,
+    mock_base_metadata,
+    mock_workspace_metadata,
+    enterprise,
+    requests_mock,
+    sample_json,
+):
+    user_info = sample_json("UserInfo")
+    user_group = sample_json("UserGroup")
+    enterprise_info = sample_json("EnterpriseInfo")
+    requests_mock.get(api.build_url("meta/whoami"), json={"id": user_id})
+    requests_mock.get(enterprise.url, json=enterprise_info)
+    requests_mock.get(f"{enterprise.url}/users/{user_id}", json=user_info)
+    requests_mock.get(f"{enterprise.url}/users", json={"users": [user_info]})
+    for group_id in enterprise_info["groupIds"]:
+        requests_mock.get(
+            enterprise.api.build_url(f"meta/groups/{group_id}"), json=user_group
+        )
 
 
 @pytest.fixture
-def run(mock_base_metadata):
+def run(mock_metadata):
     default_env = {"AIRTABLE_API_KEY": "test"}
 
     def _runner(*args: str, env: dict = default_env, fails: bool = False):
         runner = CliRunner(env=env)
         result = runner.invoke(pyairtable.cli.cli, args)
-        print(result.output)  # if a test fails, show the command's output
-        if fails:
-            assert result.exit_code != 0
-        else:
-            assert result.exit_code == 0
+        # if a test fails, show the command's output
+        print(f"{result.output=}")
+        if fails and result.exit_code == 0:
+            raise RuntimeError("expected failure, but command succeeded")
+        if result.exit_code != 0 and not fails:
+            print(f"{result.exception=}")
+            if hasattr(result.exception, "request"):
+                print(f"{result.exception.request.url=}")
+            raise RuntimeError(f"command failed: {args}")
         return result
 
     def _runner_with_json(*args, **kwargs):
@@ -51,12 +71,16 @@ def test_help(run):
         for line in result.output.split("Commands:", 1)[1].splitlines()
         if (words := line.strip().split())
     ]
-    assert commands == ["base", "bases", "whoami"]
+    assert commands == ["base", "bases", "enterprise", "whoami"]
 
 
 def test_error_without_key(run):
     result = run("whoami", env={}, fails=True)
     assert "--key, --key-file, or --key-env required" in result.output
+
+
+def test_error_invalid_command(run):
+    run("asdf", fails=True)
 
 
 def test_invalid_key_args(run, tmp_path):
@@ -72,26 +96,30 @@ def test_invalid_key_args(run, tmp_path):
         assert "only one of --key, --key-file, --key-env allowed" in result.output
 
 
-def test_whoami(run, user_id):
-    result = run.json("whoami")
+@pytest.mark.parametrize("cmd", ["whoami", "who", "w"])  # test alias
+def test_whoami(run, cmd, user_id):
+    result = run.json(cmd)
     assert result == {"id": user_id}
 
 
-def test_whoami__key(run, user_id):
-    result = run.json("-k", "key", "whoami", env={})
+@pytest.mark.parametrize("option", ["-k", "--key"])
+def test_whoami__key(run, option, user_id):
+    result = run.json(option, "key", "whoami", env={})
     assert result == {"id": user_id}
 
 
-def test_whoami__keyenv(run, user_id):
+@pytest.mark.parametrize("option", ["-ke", "--key-env"])
+def test_whoami__keyenv(run, option, user_id):
     env = {"THE_KEY": "fakeKey"}
-    result = run.json("-ke", "THE_KEY", "whoami", env=env)
+    result = run.json(option, "THE_KEY", "whoami", env=env)
     assert result == {"id": user_id}
 
 
-def test_whoami__keyfile(run, user_id, tmp_path):
+@pytest.mark.parametrize("option", ["-kf", "--key-file"])
+def test_whoami__keyfile(run, option, user_id, tmp_path):
     keyfile = tmp_path / "keyfile.txt"
     keyfile.write_text("fakeKey")
-    result = run.json("-kf", keyfile, "whoami", env={})
+    result = run.json(option, keyfile, "whoami", env={})
     assert result == {"id": user_id}
 
 
@@ -106,8 +134,9 @@ def test_base(run):
     assert "Missing argument 'BASE_ID'" in result.output
 
 
-def test_base_orm(base, run):
-    result = run("base", base.id, "orm")
+@pytest.mark.parametrize("cmd", ["orm", "o"])  # test alias
+def test_base_orm(base, run, cmd):
+    result = run("base", base.id, cmd)
     expected = str(pyairtable.orm.generate.ModelFileBuilder(base))
     assert result.output.rstrip().endswith(expected)
 
@@ -119,6 +148,7 @@ def test_base_schema(run, base, extra_args):
     assert result["tables"][0]["name"] == "Apartments"
 
 
+@pytest.mark.parametrize("cmd", ["records", "r"])  # test alias
 @pytest.mark.parametrize(
     "extra_args,expected_kwargs",
     [
@@ -134,7 +164,9 @@ def test_base_schema(run, base, extra_args):
     ],
 )
 @mock.patch("pyairtable.Table.all")
-def test_base_table_records(mock_table_all, run, base, extra_args, expected_kwargs):
+def test_base_table_records(
+    mock_table_all, run, cmd, base, extra_args, expected_kwargs
+):
     defaults = {
         "formula": None,
         "view": None,
@@ -145,7 +177,7 @@ def test_base_table_records(mock_table_all, run, base, extra_args, expected_kwar
     expected = {**defaults, **expected_kwargs}
     fake_ids = [fake_id() for _ in range(3)]
     mock_table_all.return_value = [{"id": id} for id in fake_ids]
-    result = run.json("base", base.id, "table", "Apartments", "records", *extra_args)
+    result = run.json("base", base.id, "table", "Apartments", cmd, *extra_args)
     mock_table_all.assert_called_once_with(**expected)
     assert len(result) == 3
     assert set(record["id"] for record in result) == set(fake_ids)
@@ -155,3 +187,67 @@ def test_base_table_records(mock_table_all, run, base, extra_args, expected_kwar
 def test_base_table_schema(run, base, extra_args):
     result = run.json("base", base.id, "table", "Apartments", *extra_args)
     assert result["fields"][0]["id"] == "fld1VnoyuotSTyxW1"
+
+
+@pytest.mark.parametrize("cmd", ["c", "collaborators"])
+def test_base_collaborators(run, base, cmd):
+    result = run.json("base", base.id, cmd)
+    assert result["id"] == base.id
+    assert result["collaborators"]["baseCollaborators"][0]["email"] == "foo@bam.com"
+
+
+@pytest.mark.parametrize("cmd", ["sh", "shares"])
+def test_base_shares(run, base, cmd):
+    result = run.json("base", base.id, cmd)
+    assert result[0]["shareId"] == "shr9SpczJvQpfAzSp"
+
+
+@pytest.mark.parametrize("cmd", ["e", "enterprise"])
+@pytest.mark.parametrize("extra_args", [[], ["info"]])
+def test_enterprise_info(run, enterprise, cmd, extra_args):
+    result = run.json(cmd, enterprise.id, *extra_args)
+    assert result["id"] == enterprise.id
+
+
+def test_enterprise_user(run, enterprise, user_id):
+    result = run.json("enterprise", enterprise.id, "user", user_id)
+    assert result["id"] == user_id
+    assert result["email"] == "foo@bar.com"
+
+
+def test_enterprise_users(run, enterprise, user_id):
+    result = run.json("enterprise", enterprise.id, "users", user_id)
+    assert list(result) == [user_id]
+    assert result[user_id]["id"] == user_id
+    assert result[user_id]["email"] == "foo@bar.com"
+
+
+def test_enterprise_users__all(run, enterprise, user_id):
+    result = run.json("enterprise", enterprise.id, "users", "--all")
+    assert list(result) == [user_id]
+    assert result[user_id]["id"] == user_id
+    assert result[user_id]["email"] == "foo@bar.com"
+
+
+def test_enterprise_users__invalid(run, enterprise, user_id):
+    run("enterprise", enterprise.id, "users", fails=True)
+    run("enterprise", enterprise.id, "users", "--all", user_id, fails=True)
+
+
+def test_enterprise_group(run, enterprise):
+    result = run.json("enterprise", enterprise.id, "group", "ugp1mKGb3KXUyQfOZ")
+    assert result["id"] == "ugp1mKGb3KXUyQfOZ"
+    assert result["name"] == "Group name"
+
+
+@pytest.mark.parametrize("option", ["ugp1mKGb3KXUyQfOZ", "-a", "--all"])
+def test_enterprise_groups(run, enterprise, option):
+    result = run.json("enterprise", enterprise.id, "groups", option)
+    assert list(result) == ["ugp1mKGb3KXUyQfOZ"]
+    assert result["ugp1mKGb3KXUyQfOZ"]["id"] == "ugp1mKGb3KXUyQfOZ"
+    assert result["ugp1mKGb3KXUyQfOZ"]["name"] == "Group name"
+
+
+def test_enterprise_groups__invalid(run, enterprise):
+    run("enterprise", enterprise.id, "groups", fails=True)
+    run("enterprise", enterprise.id, "groups", "--all", "ugp1mKGb3KXUyQfOZ", fails=True)

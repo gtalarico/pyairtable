@@ -35,86 +35,103 @@ There are a few ways to pass your authentication information to the CLI:
    as it could be visible to other processes or stored in your shell history.
    If you must do it, use the ``-k/--key`` option.
 
+Shortcuts
+---------
+
+If you pass a partial command to the CLI, it will try to match it to a full command.
+This only works if there is a single unambiguous completion for the partial command.
+For example, ``pyairtable e`` will be interpreted as ``pyairtable enterprise``,
+but ``pyairtable b`` is ambiguous, as it could mean ``base`` or ``bases``.
+
 Command list
 ------------
 
 ..  [[[cog
     from contextlib import redirect_stdout
     from io import StringIO
-    from pyairtable.cli import cli
+    from pyairtable.cli import cli, CLI_COMMANDS
     import textwrap
 
-    cog.outl()
-
-    indent = " " * 4
-    commands = [
-        "--help",
-        "base --help",
-        "base BASE_ID table --help",
-        "base BASE_ID table TABLE_NAME records --help",
-    ]
-    for cmd in commands:
-        with redirect_stdout(StringIO()) as f:
+    for cmd in ["", *CLI_COMMANDS]:
+        with redirect_stdout(StringIO()) as help_output:
             cli(
-                ["-k", "fake", *cmd.split()],
+                ["-k", "fake", *cmd.split(), "--help"],
                 prog_name="pyairtable",
                 standalone_mode=False
             )
-
-        cog.outl(".. code-block:: shell")
+        if cmd:
+            heading = " ".join(w for w in cmd.split() if w == w.lower())
+            cog.outl()
+            cog.outl(heading)
+            cog.outl("~" * len(heading))
         cog.outl()
-        cog.outl(f"{indent}% pyairtable {cmd}")
-        cog.outl(textwrap.indent(f.getvalue(), indent))
+        cog.outl(".. code-block:: text")
+        cog.outl()
+        cog.outl(textwrap.indent(help_output.getvalue(), " " * 4))
     ]]]
 
-.. code-block:: shell
+.. code-block:: text
 
-    % pyairtable --help
     Usage: pyairtable [OPTIONS] COMMAND [ARGS]...
 
     Options:
       -k, --key TEXT        Your API key.
       -kf, --key-file PATH  File containing your API key.
       -ke, --key-env VAR    Env var containing your API key.
+      -v, --verbose         Print verbose output.
       --help                Show this message and exit.
 
     Commands:
-      base    Print information about a base.
-      bases   List all available bases.
-      whoami  Print information about the current user.
+      base        Print information about a base.
+      bases       List all available bases.
+      enterprise  Print information about a user.
+      whoami      Print information about the current user.
 
-.. code-block:: shell
 
-    % pyairtable base --help
-    Usage: pyairtable base [OPTIONS] BASE_ID COMMAND [ARGS]...
+whoami
+~~~~~~
 
-      Print information about a base.
+.. code-block:: text
 
-    Options:
-      --help  Show this message and exit.
+    Usage: pyairtable whoami [OPTIONS]
 
-    Commands:
-      orm     Print a Python module with ORM models.
-      schema  Print the base schema.
-      table   Print information about a table.
-
-.. code-block:: shell
-
-    % pyairtable base BASE_ID table --help
-    Usage: pyairtable base BASE_ID table [OPTIONS] ID_OR_NAME COMMAND [ARGS]...
-
-      Print information about a table.
+      Print information about the current user.
 
     Options:
       --help  Show this message and exit.
 
-    Commands:
-      records  Retrieve records from the table.
-      schema   Print a JSON representation of the table schema.
 
-.. code-block:: shell
+bases
+~~~~~
 
-    % pyairtable base BASE_ID table TABLE_NAME records --help
+.. code-block:: text
+
+    Usage: pyairtable bases [OPTIONS]
+
+      List all available bases.
+
+    Options:
+      --help  Show this message and exit.
+
+
+base schema
+~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable base BASE_ID schema [OPTIONS]
+
+      Print the base schema.
+
+    Options:
+      --help  Show this message and exit.
+
+
+base table records
+~~~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
     Usage: pyairtable base BASE_ID table ID_OR_NAME records [OPTIONS]
 
       Retrieve records from the table.
@@ -127,4 +144,126 @@ Command list
       -F, --field TEXT     Limit output to certain field(s).
       --help               Show this message and exit.
 
-.. [[[end]]] (checksum: 320534bcf1749b598527336a32ec0c01)
+
+base table schema
+~~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable base BASE_ID table ID_OR_NAME schema [OPTIONS]
+
+      Print a JSON representation of the table schema.
+
+    Options:
+      --help  Show this message and exit.
+
+
+base collaborators
+~~~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable base BASE_ID collaborators [OPTIONS]
+
+      Print base collaborators.
+
+    Options:
+      --help  Show this message and exit.
+
+
+base shares
+~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable base BASE_ID shares [OPTIONS]
+
+      Print base shares.
+
+    Options:
+      --help  Show this message and exit.
+
+
+base orm
+~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable base BASE_ID orm [OPTIONS]
+
+      Print a Python module with ORM models.
+
+    Options:
+      -t, --table NAME_OR_ID  Only generate specific table(s).
+      --help                  Show this message and exit.
+
+
+enterprise info
+~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable enterprise ENTERPRISE_ID info [OPTIONS]
+
+      Print information about an enterprise.
+
+    Options:
+      --help  Show this message and exit.
+
+
+enterprise user
+~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable enterprise ENTERPRISE_ID user [OPTIONS] ID_OR_EMAIL
+
+      Print one user's information.
+
+    Options:
+      --help  Show this message and exit.
+
+
+enterprise users
+~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable enterprise ENTERPRISE_ID users [OPTIONS] ID_OR_EMAIL...
+
+      Print many users' information, keyed by user ID.
+
+    Options:
+      -c, --collaborations  Include collaborations.
+      -a, --all             Retrieve all users.
+      --help                Show this message and exit.
+
+
+enterprise group
+~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable enterprise ENTERPRISE_ID group [OPTIONS] GROUP_ID
+
+      Print a user group's information.
+
+    Options:
+      --help  Show this message and exit.
+
+
+enterprise groups
+~~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable enterprise ENTERPRISE_ID groups [OPTIONS] GROUP_ID...
+
+      Print many user groups' info, keyed by group ID.
+
+    Options:
+      -a, --all             Retrieve all groups.
+      -c, --collaborations  Include collaborations.
+      --help                Show this message and exit.
+
+.. [[[end]]] (checksum: 23cfc87fff98fb6b74461c3f1c327547)

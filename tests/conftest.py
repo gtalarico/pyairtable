@@ -10,6 +10,7 @@ from mock import Mock
 from requests import HTTPError
 
 from pyairtable import Api, Base, Table, Workspace
+from pyairtable.api.enterprise import Enterprise
 
 
 @pytest.fixture
@@ -195,3 +196,8 @@ def mock_base_metadata(base, sample_json, requests_mock):
 def mock_workspace_metadata(workspace, sample_json, requests_mock):
     workspace_json = sample_json("WorkspaceCollaborators")
     requests_mock.get(workspace.url, json=workspace_json)
+
+
+@pytest.fixture
+def enterprise(api):
+    return Enterprise(api, "entUBq2RGdihxl3vU")
