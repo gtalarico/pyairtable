@@ -65,13 +65,14 @@ def run(mock_metadata):
 
 
 def test_help(run):
+    """
+    Test that the --help message lists the correct top-level commands.
+    """
     result = run("--help")
-    commands = [
-        words[0]
-        for line in result.output.split("Commands:", 1)[1].splitlines()
-        if (words := line.strip().split())
-    ]
-    assert commands == ["base", "bases", "enterprise", "whoami"]
+    lines = result.output.split("Commands:", 1)[1].splitlines()
+    defined_commands = set(pyairtable.cli.CLI_COMMANDS)
+    listed_commands = set(line.strip().split("  ")[0] for line in lines)
+    assert not defined_commands - listed_commands
 
 
 def test_error_without_key(run):

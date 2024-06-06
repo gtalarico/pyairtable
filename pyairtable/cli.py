@@ -5,11 +5,13 @@ pyAirtable exposes a command-line interface that allows you to interact with the
 import functools
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterator, Optional, Sequence, Tuple, Union
 
+from click import Context, HelpFormatter
 from typing_extensions import ParamSpec, TypeVar
 
 from pyairtable.api.api import Api
@@ -93,12 +95,22 @@ class ShortcutGroup(click.Group):
         if exact := super().get_command(ctx, cmd_name):
             return exact
         # If exactly one subcommand starts with the given name, use that.
-        existing = [
-            subcmd for subcmd in self.list_commands(ctx) if subcmd.startswith(cmd_name)
-        ]
+        existing = [cmd for cmd in self.list_commands(ctx) if cmd.startswith(cmd_name)]
         if len(existing) == 1:
             return super().get_command(ctx, existing[0])
         return None
+
+    def format_commands(self, ctx: Context, formatter: HelpFormatter) -> None:
+        from gettext import gettext as _
+
+        rows = [
+            (name, (command.short_help or command.help or "").strip())
+            for name, command in CLI_COMMANDS.items()
+        ]
+        col_max = max(len(row[0]) for row in rows)
+
+        with formatter.section(_("Commands")):
+            formatter.write_dl(rows, col_max=col_max)
 
 
 # fmt: off
@@ -142,7 +154,7 @@ def cli(
 @needs_context
 def whoami(ctx: CliContext) -> None:
     """
-    Print information about the current user.
+    Print the current user's information.
     """
     _dump(ctx.api.whoami())
 
@@ -224,7 +236,7 @@ def base_table_records(
 @needs_context
 def base_table_schema(ctx: CliContext) -> None:
     """
-    Print a JSON representation of the table schema.
+    Print the table's schema as JSON.
     """
     _dump(ctx.table.schema())
 
@@ -258,7 +270,7 @@ def base_shares(ctx: CliContext) -> None:
 )
 def base_orm(ctx: CliContext, table: Sequence[str]) -> None:
     """
-    Print a Python module with ORM models.
+    Generate a Python ORM module.
     """
     table_ids = [t for t in table if is_table_id(t)]
     table_names = [t for t in table if not is_table_id(t)]
@@ -312,7 +324,7 @@ def enterprise_users(
     all_users: bool = False,
 ) -> None:
     """
-    Print many users' information, keyed by user ID.
+    Print many users, keyed by user ID.
     """
     if all_users and ids_or_emails:
         raise click.UsageError("Cannot combine --all with specific user IDs/emails.")
@@ -351,7 +363,7 @@ def enterprise_groups(
     collaborations: bool = False,
 ) -> None:
     """
-    Print many user groups' info, keyed by group ID.
+    Print many groups, keyed by group ID.
     """
     if all_groups and group_ids:
         raise click.UsageError("Cannot combine --all with specific group IDs.")
@@ -380,21 +392,31 @@ def _dump(obj: Any) -> None:
 
 
 def _gather_commands(
-    command: Union[click.Command, click.Group],
+    command: Union[click.Command, click.Group] = cli,
     prefix: str = "",
 ) -> Iterator[Tuple[str, Union[click.Command, click.Group]]]:
-    if isinstance(command, click.Group):
-        if command.name != "cli":
-            prefix = f"{prefix} {command.name}".strip()
-        for param in command.params:
-            if isinstance(param, click.Argument):
-                metavar = (param.metavar or param.name or "ARG").upper()
-                prefix = f"{prefix} {metavar}".strip()
-        for subcommand in command.commands.values():
-            yield from _gather_commands(subcommand, prefix=prefix)
+    """
+    Enumerate through all commands and groups, yielding a 2-tuple of
+    a human-readable command line and the associated function.
+    """
+    # placeholders for arguments so we make a valid testable command
+    if command.name != cli.name:
+        prefix = f"{prefix} {command.name}".strip()
+
+    for param in command.params:
+        if not isinstance(param, click.Argument):
+            continue
+        if param.required or (param.metavar and param.metavar.endswith("...")):
+            metavar = (param.metavar or param.name or "ARG").upper()
+            metavar = re.sub(r"\b[A-Z]+_ID", "ID", metavar)
+            prefix = f"{prefix} {metavar}".strip()
+
+    if not isinstance(command, click.Group):
+        yield (prefix, command)
         return
-    if isinstance(command, click.Command):
-        yield (f"{prefix} {command.name}".strip(), command)
+
+    for subcommand in command.commands.values():
+        yield from _gather_commands(subcommand, prefix=prefix)
 
 
 #: Mapping of command names to their functions.

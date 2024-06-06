@@ -85,7 +85,21 @@ Command list
       base        Print information about a base.
       bases       List all available bases.
       enterprise  Print information about a user.
+      list        Print a list of all available commands.
       whoami      Print information about the current user.
+
+
+list
+~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable list [OPTIONS]
+
+      Print a list of all available commands.
+
+    Options:
+      --help  Show this message and exit.
 
 
 whoami
@@ -191,7 +205,7 @@ base orm
 
     Usage: pyairtable base BASE_ID orm [OPTIONS]
 
-      Print a Python module with ORM models.
+      Generate a Python module with ORM models.
 
     Options:
       -t, --table NAME_OR_ID  Only generate specific table(s).
@@ -266,4 +280,4 @@ enterprise groups
       -c, --collaborations  Include collaborations.
       --help                Show this message and exit.
 
-.. [[[end]]] (checksum: 23cfc87fff98fb6b74461c3f1c327547)
+.. [[[end]]] (checksum: 1d5e34beb09b9f5b89f772194b28ec09)
