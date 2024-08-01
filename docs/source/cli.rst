@@ -82,24 +82,19 @@ Command list
       --help                Show this message and exit.
 
     Commands:
-      base        Print information about a base.
-      bases       List all available bases.
-      enterprise  Print information about a user.
-      list        Print a list of all available commands.
-      whoami      Print information about the current user.
-
-
-list
-~~~~
-
-.. code-block:: text
-
-    Usage: pyairtable list [OPTIONS]
-
-      Print a list of all available commands.
-
-    Options:
-      --help  Show this message and exit.
+      whoami                              Print the current user's information.
+      bases                               List all available bases.
+      base ID schema                      Print the base schema.
+      base ID table ID_OR_NAME records    Retrieve records from the table.
+      base ID table ID_OR_NAME schema     Print the table's schema as JSON.
+      base ID collaborators               Print base collaborators.
+      base ID shares                      Print base shares.
+      base ID orm                         Generate a Python ORM module.
+      enterprise ID info                  Print information about an enterprise.
+      enterprise ID user ID_OR_EMAIL      Print one user's information.
+      enterprise ID users ID_OR_EMAIL...  Print many users, keyed by user ID.
+      enterprise ID group ID              Print a user group's information.
+      enterprise ID groups ID...          Print many groups, keyed by group ID.
 
 
 whoami
@@ -109,7 +104,7 @@ whoami
 
     Usage: pyairtable whoami [OPTIONS]
 
-      Print information about the current user.
+      Print the current user's information.
 
     Options:
       --help  Show this message and exit.
@@ -166,7 +161,7 @@ base table schema
 
     Usage: pyairtable base BASE_ID table ID_OR_NAME schema [OPTIONS]
 
-      Print a JSON representation of the table schema.
+      Print the table's schema as JSON.
 
     Options:
       --help  Show this message and exit.
@@ -205,7 +200,7 @@ base orm
 
     Usage: pyairtable base BASE_ID orm [OPTIONS]
 
-      Generate a Python module with ORM models.
+      Generate a Python ORM module.
 
     Options:
       -t, --table NAME_OR_ID  Only generate specific table(s).
@@ -245,7 +240,7 @@ enterprise users
 
     Usage: pyairtable enterprise ENTERPRISE_ID users [OPTIONS] ID_OR_EMAIL...
 
-      Print many users' information, keyed by user ID.
+      Print many users, keyed by user ID.
 
     Options:
       -c, --collaborations  Include collaborations.
@@ -273,11 +268,11 @@ enterprise groups
 
     Usage: pyairtable enterprise ENTERPRISE_ID groups [OPTIONS] GROUP_ID...
 
-      Print many user groups' info, keyed by group ID.
+      Print many groups, keyed by group ID.
 
     Options:
       -a, --all             Retrieve all groups.
       -c, --collaborations  Include collaborations.
       --help                Show this message and exit.
 
-.. [[[end]]] (checksum: 1d5e34beb09b9f5b89f772194b28ec09)
+.. [[[end]]] (checksum: 9181d3a8abea1b24cb46cb6e997b08f0)
