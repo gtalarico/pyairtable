@@ -810,6 +810,14 @@ class LastModifiedTimeFieldOptions(AirtableModel):
     result: Optional[Union["DateFieldConfig", "DateTimeFieldConfig"]]
 
 
+class ManualSortFieldConfig(AirtableModel):
+    """
+    Field configuration for ``manualSort`` field type (not documented).
+    """
+
+    type: Literal["manualSort"]
+
+
 class MultilineTextFieldConfig(AirtableModel):
     """
     Field configuration for `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
@@ -1074,6 +1082,7 @@ FieldConfig: TypeAlias = Union[
     FormulaFieldConfig,
     LastModifiedByFieldConfig,
     LastModifiedTimeFieldConfig,
+    ManualSortFieldConfig,
     MultilineTextFieldConfig,
     MultipleAttachmentsFieldConfig,
     MultipleCollaboratorsFieldConfig,
@@ -1193,6 +1202,12 @@ class LastModifiedByFieldSchema(_FieldSchemaBase, LastModifiedByFieldConfig):
 class LastModifiedTimeFieldSchema(_FieldSchemaBase, LastModifiedTimeFieldConfig):
     """
     Field schema for `Last modified time <https://airtable.com/developers/web/api/field-model#lastmodifiedtime>`__.
+    """
+
+
+class ManualSortFieldSchema(_FieldSchemaBase, ManualSortFieldConfig):
+    """
+    Field schema for ``manualSort`` field type (not documented).
     """
 
 
@@ -1317,6 +1332,7 @@ FieldSchema: TypeAlias = Union[
     FormulaFieldSchema,
     LastModifiedByFieldSchema,
     LastModifiedTimeFieldSchema,
+    ManualSortFieldSchema,
     MultilineTextFieldSchema,
     MultipleAttachmentsFieldSchema,
     MultipleCollaboratorsFieldSchema,
@@ -1335,7 +1351,7 @@ FieldSchema: TypeAlias = Union[
     UrlFieldSchema,
     UnknownFieldSchema,
 ]
-# [[[end]]] (checksum: afb669896323650954a082cb4b079c16)
+# [[[end]]] (checksum: ca159bc8c76b1d15a2a57f0e76fb8911)
 # fmt: on
 
 

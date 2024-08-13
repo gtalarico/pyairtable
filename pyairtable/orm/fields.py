@@ -1414,6 +1414,7 @@ FIELD_TYPES_TO_CLASSES = {
     "lastModifiedBy": LastModifiedByField,
     "lastModifiedTime": LastModifiedTimeField,
     "lookup": LookupField,
+    "manualSort": ManualSortField,
     "multilineText": TextField,
     "multipleAttachments": AttachmentsField,
     "multipleCollaborators": MultipleCollaboratorsField,
