@@ -246,7 +246,11 @@ class Model:
         if fields:
             # Convert ORM attribute names to Airtable field names
             update_fields = {
-                attribute_map[field].field_name: None if self._fields.get(attribute_map[field].field_name) is None else attribute_map[field].to_record_value(self._fields.get(attribute_map[field].field_name))
+                attribute_map[field].field_name: None
+                    if self._fields.get(attribute_map[field].field_name) is None 
+                    else attribute_map[field].to_record_value(
+                        self._fields.get(attribute_map[field].field_name)
+                    )
                 for field in fields
                 if field in attribute_map and not attribute_map[field].readonly
             }
