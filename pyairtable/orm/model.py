@@ -362,7 +362,6 @@ class Model:
         """
         attribute_map = self._attribute_descriptor_map()
         if fields:
-            # Convert ORM attribute names to Airtable field names
             update_fields = {
                 attribute_map[field].field_name: None
                     if self._fields.get(attribute_map[field].field_name) is None 
