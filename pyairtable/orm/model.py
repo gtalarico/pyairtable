@@ -345,9 +345,9 @@ class Model:
         ct = datetime_to_iso_str(self.created_time) if self.created_time else ""
         return {"id": self.id, "createdTime": ct, "fields": fields}
     
-    def to_update_record(self, fields: Optional[List[str]] = None) -> UpdateRecordDict:
+    def to_update_record(self, fields: Optional[List[str]] = None) -> RecordDict:
         """
-        Build an :class:`~pyairtable.api.types.UpdateRecordDict` to represent this instance.
+        Build an :class:`~pyairtable.api.types.RecordDict` to represent this instance.
 
         This method generates a field update dictionary for the instance.
 
