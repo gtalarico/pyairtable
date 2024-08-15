@@ -230,7 +230,9 @@ class Model:
 
         Args:
             fields: A list of field names to save. If provided, only these
-                fields will be updated. Otherwise, all fields will be updated.
+            fields will be updated. Otherwise, all fields will be updated.
+            The field names should be in the form the user declared them
+            in the ORM class.
 
         Returns:
             ``True`` if a record was created, ``False`` if it was updated.
