@@ -103,15 +103,15 @@ def test_model_save_specific_fields():
         update_fields = args[1]
 
         assert "id" in args  # Ensure it is updating an existing record
-        assert "email" in update_fields
-        assert "is_registered" in update_fields
-        assert "first_name" not in update_fields
-        assert "last_name" not in update_fields
-        assert "birthday" not in update_fields
+        assert "Email" in update_fields
+        assert "Registered" in update_fields
+        assert "First Name" not in update_fields
+        assert "Last Name" not in update_fields
+        assert "Birthday" not in update_fields
 
         # Ensure the new values are correctly assigned
-        assert update_fields["email"] == "new_mail@gui.com"
-        assert update_fields["is_registered"] is False
+        assert update_fields["Email"] == "new_mail@gui.com"
+        assert update_fields["Registered"] is False
 
 
 def test_unsupplied_fields():
