@@ -344,6 +344,37 @@ class Model:
         }
         ct = datetime_to_iso_str(self.created_time) if self.created_time else ""
         return {"id": self.id, "createdTime": ct, "fields": fields}
+    
+    def to_update_record(self, fields: Optional[List[str]] = None) -> UpdateRecordDict:
+        """
+        Build an :class:`~pyairtable.api.types.UpdateRecordDict` to represent this instance.
+
+        This method generates a field update dictionary for the instance.
+
+        Args:
+            fields: A list of field names to save. If provided, only these
+            fields will be updated. Otherwise, all fields will be updated.
+            The field names should be in the form the user declared them
+            in the ORM class.
+
+        Returns:
+            A dictionary with the record ID and fields to update.
+        """
+        attribute_map = self._attribute_descriptor_map()
+        if fields:
+            # Convert ORM attribute names to Airtable field names
+            update_fields = {
+                attribute_map[field].field_name: None
+                    if self._fields.get(attribute_map[field].field_name) is None 
+                    else attribute_map[field].to_record_value(
+                        self._fields.get(attribute_map[field].field_name)
+                    )
+                for field in fields
+                if field in attribute_map and not attribute_map[field].readonly
+            }
+        else:
+            update_fields = self.to_record(only_writable=True)["fields"]
+        return {"id": self.id, "fields": update_fields}
 
     @classmethod
     def from_record(
@@ -461,7 +492,7 @@ class Model:
         return [by_id[record_id] for record_id in record_ids]
 
     @classmethod
-    def batch_save(cls, models: List[SelfType]) -> None:
+    def batch_save(cls, models: List[SelfType], fields: Optional[List[str]] = None) -> None:
         """
         Save a list of model instances to the Airtable API with as few
         network requests as possible. Can accept a mixture of new records
@@ -480,7 +511,7 @@ class Model:
         update_records: List[UpdateRecordDict] = [
             {"id": record["id"], "fields": record["fields"]}
             for model in update_models
-            if (record := model.to_record(only_writable=True))
+            if (record := model.to_update_record(fields=fields))
         ]
 
         table = cls.meta.table
