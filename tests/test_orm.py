@@ -71,6 +71,49 @@ def test_model_basics():
     assert record["fields"]["First Name"] == contact.first_name
 
 
+def test_model_save_specific_fields():
+    contact = Contact(
+        first_name="Gui",
+        last_name="Talarico",
+        email="gui@gui.com",
+        is_registered=True,
+        birthday=datetime(2020, 12, 12).date(),
+    )
+
+    # Mocking Table methods
+    with mock.patch.object(Table, "create") as m_create, mock.patch.object(Table, "update") as m_update:
+        m_create.return_value = {"id": "id", "createdTime": NOW}
+
+        # Initially save the full contact record
+        contact.save()
+        assert m_create.called
+
+        # Update specific fields and save them
+        contact.email = "new_mail@gui.com"
+        contact.is_registered = False
+
+        m_update.reset_mock()
+
+        m_update.return_value = {"id": "id", "createdTime": NOW}
+        contact.save(fields=["email", "is_registered"])
+
+        assert m_update.called
+
+        args, _ = m_update.call_args
+        update_fields = args[1]
+
+        assert "id" in args  # Ensure it is updating an existing record
+        assert "email" in update_fields
+        assert "is_registered" in update_fields
+        assert "first_name" not in update_fields
+        assert "last_name" not in update_fields
+        assert "birthday" not in update_fields
+
+        # Ensure the new values are correctly assigned
+        assert update_fields["email"] == "new_mail@gui.com"
+        assert update_fields["is_registered"] is False
+
+
 def test_unsupplied_fields():
     """
     Test that we can create a record without fields.
