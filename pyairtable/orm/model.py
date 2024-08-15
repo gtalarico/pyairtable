@@ -221,7 +221,7 @@ class Model:
         """
         return bool(self.id)
 
-    def save(self) -> bool:
+    def save(self, fields: Optional[List[str]] = None) -> bool:
         """
         Save the model to the API.
 
@@ -234,13 +234,21 @@ class Model:
         if self._deleted:
             raise RuntimeError(f"{self.id} was deleted")
         table = self.meta.table
-        fields = self.to_record(only_writable=True)["fields"]
+        if fields:
+            field_map = self._field_name_descriptor_map()
+            # Only include specified fields in the payload
+            update_fields = {
+                field: value for field, value in self._fields.items() if field in fields and field not in field_map[field].readonly
+            }
+        else:
+            # Include all fields except read-only ones
+            update_fields = self.to_record(only_writable=True)["fields"]
 
         if not self.id:
-            record = table.create(fields, typecast=self.meta.typecast)
+            record = table.create(update_fields, typecast=self.meta.typecast)
             did_create = True
         else:
-            record = table.update(self.id, fields, typecast=self.meta.typecast)
+            record = table.update(self.id, update_fields, typecast=self.meta.typecast)
             did_create = False
 
         self.id = record["id"]
