@@ -233,15 +233,18 @@ class Model:
         """
         if self._deleted:
             raise RuntimeError(f"{self.id} was deleted")
+
         table = self.meta.table
+        attribute_map = self._attribute_descriptor_map()
+
         if fields:
-            field_map = self._field_name_descriptor_map()
-            # Only include specified fields in the payload
+            # Convert ORM attribute names to Airtable field names
             update_fields = {
-                field: value for field, value in self._fields.items() if field in fields and field not in field_map[field].readonly
+                attribute_map[field].field_name: None if self._fields.get(attribute_map[field].field_name) is None else attribute_map[field].to_record_value(self._fields.get(attribute_map[field].field_name))
+                for field in fields
+                if field in attribute_map and not attribute_map[field].readonly
             }
         else:
-            # Include all fields except read-only ones
             update_fields = self.to_record(only_writable=True)["fields"]
 
         if not self.id:
@@ -253,6 +256,7 @@ class Model:
 
         self.id = record["id"]
         self.created_time = datetime_from_iso_str(record["createdTime"])
+        
         return did_create
 
     def delete(self) -> bool:
