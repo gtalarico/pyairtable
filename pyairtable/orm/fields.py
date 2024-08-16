@@ -176,11 +176,13 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
 
     def __set__(self, instance: "Model", value: Optional[T_ORM]) -> None:
         self._raise_if_readonly()
-        if not hasattr(instance, "_fields"):
-            instance._fields = {}
         if self.validate_type and value is not None:
             self.valid_or_raise(value)
+        if not hasattr(instance, "_fields"):
+            instance._fields = {}
         instance._fields[self.field_name] = value
+        if hasattr(instance, "_changed"):
+            instance._changed[self.field_name] = True
 
     def __delete__(self, instance: "Model") -> None:
         raise AttributeError(f"cannot delete {self._description}")

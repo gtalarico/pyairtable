@@ -125,6 +125,7 @@ class Model:
     _deleted: bool = False
     _fetched: bool = False
     _fields: Dict[FieldName, Any]
+    _changed: Dict[FieldName, bool]
     _memoized: ClassVar[Dict[RecordId, SelfType]]
 
     def __init_subclass__(cls, **kwargs: Any):
@@ -133,10 +134,21 @@ class Model:
         cls._validate_class()
         super().__init_subclass__(**kwargs)
 
-    def __repr__(self) -> str:
-        if not self.id:
-            return f"<unsaved {self.__class__.__name__}>"
-        return f"<{self.__class__.__name__} id={self.id!r}>"
+    @classmethod
+    def _validate_class(cls) -> None:
+        # Verify required Meta attributes were set (but don't call any callables)
+        assert cls.meta.get("api_key", required=True, call=False)
+        assert cls.meta.get("base_id", required=True, call=False)
+        assert cls.meta.get("table_name", required=True, call=False)
+
+        model_attributes = [a for a in cls.__dict__.keys() if not a.startswith("__")]
+        overridden = set(model_attributes).intersection(Model.__dict__.keys())
+        if overridden:
+            raise ValueError(
+                "Class {cls} fields clash with existing method: {name}".format(
+                    cls=cls.__name__, name=overridden
+                )
+            )
 
     @classmethod
     def _attribute_descriptor_map(cls) -> Dict[str, AnyField]:
@@ -199,21 +211,13 @@ class Model:
                 raise AttributeError(key)
             setattr(self, key, value)
 
-    @classmethod
-    def _validate_class(cls) -> None:
-        # Verify required Meta attributes were set (but don't call any callables)
-        assert cls.meta.get("api_key", required=True, call=False)
-        assert cls.meta.get("base_id", required=True, call=False)
-        assert cls.meta.get("table_name", required=True, call=False)
+        # Only start tracking changes after the object is created
+        self._changed = {}
 
-        model_attributes = [a for a in cls.__dict__.keys() if not a.startswith("__")]
-        overridden = set(model_attributes).intersection(Model.__dict__.keys())
-        if overridden:
-            raise ValueError(
-                "Class {cls} fields clash with existing method: {name}".format(
-                    cls=cls.__name__, name=overridden
-                )
-            )
+    def __repr__(self) -> str:
+        if not self.id:
+            return f"<unsaved {self.__class__.__name__}>"
+        return f"<{self.__class__.__name__} id={self.id!r}>"
 
     def exists(self) -> bool:
         """
@@ -221,31 +225,45 @@ class Model:
         """
         return bool(self.id)
 
-    def save(self) -> bool:
+    def save(self, *, force: bool = False) -> bool:
         """
         Save the model to the API.
 
         If the instance does not exist already, it will be created;
-        otherwise, the existing record will be updated.
+        otherwise, the existing record will be updated, using only the
+        fields which have been modified since it was retrieved.
+
+        Args:
+            force: If ``True``, all fields will be saved, even if they have not changed.
 
         Returns:
-            ``True`` if a record was created, ``False`` if it was updated.
+            ``True`` if a record was created;
+            ``False`` if it was updated, or if the model had no changes.
         """
         if self._deleted:
             raise RuntimeError(f"{self.id} was deleted")
-        table = self.meta.table
-        fields = self.to_record(only_writable=True)["fields"]
+
+        field_values = self.to_record(only_writable=True)["fields"]
 
         if not self.id:
-            record = table.create(fields, typecast=self.meta.typecast)
-            did_create = True
-        else:
-            record = table.update(self.id, fields, typecast=self.meta.typecast)
-            did_create = False
+            record = self.meta.table.create(field_values, typecast=self.meta.typecast)
+            self.id = record["id"]
+            self.created_time = datetime_from_iso_str(record["createdTime"])
+            self._changed.clear()
+            return True
 
-        self.id = record["id"]
-        self.created_time = datetime_from_iso_str(record["createdTime"])
-        return did_create
+        if not force:
+            if not self._changed:
+                return False
+            field_values = {
+                field_name: value
+                for field_name, value in field_values.items()
+                if self._changed.get(field_name)
+            }
+
+        self.meta.table.update(self.id, field_values, typecast=self.meta.typecast)
+        self._changed.clear()
+        return False
 
     def delete(self) -> bool:
         """
@@ -391,6 +409,7 @@ class Model:
         record = self.meta.table.get(self.id)
         unused = self.from_record(record, memoize=False)
         self._fields = unused._fields
+        self._changed.clear()
         self._fetched = True
         self.created_time = unused.created_time
 

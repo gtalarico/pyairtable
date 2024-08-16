@@ -833,7 +833,7 @@ def test_single_link_field__multiple_values():
 
     # if book.author.__set__ not called, the entire list will be sent back to the API
     with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
-        book.save()
+        book.save(force=True)
         m.assert_called_once_with(book.id, {"Author": [a1, a2, a3]}, typecast=True)
 
     # if we modify the field value, it will drop items 2-N
@@ -974,7 +974,7 @@ def test_datetime_timezones(requests_mock):
     # Test that we parse the "Z" into UTC correctly
     assert obj.dt.date() == datetime.date(2024, 2, 29)
     assert obj.dt.tzinfo is datetime.timezone.utc
-    obj.save()
+    obj.save(force=True)
     assert m.last_request.json()["fields"]["dt"] == "2024-02-29T12:34:56.000Z"
 
     # Test that we can set a UTC timezone and it will be saved as-is.
@@ -1018,5 +1018,5 @@ def test_select_field(fields, expected):
     assert obj.the_field == expected
 
     with mock.patch("pyairtable.Table.update", return_value=obj.to_record()) as m:
-        obj.save()
+        obj.save(force=True)
         m.assert_called_once_with(obj.id, fields, typecast=True)
