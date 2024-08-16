@@ -271,6 +271,7 @@ def test_type_validation_LinkField():
         (f.LookupField, ["any", "values"]),
         (f.CreatedByField, fake_user()),
         (f.LastModifiedByField, fake_user()),
+        (f.ManualSortField, "fcca"),
         # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.CreatedTimeField, DATETIME_S, DATETIME_V),
         (f.LastModifiedTimeField, DATETIME_S, DATETIME_V),
@@ -402,6 +403,7 @@ def test_writable_fields(test_case):
         f.LastModifiedByField,
         f.LastModifiedTimeField,
         f.LookupField,
+        f.ManualSortField,
         f.MultipleCollaboratorsField,
         f.MultipleSelectField,
         f.NumberField,

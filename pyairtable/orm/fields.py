@@ -962,6 +962,14 @@ class LookupField(Generic[T], _ListField[T, T]):
     readonly = True
 
 
+class ManualSortField(TextField):
+    """
+    Field configuration for ``manualSort`` field type (not documented).
+    """
+
+    readonly = True
+
+
 class MultipleCollaboratorsField(_ValidatingListField[CollaboratorDict]):
     """
     Accepts a list of dicts in the format detailed in
@@ -1072,6 +1080,7 @@ for cls, match in sorted(classes.items()):
         "LastModifiedByField",
         "LastModifiedTimeField",
         "ExternalSyncSourceField",
+        "ManualSortField",
     }:
         continue
 
@@ -1414,6 +1423,7 @@ FIELD_TYPES_TO_CLASSES = {
     "lastModifiedBy": LastModifiedByField,
     "lastModifiedTime": LastModifiedTimeField,
     "lookup": LookupField,
+    "manualSort": ManualSortField,
     "multilineText": TextField,
     "multipleAttachments": AttachmentsField,
     "multipleCollaborators": MultipleCollaboratorsField,
@@ -1486,6 +1496,7 @@ __all__ = [
     "LastModifiedTimeField",
     "LinkField",
     "LookupField",
+    "ManualSortField",
     "MultipleCollaboratorsField",
     "MultipleSelectField",
     "NumberField",
@@ -1522,7 +1533,7 @@ __all__ = [
     "FIELD_CLASSES_TO_TYPES",
     "LinkSelf",
 ]
-# [[[end]]] (checksum: 21316c688401f32f59d597c496d48bf3)
+# [[[end]]] (checksum: 3ea404fb3814f0d053b93d3479ab5e13)
 
 
 # Delayed import to avoid circular dependency
