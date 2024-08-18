@@ -62,7 +62,7 @@ def test_model_basics():
     # save
     with mock.patch.object(Table, "create") as m_save:
         m_save.return_value = {"id": "id", "createdTime": NOW}
-        contact.save()
+        assert contact.save().created
 
     assert m_save.called
     assert contact.id == "id"
@@ -163,7 +163,8 @@ def test_unmodified_field_not_saved(contact_record):
 
     # Do not call update() if the record is unchanged
     with mock_update_contact() as m_update:
-        contact.save()
+        result = contact.save()
+        assert not (result.created or result.updated)
         m_update.assert_not_called()
 
     # By default, only pass fields which were changed to the API

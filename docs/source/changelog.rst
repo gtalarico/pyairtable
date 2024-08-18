@@ -35,6 +35,14 @@ Changelog
   - `PR #373 <https://github.com/gtalarico/pyairtable/pull/373>`_
 * Added command line utility and ORM module generator. See :doc:`cli`.
   - `PR #376 <https://github.com/gtalarico/pyairtable/pull/376>`_
+* Changed the behavior of :meth:`Model.save <pyairtable.orm.Model.save>`
+  to no longer send unmodified field values to the API.
+  - `PR #381 <https://github.com/gtalarico/pyairtable/pull/381>`_
+* Added ``use_field_ids=`` parameter to :class:`~pyairtable.Api`.
+  - `PR #386 <https://github.com/gtalarico/pyairtable/pull/386>`_
+* Changed the return type of :meth:`Model.save <pyairtable.orm.Model.save>`
+  from ``bool`` to :class:`~pyairtable.orm.SaveResult`.
+  - `PR #387 <https://github.com/gtalarico/pyairtable/pull/387>`_
 
 2.3.3 (2024-03-22)
 ------------------------
