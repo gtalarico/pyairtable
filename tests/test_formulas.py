@@ -5,6 +5,7 @@ from fractions import Fraction
 import pytest
 from mock import call
 
+import pyairtable.exceptions
 from pyairtable import formulas as F
 from pyairtable import orm
 from pyairtable.formulas import AND, EQ, GT, GTE, LT, LTE, NE, NOT, OR
@@ -181,7 +182,7 @@ def test_compound_flatten():
 def test_compound_flatten_circular_dependency():
     circular = NOT(F.Formula("x"))
     circular.components = [circular]
-    with pytest.raises(F.CircularDependency):
+    with pytest.raises(pyairtable.exceptions.CircularFormulaError):
         circular.flatten()
 
 

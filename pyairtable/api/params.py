@@ -1,10 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-
-class InvalidParamException(ValueError):
-    """
-    Raised when invalid parameters are passed to ``all()``, ``first()``, etc.
-    """
+from pyairtable.exceptions import InvalidParameterError
 
 
 def dict_list_to_request_params(
@@ -85,7 +81,7 @@ def _option_to_param(name: str) -> str:
     try:
         return OPTIONS_TO_PARAMETERS[name]
     except KeyError:
-        raise InvalidParamException(name)
+        raise InvalidParameterError(name)
 
 
 #: List of option names that cannot be passed via POST, only GET

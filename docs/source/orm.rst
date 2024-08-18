@@ -118,7 +118,7 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
             links = re.findall(r"`.+? <.*?field-model.*?>`", cls.__doc__ or "")
             ro = ' 🔒' if cls.readonly else ''
             cog.outl(f"   * - :class:`~pyairtable.orm.fields.{cls.__name__}`{ro}")
-            cog.outl(f"     - {', '.join(f'{link}__' for link in links) if links else '(see docs)'}")
+            cog.outl(f"     - {', '.join(f'{link}__' for link in links) if links else '(undocumented)'}")
 
     classes = sorted(fields.ALL_FIELDS, key=attrgetter("__name__"))
     optional = [cls for cls in classes if not cls.__name__.startswith("Required")]
@@ -185,6 +185,8 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__
    * - :class:`~pyairtable.orm.fields.LookupField` 🔒
      - `Lookup <https://airtable.com/developers/web/api/field-model#lookup>`__
+   * - :class:`~pyairtable.orm.fields.ManualSortField` 🔒
+     - (undocumented)
    * - :class:`~pyairtable.orm.fields.MultipleCollaboratorsField`
      - `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__
    * - :class:`~pyairtable.orm.fields.MultipleSelectField`
@@ -257,7 +259,7 @@ See :ref:`Required Values` for more details.
      - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.RequiredUrlField`
      - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
-.. [[[end]]] (checksum: 131138e1071ba71d4f46f05da4d57570)
+.. [[[end]]] (checksum: 43c56200ca513d3a0603bb5a6ddbb1ef)
 
 
 Formula, Rollup, and Lookup Fields

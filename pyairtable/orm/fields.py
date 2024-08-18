@@ -59,6 +59,7 @@ from pyairtable.api.types import (
     CollaboratorDict,
     RecordId,
 )
+from pyairtable.exceptions import MissingValueError, MultipleValuesError
 
 if TYPE_CHECKING:
     from pyairtable.orm import Model  # noqa
@@ -280,19 +281,13 @@ class _FieldWithRequiredValue(Generic[T_API, T_ORM], Field[T_API, T_ORM, T_ORM])
     ) -> Union[SelfType, T_ORM]:
         value = super().__get__(instance, owner)
         if value is None or value == "":
-            raise MissingValue(f"{self._description} received an empty value")
+            raise MissingValueError(f"{self._description} received an empty value")
         return value
 
     def __set__(self, instance: "Model", value: Optional[T_ORM]) -> None:
         if value in (None, ""):
-            raise MissingValue(f"{self._description} does not accept empty values")
+            raise MissingValueError(f"{self._description} does not accept empty values")
         super().__set__(instance, value)
-
-
-class MissingValue(ValueError):
-    """
-    A required field received an empty value, either from Airtable or other code.
-    """
 
 
 #: A generic Field with internal and API representations that are the same type.
@@ -812,7 +807,9 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
         if not instance:
             return self
         if self._raise_if_many and len(instance._fields.get(self.field_name) or []) > 1:
-            raise MultipleValues(f"{self._description} got more than one linked record")
+            raise MultipleValuesError(
+                f"{self._description} got more than one linked record"
+            )
         links = self._link_field.__get__(instance, owner)
         try:
             return links[0]
@@ -844,12 +841,6 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
     @utils.docstring_from(LinkField.linked_model)
     def linked_model(self) -> Type[T_Linked]:
         return self._link_field.linked_model
-
-
-class MultipleValues(ValueError):
-    """
-    SingleLinkField received more than one value from either Airtable or calling code.
-    """
 
 
 # Many of these are "passthrough" subclasses for now. E.g. there is no real
@@ -973,6 +964,14 @@ class LookupField(Generic[T], _ListField[T, T]):
     readonly = True
 
 
+class ManualSortField(TextField):
+    """
+    Field configuration for ``manualSort`` field type (not documented).
+    """
+
+    readonly = True
+
+
 class MultipleCollaboratorsField(_ValidatingListField[CollaboratorDict]):
     """
     Accepts a list of dicts in the format detailed in
@@ -1083,6 +1082,7 @@ for cls, match in sorted(classes.items()):
         "LastModifiedByField",
         "LastModifiedTimeField",
         "ExternalSyncSourceField",
+        "ManualSortField",
     }:
         continue
 
@@ -1425,6 +1425,7 @@ FIELD_TYPES_TO_CLASSES: Dict[str, Type[AnyField]] = {
     "lastModifiedBy": LastModifiedByField,
     "lastModifiedTime": LastModifiedTimeField,
     "lookup": LookupField,
+    "manualSort": ManualSortField,
     "multilineText": TextField,
     "multipleAttachments": AttachmentsField,
     "multipleCollaborators": MultipleCollaboratorsField,
@@ -1497,6 +1498,7 @@ __all__ = [
     "LastModifiedTimeField",
     "LinkField",
     "LookupField",
+    "ManualSortField",
     "MultipleCollaboratorsField",
     "MultipleSelectField",
     "NumberField",
@@ -1533,7 +1535,7 @@ __all__ = [
     "FIELD_CLASSES_TO_TYPES",
     "LinkSelf",
 ]
-# [[[end]]] (checksum: 4e24bb038e7e79db2f563afd1708eeef)
+# [[[end]]] (checksum: 3c6f5447f45e74c170ec3378272c6dd3)
 
 
 # Delayed import to avoid circular dependency

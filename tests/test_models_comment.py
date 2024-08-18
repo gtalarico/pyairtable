@@ -45,14 +45,15 @@ def test_parse(comment_json):
     Comment.parse_obj(comment_json)
 
 
-@pytest.mark.parametrize("attr", ["mentioned", "last_updated_time"])
-def test_missing_attributes(comment_json, attr):
+def test_missing_attributes(comment_json):
     """
     Test that we can parse the payload when missing optional values.
     """
-    del comment_json[Comment.__fields__[attr].alias]
+    del comment_json["lastUpdatedTime"]
+    del comment_json["mentioned"]
     comment = Comment.parse_obj(comment_json)
-    assert getattr(comment, attr) is None
+    assert comment.mentioned == {}
+    assert comment.last_updated_time is None
 
 
 @pytest.mark.parametrize(

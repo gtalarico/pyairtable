@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 from requests_mock import NoMockAddress
 
+import pyairtable.exceptions
 from pyairtable.formulas import OR, RECORD_ID
 from pyairtable.orm import fields as f
 from pyairtable.orm.model import Model
@@ -270,6 +271,7 @@ def test_type_validation_LinkField():
         (f.LookupField, ["any", "values"]),
         (f.CreatedByField, fake_user()),
         (f.LastModifiedByField, fake_user()),
+        (f.ManualSortField, "fcca"),
         # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.CreatedTimeField, DATETIME_S, DATETIME_V),
         (f.LastModifiedTimeField, DATETIME_S, DATETIME_V),
@@ -401,6 +403,7 @@ def test_writable_fields(test_case):
         f.LastModifiedByField,
         f.LastModifiedTimeField,
         f.LookupField,
+        f.ManualSortField,
         f.MultipleCollaboratorsField,
         f.MultipleSelectField,
         f.NumberField,
@@ -465,11 +468,11 @@ def test_rejects_null(field_type):
         the_field = field_type("Field Name")
 
     obj = T()
-    with pytest.raises(f.MissingValue):
+    with pytest.raises(pyairtable.exceptions.MissingValueError):
         obj.the_field
-    with pytest.raises(f.MissingValue):
+    with pytest.raises(pyairtable.exceptions.MissingValueError):
         obj.the_field = None
-    with pytest.raises(f.MissingValue):
+    with pytest.raises(pyairtable.exceptions.MissingValueError):
         T(the_field=None)
 
 
@@ -855,7 +858,7 @@ def test_single_link_field__raise_if_many():
         author = f.SingleLinkField("Author", Author, raise_if_many=True)
 
     book = Book.from_record(fake_record(Author=[fake_id(), fake_id()]))
-    with pytest.raises(f.MultipleValues):
+    with pytest.raises(pyairtable.exceptions.MultipleValuesError):
         book.author
 
 
