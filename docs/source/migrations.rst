@@ -11,6 +11,12 @@ Migrating from 2.x to 3.0
 
 In this release we've made a number of breaking changes, summarized below.
 
+Deprecated metadata module removed
+---------------------------------------------
+
+The 3.0 release removed the ``pyairtable.metadata`` module. For supported alternatives,
+see :doc:`metadata`.
+
 Changes to the formulas module
 ---------------------------------------------
 
@@ -56,8 +62,11 @@ The full list of breaking changes is below:
     * - :func:`~pyairtable.formulas.escape_quotes`
       - Deprecated. Use :func:`~pyairtable.formulas.quoted` instead.
 
-Changes to retrieving ORM model configuration
+Changes to the ORM in 3.0
 ---------------------------------------------
+
+:data:`Model.created_time <pyairtable.orm.Model.created_time>` is now a ``datetime`` (or ``None``)
+instead of ``str``. This change also applies to all timestamp fields used in :ref:`API: pyairtable.models`.
 
 The 3.0 release has changed the API for retrieving ORM model configuration:
 
