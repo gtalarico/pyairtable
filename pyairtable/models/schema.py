@@ -653,7 +653,7 @@ class CheckboxFieldConfig(AirtableModel):
     """
 
     type: Literal["checkbox"]
-    options: Optional["CheckboxFieldOptions"]
+    options: "CheckboxFieldOptions"
 
 
 class CheckboxFieldOptions(AirtableModel):
@@ -667,7 +667,7 @@ class CountFieldConfig(AirtableModel):
     """
 
     type: Literal["count"]
-    options: Optional["CountFieldOptions"]
+    options: "CountFieldOptions"
 
 
 class CountFieldOptions(AirtableModel):
@@ -747,7 +747,7 @@ class DurationFieldConfig(AirtableModel):
     """
 
     type: Literal["duration"]
-    options: Optional["DurationFieldOptions"]
+    options: "DurationFieldOptions"
 
 
 class DurationFieldOptions(AirtableModel):
@@ -768,7 +768,7 @@ class ExternalSyncSourceFieldConfig(AirtableModel):
     """
 
     type: Literal["externalSyncSource"]
-    options: Optional["SingleSelectFieldOptions"]
+    options: "SingleSelectFieldOptions"
 
 
 class FormulaFieldConfig(AirtableModel):
@@ -777,7 +777,7 @@ class FormulaFieldConfig(AirtableModel):
     """
 
     type: Literal["formula"]
-    options: Optional["FormulaFieldOptions"]
+    options: "FormulaFieldOptions"
 
 
 class FormulaFieldOptions(AirtableModel):
@@ -801,7 +801,7 @@ class LastModifiedTimeFieldConfig(AirtableModel):
     """
 
     type: Literal["lastModifiedTime"]
-    options: Optional["LastModifiedTimeFieldOptions"]
+    options: "LastModifiedTimeFieldOptions"
 
 
 class LastModifiedTimeFieldOptions(AirtableModel):
@@ -832,7 +832,7 @@ class MultipleAttachmentsFieldConfig(AirtableModel):
     """
 
     type: Literal["multipleAttachments"]
-    options: Optional["MultipleAttachmentsFieldOptions"]
+    options: "MultipleAttachmentsFieldOptions"
 
 
 class MultipleAttachmentsFieldOptions(AirtableModel):
@@ -857,7 +857,7 @@ class MultipleLookupValuesFieldConfig(AirtableModel):
     """
 
     type: Literal["multipleLookupValues"]
-    options: Optional["MultipleLookupValuesFieldOptions"]
+    options: "MultipleLookupValuesFieldOptions"
 
 
 class MultipleLookupValuesFieldOptions(AirtableModel):
@@ -873,7 +873,7 @@ class MultipleRecordLinksFieldConfig(AirtableModel):
     """
 
     type: Literal["multipleRecordLinks"]
-    options: Optional["MultipleRecordLinksFieldOptions"]
+    options: "MultipleRecordLinksFieldOptions"
 
 
 class MultipleRecordLinksFieldOptions(AirtableModel):
@@ -890,7 +890,7 @@ class MultipleSelectsFieldConfig(AirtableModel):
     """
 
     type: Literal["multipleSelects"]
-    options: Optional["SingleSelectFieldOptions"]
+    options: "SingleSelectFieldOptions"
 
 
 class NumberFieldConfig(AirtableModel):
@@ -899,7 +899,7 @@ class NumberFieldConfig(AirtableModel):
     """
 
     type: Literal["number"]
-    options: Optional["NumberFieldOptions"]
+    options: "NumberFieldOptions"
 
 
 class NumberFieldOptions(AirtableModel):
@@ -912,7 +912,7 @@ class PercentFieldConfig(AirtableModel):
     """
 
     type: Literal["percent"]
-    options: Optional["NumberFieldOptions"]
+    options: "NumberFieldOptions"
 
 
 class PhoneNumberFieldConfig(AirtableModel):
@@ -929,7 +929,7 @@ class RatingFieldConfig(AirtableModel):
     """
 
     type: Literal["rating"]
-    options: Optional["RatingFieldOptions"]
+    options: "RatingFieldOptions"
 
 
 class RatingFieldOptions(AirtableModel):
@@ -952,7 +952,7 @@ class RollupFieldConfig(AirtableModel):
     """
 
     type: Literal["rollup"]
-    options: Optional["RollupFieldOptions"]
+    options: "RollupFieldOptions"
 
 
 class RollupFieldOptions(AirtableModel):
@@ -985,7 +985,7 @@ class SingleSelectFieldConfig(AirtableModel):
     """
 
     type: Literal["singleSelect"]
-    options: Optional["SingleSelectFieldOptions"]
+    options: "SingleSelectFieldOptions"
 
 
 class SingleSelectFieldOptions(AirtableModel):

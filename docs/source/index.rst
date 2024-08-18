@@ -31,6 +31,7 @@ pyAirtable
    metadata
    webhooks
    enterprise
+   cli
    api
 
 
@@ -38,8 +39,8 @@ pyAirtable
    :caption: More
    :hidden:
 
-   migrations
    about
+   migrations
    changelog
    contributing
    GitHub <https://github.com/gtalarico/pyairtable>

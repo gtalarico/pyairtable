@@ -33,10 +33,12 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Dict,
     Generic,
     List,
     Literal,
     Optional,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -1378,7 +1380,7 @@ class CreatedTimeField(RequiredDatetimeField):
 #: Set of all Field subclasses exposed by the library.
 #:
 #: :meta hide-value:
-ALL_FIELDS = {
+ALL_FIELDS: Set[Type[AnyField]] = {
     field_class
     for name, field_class in vars().items()
     if isinstance(field_class, type)
@@ -1391,7 +1393,7 @@ ALL_FIELDS = {
 #: Set of all read-only Field subclasses exposed by the library.
 #:
 #: :meta hide-value:
-READONLY_FIELDS = {cls for cls in ALL_FIELDS if cls.readonly}
+READONLY_FIELDS: Set[Type[AnyField]] = {cls for cls in ALL_FIELDS if cls.readonly}
 
 
 #: Mapping of Airtable field type names to their ORM classes.
@@ -1404,7 +1406,7 @@ READONLY_FIELDS = {cls for cls in ALL_FIELDS if cls.readonly}
 #: field type names are mapped to the constant ``NotImplemented``.
 #:
 #: :meta hide-value:
-FIELD_TYPES_TO_CLASSES = {
+FIELD_TYPES_TO_CLASSES: Dict[str, Type[AnyField]] = {
     "aiText": AITextField,
     "autoNumber": AutoNumberField,
     "barcode": BarcodeField,
@@ -1427,6 +1429,7 @@ FIELD_TYPES_TO_CLASSES = {
     "multilineText": TextField,
     "multipleAttachments": AttachmentsField,
     "multipleCollaborators": MultipleCollaboratorsField,
+    "multipleLookupValues": LookupField,
     "multipleRecordLinks": LinkField,
     "multipleSelects": MultipleSelectField,
     "number": NumberField,
@@ -1445,7 +1448,7 @@ FIELD_TYPES_TO_CLASSES = {
 #: Mapping of field classes to the set of supported Airtable field types.
 #:
 #: :meta hide-value:
-FIELD_CLASSES_TO_TYPES = {
+FIELD_CLASSES_TO_TYPES: Dict[Type[AnyField], Set[str]] = {
     cls: {key for (key, val) in FIELD_TYPES_TO_CLASSES.items() if val == cls}
     for cls in ALL_FIELDS
 }
@@ -1460,19 +1463,18 @@ FIELD_CLASSES_TO_TYPES = {
 #     src = fp.read()
 #
 # classes = re.findall(r"class ((?:[A-Z]\w+)?Field)", src)
-# constants = re.findall(r"^(?!T_)([A-Z][A-Z_]+) = ", src, re.MULTILINE)
+# constants = re.findall(r"^(?!T_)([A-Z][A-Z_]+)(?:: [^=]+)? = ", src, re.MULTILINE)
 # extras = ["LinkSelf"]
 # names = sorted(classes) + constants + extras
 #
 # cog.outl("\n\n__all__ = [")
-# for name in ["Field", *names]:
+# for name in names:
 #     cog.outl(f'    "{name}",')
 # cog.outl("]")
 # [[[out]]]
 
 
 __all__ = [
-    "Field",
     "AITextField",
     "AttachmentsField",
     "AutoNumberField",
@@ -1533,7 +1535,7 @@ __all__ = [
     "FIELD_CLASSES_TO_TYPES",
     "LinkSelf",
 ]
-# [[[end]]] (checksum: 3ea404fb3814f0d053b93d3479ab5e13)
+# [[[end]]] (checksum: 3c6f5447f45e74c170ec3378272c6dd3)
 
 
 # Delayed import to avoid circular dependency
