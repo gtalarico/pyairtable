@@ -38,10 +38,14 @@ def mock_metadata(
 
 
 @pytest.fixture
-def run(mock_metadata):
+def run(mock_metadata, monkeypatch):
     default_env = {"AIRTABLE_API_KEY": "test"}
 
     def _runner(*args: str, env: dict = default_env, fails: bool = False):
+        # make sure we're starting from a blank environment
+        monkeypatch.delenv("AIRTABLE_API_KEY", raising=False)
+        monkeypatch.delenv("AIRTABLE_API_KEY_FILE", raising=False)
+        # run the command
         runner = CliRunner(env=env)
         result = runner.invoke(pyairtable.cli.cli, args)
         # if a test fails, show the command's output
@@ -57,6 +61,7 @@ def run(mock_metadata):
 
     def _runner_with_json(*args, **kwargs):
         result = _runner(*args, **kwargs)
+        assert result.stdout, "command did not produce any output"
         return json.loads(result.stdout)
 
     _runner.json = _runner_with_json
