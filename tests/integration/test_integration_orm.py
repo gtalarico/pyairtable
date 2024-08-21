@@ -201,6 +201,7 @@ def test_every_field(Everything):
             f.ExternalSyncSourceField,
             f.AITextField,
             f.RequiredAITextField,
+            f.ManualSortField,
         }:
             continue
         assert field_class in classes_used
