@@ -53,6 +53,8 @@ The full list of breaking changes is below:
     * - :func:`~pyairtable.formulas.IF`, :func:`~pyairtable.formulas.FIND`, :func:`~pyairtable.formulas.LOWER`
       - These no longer return ``str``, and instead return instances of
         :class:`~pyairtable.formulas.FunctionCall`.
+    * - :func:`~pyairtable.formulas.escape_quotes`
+      - Deprecated. Use :func:`~pyairtable.formulas.quoted` instead.
 
 Changes to retrieving ORM model configuration
 ---------------------------------------------

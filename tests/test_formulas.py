@@ -334,7 +334,7 @@ def test_function_call_equivalence():
     "input,expected",
     [
         ("First Name", "{First Name}"),
-        ("Guest's Name", r"{Guest\'s Name}"),
+        ("Guest's Name", r"{Guest's Name}"),
         ("With {Curly Braces}", r"{With {Curly Braces\}}"),
     ],
 )
@@ -343,8 +343,9 @@ def test_field_name(input, expected):
 
 
 def test_quoted():
-    assert F.quoted("John") == "'John'"
-    assert F.quoted("Guest's Name") == "'Guest\\'s Name'"
+    assert F.quoted("Guest") == "'Guest'"
+    assert F.quoted("Guest's Name") == r"'Guest\'s Name'"
+    assert F.quoted(F.quoted("Guest's Name")) == r"'\'Guest\\\'s Name\''"
 
 
 class FakeModel(orm.Model):

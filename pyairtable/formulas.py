@@ -7,6 +7,7 @@ See :doc:`formulas` for more information.
 
 import datetime
 import re
+import warnings
 from decimal import Decimal
 from fractions import Fraction
 from typing import Any, ClassVar, Iterable, List, Optional, Set, Union
@@ -461,12 +462,16 @@ def quoted(value: str) -> str:
     >>> quoted("Guest's Name")
     "'Guest\\'s Name'"
     """
-    return "'{}'".format(escape_quotes(str(value)))
+    value = value.replace("\\", r"\\").replace("'", r"\'")
+    return "'{}'".format(value)
 
 
 def escape_quotes(value: str) -> str:
     r"""
     Ensure any quotes are escaped. Already escaped quotes are ignored.
+
+    This function has been deprecated.
+    Use :func:`~pyairtable.formulas.quoted` instead.
 
     Args:
         value: text to be escaped
@@ -477,6 +482,11 @@ def escape_quotes(value: str) -> str:
         >>> escape_quotes(r"Player\'s Name")
         "Player\\'s Name"
     """
+    warnings.warn(
+        "escape_quotes is deprecated; use quoted() instead.",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
     escaped_value = re.sub("(?<!\\\\)'", "\\'", value)
     return escaped_value
 
@@ -492,12 +502,12 @@ def field_name(name: str) -> str:
         >>> field_name("First Name")
         '{First Name}'
         >>> field_name("Guest's Name")
-        "{Guest\\'s Name}"
+        "{Guest's Name}"
     """
     # This will not actually work with field names that contain more
     # than one closing curly brace; that's a limitation of Airtable.
     # Our library will escape all closing braces, but the API will fail.
-    return "{%s}" % escape_quotes(name.replace("}", r"\}"))
+    return "{%s}" % name.replace("}", r"\}")
 
 
 class FunctionCall(Formula):
