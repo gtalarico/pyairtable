@@ -6,30 +6,35 @@ Changelog
 ------------------------
 
 * Rewrite of :mod:`pyairtable.formulas` module. See :ref:`Building Formulas`.
-  - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_.
+  - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_
 * :class:`~pyairtable.orm.fields.TextField` and
   :class:`~pyairtable.orm.fields.CheckboxField` return ``""``
   or ``False`` instead of ``None``.
-  - `PR #347 <https://github.com/gtalarico/pyairtable/pull/347>`_.
+  - `PR #347 <https://github.com/gtalarico/pyairtable/pull/347>`_
 * Changed the type of :data:`~pyairtable.orm.Model.created_time`
   from ``str`` to ``datetime``, along with all other timestamp fields
   used in :ref:`API: pyairtable.models`.
-  - `PR #352 <https://github.com/gtalarico/pyairtable/pull/352>`_.
+  - `PR #352 <https://github.com/gtalarico/pyairtable/pull/352>`_
 * Added ORM field type :class:`~pyairtable.orm.fields.SingleLinkField`
   for record links that should only contain one record.
-  - `PR #354 <https://github.com/gtalarico/pyairtable/pull/354>`_.
+  - `PR #354 <https://github.com/gtalarico/pyairtable/pull/354>`_
 * Support ``use_field_ids`` in the :ref:`ORM`.
-  - `PR #355 <https://github.com/gtalarico/pyairtable/pull/355>`_.
+  - `PR #355 <https://github.com/gtalarico/pyairtable/pull/355>`_
 * Removed the ``pyairtable.metadata`` module.
-  - `PR #360 <https://github.com/gtalarico/pyairtable/pull/360>`_.
+  - `PR #360 <https://github.com/gtalarico/pyairtable/pull/360>`_
 * Renamed ``return_fields_by_field_id=`` to ``use_field_ids=``.
-  - `PR #362 <https://github.com/gtalarico/pyairtable/pull/362>`_.
+  - `PR #362 <https://github.com/gtalarico/pyairtable/pull/362>`_
 * Added ORM fields that :ref:`require a non-null value <Required Values>`.
-  - `PR #363 <https://github.com/gtalarico/pyairtable/pull/363>`_.
+  - `PR #363 <https://github.com/gtalarico/pyairtable/pull/363>`_
 * Refactored methods for accessing ORM model configuration.
-  - `PR #366 <https://github.com/gtalarico/pyairtable/pull/366>`_.
+  - `PR #366 <https://github.com/gtalarico/pyairtable/pull/366>`_
 * Added support for :ref:`memoization of ORM models <memoizing linked records>`.
-  - `PR #369 <https://github.com/gtalarico/pyairtable/pull/369>`_.
+  - `PR #369 <https://github.com/gtalarico/pyairtable/pull/369>`_
+* Added `Enterprise.grant_access <pyairtable.Enterprise.grant_access>`
+  and `Enterprise.revoke_access <pyairtable.Enterprise.revoke_access>`.
+  - `PR #373 <https://github.com/gtalarico/pyairtable/pull/373>`_
+* Added command line utility and ORM module generator. See :doc:`cli`.
+  - `PR #376 <https://github.com/gtalarico/pyairtable/pull/376>`_
 
 2.3.3 (2024-03-22)
 ------------------------
