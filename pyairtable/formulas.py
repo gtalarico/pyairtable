@@ -466,7 +466,7 @@ def quoted(value: str) -> str:
     return "'{}'".format(value)
 
 
-def escape_quotes(value: str) -> str:
+def escape_quotes(value: str) -> str:  # pragma: no cover
     r"""
     Ensure any quotes are escaped. Already escaped quotes are ignored.
 

@@ -58,7 +58,8 @@
     bet set to null. If ``False``, only provided fields are updated.
 
 .. |kwarg_use_field_ids| replace:: An optional boolean value that lets you return field objects where the
-    key is the field id. This defaults to `false`, which returns field objects where the key is the field name.
+    key is the field id. This defaults to ``False``, which returns field objects where the key is the field name.
+    This behavior can be overridden by passing ``use_field_ids=True`` to :class:`~pyairtable.Api`.
 
 .. |kwarg_force_metadata| replace::
     By default, this method will only fetch information from the API if it has not been cached.
