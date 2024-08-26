@@ -197,6 +197,8 @@ class Table:
             user_locale: |kwarg_user_locale|
             use_field_ids: |kwarg_use_field_ids|
         """
+        if self.api.use_field_ids:
+            options.setdefault("use_field_ids", self.api.use_field_ids)
         record = self.api.get(self.record_url(record_id), options=options)
         return assert_typed_dict(RecordDict, record)
 

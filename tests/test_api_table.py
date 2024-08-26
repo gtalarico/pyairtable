@@ -497,11 +497,39 @@ def test_delete_view(table, mock_schema, requests_mock):
 fake_upsert = {"updatedRecords": [], "createdRecords": [], "records": []}
 
 
-@pytest.mark.parametrize("method_name", ("all", "first"))
-def test_use_field_ids__get(table, monkeypatch, requests_mock, method_name):
+def test_use_field_ids__get_record(table, monkeypatch, requests_mock):
     """
     Test that setting api.use_field_ids=True will change the default behavior
-    (but not the explicit behavior) of the API methods on Table.
+    (but not the explicit behavior) of Table.get()
+    """
+    record = fake_record()
+    url = table.record_url(record_id := record["id"])
+    m = requests_mock.register_uri("GET", url, json=record)
+
+    # by default, we don't pass the param at all
+    table.get(record_id)
+    assert m.called
+    assert "returnFieldsByFieldId" not in m.last_request.qs
+
+    # if use_field_ids=True, we should pass the param...
+    monkeypatch.setattr(table.api, "use_field_ids", True)
+    m.reset()
+    table.get(record_id)
+    assert m.called
+    assert m.last_request.qs["returnFieldsByFieldId"] == ["1"]
+
+    # ...but we can override it
+    m.reset()
+    table.get(record_id, use_field_ids=False)
+    assert m.called
+    assert m.last_request.qs["returnFieldsByFieldId"] == ["0"]
+
+
+@pytest.mark.parametrize("method_name", ("all", "first"))
+def test_use_field_ids__get_records(table, monkeypatch, requests_mock, method_name):
+    """
+    Test that setting api.use_field_ids=True will change the default behavior
+    (but not the explicit behavior) of Table.all() and Table.first()
     """
     m = requests_mock.register_uri("GET", table.url, json={"records": []})
 
@@ -545,6 +573,10 @@ def test_use_field_ids__post(
     suffix,
     response,
 ):
+    """
+    Test that setting api.use_field_ids=True will change the default behavior
+    (but not the explicit behavior) of the create/update API methods on Table.
+    """
     url = f"{table.url}/{suffix}".rstrip("/")
     print(f"{url=}")
     m = requests_mock.register_uri(http_method, url, json=response)
