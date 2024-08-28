@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from posixpath import join as urljoin
 from unittest import mock
 
@@ -10,6 +11,8 @@ from pyairtable.formulas import AND, EQ, Field
 from pyairtable.models.schema import TableSchema
 from pyairtable.testing import fake_id, fake_record
 from pyairtable.utils import chunked
+
+NOW = datetime.now(timezone.utc).isoformat()
 
 
 @pytest.fixture()
@@ -206,29 +209,60 @@ def test_first_none(table: Table, mock_response_single):
         assert rv is None
 
 
-def test_all(table: Table, mock_response_list, mock_records):
-    with Mocker() as mock:
-        mock.get(
-            table.url,
+def test_all(table, requests_mock, mock_response_list, mock_records):
+    requests_mock.get(
+        table.url,
+        status_code=200,
+        json=mock_response_list[0],
+        complete_qs=True,
+    )
+    for n, resp in enumerate(mock_response_list, 1):
+        offset = resp.get("offset", None)
+        if not offset:
+            continue
+        offset_url = table.url + "?offset={}".format(offset)
+        requests_mock.get(
+            offset_url,
             status_code=200,
-            json=mock_response_list[0],
+            json=mock_response_list[1],
             complete_qs=True,
         )
-        for n, resp in enumerate(mock_response_list, 1):
-            offset = resp.get("offset", None)
-            if not offset:
-                continue
-            offset_url = table.url + "?offset={}".format(offset)
-            mock.get(
-                offset_url,
-                status_code=200,
-                json=mock_response_list[1],
-                complete_qs=True,
-            )
-        response = table.all()
+    response = table.all()
 
     for n, resp in enumerate(response):
         assert dict_equals(resp, mock_records[n])
+
+
+@pytest.mark.parametrize(
+    "kwargs,expected",
+    [
+        ({"view": "Grid view"}, {"view": ["Grid view"]}),
+        ({"page_size": 10}, {"pageSize": ["10"]}),
+        ({"max_records": 10}, {"maxRecords": ["10"]}),
+        ({"fields": ["Name", "Email"]}, {"fields[]": ["Name", "Email"]}),
+        ({"formula": "{Status}='Active'"}, {"filterByFormula": ["{Status}='Active'"]}),
+        ({"cell_format": "json"}, {"cellFormat": ["json"]}),
+        ({"user_locale": "en_US"}, {"userLocale": ["en_US"]}),
+        ({"time_zone": "America/New_York"}, {"timeZone": ["America/New_York"]}),
+        ({"use_field_ids": True}, {"returnFieldsByFieldId": ["1"]}),
+        (
+            {"sort": ["Name", "-Email"]},
+            {
+                "sort[0][direction]": ["asc"],
+                "sort[0][field]": ["Name"],
+                "sort[1][direction]": ["desc"],
+                "sort[1][field]": ["Email"],
+            },
+        ),
+    ],
+)
+def test_all__params(table, requests_mock, kwargs, expected):
+    """
+    Test that parameters to all() get translated to query string correctly.
+    """
+    m = requests_mock.get(table.url, status_code=200, json={"records": []})
+    table.all(**kwargs)
+    assert m.last_request.qs == expected
 
 
 def test_iterate(table: Table, mock_response_list, mock_records):
@@ -458,6 +492,113 @@ def test_delete_view(table, mock_schema, requests_mock):
     m = requests_mock.delete(view._url)
     view.delete()
     assert m.call_count == 1
+
+
+fake_upsert = {"updatedRecords": [], "createdRecords": [], "records": []}
+
+
+def test_use_field_ids__get_record(table, monkeypatch, requests_mock):
+    """
+    Test that setting api.use_field_ids=True will change the default behavior
+    (but not the explicit behavior) of Table.get()
+    """
+    record = fake_record()
+    url = table.record_url(record_id := record["id"])
+    m = requests_mock.register_uri("GET", url, json=record)
+
+    # by default, we don't pass the param at all
+    table.get(record_id)
+    assert m.called
+    assert "returnFieldsByFieldId" not in m.last_request.qs
+
+    # if use_field_ids=True, we should pass the param...
+    monkeypatch.setattr(table.api, "use_field_ids", True)
+    m.reset()
+    table.get(record_id)
+    assert m.called
+    assert m.last_request.qs["returnFieldsByFieldId"] == ["1"]
+
+    # ...but we can override it
+    m.reset()
+    table.get(record_id, use_field_ids=False)
+    assert m.called
+    assert m.last_request.qs["returnFieldsByFieldId"] == ["0"]
+
+
+@pytest.mark.parametrize("method_name", ("all", "first"))
+def test_use_field_ids__get_records(table, monkeypatch, requests_mock, method_name):
+    """
+    Test that setting api.use_field_ids=True will change the default behavior
+    (but not the explicit behavior) of Table.all() and Table.first()
+    """
+    m = requests_mock.register_uri("GET", table.url, json={"records": []})
+
+    # by default, we don't pass the param at all
+    method = getattr(table, method_name)
+    method()
+    assert m.called
+    assert "returnFieldsByFieldId" not in m.last_request.qs
+
+    # if use_field_ids=True, we should pass the param...
+    monkeypatch.setattr(table.api, "use_field_ids", True)
+    m.reset()
+    method()
+    assert m.called
+    assert m.last_request.qs["returnFieldsByFieldId"] == ["1"]
+
+    # ...but we can override it
+    m.reset()
+    method(use_field_ids=False)
+    assert m.called
+    assert m.last_request.qs["returnFieldsByFieldId"] == ["0"]
+
+
+@pytest.mark.parametrize(
+    "method_name,method_args,http_method,suffix,response",
+    [
+        ("create", ({"fields": {}}), "POST", "", fake_record()),
+        ("update", ("rec123", {}), "PATCH", "rec123", fake_record()),
+        ("batch_create", ([fake_record()],), "POST", "", {"records": []}),
+        ("batch_update", ([fake_record()],), "PATCH", "", {"records": []}),
+        ("batch_upsert", ([fake_record()], ["Key"]), "PATCH", "", fake_upsert),
+    ],
+)
+def test_use_field_ids__post(
+    table,
+    monkeypatch,
+    requests_mock,
+    method_name,
+    method_args,
+    http_method,
+    suffix,
+    response,
+):
+    """
+    Test that setting api.use_field_ids=True will change the default behavior
+    (but not the explicit behavior) of the create/update API methods on Table.
+    """
+    url = f"{table.url}/{suffix}".rstrip("/")
+    print(f"{url=}")
+    m = requests_mock.register_uri(http_method, url, json=response)
+
+    # by default, the param is False
+    method = getattr(table, method_name)
+    method(*method_args)
+    assert m.call_count == 1
+    assert m.last_request.json()["returnFieldsByFieldId"] is False
+
+    # if use_field_ids=True, we should pass the param...
+    monkeypatch.setattr(table.api, "use_field_ids", True)
+    m.reset()
+    method(*method_args)
+    assert m.call_count == 1
+    assert m.last_request.json()["returnFieldsByFieldId"] is True
+
+    # ...but we can override it
+    m.reset()
+    method(*method_args, use_field_ids=False)
+    assert m.call_count == 1
+    assert m.last_request.json()["returnFieldsByFieldId"] is False
 
 
 # Helpers

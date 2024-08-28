@@ -197,6 +197,8 @@ class Table:
             user_locale: |kwarg_user_locale|
             use_field_ids: |kwarg_use_field_ids|
         """
+        if self.api.use_field_ids:
+            options.setdefault("use_field_ids", self.api.use_field_ids)
         record = self.api.get(self.record_url(record_id), options=options)
         return assert_typed_dict(RecordDict, record)
 
@@ -230,6 +232,8 @@ class Table:
         """
         if isinstance(formula := options.get("formula"), Formula):
             options["formula"] = to_formula_str(formula)
+        if self.api.use_field_ids:
+            options.setdefault("use_field_ids", self.api.use_field_ids)
         for page in self.api.iterate_requests(
             method="get",
             url=self.url,
@@ -290,7 +294,7 @@ class Table:
         self,
         fields: WritableFields,
         typecast: bool = False,
-        use_field_ids: bool = False,
+        use_field_ids: Optional[bool] = None,
     ) -> RecordDict:
         """
         Create a new record
@@ -304,6 +308,8 @@ class Table:
             typecast: |kwarg_typecast|
             use_field_ids: |kwarg_use_field_ids|
         """
+        if use_field_ids is None:
+            use_field_ids = self.api.use_field_ids
         created = self.api.post(
             url=self.url,
             json={
@@ -318,7 +324,7 @@ class Table:
         self,
         records: Iterable[WritableFields],
         typecast: bool = False,
-        use_field_ids: bool = False,
+        use_field_ids: Optional[bool] = None,
     ) -> List[RecordDict]:
         """
         Create a number of new records in batches.
@@ -343,6 +349,8 @@ class Table:
             use_field_ids: |kwarg_use_field_ids|
         """
         inserted_records = []
+        if use_field_ids is None:
+            use_field_ids = self.api.use_field_ids
 
         # If we got an iterator, exhaust it and collect it into a list.
         records = list(records)
@@ -367,7 +375,7 @@ class Table:
         fields: WritableFields,
         replace: bool = False,
         typecast: bool = False,
-        use_field_ids: bool = False,
+        use_field_ids: Optional[bool] = None,
     ) -> RecordDict:
         """
         Update a particular record ID with the given fields.
@@ -384,6 +392,8 @@ class Table:
             typecast: |kwarg_typecast|
             use_field_ids: |kwarg_use_field_ids|
         """
+        if use_field_ids is None:
+            use_field_ids = self.api.use_field_ids
         method = "put" if replace else "patch"
         updated = self.api.request(
             method=method,
@@ -401,7 +411,7 @@ class Table:
         records: Iterable[UpdateRecordDict],
         replace: bool = False,
         typecast: bool = False,
-        use_field_ids: bool = False,
+        use_field_ids: Optional[bool] = None,
     ) -> List[RecordDict]:
         """
         Update several records in batches.
@@ -417,6 +427,8 @@ class Table:
         """
         updated_records = []
         method = "put" if replace else "patch"
+        if use_field_ids is None:
+            use_field_ids = self.api.use_field_ids
 
         # If we got an iterator, exhaust it and collect it into a list.
         records = list(records)
@@ -442,7 +454,7 @@ class Table:
         key_fields: List[FieldName],
         replace: bool = False,
         typecast: bool = False,
-        use_field_ids: bool = False,
+        use_field_ids: Optional[bool] = None,
     ) -> UpsertResultDict:
         """
         Update or create records in batches, either using ``id`` (if given) or using a set of
@@ -462,6 +474,9 @@ class Table:
         Returns:
             Lists of created/updated record IDs, along with the list of all records affected.
         """
+        if use_field_ids is None:
+            use_field_ids = self.api.use_field_ids
+
         # If we got an iterator, exhaust it and collect it into a list.
         records = list(records)
 
