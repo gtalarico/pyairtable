@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timezone
+from functools import partial
 from operator import itemgetter
 from unittest import mock
 
@@ -26,10 +27,23 @@ class Contact(Model):
     first_name = f.TextField("First Name")
     last_name = f.TextField("Last Name")
     email = f.EmailField("Email")
-    is_registered = f.CheckboxField("Registered")
+    is_registered = f.CheckboxField("Registered?")
     address = f.LinkField("Link", Address, lazy=False)
     birthday = f.DateField("Birthday")
     created_at = f.CreatedTimeField("Created At")
+
+
+@pytest.fixture
+def contact_record():
+    return fake_record(
+        {
+            "First Name": "John",
+            "Last Name": "Doe",
+            "Email": "john@example.com",
+            "Registered?": True,
+            "Birthday": "1970-01-01",
+        }
+    )
 
 
 def test_model_basics():
@@ -138,31 +152,49 @@ def test_from_record():
         assert not contact.first_name == "X"
 
 
-def test_readonly_field_not_saved():
+def test_unmodified_field_not_saved(contact_record):
     """
-    Test that we do not attempt to save readonly fields to the API,
-    but we can retrieve readonly fields and set them on instantiation.
+    Test that we do not attempt to save fields to the API if they are unchanged.
     """
-
-    record = {
-        "id": "recwnBLPIeQJoYVt4",
-        "createdTime": datetime.now(timezone.utc).isoformat(),
-        "fields": {
-            "Birthday": "1970-01-01",
-            "Age": 57,
-        },
-    }
-
-    contact = Contact.from_record(record)
-    with mock.patch.object(Table, "update") as m_update:
-        m_update.return_value = record
-        contact.birthday = datetime(2000, 1, 1)
-        contact.save()
-
-    # We should not pass 'Age' to the API
-    m_update.assert_called_once_with(
-        contact.id, {"Birthday": "2000-01-01"}, typecast=True
+    contact = Contact.from_record(contact_record)
+    mock_update_contact = partial(
+        mock.patch.object, Table, "update", return_value=contact_record
     )
+
+    # Do not call update() if the record is unchanged
+    with mock_update_contact() as m_update:
+        contact.save()
+        m_update.assert_not_called()
+
+    # By default, only pass fields which were changed to the API
+    with mock_update_contact() as m_update:
+        contact.email = "john.doe@example.com"
+        contact.save()
+        m_update.assert_called_once_with(
+            contact.id,
+            {"Email": "john.doe@example.com"},
+            typecast=True,
+        )
+
+    # Once saved, the field is no longer marked as changed
+    with mock_update_contact() as m_update:
+        contact.save()
+        m_update.assert_not_called()
+
+    # We can explicitly pass all fields to the API
+    with mock_update_contact() as m_update:
+        contact.save(force=True)
+        m_update.assert_called_once_with(
+            contact.id,
+            {
+                "First Name": "John",
+                "Last Name": "Doe",
+                "Email": "john.doe@example.com",
+                "Registered?": True,
+                "Birthday": "1970-01-01",
+            },
+            typecast=True,
+        )
 
 
 def test_linked_record():
@@ -209,7 +241,7 @@ def test_linked_record_can_be_saved(requests_mock, access_linked_records):
     if access_linked_records:
         assert contact.address[0].id == address_id
 
-    contact.save()
+    contact.save(force=True)
     assert mock_save.last_request.json() == {
         "fields": {
             "Email": "alice@example.com",

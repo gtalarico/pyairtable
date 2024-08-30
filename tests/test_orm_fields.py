@@ -756,6 +756,56 @@ def test_link_field__load_many(requests_mock):
     assert mock_list.call_count == 2
 
 
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "author.books = [book]",
+        "author.books.append(book)",
+        "author.books[0] = book",
+        "author.books.insert(0, book)",
+        "author.books[0:1] = []",
+        "author.books.pop(0)",
+        "del author.books[0]",
+        "author.books.remove(author.books[0])",
+        "author.books.clear()",
+        "author.books.extend([book])",
+    ),
+)
+def test_link_field__save(requests_mock, mutation):
+    """
+    Test that we correctly detect changes to linked fields and save them.
+    """
+
+    class Book(Model):
+        Meta = fake_meta()
+
+    class Author(Model):
+        Meta = fake_meta()
+        books = f.LinkField("Books", model=Book)
+
+    b1 = Book.from_record(fake_record())
+    b2 = Book.from_record(fake_record())
+    author = Author.from_record(fake_record({"Books": [b1.id]}))
+
+    def _cb(request, context):
+        return {
+            "id": author.id,
+            "createdTime": datetime_to_iso_str(author.created_time),
+            "fields": request.json()["fields"],
+        }
+
+    requests_mock.get(
+        Book.meta.table.url,
+        json={"records": [b1.to_record(), b2.to_record()]},
+    )
+    m = requests_mock.patch(Author.meta.table.record_url(author.id), json=_cb)
+    exec(mutation, {}, {"author": author, "book": b2})
+    assert author._changed["Books"]
+    author.save()
+    assert m.call_count == 1
+    assert "Books" in m.last_request.json()["fields"]
+
+
 def test_single_link_field():
     class Author(Model):
         Meta = fake_meta()
@@ -833,7 +883,7 @@ def test_single_link_field__multiple_values():
 
     # if book.author.__set__ not called, the entire list will be sent back to the API
     with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
-        book.save()
+        book.save(force=True)
         m.assert_called_once_with(book.id, {"Author": [a1, a2, a3]}, typecast=True)
 
     # if we modify the field value, it will drop items 2-N
@@ -974,7 +1024,7 @@ def test_datetime_timezones(requests_mock):
     # Test that we parse the "Z" into UTC correctly
     assert obj.dt.date() == datetime.date(2024, 2, 29)
     assert obj.dt.tzinfo is datetime.timezone.utc
-    obj.save()
+    obj.save(force=True)
     assert m.last_request.json()["fields"]["dt"] == "2024-02-29T12:34:56.000Z"
 
     # Test that we can set a UTC timezone and it will be saved as-is.
@@ -1018,5 +1068,5 @@ def test_select_field(fields, expected):
     assert obj.the_field == expected
 
     with mock.patch("pyairtable.Table.update", return_value=obj.to_record()) as m:
-        obj.save()
+        obj.save(force=True)
         m.assert_called_once_with(obj.id, fields, typecast=True)

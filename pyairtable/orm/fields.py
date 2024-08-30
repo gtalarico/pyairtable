@@ -29,6 +29,7 @@ import abc
 import importlib
 from datetime import date, datetime, timedelta
 from enum import Enum
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -60,6 +61,7 @@ from pyairtable.api.types import (
     RecordId,
 )
 from pyairtable.exceptions import MissingValueError, MultipleValuesError
+from pyairtable.orm.changes import ChangeNotifyingList
 
 if TYPE_CHECKING:
     from pyairtable.orm import Model  # noqa
@@ -178,11 +180,13 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
 
     def __set__(self, instance: "Model", value: Optional[T_ORM]) -> None:
         self._raise_if_readonly()
-        if not hasattr(instance, "_fields"):
-            instance._fields = {}
         if self.validate_type and value is not None:
             self.valid_or_raise(value)
+        if not hasattr(instance, "_fields"):
+            instance._fields = {}
         instance._fields[self.field_name] = value
+        if hasattr(instance, "_changed"):
+            instance._changed[self.field_name] = True
 
     def __delete__(self, instance: "Model") -> None:
         raise AttributeError(f"cannot delete {self._description}")
@@ -488,15 +492,23 @@ class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM], List[T_O
         return self._get_list_value(instance)
 
     def _get_list_value(self, instance: "Model") -> List[T_ORM]:
-        value = cast(List[T_ORM], instance._fields.get(self.field_name))
+        value = instance._fields.get(self.field_name)
         # If Airtable returns no value, substitute an empty list.
         if value is None:
             value = []
-            # For implementers to be able to modify this list in place
-            # and persist it later when they call .save(), we need to
-            # set this empty list as the field's value.
-            if not self.readonly:
-                instance._fields[self.field_name] = value
+        if self.readonly:
+            return value
+
+        # We need to keep track of any mutations to this list, so we know
+        # whether to write the field back to the API when the model is saved.
+        if not isinstance(value, ChangeNotifyingList):
+            on_change = partial(instance._changed.__setitem__, self.field_name, True)
+            value = ChangeNotifyingList[T_ORM](value, on_change=on_change)
+
+        # For implementers to be able to modify this list in place
+        # and persist it later when they call .save(), we need to
+        # set the list as the field's value.
+        instance._fields[self.field_name] = value
         return value
 
 
