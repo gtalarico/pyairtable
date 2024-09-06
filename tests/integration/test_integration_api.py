@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
+from unittest.mock import ANY
 from uuid import uuid4
 
 import pytest
+import requests
 
 from pyairtable import Table
 from pyairtable import formulas as fo
@@ -286,14 +288,50 @@ def test_integration_attachment_multiple(table, cols, valid_img_url):
     rec = table.create(
         {
             cols.ATTACHMENT: [
-                attachment(valid_img_url, filename="a.jpg"),
-                attachment(valid_img_url, filename="b.jpg"),
+                attachment(valid_img_url, filename="a.png"),
+                attachment(valid_img_url, filename="b.png"),
             ]
         }
     )
     rv_get = table.get(rec["id"])
-    assert rv_get["fields"]["attachment"][0]["filename"] == "a.jpg"
-    assert rv_get["fields"]["attachment"][1]["filename"] == "b.jpg"
+    assert rv_get["fields"]["attachment"][0]["filename"] == "a.png"
+    assert rv_get["fields"]["attachment"][1]["filename"] == "b.png"
+
+
+def test_integration_upload_attachment(table, cols, valid_img_url, tmp_path):
+    rec = table.create({cols.ATTACHMENT: [attachment(valid_img_url, filename="a.png")]})
+    content = requests.get(valid_img_url).content
+    response = table.upload_attachment(rec["id"], cols.ATTACHMENT, "b.png", content)
+    assert response == {
+        "id": rec["id"],
+        "createdTime": ANY,
+        "fields": {
+            cols.ATTACHMENT_ID: [
+                {
+                    "id": ANY,
+                    "url": ANY,
+                    "filename": "a.png",
+                    "type": "image/png",
+                    "size": 7297,
+                    # These exist because valid_img_url has been uploaded many, many times.
+                    "height": 400,
+                    "width": 400,
+                    "thumbnails": ANY,
+                },
+                {
+                    "id": ANY,
+                    "url": ANY,
+                    "filename": "b.png",
+                    "type": "image/png",
+                    "size": 7297,
+                    # These will not exist because we just uploaded the content.
+                    # "height": 400,
+                    # "width": 400,
+                    # "thumbnails": ANY,
+                },
+            ]
+        },
+    }
 
 
 def test_integration_comments(api, table: Table, cols):

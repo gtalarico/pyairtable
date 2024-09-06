@@ -21,6 +21,7 @@ def cols():
         BOOL = "boolean"  # Boolean
         DATETIME = "datetime"  # Datetime
         ATTACHMENT = "attachment"  # attachment
+        ATTACHMENT_ID = "fld5VP9oPeCpvIumr"  # for upload_attachment
 
     return Columns
 

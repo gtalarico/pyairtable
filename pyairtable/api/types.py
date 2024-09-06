@@ -350,6 +350,12 @@ class UserAndScopesDict(TypedDict, total=False):
     scopes: List[str]
 
 
+class UploadAttachmentResultDict(TypedDict):
+    id: RecordId
+    createdTime: str
+    fields: Dict[str, List[AttachmentDict]]
+
+
 @lru_cache
 def _create_model_from_typeddict(cls: Type[T]) -> Type[pydantic.BaseModel]:
     """

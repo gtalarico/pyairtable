@@ -1,7 +1,21 @@
+import base64
+import mimetypes
+import os
 import posixpath
 import urllib.parse
 import warnings
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Union, overload
+from pathlib import Path
+from typing import (
+    Any,
+    BinaryIO,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Union,
+    overload,
+)
 
 import pyairtable.models
 from pyairtable.api.retrying import Retry
@@ -11,6 +25,7 @@ from pyairtable.api.types import (
     RecordDict,
     RecordId,
     UpdateRecordDict,
+    UploadAttachmentResultDict,
     UpsertResultDict,
     WritableFields,
     assert_typed_dict,
@@ -690,6 +705,38 @@ class Table:
         if self._schema:
             self._schema.fields.append(field_schema)
         return field_schema
+
+    def upload_attachment(
+        self,
+        record_id: RecordId,
+        field: str,
+        filename: Union[str, Path],
+        content: Optional[bytes] = None,
+        content_type: Optional[str] = None,
+    ) -> UploadAttachmentResultDict:
+        """ """
+        if content is None:
+            with open(filename, "rb") as fp:
+                content = fp.read()
+            return self.upload_attachment(
+                record_id, field, filename, content, content_type
+            )
+
+        filename = os.path.basename(filename)
+        if content_type is None:
+            if not (content_type := mimetypes.guess_type(filename)[0]):
+                warnings.warn(f"Could not guess content-type for {filename!r}")
+                content_type = "application/octet-stream"
+
+        # TODO: figure out how to handle the atypical subdomain in a more graceful fashion
+        url = f"https://content.airtable.com/v0/{self.base.id}/{record_id}/{field}/uploadAttachment"
+        payload = {
+            "contentType": content_type,
+            "filename": filename,
+            "file": base64.encodebytes(content).decode("utf8"),  # API needs Unicode
+        }
+        response = self.api.post(url, json=payload)
+        return assert_typed_dict(UploadAttachmentResultDict, response)
 
 
 # These are at the bottom of the module to avoid circular imports

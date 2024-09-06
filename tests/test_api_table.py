@@ -9,7 +9,7 @@ from requests_mock import Mocker
 from pyairtable import Api, Base, Table
 from pyairtable.formulas import AND, EQ, Field
 from pyairtable.models.schema import TableSchema
-from pyairtable.testing import fake_id, fake_record
+from pyairtable.testing import fake_attachment, fake_id, fake_record
 from pyairtable.utils import chunked
 
 NOW = datetime.now(timezone.utc).isoformat()
@@ -599,6 +599,52 @@ def test_use_field_ids__post(
     method(*method_args, use_field_ids=False)
     assert m.call_count == 1
     assert m.last_request.json()["returnFieldsByFieldId"] is False
+
+
+RECORD_ID = fake_id()
+FIELD_ID = fake_id("fld")
+
+
+@pytest.fixture
+def mock_upload_attachment(requests_mock, table):
+    return requests_mock.post(
+        f"https://content.airtable.com/v0/{table.base.id}/{RECORD_ID}/{FIELD_ID}/uploadAttachment",
+        status_code=200,
+        json={
+            "id": RECORD_ID,
+            "createdTime": NOW,
+            "fields": {FIELD_ID: [fake_attachment()]},
+        },
+    )
+
+
+def test_upload_attachment(mock_upload_attachment, table):
+    """
+    Test that we can upload an attachment to a record.
+    """
+    table.upload_attachment(RECORD_ID, FIELD_ID, "sample.txt", b"Hello, World!")
+    assert mock_upload_attachment.last_request.json() == {
+        "contentType": "text/plain",
+        "file": "SGVsbG8sIFdvcmxkIQ==\n",  # base64 encoded "Hello, World!"
+        "filename": "sample.txt",
+    }
+
+
+def test_upload_attachment__no_content(mock_upload_attachment, table, tmp_path):
+    """
+    Test that we can upload an attachment to a record.
+    """
+    tmp_file = tmp_path / "sample_no_extension"
+    tmp_file.write_bytes(b"Hello, World!")
+
+    with pytest.warns(Warning, match="Could not guess content-type"):
+        table.upload_attachment(RECORD_ID, FIELD_ID, tmp_file)
+
+    assert mock_upload_attachment.last_request.json() == {
+        "contentType": "application/octet-stream",
+        "file": "SGVsbG8sIFdvcmxkIQ==\n",  # base64 encoded "Hello, World!"
+        "filename": "sample_no_extension",
+    }
 
 
 # Helpers

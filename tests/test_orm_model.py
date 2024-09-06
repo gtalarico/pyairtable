@@ -8,7 +8,7 @@ from requests_mock import Mocker
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
 from pyairtable.orm.model import SaveResult
-from pyairtable.testing import fake_id, fake_meta, fake_record
+from pyairtable.testing import fake_attachment, fake_id, fake_meta, fake_record
 
 
 class FakeModel(Model):
@@ -458,3 +458,24 @@ def test_save_bool_deprecated():
 
     with pytest.deprecated_call():
         assert bool(SaveResult(fake_id(), created=True)) is True
+
+
+@pytest.mark.skip
+def test_add_attachment():
+    """
+    Test that we can add an attachment to a record.
+    """
+
+    class Fake(Model):
+        Meta = fake_meta()
+        attachments = f.AttachmentsField("Files")
+
+    record = fake_record(Files=fake_attachment())
+
+    record = fake_record()
+    with mock.patch("pyairtable.Table.add_attachment") as mock_add_attachment:
+        FakeModel.add_attachment(record["id"], "file.txt", b"Hello, World!")
+
+    mock_add_attachment.assert_called_once_with(
+        record["id"], "file.txt", b"Hello, World!"
+    )
