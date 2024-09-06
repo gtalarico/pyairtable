@@ -43,6 +43,7 @@ Changelog
 * Changed the return type of :meth:`Model.save <pyairtable.orm.Model.save>`
   from ``bool`` to :class:`~pyairtable.orm.SaveResult`.
   - `PR #387 <https://github.com/gtalarico/pyairtable/pull/387>`_
+* Added :class:`pyairtable.testing.MockAirtable` for easier testing.
 
 2.3.3 (2024-03-22)
 ------------------------
