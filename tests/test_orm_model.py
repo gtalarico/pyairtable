@@ -8,7 +8,9 @@ from requests_mock import Mocker
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
 from pyairtable.orm.model import SaveResult
-from pyairtable.testing import fake_attachment, fake_id, fake_meta, fake_record
+from pyairtable.testing import fake_id, fake_meta, fake_record
+
+NOW = datetime.now(timezone.utc).isoformat()
 
 
 class FakeModel(Model):
@@ -461,7 +463,7 @@ def test_save_bool_deprecated():
 
 
 @pytest.mark.skip
-def test_add_attachment():
+def test_attachment_upload(tmp_path):
     """
     Test that we can add an attachment to a record.
     """
@@ -470,12 +472,28 @@ def test_add_attachment():
         Meta = fake_meta()
         attachments = f.AttachmentsField("Files")
 
-    record = fake_record(Files=fake_attachment())
-
     record = fake_record()
-    with mock.patch("pyairtable.Table.add_attachment") as mock_add_attachment:
-        FakeModel.add_attachment(record["id"], "file.txt", b"Hello, World!")
+    instance = Fake.from_record(record)
+    response = {
+        "id": record["id"],
+        "createdTime": NOW,
+        "fields": {
+            fake_id("fld"): [
+                {
+                    "id": fake_id("att"),
+                    "url": "https://example.com/a.png",
+                    "filename": "a.txt",
+                    "type": "text/plain",
+                },
+            ]
+        },
+    }
+    tmp_file = tmp_path / "a.txt"
+    tmp_file.write_text("Hello, world!")
 
-    mock_add_attachment.assert_called_once_with(
-        record["id"], "file.txt", b"Hello, World!"
+    with mock.patch("pyairtable.Table.upload_attachment", return_value=response) as m:
+        instance.attachments.upload(tmp_file)
+
+    m.assert_called_once_with(
+        record["id"], "Files", filename=tmp_file, content=None, content_type=None
     )

@@ -43,6 +43,7 @@ Changelog
 * Changed the return type of :meth:`Model.save <pyairtable.orm.Model.save>`
   from ``bool`` to :class:`~pyairtable.orm.SaveResult`.
   - `PR #387 <https://github.com/gtalarico/pyairtable/pull/387>`_
+* Added support for `Upload attachment <https://airtable.com/developers/web/api/upload-attachment>`_.
 
 2.3.3 (2024-03-22)
 ------------------------

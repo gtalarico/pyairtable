@@ -5,17 +5,7 @@ import posixpath
 import urllib.parse
 import warnings
 from pathlib import Path
-from typing import (
-    Any,
-    BinaryIO,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Union,
-    overload,
-)
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Union, overload
 
 import pyairtable.models
 from pyairtable.api.retrying import Retry

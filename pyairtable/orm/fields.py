@@ -29,7 +29,7 @@ import abc
 import importlib
 from datetime import date, datetime, timedelta
 from enum import Enum
-from functools import partial
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -61,7 +61,7 @@ from pyairtable.api.types import (
     RecordId,
 )
 from pyairtable.exceptions import MissingValueError, MultipleValuesError
-from pyairtable.orm.changes import ChangeNotifyingList
+from pyairtable.orm.lists import ChangeTrackingList
 
 if TYPE_CHECKING:
     from pyairtable.orm import Model  # noqa
@@ -474,6 +474,7 @@ class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM], List[T_O
     """
 
     valid_types = list
+    list_class: Type[ChangeTrackingList[T_ORM]] = ChangeTrackingList
 
     # List fields will always return a list, never ``None``, so we
     # have to overload the type annotations for __get__
@@ -501,9 +502,8 @@ class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM], List[T_O
 
         # We need to keep track of any mutations to this list, so we know
         # whether to write the field back to the API when the model is saved.
-        if not isinstance(value, ChangeNotifyingList):
-            on_change = partial(instance._changed.__setitem__, self.field_name, True)
-            value = ChangeNotifyingList[T_ORM](value, on_change=on_change)
+        if not isinstance(value, self.list_class):
+            value = self.list_class(value, field=self, model=instance)
 
         # For implementers to be able to modify this list in place
         # and persist it later when they call .save(), we need to
@@ -873,6 +873,32 @@ class AITextField(_DictField[AITextDict]):
     readonly = True
 
 
+class AttachmentsList(ChangeTrackingList[AttachmentDict]):
+    def upload(
+        self,
+        filename: Union[str, Path],
+        content: Optional[bytes] = None,
+        content_type: Optional[str] = None,
+    ) -> None:
+        """
+        Upload an attachment to the Airtable API. This will replace the current
+        list with the response from the server, which will contain a full list of
+        :class:`~pyairtable.api.types.AttachmentDict`.
+        """
+        if not self._model.id:
+            raise ValueError("cannot upload attachments to an unsaved record")
+        response = self._model.meta.table.upload_attachment(
+            self._model.id,
+            self._field.field_name,
+            filename=filename,
+            content=content,
+            content_type=content_type,
+        )
+        with self.disable_tracking():
+            self.clear()
+            self.extend(*response["fields"].values())
+
+
 class AttachmentsField(_ValidatingListField[AttachmentDict]):
     """
     Accepts a list of dicts in the format detailed in
@@ -880,6 +906,22 @@ class AttachmentsField(_ValidatingListField[AttachmentDict]):
     """
 
     contains_type = cast(Type[AttachmentDict], dict)
+    list_class = AttachmentsList
+
+    # TODO: this is a bit of a hack to make AttachmentsField return AttachmentsList.
+    # It makes assumptions about parent class, and ought to be refactored.
+    @overload
+    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
+
+    @overload
+    def __get__(self, instance: "Model", owner: Type[Any]) -> AttachmentsList: ...
+
+    def __get__(
+        self, instance: Optional["Model"], owner: Type[Any]
+    ) -> Union[SelfType, AttachmentsList]:
+        if not instance:
+            return self
+        return cast(AttachmentsList, super().__get__(instance, owner))
 
 
 class BarcodeField(_DictField[BarcodeDict]):

@@ -10,6 +10,7 @@ from typing_extensions import assert_type
 import pyairtable
 import pyairtable.api.types as T
 from pyairtable import orm
+from pyairtable.orm.fields import AttachmentsList
 
 if TYPE_CHECKING:
     # This section does not actually get executed; it is only parsed by mypy.
@@ -139,7 +140,7 @@ if TYPE_CHECKING:
 
     record = EveryField()
     assert_type(record.aitext, Optional[T.AITextDict])
-    assert_type(record.attachments, List[T.AttachmentDict])
+    assert_type(record.attachments, AttachmentsList)
     assert_type(record.autonumber, int)
     assert_type(record.barcode, Optional[T.BarcodeDict])
     assert_type(record.button, T.ButtonDict)
