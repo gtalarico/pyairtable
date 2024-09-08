@@ -635,7 +635,7 @@ class _Meta:
         }
 
 
-@dataclass
+@dataclass(frozen=True)
 class SaveResult:
     """
     Represents the result of saving a record to the API. The result's
