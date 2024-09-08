@@ -37,21 +37,23 @@ def mock_upload():
         yield m
 
 
-def test_attachment_upload(mock_upload, tmp_path):
+@pytest.mark.parametrize("content", [b"Hello, world!", "Hello, world!"])
+def test_attachment_upload(mock_upload, tmp_path, content):
     """
     Test that we can add an attachment to a record.
     """
-    tmp_file = tmp_path / "a.txt"
-    tmp_file.write_text("Hello, world!")
+    fp = tmp_path / "a.txt"
+    writer = fp.write_text if isinstance(content, str) else fp.write_bytes
+    writer(content)
 
     record = fake_record()
     instance = Fake.from_record(record)
-    instance.attachments.upload(tmp_file)
+    instance.attachments.upload(fp)
 
     mock_upload.assert_called_once_with(
         record["id"],
         "Files",
-        filename=tmp_file,
+        filename=fp,
         content=None,
         content_type=None,
     )

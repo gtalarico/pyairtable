@@ -618,11 +618,12 @@ def mock_upload_attachment(requests_mock, table):
     )
 
 
-def test_upload_attachment(mock_upload_attachment, table):
+@pytest.mark.parametrize("content", [b"Hello, World!", "Hello, World!"])
+def test_upload_attachment(mock_upload_attachment, table, content):
     """
     Test that we can upload an attachment to a record.
     """
-    table.upload_attachment(RECORD_ID, FIELD_ID, "sample.txt", b"Hello, World!")
+    table.upload_attachment(RECORD_ID, FIELD_ID, "sample.txt", content)
     assert mock_upload_attachment.last_request.json() == {
         "contentType": "text/plain",
         "file": "SGVsbG8sIFdvcmxkIQ==\n",  # base64 encoded "Hello, World!"
@@ -630,7 +631,7 @@ def test_upload_attachment(mock_upload_attachment, table):
     }
 
 
-def test_upload_attachment__no_content(mock_upload_attachment, table, tmp_path):
+def test_upload_attachment__no_content_type(mock_upload_attachment, table, tmp_path):
     """
     Test that we can upload an attachment to a record.
     """

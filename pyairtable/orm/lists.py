@@ -101,7 +101,7 @@ class AttachmentsList(ChangeTrackingList[AttachmentDict]):
     def upload(
         self,
         filename: Union[str, Path],
-        content: Optional[bytes] = None,
+        content: Optional[Union[str, bytes]] = None,
         content_type: Optional[str] = None,
     ) -> None:
         """

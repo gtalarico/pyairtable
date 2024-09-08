@@ -701,7 +701,7 @@ class Table:
         record_id: RecordId,
         field: str,
         filename: Union[str, Path],
-        content: Optional[bytes] = None,
+        content: Optional[Union[str, bytes]] = None,
         content_type: Optional[str] = None,
     ) -> UploadAttachmentResultDict:
         """ """
@@ -720,6 +720,7 @@ class Table:
 
         # TODO: figure out how to handle the atypical subdomain in a more graceful fashion
         url = f"https://content.airtable.com/v0/{self.base.id}/{record_id}/{field}/uploadAttachment"
+        content = content.encode() if isinstance(content, str) else content
         payload = {
             "contentType": content_type,
             "filename": filename,
