@@ -486,10 +486,25 @@ class _ListFieldBase(
 
     valid_types = list
     list_class: Type[T_ORM_List]
-    contains_type: Optional[Type[T_ORM]] = None
+    contains_type: Optional[Type[T_ORM]]
 
     # List fields will always return a list, never ``None``, so we
     # have to overload the type annotations for __get__
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        cls.contains_type = kwargs.pop("contains_type", None)
+        cls.list_class = kwargs.pop("list_class", ChangeTrackingList)
+
+        if cls.contains_type and not isinstance(cls.contains_type, type):
+            raise TypeError(f"contains_type= expected a type, got {cls.contains_type}")
+        if not isinstance(cls.list_class, type):
+            raise TypeError(f"list_class= expected a type, got {cls.list_class}")
+        if not issubclass(cls.list_class, ChangeTrackingList):
+            raise TypeError(
+                f"list_class= expected Type[ChangeTrackingList], got {cls.list_class}"
+            )
+
+        return super().__init_subclass__(**kwargs)
 
     @overload
     def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
@@ -513,12 +528,9 @@ class _ListFieldBase(
         # We need to keep track of any mutations to this list, so we know
         # whether to write the field back to the API when the model is saved.
         if not isinstance(value, self.list_class):
-            if not isinstance(self.list_class, type):
-                raise RuntimeError(f"expected a type, got {self.list_class}")
-            if not issubclass(self.list_class, ChangeTrackingList):
-                raise RuntimeError(
-                    f"expected Type[ChangeTrackingList], got {self.list_class}"
-                )
+            # These were already checked in __init_subclass__ but mypy doesn't know that.
+            assert isinstance(self.list_class, type)
+            assert issubclass(self.list_class, ChangeTrackingList)
             value = self.list_class(value, field=self, model=instance)
 
         # For implementers to be able to modify this list in place
@@ -541,8 +553,6 @@ class _ListField(Generic[T], _ListFieldBase[T, T, ChangeTrackingList[T]]):
     Not for direct use; should be subclassed by concrete field types (below).
     """
 
-    list_class = ChangeTrackingList
-
 
 class _LinkFieldOptions(Enum):
     LinkSelf = object()
@@ -564,8 +574,6 @@ class LinkField(
 
     See `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__.
     """
-
-    list_class = ChangeTrackingList
 
     _linked_model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]]
     _max_retrieve: Optional[int] = None
@@ -900,9 +908,12 @@ class AITextField(_DictField[AITextDict]):
     readonly = True
 
 
-class AttachmentsField(_ListFieldBase[AttachmentDict, AttachmentDict, AttachmentsList]):
-    contains_type = cast(Type[AttachmentDict], dict)
-    list_class = AttachmentsList
+class AttachmentsField(
+    _ListFieldBase[AttachmentDict, AttachmentDict, AttachmentsList],
+    list_class=AttachmentsList,
+    contains_type=dict,
+):
+    pass
 
 
 class BarcodeField(_DictField[BarcodeDict]):
@@ -1007,23 +1018,19 @@ class ManualSortField(TextField):
     readonly = True
 
 
-class MultipleCollaboratorsField(_ListField[CollaboratorDict]):
+class MultipleCollaboratorsField(_ListField[CollaboratorDict], contains_type=dict):
     """
     Accepts a list of dicts in the format detailed in
     `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_.
     """
 
-    contains_type = cast(Type[CollaboratorDict], dict)
 
-
-class MultipleSelectField(_ListField[str]):
+class MultipleSelectField(_ListField[str], contains_type=str):
     """
     Accepts a list of ``str``.
 
     See `Multiple select <https://airtable.com/developers/web/api/field-model#multiselect>`__.
     """
-
-    contains_type = str
 
 
 class PercentField(NumberField):

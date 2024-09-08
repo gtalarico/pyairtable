@@ -1070,3 +1070,22 @@ def test_select_field(fields, expected):
     with mock.patch("pyairtable.Table.update", return_value=obj.to_record()) as m:
         obj.save(force=True)
         m.assert_called_once_with(obj.id, fields, typecast=True)
+
+
+@pytest.mark.parametrize(
+    "class_kwargs",
+    [
+        {"contains_type": 1},
+        {"list_class": 1},
+        {"list_class": dict},
+    ],
+)
+def test_invalid_list_class_params(class_kwargs):
+    """
+    Test that certain parameters to ListField are invalid.
+    """
+
+    with pytest.raises(TypeError):
+
+        class ListFieldSubclass(f._ListField, **class_kwargs):
+            pass
