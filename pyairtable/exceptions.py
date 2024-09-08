@@ -26,3 +26,15 @@ class MultipleValuesError(PyAirtableError, ValueError):
     """
     SingleLinkField received more than one value from either Airtable or calling code.
     """
+
+
+class ReadonlyFieldError(PyAirtableError, ValueError):
+    """
+    Attempted to set a value on a readonly field.
+    """
+
+
+class UnsavedRecordError(PyAirtableError, ValueError):
+    """
+    Attempted to perform an unsupported operation on an unsaved record.
+    """

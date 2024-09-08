@@ -29,7 +29,6 @@ import abc
 import importlib
 from datetime import date, datetime, timedelta
 from enum import Enum
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -60,8 +59,12 @@ from pyairtable.api.types import (
     CollaboratorDict,
     RecordId,
 )
-from pyairtable.exceptions import MissingValueError, MultipleValuesError
-from pyairtable.orm.lists import ChangeTrackingList
+from pyairtable.exceptions import (
+    MissingValueError,
+    MultipleValuesError,
+    UnsavedRecordError,
+)
+from pyairtable.orm.lists import AttachmentsList, ChangeTrackingList
 
 if TYPE_CHECKING:
     from pyairtable.orm import Model  # noqa
@@ -71,7 +74,8 @@ _ClassInfo: TypeAlias = Union[type, Tuple["_ClassInfo", ...]]
 T = TypeVar("T")
 T_Linked = TypeVar("T_Linked", bound="Model")  # used by LinkField
 T_API = TypeVar("T_API")  # type used to exchange values w/ Airtable API
-T_ORM = TypeVar("T_ORM")  # type used to store values internally
+T_ORM = TypeVar("T_ORM")  # type used to represent values internally
+T_ORM_List = TypeVar("T_ORM_List")  # type used for lists of internal values
 T_Missing = TypeVar("T_Missing")  # type returned when Airtable has no value
 
 
@@ -466,15 +470,23 @@ class _DictField(Generic[T], _BasicField[T]):
     valid_types = dict
 
 
-class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM], List[T_ORM]]):
+class _ListFieldBase(
+    Generic[T_API, T_ORM, T_ORM_List],
+    Field[List[T_API], List[T_ORM], T_ORM_List],
+):
     """
-    Generic type for a field that stores a list of values. Can be used
-    to refer to a lookup field that might return more than one value.
+    Generic type for a field that stores a list of values.
     Not for direct use; should be subclassed by concrete field types (below).
+
+    Generic type parameters:
+        * ``T_API``: The type of value returned by the Airtable API.
+        * ``T_ORM``: The type of value stored internally.
+        * ``T_ORM_List``: The type of list object that will be returned.
     """
 
     valid_types = list
-    list_class: Type[ChangeTrackingList[T_ORM]] = ChangeTrackingList
+    list_class: Type[T_ORM_List]
+    contains_type: Optional[Type[T_ORM]] = None
 
     # List fields will always return a list, never ``None``, so we
     # have to overload the type annotations for __get__
@@ -483,43 +495,53 @@ class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM], List[T_O
     def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
 
     @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> List[T_ORM]: ...
+    def __get__(self, instance: "Model", owner: Type[Any]) -> T_ORM_List: ...
 
     def __get__(
         self, instance: Optional["Model"], owner: Type[Any]
-    ) -> Union[SelfType, List[T_ORM]]:
+    ) -> Union[SelfType, T_ORM_List]:
         if not instance:
             return self
         return self._get_list_value(instance)
 
-    def _get_list_value(self, instance: "Model") -> List[T_ORM]:
+    def _get_list_value(self, instance: "Model") -> T_ORM_List:
         value = instance._fields.get(self.field_name)
         # If Airtable returns no value, substitute an empty list.
         if value is None:
             value = []
-        if self.readonly:
-            return value
 
         # We need to keep track of any mutations to this list, so we know
         # whether to write the field back to the API when the model is saved.
         if not isinstance(value, self.list_class):
+            if not isinstance(self.list_class, type):
+                raise RuntimeError(f"expected a type, got {self.list_class}")
+            if not issubclass(self.list_class, ChangeTrackingList):
+                raise RuntimeError(
+                    f"expected Type[ChangeTrackingList], got {self.list_class}"
+                )
             value = self.list_class(value, field=self, model=instance)
 
         # For implementers to be able to modify this list in place
         # and persist it later when they call .save(), we need to
         # set the list as the field's value.
         instance._fields[self.field_name] = value
-        return value
-
-
-class _ValidatingListField(Generic[T], _ListField[T, T]):
-    contains_type: Type[T]
+        return cast(T_ORM_List, value)
 
     def valid_or_raise(self, value: Any) -> None:
         super().valid_or_raise(value)
-        for obj in value:
-            if not isinstance(obj, self.contains_type):
-                raise TypeError(f"expected {self.contains_type}; got {type(obj)}")
+        if self.contains_type:
+            for obj in value:
+                if not isinstance(obj, self.contains_type):
+                    raise TypeError(f"expected {self.contains_type}; got {type(obj)}")
+
+
+class _ListField(Generic[T], _ListFieldBase[T, T, ChangeTrackingList[T]]):
+    """
+    Generic type for a field that stores a list of values.
+    Not for direct use; should be subclassed by concrete field types (below).
+    """
+
+    list_class = ChangeTrackingList
 
 
 class _LinkFieldOptions(Enum):
@@ -530,7 +552,10 @@ class _LinkFieldOptions(Enum):
 LinkSelf = _LinkFieldOptions.LinkSelf
 
 
-class LinkField(_ListField[RecordId, T_Linked]):
+class LinkField(
+    Generic[T_Linked],
+    _ListFieldBase[RecordId, T_Linked, ChangeTrackingList[T_Linked]],
+):
     """
     Represents a MultipleRecordLinks field. Returns and accepts lists of Models.
 
@@ -539,6 +564,8 @@ class LinkField(_ListField[RecordId, T_Linked]):
 
     See `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__.
     """
+
+    list_class = ChangeTrackingList
 
     _linked_model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]]
     _max_retrieve: Optional[int] = None
@@ -680,7 +707,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
             for value in records[: self._max_retrieve]
         ]
 
-    def _get_list_value(self, instance: "Model") -> List[T_Linked]:
+    def _get_list_value(self, instance: "Model") -> ChangeTrackingList[T_Linked]:
         """
         Unlike most other field classes, LinkField does not store its internal
         representation (T_ORM) in instance._fields after Model.from_record().
@@ -709,7 +736,7 @@ class LinkField(_ListField[RecordId, T_Linked]):
             # We could *try* to recursively save models that don't have an ID yet,
             # but that requires us to second-guess the implementers' intentions.
             # Better to just raise an exception.
-            raise ValueError(f"{self._description} contains an unsaved record")
+            raise UnsavedRecordError(f"{self._description} contains an unsaved record")
 
         return [v if isinstance(v, str) else v.id for v in value]
 
@@ -873,55 +900,9 @@ class AITextField(_DictField[AITextDict]):
     readonly = True
 
 
-class AttachmentsList(ChangeTrackingList[AttachmentDict]):
-    def upload(
-        self,
-        filename: Union[str, Path],
-        content: Optional[bytes] = None,
-        content_type: Optional[str] = None,
-    ) -> None:
-        """
-        Upload an attachment to the Airtable API. This will replace the current
-        list with the response from the server, which will contain a full list of
-        :class:`~pyairtable.api.types.AttachmentDict`.
-        """
-        if not self._model.id:
-            raise ValueError("cannot upload attachments to an unsaved record")
-        response = self._model.meta.table.upload_attachment(
-            self._model.id,
-            self._field.field_name,
-            filename=filename,
-            content=content,
-            content_type=content_type,
-        )
-        with self.disable_tracking():
-            self.clear()
-            self.extend(*response["fields"].values())
-
-
-class AttachmentsField(_ValidatingListField[AttachmentDict]):
-    """
-    Accepts a list of dicts in the format detailed in
-    `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_.
-    """
-
+class AttachmentsField(_ListFieldBase[AttachmentDict, AttachmentDict, AttachmentsList]):
     contains_type = cast(Type[AttachmentDict], dict)
     list_class = AttachmentsList
-
-    # TODO: this is a bit of a hack to make AttachmentsField return AttachmentsList.
-    # It makes assumptions about parent class, and ought to be refactored.
-    @overload
-    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
-
-    @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> AttachmentsList: ...
-
-    def __get__(
-        self, instance: Optional["Model"], owner: Type[Any]
-    ) -> Union[SelfType, AttachmentsList]:
-        if not instance:
-            return self
-        return cast(AttachmentsList, super().__get__(instance, owner))
 
 
 class BarcodeField(_DictField[BarcodeDict]):
@@ -996,7 +977,7 @@ class LastModifiedTimeField(DatetimeField):
     readonly = True
 
 
-class LookupField(Generic[T], _ListField[T, T]):
+class LookupField(Generic[T], _ListField[T]):
     """
     Generic field class for a lookup, which returns a list of values.
 
@@ -1026,7 +1007,7 @@ class ManualSortField(TextField):
     readonly = True
 
 
-class MultipleCollaboratorsField(_ValidatingListField[CollaboratorDict]):
+class MultipleCollaboratorsField(_ListField[CollaboratorDict]):
     """
     Accepts a list of dicts in the format detailed in
     `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_.
@@ -1035,7 +1016,7 @@ class MultipleCollaboratorsField(_ValidatingListField[CollaboratorDict]):
     contains_type = cast(Type[CollaboratorDict], dict)
 
 
-class MultipleSelectField(_ValidatingListField[str]):
+class MultipleSelectField(_ListField[str]):
     """
     Accepts a list of ``str``.
 

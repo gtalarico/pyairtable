@@ -187,7 +187,7 @@ class Apartment(Model):
 
     name = F.TextField('Name')
     pictures = F.AttachmentsField('Pictures')
-    district = F._ValidatingListField[str]('District')
+    district = F._ListField[str]('District')
 
 
 __all__ = [

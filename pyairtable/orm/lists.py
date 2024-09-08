@@ -1,12 +1,28 @@
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterable, Iterator, List, Optional, SupportsIndex, Union
+from typing import (
+    TYPE_CHECKING,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    SupportsIndex,
+    Union,
+    overload,
+)
 
 from typing_extensions import Self, TypeVar
 
 from pyairtable.api.types import AttachmentDict
+from pyairtable.exceptions import ReadonlyFieldError, UnsavedRecordError
 
 T = TypeVar("T")
+
+
+if TYPE_CHECKING:
+    # These would be circular imports if not for the TYPE_CHECKING condition.
+    from pyairtable.orm.fields import AnyField
+    from pyairtable.orm.model import Model
 
 
 class ChangeTrackingList(List[T]):
@@ -15,7 +31,7 @@ class ChangeTrackingList(List[T]):
     if any mutations happened to the lists returned from linked record fields.
     """
 
-    def __init__(self, *args: Iterable[T], field: Any, model: Any) -> None:
+    def __init__(self, *args: Iterable[T], field: "AnyField", model: "Model") -> None:
         super().__init__(*args)
         self._field = field
         self._model = model
@@ -37,9 +53,20 @@ class ChangeTrackingList(List[T]):
         if self._tracking_enabled:
             self._model._changed[self._field.field_name] = True
 
-    def __setitem__(self, index: SupportsIndex, value: T) -> None:  # type: ignore[override]
+    @overload
+    def __setitem__(self, index: SupportsIndex, value: T, /) -> None: ...
+
+    @overload
+    def __setitem__(self, key: slice, value: Iterable[T], /) -> None: ...
+
+    def __setitem__(
+        self,
+        index: Union[SupportsIndex, slice],
+        value: Union[T, Iterable[T]],
+        /,
+    ) -> None:
         self._on_change()
-        return super().__setitem__(index, value)
+        return super().__setitem__(index, value)  # type: ignore
 
     def __delitem__(self, key: Union[SupportsIndex, slice]) -> None:
         self._on_change()
@@ -83,7 +110,9 @@ class AttachmentsList(ChangeTrackingList[AttachmentDict]):
         :class:`~pyairtable.api.types.AttachmentDict`.
         """
         if not self._model.id:
-            raise ValueError("cannot upload attachments to an unsaved record")
+            raise UnsavedRecordError("cannot upload attachments to an unsaved record")
+        if self._field.readonly:
+            raise ReadonlyFieldError("cannot upload attachments to a readonly field")
         response = self._model.meta.table.upload_attachment(
             self._model.id,
             self._field.field_name,
