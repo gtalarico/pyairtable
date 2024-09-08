@@ -1,4 +1,6 @@
+import dataclasses
 import datetime
+import warnings
 from dataclasses import dataclass
 from functools import cached_property
 from typing import (
@@ -10,6 +12,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Set,
     Type,
     Union,
     cast,
@@ -225,7 +228,7 @@ class Model:
         """
         return bool(self.id)
 
-    def save(self, *, force: bool = False) -> bool:
+    def save(self, *, force: bool = False) -> "SaveResult":
         """
         Save the model to the API.
 
@@ -235,10 +238,6 @@ class Model:
 
         Args:
             force: If ``True``, all fields will be saved, even if they have not changed.
-
-        Returns:
-            ``True`` if a record was created;
-            ``False`` if it was updated, or if the model had no changes.
         """
         if self._deleted:
             raise RuntimeError(f"{self.id} was deleted")
@@ -250,11 +249,11 @@ class Model:
             self.id = record["id"]
             self.created_time = datetime_from_iso_str(record["createdTime"])
             self._changed.clear()
-            return True
+            return SaveResult(self.id, created=True, field_names=set(field_values))
 
         if not force:
             if not self._changed:
-                return False
+                return SaveResult(self.id)
             field_values = {
                 field_name: value
                 for field_name, value in field_values.items()
@@ -263,7 +262,9 @@ class Model:
 
         self.meta.table.update(self.id, field_values, typecast=self.meta.typecast)
         self._changed.clear()
-        return False
+        return SaveResult(
+            self.id, forced=force, updated=True, field_names=set(field_values)
+        )
 
     def delete(self) -> bool:
         """
@@ -632,3 +633,65 @@ class _Meta:
             "time_zone": None,
             "use_field_ids": self.use_field_ids,
         }
+
+
+@dataclass(frozen=True)
+class SaveResult:
+    """
+    Represents the result of saving a record to the API. The result's
+    attributes contain more granular information about the save operation:
+
+        >>> result = model.save()
+        >>> result.record_id
+        'recWPqD9izdsNvlE'
+        >>> result.created
+        False
+        >>> result.updated
+        True
+        >>> result.forced
+        False
+        >>> result.field_names
+        {'Name', 'Email'}
+
+    If none of the model's fields have changed, calling :meth:`~pyairtable.orm.Model.save`
+    will not perform any API requests and will return a SaveResult with no changes.
+
+        >>> model = YourModel()
+        >>> result = model.save()
+        >>> result.saved
+        True
+        >>> second_result = model.save()
+        >>> second_result.saved
+        False
+
+    For backwards compatibility, instances of SaveResult will evaluate as truthy
+    if the record was created, and falsy if the record was not created.
+    """
+
+    record_id: RecordId
+    created: bool = False
+    updated: bool = False
+    forced: bool = False
+    field_names: Set[FieldName] = dataclasses.field(default_factory=set)
+
+    def __bool__(self) -> bool:
+        """
+        Returns ``True`` if the record was created. This is for backwards compatibility
+        with the behavior of :meth:`~pyairtable.orm.Model.save` prior to the 3.0 release,
+        which returned a boolean indicating whether a record was created.
+        """
+        warnings.warn(
+            "Model.save() now returns SaveResult instead of bool; switch"
+            " to checking Model.save().created instead before the 4.0 release.",
+            DeprecationWarning,
+        )
+        return self.created
+
+    @property
+    def saved(self) -> bool:
+        """
+        Whether the record was saved to the API. If ``False``, this indicates there
+        were no changes to the model and the :meth:`~pyairtable.orm.Model.save`
+        operation was not forced.
+        """
+        return self.created or self.updated

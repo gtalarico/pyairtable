@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from functools import partial
 from unittest import mock
 
@@ -6,7 +7,20 @@ from requests_mock import Mocker
 
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
+from pyairtable.orm.model import SaveResult
 from pyairtable.testing import fake_id, fake_meta, fake_record
+
+
+class FakeModel(Model):
+    Meta = fake_meta()
+    one = f.TextField("one")
+    two = f.TextField("two")
+
+
+class FakeModelByIds(Model):
+    Meta = fake_meta(use_field_ids=True, table_name="Apartments")
+    Name = f.TextField("fld1VnoyuotSTyxW1")
+    Age = f.NumberField("fld2VnoyuotSTy4g6")
 
 
 @pytest.fixture(autouse=True)
@@ -124,18 +138,6 @@ def test_model_overlapping(name):
                 name: f.TextField(name),
             },
         )
-
-
-class FakeModel(Model):
-    Meta = fake_meta()
-    one = f.TextField("one")
-    two = f.TextField("two")
-
-
-class FakeModelByIds(Model):
-    Meta = fake_meta(use_field_ids=True, table_name="Apartments")
-    Name = f.TextField("fld1VnoyuotSTyxW1")
-    Age = f.NumberField("fld2VnoyuotSTy4g6")
 
 
 def test_repr():
@@ -375,3 +377,84 @@ def test_dynamic_model_meta():
     assert f.meta.base_id == data["base_id"]
     assert f.meta.table_name == data["table_name"]
     Fake.Meta.table_name.assert_called_once()
+
+
+@mock.patch("pyairtable.Table.create")
+def test_save__create(mock_create):
+    """
+    Test that we can save a model instance we've created.
+    """
+    mock_create.return_value = {
+        "id": fake_id,
+        "createdTime": datetime.now(timezone.utc).isoformat(),
+        "fields": {"one": "ONE", "two": "TWO"},
+    }
+    obj = FakeModel(one="ONE", two="TWO")
+    result = obj.save()
+    assert result.saved
+    assert result.created
+    assert result.field_names == {"one", "two"}
+    assert not result.updated
+    assert not result.forced
+    mock_create.assert_called_once_with({"one": "ONE", "two": "TWO"}, typecast=True)
+
+
+@mock.patch("pyairtable.Table.update")
+def test_save__update(mock_update):
+    """
+    Test that we can save a model instance that already exists.
+    """
+    obj = FakeModel.from_record(fake_record(one="ONE", two="TWO"))
+    obj.one = "new value"
+    result = obj.save()
+    assert result.saved
+    assert not result.created
+    assert result.updated
+    assert result.field_names == {"one"}
+    assert not result.forced
+    mock_update.assert_called_once_with(obj.id, {"one": "new value"}, typecast=True)
+
+
+@mock.patch("pyairtable.Table.update")
+def test_save__update_force(mock_update):
+    """
+    Test that we can save a model instance that already exists,
+    and we can force saving all values to the API.
+    """
+    obj = FakeModel.from_record(fake_record(one="ONE", two="TWO"))
+    obj.one = "new value"
+    result = obj.save(force=True)
+    assert result.saved
+    assert not result.created
+    assert result.updated
+    assert result.forced
+    assert result.field_names == {"one", "two"}
+    mock_update.assert_called_once_with(
+        obj.id, {"one": "new value", "two": "TWO"}, typecast=True
+    )
+
+
+@mock.patch("pyairtable.Table.update")
+def test_save__noop(mock_update):
+    """
+    Test that if a model is unchanged, we don't try to save it to the API.
+    """
+    obj = FakeModel.from_record(fake_record(one="ONE", two="TWO"))
+    result = obj.save()
+    assert not result.saved
+    assert not result.created
+    assert not result.updated
+    assert not result.field_names
+    assert not result.forced
+    mock_update.assert_not_called()
+
+
+def test_save_bool_deprecated():
+    """
+    Test that SaveResult instances can be used as booleans, but emit a deprecation warning.
+    """
+    with pytest.deprecated_call():
+        assert bool(SaveResult(fake_id(), created=False)) is False
+
+    with pytest.deprecated_call():
+        assert bool(SaveResult(fake_id(), created=True)) is True

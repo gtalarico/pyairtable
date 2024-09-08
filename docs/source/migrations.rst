@@ -68,6 +68,10 @@ Changes to the ORM in 3.0
 :data:`Model.created_time <pyairtable.orm.Model.created_time>` is now a ``datetime`` (or ``None``)
 instead of ``str``. This change also applies to all timestamp fields used in :ref:`API: pyairtable.models`.
 
+:meth:`Model.save <pyairtable.orm.Model.save>` now only saves changed fields to the API, which
+means it will sometimes not perform any network traffic (though this behavior can be overridden).
+It also now returns an instance of :class:`~pyairtable.orm.SaveResult` instead of ``bool``.
+
 The 3.0 release has changed the API for retrieving ORM model configuration:
 
 .. list-table::

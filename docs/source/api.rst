@@ -95,6 +95,9 @@ API: pyairtable.orm
 .. autoclass:: pyairtable.orm.Model
     :members:
 
+.. autoclass:: pyairtable.orm.SaveResult
+    :members:
+
 
 API: pyairtable.orm.fields
 *******************************
