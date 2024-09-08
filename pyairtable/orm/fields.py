@@ -1474,20 +1474,27 @@ FIELD_CLASSES_TO_TYPES: Dict[Type[AnyField], Set[str]] = {
 # with open(cog.inFile) as fp:
 #     src = fp.read()
 #
-# classes = re.findall(r"class ((?:[A-Z]\w+)?Field)", src)
+# classes = re.findall(r"^class ((?:[A-Z]\w+)?Field)\b", src, re.MULTILINE)
 # constants = re.findall(r"^(?!T_)([A-Z][A-Z_]+)(?:: [^=]+)? = ", src, re.MULTILINE)
+# aliases = re.findall(r"^(\w+): TypeAlias\b", src, re.MULTILINE)
 # extras = ["LinkSelf"]
-# names = sorted(classes) + constants + extras
+# names = constants + sorted(classes + aliases + extras)
 #
 # cog.outl("\n\n__all__ = [")
 # for name in names:
-#     cog.outl(f'    "{name}",')
+#     if not name.startswith("_"):
+#         cog.outl(f'    "{name}",')
 # cog.outl("]")
 # [[[out]]]
 
 
 __all__ = [
+    "ALL_FIELDS",
+    "READONLY_FIELDS",
+    "FIELD_TYPES_TO_CLASSES",
+    "FIELD_CLASSES_TO_TYPES",
     "AITextField",
+    "AnyField",
     "AttachmentsField",
     "AutoNumberField",
     "BarcodeField",
@@ -1509,6 +1516,7 @@ __all__ = [
     "LastModifiedByField",
     "LastModifiedTimeField",
     "LinkField",
+    "LinkSelf",
     "LookupField",
     "ManualSortField",
     "MultipleCollaboratorsField",
@@ -1541,13 +1549,8 @@ __all__ = [
     "SingleLinkField",
     "TextField",
     "UrlField",
-    "ALL_FIELDS",
-    "READONLY_FIELDS",
-    "FIELD_TYPES_TO_CLASSES",
-    "FIELD_CLASSES_TO_TYPES",
-    "LinkSelf",
 ]
-# [[[end]]] (checksum: 3c6f5447f45e74c170ec3378272c6dd3)
+# [[[end]]] (checksum: 87b0a100c9e30523d9aab8cc935c7960)
 
 
 # Delayed import to avoid circular dependency
