@@ -612,6 +612,7 @@ back to the API.
 You can also use :meth:`~pyairtable.orm.fields.AttachmentList.upload` to
 directly upload content to Airtable. You do not need to call
 :meth:`~pyairtable.orm.Model.save`; the change will be saved immediately.
+Note that this means any other unsaved changes to this field will be lost.
 
     >>> model.attachments.upload("example.jpg", b"...", "image/jpeg")
     >>> model.attachments[-1]["filename"]

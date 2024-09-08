@@ -60,14 +60,40 @@ def test_attachment_upload(mock_upload, tmp_path, content):
 
 
 def test_attachment_upload__readonly(mock_upload):
+    """
+    Test that calling upload() on a readonly field will raise an exception.
+    """
     record = fake_record()
     instance = Fake.from_record(record)
     with pytest.raises(ReadonlyFieldError):
         instance.readonly_attachments.upload("a.txt", content="Hello, world!")
 
 
-def test_attachment_upload__unsaved(mock_upload):
+def test_attachment_upload__unsaved_record(mock_upload):
+    """
+    Test that calling upload() on an unsaved record will not call the API
+    and instead raises an exception.
+    """
     instance = Fake()
     with pytest.raises(UnsavedRecordError):
         instance.attachments.upload("a.txt", content=b"Hello, world!")
     mock_upload.assert_not_called()
+
+
+def test_attachment_upload__unsaved_value(mock_upload):
+    """
+    Test that calling upload() on an attachment list will clobber
+    any other unsaved changes made to that field.
+
+    This is not necessarily the most useful side effect, but it's the
+    only rational way to deal with the fact that Airtable will return
+    the full field value in its response, with no straightforward way
+    for us to identify the specific attachment that was uploaded.
+    """
+    instance = Fake.from_record(fake_record())
+    unsaved_url = "https://example.com/unsaved.txt"
+    instance.attachments = [{"url": unsaved_url}]
+    instance.attachments.upload("b.txt", content="Hello, world!")
+    mock_upload.assert_called_once()
+    assert len(instance.attachments) == 1
+    assert instance.attachments[0]["url"] != unsaved_url

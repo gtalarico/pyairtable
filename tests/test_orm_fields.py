@@ -9,6 +9,7 @@ from requests_mock import NoMockAddress
 import pyairtable.exceptions
 from pyairtable.formulas import OR, RECORD_ID
 from pyairtable.orm import fields as f
+from pyairtable.orm.lists import AttachmentsList
 from pyairtable.orm.model import Model
 from pyairtable.testing import (
     fake_attachment,
@@ -1089,3 +1090,48 @@ def test_invalid_list_class_params(class_kwargs):
 
         class ListFieldSubclass(f._ListField, **class_kwargs):
             pass
+
+
+@mock.patch("pyairtable.Table.create")
+def test_attachments__set(mock_create):
+    """
+    Test that AttachmentsField can be set with a list of AttachmentDict,
+    and the value will be coerced to an AttachmentsList.
+    """
+    mock_create.return_value = {
+        "id": fake_id(),
+        "createdTime": DATETIME_S,
+        "fields": {
+            "Attachments": [
+                {
+                    "id": fake_id("att"),
+                    "url": "https://example.com",
+                    "filename": "a.jpg",
+                }
+            ]
+        },
+    }
+
+    class T(Model):
+        Meta = fake_meta()
+        attachments = f.AttachmentsField("Attachments")
+
+    obj = T()
+    assert obj.attachments == []
+    assert isinstance(obj.attachments, AttachmentsList)
+
+    obj.attachments = [{"url": "https://example.com"}]
+    assert isinstance(obj.attachments, AttachmentsList)
+
+    obj.save()
+    assert isinstance(obj.attachments, AttachmentsList)
+    assert obj.attachments[0]["url"] == "https://example.com"
+
+
+def test_attachments__set_invalid_type():
+    class T(Model):
+        Meta = fake_meta()
+        attachments = f.AttachmentsField("Attachments")
+
+    with pytest.raises(TypeError):
+        T().attachments = [1, 2, 3]
