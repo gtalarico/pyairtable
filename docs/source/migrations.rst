@@ -65,28 +65,40 @@ The full list of breaking changes is below:
 Changes to the ORM in 3.0
 ---------------------------------------------
 
-:data:`Model.created_time <pyairtable.orm.Model.created_time>` is now a ``datetime`` (or ``None``)
-instead of ``str``. This change also applies to all timestamp fields used in :ref:`API: pyairtable.models`.
+* :data:`Model.created_time <pyairtable.orm.Model.created_time>` is now a ``datetime`` (or ``None``)
+  instead of ``str``. This change also applies to all timestamp fields used in :ref:`API: pyairtable.models`.
 
-:meth:`Model.save <pyairtable.orm.Model.save>` now only saves changed fields to the API, which
-means it will sometimes not perform any network traffic (though this behavior can be overridden).
-It also now returns an instance of :class:`~pyairtable.orm.SaveResult` instead of ``bool``.
+* :meth:`Model.save <pyairtable.orm.Model.save>` now only saves changed fields to the API, which
+  means it will sometimes not perform any network traffic (though this behavior can be overridden).
+  It also now returns an instance of :class:`~pyairtable.orm.SaveResult` instead of ``bool``.
 
-The 3.0 release has changed the API for retrieving ORM model configuration:
+* Fields which contain lists of values now return instances of ``ChangeTrackingList``, which
+  is still a subclass of ``list``. This should not affect most uses, but it does mean that
+  some code which relies on exact type checking may need to be updated:
 
-.. list-table::
-    :header-rows: 1
+    >>> isinstance(Foo().atts, list)
+    True
+    >>> type(Foo().atts) is list
+    False
+    >>> type(Foo().atts)
+    <class 'pyairtable.orm.lists.ChangeTrackingList'>
 
-    * - Method in 2.x
-      - Method in 3.0
-    * - ``Model.get_api()``
-      - ``Model.meta.api``
-    * - ``Model.get_base()``
-      - ``Model.meta.base``
-    * - ``Model.get_table()``
-      - ``Model.meta.table``
-    * - ``Model._get_meta(name)``
-      - ``Model.meta.get(name)``
+* The 3.0 release has changed the API for retrieving ORM model configuration:
+
+  .. list-table::
+      :header-rows: 1
+
+      * - Method in 2.x
+        - Method in 3.0
+      * - ``Model.get_api()``
+        - ``Model.meta.api``
+      * - ``Model.get_base()``
+        - ``Model.meta.base``
+      * - ``Model.get_table()``
+        - ``Model.meta.table``
+      * - ``Model._get_meta(name)``
+        - ``Model.meta.get(name)``
+
 
 Miscellaneous name changes
 ---------------------------------------------

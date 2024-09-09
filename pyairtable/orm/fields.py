@@ -919,7 +919,10 @@ class AttachmentsField(
     list_class=AttachmentsList,
     contains_type=dict,
 ):
-    pass
+    """
+    Accepts a list of dicts in the format detailed in
+    `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_.
+    """
 
 
 class BarcodeField(_DictField[BarcodeDict]):

@@ -102,7 +102,7 @@ def test_create_field(blank_base: pyairtable.Base):
     assert len(table.schema().fields) == 1
     fld = table.create_field(
         "Status",
-        type="singleSelect",
+        field_type="singleSelect",
         options={
             "choices": [
                 {"name": "Todo"},

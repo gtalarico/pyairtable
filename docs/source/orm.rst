@@ -583,8 +583,8 @@ comments on a particular record, just like their :class:`~pyairtable.Table` equi
     >>> comment.delete()
 
 
-Attachments
-------------------
+Attachments in the ORM
+----------------------
 
 When retrieving attachments from the API, pyAirtable will return a list of
 :class:`~pyairtable.api.types.AttachmentDict`.
@@ -602,23 +602,16 @@ When retrieving attachments from the API, pyAirtable will return a list of
         ...
     ]
 
-You can append your own values to this list, and as long as they conform
-to :class:`~pyairtable.api.types.CreateAttachmentDict`, they will be saved
-back to the API.
+You can append your own values to this list, and as long as they have
+either a ``"id"`` or ``"url"`` key, they will be saved back to the API.
 
     >>> model.attachments.append({"url": "https://example.com/example.jpg"})
     >>> model.save()
 
-You can also use :meth:`~pyairtable.orm.fields.AttachmentList.upload` to
-directly upload content to Airtable. You do not need to call
-:meth:`~pyairtable.orm.Model.save`; the change will be saved immediately.
-Note that this means any other unsaved changes to this field will be lost.
+You can also use :meth:`~pyairtable.orm.lists.AttachmentsList.upload` to
+directly upload content to Airtable:
 
-    >>> model.attachments.upload("example.jpg", b"...", "image/jpeg")
-    >>> model.attachments[-1]["filename"]
-    'example.jpg'
-    >>> model.attachments[-1]["url"]
-    'https://v5.airtableusercontent.com/...'
+.. automethod:: pyairtable.orm.lists.AttachmentsList.upload
 
 
 ORM Limitations

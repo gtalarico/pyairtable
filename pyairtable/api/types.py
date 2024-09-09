@@ -367,6 +367,27 @@ class UserAndScopesDict(TypedDict, total=False):
 
 
 class UploadAttachmentResultDict(TypedDict):
+    """
+    A ``dict`` representing the payload returned by
+    `Upload attachment <https://airtable.com/developers/web/api/upload-attachment>`__.
+
+    Usage:
+        >>> table.upload_attachment("recAdw9EjV90xbZ", "Attachments", "/tmp/example.jpg")
+        {
+            'id': 'recAdw9EjV90xbZ',
+            'createdTime': '2023-05-22T21:24:15.333134Z',
+            'fields': {
+                'Attachments': [
+                    {
+                        'id': 'attW8eG2x0ew1Af',
+                        'url': 'https://content.airtable.com/...',
+                        'filename': 'example.jpg'
+                    }
+                ]
+            }
+        }
+    """
+
     id: RecordId
     createdTime: str
     fields: Dict[str, List[AttachmentDict]]

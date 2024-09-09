@@ -105,9 +105,22 @@ class AttachmentsList(ChangeTrackingList[Union[AttachmentDict, CreateAttachmentD
         content_type: Optional[str] = None,
     ) -> None:
         """
-        Upload an attachment to the Airtable API. This will replace the current
-        list with the response from the server, which will contain a full list of
-        :class:`~pyairtable.api.types.AttachmentDict`.
+        Upload an attachment to the Airtable API and refresh the field's values.
+
+        This method will replace the current list with the response from the server,
+        which will contain a list of :class:`~pyairtable.api.types.AttachmentDict` for
+        all attachments in the field (not just the ones uploaded).
+
+        You do not need to call :meth:`~pyairtable.orm.Model.save`; the new attachment
+        will be saved immediately. Note that this means any other unsaved changes to
+        this field will be lost.
+
+        Example:
+            >>> model.attachments.upload("example.jpg", b"...", "image/jpeg")
+            >>> model.attachments[-1]["filename"]
+            'example.jpg'
+            >>> model.attachments[-1]["url"]
+            'https://v5.airtableusercontent.com/...'
         """
         if not self._model.id:
             raise UnsavedRecordError("cannot upload attachments to an unsaved record")
