@@ -7,11 +7,13 @@ import inspect
 import random
 import string
 from collections import defaultdict
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
+from functools import partialmethod
 from typing import (
     Any,
     Dict,
     Iterable,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -162,10 +164,12 @@ class MockAirtable:
         from pyairtable import Api
         from pyairtable.testing import MockAirtable
 
+        table = Api.base("baseId").table("tableName")
+
         with MockAirtable() as m:
             m.add_record("baseId", "tableName", {"Name": "Alice"})
-            records = t.all()
-            assert len(t.all()) == 1
+            records = table.all()
+            assert len(table.all()) == 1
 
     If you use pytest, you might want to include this as a fixture.
 
@@ -191,10 +195,27 @@ class MockAirtable:
         Traceback (most recent call last): ...
         RuntimeError: unhandled call to Api.request
 
-    This behavior can be overridden by setting the ``passthrough`` argument to True,
+    You can allow unhandled requests by setting the ``passthrough`` argument to True,
     either on the constructor or temporarily on the MockAirtable instance. This is
     useful when using another library, like `requests-mock <https://requests-mock.readthedocs.io/en/latest/>`_,
     to prepare responses for complex cases (like code that retrieves the schema).
+
+    .. code-block:: python
+
+        def test_your_function(requests_mock, mock_airtable, monkeypatch):
+            base = Api.base("baseId")
+
+            # load and cache our mock schema
+            requests_mock.get(
+                base.meta_url("tables"),
+                json={"tables": [...]}
+            )
+            with mock_airtable.enable_passthrough():
+                base.schema()
+
+            # code below will fail if any more unhandled requests are made
+            ...
+
     """
 
     # The list of APIs that are mocked by this class.
@@ -254,6 +275,40 @@ class MockAirtable:
     def __exit__(self, *exc_info: Any) -> None:
         if self._stack:
             self._stack.__exit__(*exc_info)
+
+    @contextmanager
+    def set_passthrough(self, allowed: bool) -> Iterator[Self]:
+        """
+        Context manager that temporarily changes whether unmocked methods
+        are allowed to perform real network requests. For convenience, there are
+        also shortcuts ``enable_passthrough()`` and ``disable_passthrough()``.
+
+        Usage:
+
+            .. code-block:: python
+
+                with MockAirtable() as m:
+                    with m.enable_passthrough():
+                        schema = base.schema()
+                        hooks = table.webhooks()
+
+                    # no more network requests allowed
+                    ...
+
+        Args:
+            allowed: If ``True``, unmocked methods will be allowed to perform real
+                network requests within this context manager. If ``False``,
+                they will not be allowed.
+        """
+        original = self.passthrough
+        self.passthrough = allowed
+        try:
+            yield self
+        finally:
+            self.passthrough = original
+
+    enable_passthrough = partialmethod(set_passthrough, True)
+    disable_passthrough = partialmethod(set_passthrough, False)
 
     @overload
     def add_records(

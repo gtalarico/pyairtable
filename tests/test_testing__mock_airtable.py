@@ -190,7 +190,7 @@ def test_table_batch_upsert(mock_airtable, table):
         "table.schema()",
     ],
 )
-def test_unhandled_methods(mock_airtable, expr, api, base, table):
+def test_unhandled_methods(mock_airtable, monkeypatch, expr, api, base, table):
     """
     Test that unhandled methods raise an error.
     """
@@ -203,5 +203,20 @@ def test_passthrough(mock_airtable, requests_mock, base, monkeypatch):
     Test that we can temporarily pass through unhandled methods to the requests library.
     """
     requests_mock.get(base.meta_url("tables"), json={"tables": []})
-    monkeypatch.setattr(mock_airtable, "passthrough", True)
-    assert base.schema().tables == []  # no RuntimeError
+
+    with monkeypatch.context() as mctx:
+        mctx.setattr(mock_airtable, "passthrough", True)
+        assert base.schema(force=True).tables == []  # no RuntimeError
+
+    with mock_airtable.enable_passthrough():
+        assert base.schema(force=True).tables == []  # no RuntimeError
+        with mock_airtable.disable_passthrough():
+            with pytest.raises(RuntimeError):
+                base.schema(force=True)
+
+    with mock_airtable.set_passthrough(True):
+        assert base.schema(force=True).tables == []  # no RuntimeError
+
+    with mock_airtable.set_passthrough(False):
+        with pytest.raises(RuntimeError):
+            base.schema(force=True)
