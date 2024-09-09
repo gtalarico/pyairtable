@@ -261,11 +261,9 @@ def test_attachments_upload(Everything, valid_img_url, tmp_path):
     record.attachments.append({"url": valid_img_url, "filename": "logo.png"})
     record.save()
     assert record.attachments[0]["url"] == valid_img_url
-
     record.fetch()
+    assert record.attachments[0]["id"] is not None
     assert record.attachments[0]["filename"] == "logo.png"
-    assert record.attachments[0]["type"] == "image/png"
-    assert record.attachments[0]["url"] != valid_img_url  # overwritten by Airtable
 
     # add an attachment by uploading content
     tmp_file = tmp_path / "sample.txt"

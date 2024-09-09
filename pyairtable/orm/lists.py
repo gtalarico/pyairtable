@@ -13,7 +13,7 @@ from typing import (
 
 from typing_extensions import Self, TypeVar
 
-from pyairtable.api.types import AttachmentDict
+from pyairtable.api.types import AttachmentDict, CreateAttachmentDict
 from pyairtable.exceptions import ReadonlyFieldError, UnsavedRecordError
 
 T = TypeVar("T")
@@ -97,7 +97,7 @@ class ChangeTrackingList(List[T]):
         return super().pop(index)
 
 
-class AttachmentsList(ChangeTrackingList[AttachmentDict]):
+class AttachmentsList(ChangeTrackingList[Union[AttachmentDict, CreateAttachmentDict]]):
     def upload(
         self,
         filename: Union[str, Path],
@@ -120,6 +120,9 @@ class AttachmentsList(ChangeTrackingList[AttachmentDict]):
             content=content,
             content_type=content_type,
         )
+        attachments = list(response["fields"].values()).pop(0)
         with self.disable_tracking():
             self.clear()
-            self.extend(*response["fields"].values())
+            # We only ever expect one key: value in `response["fields"]`.
+            # See https://airtable.com/developers/web/api/upload-attachment
+            self.extend(attachments)

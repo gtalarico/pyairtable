@@ -76,7 +76,20 @@ class AttachmentDict(TypedDict, total=False):
     thumbnails: Dict[str, Dict[str, Union[str, int]]]
 
 
-class CreateAttachmentDict(TypedDict, total=False):
+class CreateAttachmentById(TypedDict):
+    """
+    A ``dict`` representing a new attachment to be written to the Airtable API.
+
+    >>> new_attachment = {"id": "attW8eG2x0ew1Af"}
+    >>> existing = record["fields"].setdefault("Attachments", [])
+    >>> existing.append(new_attachment)
+    >>> table.update(existing["id"], existing["fields"])
+    """
+
+    id: str
+
+
+class CreateAttachmentByUrl(TypedDict, total=False):
     """
     A ``dict`` representing a new attachment to be written to the Airtable API.
 
@@ -91,6 +104,9 @@ class CreateAttachmentDict(TypedDict, total=False):
 
     url: Required[str]
     filename: str
+
+
+CreateAttachmentDict: TypeAlias = Union[CreateAttachmentById, CreateAttachmentByUrl]
 
 
 class BarcodeDict(TypedDict, total=False):

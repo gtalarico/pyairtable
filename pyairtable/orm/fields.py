@@ -57,6 +57,8 @@ from pyairtable.api.types import (
     BarcodeDict,
     ButtonDict,
     CollaboratorDict,
+    CollaboratorEmailDict,
+    CreateAttachmentDict,
     RecordId,
 )
 from pyairtable.exceptions import (
@@ -909,7 +911,11 @@ class AITextField(_DictField[AITextDict]):
 
 
 class AttachmentsField(
-    _ListFieldBase[AttachmentDict, AttachmentDict, AttachmentsList],
+    _ListFieldBase[
+        AttachmentDict,
+        Union[AttachmentDict, CreateAttachmentDict],
+        AttachmentsList,
+    ],
     list_class=AttachmentsList,
     contains_type=dict,
 ):
@@ -924,7 +930,7 @@ class BarcodeField(_DictField[BarcodeDict]):
     """
 
 
-class CollaboratorField(_DictField[CollaboratorDict]):
+class CollaboratorField(_DictField[Union[CollaboratorDict, CollaboratorEmailDict]]):
     """
     Accepts a `dict` that should conform to the format detailed in the
     `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`_
@@ -968,10 +974,8 @@ class ExternalSyncSourceField(TextField):
     readonly = True
 
 
-class LastModifiedByField(CollaboratorField):
+class LastModifiedByField(_DictField[CollaboratorDict]):
     """
-    Equivalent to :class:`CollaboratorField(readonly=True) <CollaboratorField>`.
-
     See `Last modified by <https://airtable.com/developers/web/api/field-model#lastmodifiedby>`__.
     """
 
@@ -1018,7 +1022,9 @@ class ManualSortField(TextField):
     readonly = True
 
 
-class MultipleCollaboratorsField(_ListField[CollaboratorDict], contains_type=dict):
+class MultipleCollaboratorsField(
+    _ListField[Union[CollaboratorDict, CollaboratorEmailDict]], contains_type=dict
+):
     """
     Accepts a list of dicts in the format detailed in
     `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_.
@@ -1177,7 +1183,7 @@ class RequiredBarcodeField(BarcodeField, _BasicFieldWithRequiredValue[BarcodeDic
     """
 
 
-class RequiredCollaboratorField(CollaboratorField, _BasicFieldWithRequiredValue[CollaboratorDict]):
+class RequiredCollaboratorField(CollaboratorField, _BasicFieldWithRequiredValue[Union[CollaboratorDict, CollaboratorEmailDict]]):
     """
     Accepts a `dict` that should conform to the format detailed in the
     `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`_
@@ -1367,7 +1373,7 @@ class RequiredUrlField(UrlField, _BasicFieldWithRequiredValue[str]):
     """
 
 
-# [[[end]]] (checksum: 84b5c48286d992737e12318a72e4e123)
+# [[[end]]] (checksum: 5078434bb8fd65fa8f0be48de6915c2d)
 # fmt: on
 
 
@@ -1395,10 +1401,8 @@ class ButtonField(_DictField[ButtonDict], _BasicFieldWithRequiredValue[ButtonDic
     readonly = True
 
 
-class CreatedByField(RequiredCollaboratorField):
+class CreatedByField(_BasicFieldWithRequiredValue[CollaboratorDict]):
     """
-    Equivalent to :class:`CollaboratorField(readonly=True) <CollaboratorField>`.
-
     See `Created by <https://airtable.com/developers/web/api/field-model#createdby>`__.
 
     If the Airtable API returns ``null``, this field will raise :class:`~pyairtable.orm.fields.MissingValue`.

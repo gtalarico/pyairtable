@@ -26,11 +26,21 @@ def mock_upload():
             fake_id("fld"): [
                 {
                     "id": fake_id("att"),
-                    "url": "https://example.com/a.png",
+                    "url": "https://example.com/a.txt",
                     "filename": "a.txt",
                     "type": "text/plain",
                 },
-            ]
+            ],
+            # Test that, if Airtable's API returns multiple fields (for some reason),
+            # we will only use the first field in the "fields" key (not all of them).
+            fake_id("fld"): [
+                {
+                    "id": fake_id("att"),
+                    "url": "https://example.com/b.png",
+                    "filename": "b.png",
+                    "type": "image/png",
+                },
+            ],
         },
     }
     with mock.patch("pyairtable.Table.upload_attachment", return_value=response) as m:
@@ -49,6 +59,14 @@ def test_attachment_upload(mock_upload, tmp_path, content):
     record = fake_record()
     instance = Fake.from_record(record)
     instance.attachments.upload(fp)
+    assert instance.attachments == [
+        {
+            "id": mock.ANY,
+            "url": "https://example.com/a.txt",
+            "filename": "a.txt",
+            "type": "text/plain",
+        },
+    ]
 
     mock_upload.assert_called_once_with(
         record["id"],
