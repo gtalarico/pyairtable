@@ -7,7 +7,7 @@ import requests
 
 from pyairtable import Table
 from pyairtable import formulas as fo
-from pyairtable.utils import attachment, date_to_iso_str, datetime_to_iso_str
+from pyairtable.utils import date_to_iso_str, datetime_to_iso_str
 
 pytestmark = [pytest.mark.integration]
 
@@ -279,7 +279,7 @@ def test_integration_formula_composition(table: Table, cols):
 
 
 def test_integration_attachment(table, cols, valid_img_url):
-    rec = table.create({cols.ATTACHMENT: [attachment(valid_img_url)]})
+    rec = table.create({cols.ATTACHMENT: [{"url": valid_img_url}]})
     rv_get = table.get(rec["id"])
     assert rv_get["fields"]["attachment"][0]["url"].endswith("logo.png")
 
@@ -288,8 +288,8 @@ def test_integration_attachment_multiple(table, cols, valid_img_url):
     rec = table.create(
         {
             cols.ATTACHMENT: [
-                attachment(valid_img_url, filename="a.png"),
-                attachment(valid_img_url, filename="b.png"),
+                {"url": valid_img_url, "filename": "a.png"},
+                {"url": valid_img_url, "filename": "b.png"},
             ]
         }
     )
@@ -299,7 +299,7 @@ def test_integration_attachment_multiple(table, cols, valid_img_url):
 
 
 def test_integration_upload_attachment(table, cols, valid_img_url, tmp_path):
-    rec = table.create({cols.ATTACHMENT: [attachment(valid_img_url, filename="a.png")]})
+    rec = table.create({cols.ATTACHMENT: [{"url": valid_img_url, "filename": "a.png"}]})
     content = requests.get(valid_img_url).content
     response = table.upload_attachment(rec["id"], cols.ATTACHMENT, "b.png", content)
     assert response == {

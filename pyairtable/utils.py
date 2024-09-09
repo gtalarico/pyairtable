@@ -1,6 +1,7 @@
 import inspect
 import re
 import textwrap
+import warnings
 from datetime import date, datetime
 from functools import partial, wraps
 from typing import (
@@ -106,6 +107,10 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentByUrl:
 
 
     """
+    warnings.warn(
+        "attachment(url, filename) is deprecated; use {'url': url, 'filename': filename} instead.",
+        DeprecationWarning,
+    )
     return {"url": url} if not filename else {"url": url, "filename": filename}
 
 
