@@ -314,10 +314,10 @@ class MockAirtable:
     def add_records(
         self,
         base_id: str,
-        table_name: str,
+        table_id_or_name: str,
         /,
         records: Iterable[Dict[str, Any]],
-    ) -> None: ...
+    ) -> List[RecordDict]: ...
 
     @overload
     def add_records(
@@ -325,9 +325,9 @@ class MockAirtable:
         table: Table,
         /,
         records: Iterable[Dict[str, Any]],
-    ) -> None: ...
+    ) -> List[RecordDict]: ...
 
-    def add_records(self, *args: Any, **kwargs: Any) -> None:
+    def add_records(self, *args: Any, **kwargs: Any) -> List[RecordDict]:
         """
         Add a list of records to the mock Airtable instance.
 
@@ -340,15 +340,27 @@ class MockAirtable:
 
             with MockAirtable() as m:
                 m.add_records(table, records=[{"id": "recFake", {"Name": "Alice"}}])
+
+        Args:
+            base_id: |arg_base_id|
+                *This must be the first positional argument.*
+            table_id_or_name: |arg_table_id_or_name|
+                This should be the same ID or name used in the code under test.
+                *This must be the second positional argument.*
+            table: An instance of :class:`~pyairtable.Table`.
+                *This is an alternative to providing base and table IDs,
+                and must be the first positional argument.*
+            records: A sequence of :class:`~pyairtable.api.types.RecordDict`,
+                :class:`~pyairtable.api.types.UpdateRecordDict`,
+                :class:`~pyairtable.api.types.CreateRecordDict`,
+                or :class:`~pyairtable.api.types.Fields`.
         """
         base_id, table_name, records = _extract_args(args, kwargs, ["records"])
+        coerced = [coerce_fake_record(record) for record in records]
         self.records[(base_id, table_name)].update(
-            {
-                coerced["id"]: coerced
-                for record in records
-                if (coerced := coerce_fake_record(record))
-            }
+            {record["id"]: record for record in coerced}
         )
+        return coerced
 
     def clear(self) -> None:
         """
