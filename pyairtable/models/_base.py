@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, ClassVar, Dict, Iterable, Mapping, Optional, Set, Type, Union
 
 import inflection
+from pydantic import ConfigDict
 from typing_extensions import Self as SelfType
 
 from pyairtable._compat import pydantic
@@ -18,30 +19,29 @@ class AirtableModel(pydantic.BaseModel):
     Base model for any data structures that will be loaded from the Airtable API.
     """
 
-    class Config:
-        # Ignore field names we don't recognize, so applications don't crash
-        # if Airtable decides to add new attributes.
-        extra = "ignore"
-
-        # Convert e.g. "base_invite_links" to "baseInviteLinks" for (de)serialization
-        alias_generator = partial(inflection.camelize, uppercase_first_letter=False)
-
-        # Allow both base_invite_links= and baseInviteLinks= in constructor
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        extra="ignore",
+        alias_generator=partial(inflection.camelize, uppercase_first_letter=False),
+        populate_by_name=True,
+    )
 
     _raw: Any = pydantic.PrivateAttr()
 
     def __init__(self, **data: Any) -> None:
-        self._raw = data.copy()
+        raw = data.copy()
+
         # Convert JSON-serializable input data to the types expected by our model.
         # For now this only converts ISO 8601 strings to datetime objects.
-        for field_model in self.__fields__.values():
-            for name in {field_model.name, field_model.alias}:
-                if not (value := data.get(name)):
+        for field_name, field_model in self.model_fields.items():
+            for name in {field_name, field_model.alias}:
+                if not name or not (value := data.get(name)):
                     continue
-                if isinstance(value, str) and field_model.type_ is datetime:
+                if isinstance(value, str) and field_model.annotation is datetime:
                     data[name] = datetime_from_iso_str(value)
+
         super().__init__(**data)
+
+        self._raw = raw  # must happen *after* __init__
 
     @classmethod
     def from_api(
@@ -166,7 +166,7 @@ class RestfulModel(AirtableModel):
             obj = self._api.get(self._url)
         copyable = type(self).from_api(obj, self._api, context=self._url_context)
         self.__dict__.update(
-            {key: copyable.__dict__.get(key) for key in type(self).__fields__}
+            {key: copyable.__dict__.get(key) for key in type(self).model_fields}
         )
 
 

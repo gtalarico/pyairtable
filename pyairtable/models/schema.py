@@ -569,7 +569,7 @@ class UserInfo(
     is_admin: bool = False
     is_super_admin: bool = False
     groups: List[NestedId] = _FL()
-    collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
+    collaborations: "Collaborations" = _F("Collaborations")
 
     def logout(self) -> None:
         self._api.post(self._url + "/logout")
@@ -588,7 +588,7 @@ class UserGroup(AirtableModel):
     created_time: datetime
     updated_time: datetime
     members: List["UserGroup.Member"]
-    collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
+    collaborations: "Collaborations" = _F("Collaborations")
 
     class Member(AirtableModel):
         user_id: str
