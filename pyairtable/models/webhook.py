@@ -56,10 +56,10 @@ class Webhook(CanDeleteModel, url="bases/{base.id}/webhooks/{self.id}"):
     are_notifications_enabled: bool
     cursor_for_next_payload: int
     is_hook_enabled: bool
-    last_successful_notification_time: Optional[datetime]
-    notification_url: Optional[str]
-    last_notification_result: Optional["WebhookNotificationResult"]
-    expiration_time: Optional[datetime]
+    last_successful_notification_time: Optional[datetime] = None
+    notification_url: Optional[str] = None
+    last_notification_result: Optional["WebhookNotificationResult"] = None
+    expiration_time: Optional[datetime] = None
     specification: "WebhookSpecification"
 
     def enable_notifications(self) -> None:
@@ -258,19 +258,19 @@ class WebhookSpecification(AirtableModel):
 
     class Options(AirtableModel):
         filters: "WebhookSpecification.Filters"
-        includes: Optional["WebhookSpecification.Includes"]
+        includes: Optional["WebhookSpecification.Includes"] = None
 
     class Filters(AirtableModel):
         data_types: List[str]
-        record_change_scope: Optional[str]
+        record_change_scope: Optional[str] = None
         change_types: List[str] = FL()
         from_sources: List[str] = FL()
-        source_options: Optional["WebhookSpecification.SourceOptions"]
+        source_options: Optional["WebhookSpecification.SourceOptions"] = None
         watch_data_in_field_ids: List[str] = FL()
         watch_schemas_of_field_ids: List[str] = FL()
 
     class SourceOptions(AirtableModel):
-        form_submission: Optional["WebhookSpecification.FormSubmission"]
+        form_submission: Optional["WebhookSpecification.FormSubmission"] = None
 
     class FormSubmission(AirtableModel):
         view_id: str
@@ -282,7 +282,7 @@ class WebhookSpecification(AirtableModel):
 
 
 class CreateWebhook(AirtableModel):
-    notification_url: Optional[str]
+    notification_url: Optional[str] = None
     specification: WebhookSpecification
 
 
@@ -301,7 +301,7 @@ class CreateWebhookResponse(AirtableModel):
     mac_secret_base64: str
 
     #: The timestamp when the webhook will expire and be deleted.
-    expiration_time: Optional[datetime]
+    expiration_time: Optional[datetime] = None
 
 
 class WebhookPayload(AirtableModel):
@@ -313,16 +313,16 @@ class WebhookPayload(AirtableModel):
     timestamp: datetime
     base_transaction_number: int
     payload_format: str
-    action_metadata: Optional["WebhookPayload.ActionMetadata"]
+    action_metadata: Optional["WebhookPayload.ActionMetadata"] = None
     changed_tables_by_id: Dict[str, "WebhookPayload.TableChanged"] = FD()
     created_tables_by_id: Dict[str, "WebhookPayload.TableCreated"] = FD()
     destroyed_table_ids: List[str] = FL()
-    error: Optional[bool]
-    error_code: Optional[str] = pydantic.Field(alias="code")
+    error: Optional[bool] = None
+    error_code: Optional[str] = pydantic.Field(alias="code", default=None)
 
     #: This is not a part of Airtable's webhook payload specification.
     #: This indicates the cursor field in the response which provided this payload.
-    cursor: Optional[int]
+    cursor: Optional[int] = None
 
     class ActionMetadata(AirtableModel):
         source: str
@@ -333,8 +333,8 @@ class WebhookPayload(AirtableModel):
         description: Optional[str] = None
 
     class FieldInfo(AirtableModel):
-        name: Optional[str]
-        type: Optional[str]
+        name: Optional[str] = None
+        type: Optional[str] = None
 
     class FieldChanged(AirtableModel):
         current: "WebhookPayload.FieldInfo"

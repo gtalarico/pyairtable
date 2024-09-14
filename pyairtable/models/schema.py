@@ -310,7 +310,7 @@ class TableSchema(
     id: str
     name: str
     primary_field_id: str
-    description: Optional[str]
+    description: Optional[str] = None
     fields: List["FieldSchema"]
     views: List["ViewSchema"]
 
@@ -345,8 +345,8 @@ class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):
     id: str
     type: str
     name: str
-    personal_for_user_id: Optional[str]
-    visible_field_ids: Optional[List[str]]
+    personal_for_user_id: Optional[str] = None
+    visible_field_ids: Optional[List[str]] = None
 
 
 class GroupCollaborator(AirtableModel):
@@ -383,7 +383,7 @@ class InviteLink(CanDeleteModel, url="{invite_links._url}/{self.id}"):
     id: str
     type: str
     created_time: datetime
-    invited_email: Optional[str]
+    invited_email: Optional[str] = None
     referred_by_user_id: str
     permission_level: str
     restricted_to_email_domains: List[str] = _FL()
@@ -561,10 +561,10 @@ class UserInfo(
     state: str
     is_sso_required: bool
     is_two_factor_auth_enabled: bool
-    last_activity_time: Optional[datetime]
-    created_time: Optional[datetime]
-    enterprise_user_type: Optional[str]
-    invited_to_airtable_by_user_id: Optional[str]
+    last_activity_time: Optional[datetime] = None
+    created_time: Optional[datetime] = None
+    enterprise_user_type: Optional[str] = None
+    invited_to_airtable_by_user_id: Optional[str] = None
     is_managed: bool = False
     is_admin: bool = False
     is_super_admin: bool = False
@@ -617,8 +617,8 @@ class AITextFieldConfig(AirtableModel):
 
 
 class AITextFieldOptions(AirtableModel):
-    prompt: Optional[List[Union[str, "AITextFieldOptions.PromptField"]]]
-    referenced_field_ids: Optional[List[str]]
+    prompt: List[Union[str, "AITextFieldOptions.PromptField"]] = _FL()
+    referenced_field_ids: List[str] = _FL()
 
     class PromptField(AirtableModel):
         field: NestedFieldId
@@ -673,7 +673,7 @@ class CountFieldConfig(AirtableModel):
 
 class CountFieldOptions(AirtableModel):
     is_valid: bool
-    record_link_field_id: Optional[str]
+    record_link_field_id: Optional[str] = None
 
 
 class CreatedByFieldConfig(AirtableModel):
@@ -862,9 +862,9 @@ class MultipleLookupValuesFieldConfig(AirtableModel):
 
 
 class MultipleLookupValuesFieldOptions(AirtableModel):
-    field_id_in_linked_table: Optional[str]
+    field_id_in_linked_table: Optional[str] = None
     is_valid: bool
-    record_link_field_id: Optional[str]
+    record_link_field_id: Optional[str] = None
     result: Optional["FieldConfig"]
 
 
@@ -881,8 +881,8 @@ class MultipleRecordLinksFieldOptions(AirtableModel):
     is_reversed: bool
     linked_table_id: str
     prefers_single_record_link: bool
-    inverse_link_field_id: Optional[str]
-    view_id_for_record_selection: Optional[str]
+    inverse_link_field_id: Optional[str] = None
+    view_id_for_record_selection: Optional[str] = None
 
 
 class MultipleSelectsFieldConfig(AirtableModel):
@@ -957,9 +957,9 @@ class RollupFieldConfig(AirtableModel):
 
 
 class RollupFieldOptions(AirtableModel):
-    field_id_in_linked_table: Optional[str]
+    field_id_in_linked_table: Optional[str] = None
     is_valid: bool
-    record_link_field_id: Optional[str]
+    record_link_field_id: Optional[str] = None
     referenced_field_ids: Optional[List[str]]
     result: Optional["FieldConfig"]
 
@@ -995,7 +995,7 @@ class SingleSelectFieldOptions(AirtableModel):
     class Choice(AirtableModel):
         id: str
         name: str
-        color: Optional[str]
+        color: Optional[str] = None
 
 
 class UrlFieldConfig(AirtableModel):
@@ -1024,7 +1024,7 @@ class _FieldSchemaBase(
 ):
     id: str
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
 
 
 # This section is auto-generated so that FieldSchema and FieldConfig are kept aligned.

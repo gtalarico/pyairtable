@@ -248,7 +248,7 @@ class CanUpdateModel(RestfulModel):
             raise RuntimeError("save() called with no URL specified")
         include = set(self.__writable) if self.__writable else None
         exclude = set(self.__readonly) if self.__readonly else None
-        data = self.dict(
+        data = self.model_dump(
             by_alias=True,
             include=include,
             exclude=exclude,
@@ -264,8 +264,7 @@ class CanUpdateModel(RestfulModel):
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Prevents implementers from changing values on readonly or non-writable fields.
-        # Mypy can't tell that we are using pydantic v1.
-        if name in self.__class__.__fields__:  # type: ignore[operator, unused-ignore]
+        if name in self.__class__.model_fields:
             if self.__readonly and name in self.__readonly:
                 raise AttributeError(name)
             if self.__writable is not None and name not in self.__writable:
