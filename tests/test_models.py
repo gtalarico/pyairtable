@@ -299,3 +299,36 @@ def test_datetime_conversion(api, requests_mock):
     obj.save()
     assert m.call_count == 1
     assert m.request_history[0].json() == {"timestamp": "2024-01-08T12:34:56.000Z"}
+
+
+@pytest.mark.parametrize(
+    "attrpath",
+    [
+        "pyairtable.models.webhook.Webhook.last_successful_notification_time",
+        "pyairtable.models.webhook.Webhook.expiration_time",
+        "pyairtable.models.comment.Comment.created_time",
+        "pyairtable.models.comment.Comment.last_updated_time",
+        "pyairtable.models.webhook.WebhookNotification.timestamp",
+        "pyairtable.models.webhook.WebhookPayload.timestamp",
+        "pyairtable.models.audit.AuditLogResponse.events[0].timestamp",
+        "pyairtable.models.schema.BaseCollaborators.group_collaborators.via_base[0].created_time",
+        "pyairtable.models.schema.BaseCollaborators.individual_collaborators.via_base[0].created_time",
+        "pyairtable.models.schema.BaseCollaborators.interfaces['pbdLkNDICXNqxSDhG'].created_time",
+        "pyairtable.models.schema.BaseCollaborators.interfaces['pbdLkNDICXNqxSDhG'].first_publish_time",
+        "pyairtable.models.schema.BaseShares.shares[0].created_time",
+        "pyairtable.models.schema.WorkspaceCollaborators.invite_links.via_base[0].created_time",
+        "pyairtable.models.schema.EnterpriseInfo.created_time",
+        "pyairtable.models.schema.WorkspaceCollaborators.created_time",
+        "pyairtable.models.schema.WorkspaceCollaborators.invite_links.via_base[0].created_time",
+        "pyairtable.models.schema.UserGroup.created_time",
+        "pyairtable.models.schema.UserGroup.updated_time",
+        "pyairtable.models.schema.UserGroup.members[1].created_time",
+        "pyairtable.models.schema.UserInfo.created_time",
+        "pyairtable.models.schema.UserInfo.last_activity_time",
+    ],
+)
+def test_datetime_models(attrpath, schema_obj):
+    """
+    Test that specific models' fields are correctly converted to datetimes.
+    """
+    assert isinstance(schema_obj(attrpath), datetime)

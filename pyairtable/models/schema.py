@@ -180,6 +180,7 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
         url="meta/bases/{base.id}/interfaces/{key}",
     ):
         created_time: datetime
+        first_publish_time: Optional[datetime]
         group_collaborators: List["GroupCollaborator"] = _FL()
         individual_collaborators: List["IndividualCollaborator"] = _FL()
         invite_links: List["InterfaceInviteLink"] = _FL()
