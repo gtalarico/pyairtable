@@ -36,11 +36,11 @@ from pyairtable import testing as T
         ),
         (
             "fake_user",
-            call("alice"),
+            call("Alice"),
             {
-                "id": "usr000000000alice",
+                "id": "usr000000000Alice",
                 "email": "alice@example.com",
-                "name": "Fake User",
+                "name": "Alice",
             },
         ),
     ],

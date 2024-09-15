@@ -1,5 +1,8 @@
 """
-Helper functions for writing tests that use the pyairtable library.
+pyAirtable provides a number of helper functions for testing code that uses
+the Airtable API. These functions are designed to be used with the standard
+Python :mod:`unittest.mock` library, and can be used to create fake records,
+users, and attachments, as well as to mock the Airtable API itself.
 """
 
 import datetime
@@ -105,16 +108,25 @@ def fake_record(
     Generate a fake record dict with the given field values.
 
     >>> fake_record({"Name": "Alice"})
-    {'id': '...', 'createdTime': '...', 'fields': {'Name': 'Alice'}}
-
-    >>> fake_record(name="Alice", address="123 Fake St")
-    {'id': '...', 'createdTime': '...', 'fields': {'name': 'Alice', 'address': '123 Fake St'}}
+    {
+        'id': '...',
+        'createdTime': '...',
+        'fields': {'name': 'Alice'}
+    }
 
     >>> fake_record(name="Alice", id="123")
-    {'id': 'rec00000000000123', 'createdTime': '...', 'fields': {'name': 'Alice'}}
+    {
+        'id': 'rec00000000000123',
+        'createdTime': '...',
+        'fields': {'name': 'Alice'}
+    }
 
     >>> fake_record(name="Alice", id="recABC00000000123")
-    {'id': 'recABC00000000123', 'createdTime': '...', 'fields': {'name': 'Alice'}}
+    {
+        'id': 'recABC00000000123',
+        'createdTime': '...',
+        'fields': {'name': 'Alice'}
+    }
     """
     return {
         "id": str(id) if is_airtable_id(id, "rec") else fake_id(value=id),
@@ -127,25 +139,47 @@ def fake_user(value: Any = None) -> CollaboratorDict:
     """
     Generate a fake user dict with the given value for an email prefix.
 
-    >>> fake_user("alice")
-    {'id': 'usr000000000Alice', 'email': 'alice@example.com', 'name': 'Fake User'}
+    >>> fake_user("Alice")
+    {
+        'id': 'usr000000000Alice',
+        'email': 'alice@example.com'
+        'name': 'Alice'
+    }
     """
     id = fake_id("usr", value)
     return {
         "id": id,
-        "email": f"{value or id}@example.com",
-        "name": "Fake User",
+        "email": f"{str(value or id).lower()}@example.com",
+        "name": str(value or "Fake User"),
     }
 
 
-def fake_attachment() -> AttachmentDict:
+def fake_attachment(url: str = "", filename: str = "") -> AttachmentDict:
     """
     Generate a fake attachment dict.
+
+    >>> fake_attachment()
+    {
+        'id': 'att...',
+        'url': 'https://example.com/',
+        'filename': 'foo.txt',
+        'size': 100,
+        'type': 'text/plain',
+    }
+
+    >>> fake_attachment('https://example.com/image.png', 'foo.png')
+    {
+        'id': 'att...',
+        'url': 'https://example.com/image.png',
+        'filename': 'foo.png',
+        'size': 100,
+        'type': 'text/plain',
+    }
     """
     return {
         "id": fake_id("att"),
-        "url": "https://example.com/",
-        "filename": "foo.txt",
+        "url": url or "https://example.com/",
+        "filename": filename or "foo.txt",
         "size": 100,
         "type": "text/plain",
     }
@@ -329,17 +363,24 @@ class MockAirtable:
 
     def add_records(self, *args: Any, **kwargs: Any) -> List[RecordDict]:
         """
-        Add a list of records to the mock Airtable instance.
+        Add a list of records to the mock Airtable instance. These will be returned
+        from methods like :meth:`~pyairtable.Table.all` and :meth:`~pyairtable.Table.get`.
 
-        Can be called with either a base ID and table name, or an instance of :class:`~pyairtable.Table`.
+        Can be called with either a base ID and table name,
+        or an instance of :class:`~pyairtable.Table`:
 
         .. code-block::
 
-            with MockAirtable() as m:
-                m.add_records("baseId", "tableName", [{"Name": "Alice"}])
+            m = MockAirtable()
+            m.add_records("baseId", "tableName", [{"Name": "Alice"}])
+            m.add_records(table, records=[{"id": "recFake", {"Name": "Alice"}}])
 
-            with MockAirtable() as m:
-                m.add_records(table, records=[{"id": "recFake", {"Name": "Alice"}}])
+        .. note::
+
+            The parameters to :meth:`~pyairtable.Table.all` are not supported by MockAirtable,
+            and constraints like ``formula=`` and ``limit=`` will be ignored. It is assumed
+            that you are adding records to specifically test a particular use case.
+            MockAirtable is not a full in-memory replacement for the Airtable API.
 
         Args:
             base_id: |arg_base_id|
