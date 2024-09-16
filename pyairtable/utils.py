@@ -88,7 +88,7 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentDict:
 
     Usage:
         >>> table = Table(...)
-        >>> profile_url = "https://myprofile.com/id/profile.jpg
+        >>> profile_url = "https://example.com/profile.jpg"
         >>> rec = table.create({"Profile Photo": [attachment(profile_url)]})
         {
             'id': 'recZXOZ5gT9vVGHfL',
@@ -96,8 +96,8 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentDict:
                 'attachment': [
                     {
                         'id': 'attu6kbaST3wUuNTA',
-                        'url': 'https://aws1.discourse-cdn.com/airtable/original/2X/4/411e4fac00df06a5e316a0585a831549e11d0705.png',
-                        'filename': '411e4fac00df06a5e316a0585a831549e11d0705.png'
+                        'url': 'https://content.airtable.com/...',
+                        'filename': 'profile.jpg'
                     }
                 ]
             },
