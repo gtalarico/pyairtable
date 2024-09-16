@@ -1,0 +1,18 @@
+{
+    "author": {
+        "id": "usrLkNDICXNqxSDhG",
+        "email": "author@example.com"
+    },
+    "createdTime": "2019-01-03T12:33:12.421Z",
+    "id": "comLkNDICXNqxSDhG",
+    "lastUpdatedTime": "2019-01-03T12:33:12.421Z",
+    "text": "Hello, @[usr00000mentioned]!",
+    "mentioned": {
+        "usr00000mentioned": {
+            "displayName": "Alice Doe",
+            "id": "usr00000mentioned",
+            "email": "alice@example.com",
+            "type": "user"
+        }
+    }
+}

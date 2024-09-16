@@ -1,0 +1,39 @@
+{
+  "events": [
+    {
+      "action": "createBase",
+      "actor": {
+        "type": "user",
+        "user": {
+          "email": "foo@bar.com",
+          "id": "usrL2PNC5o3H4lBEi",
+          "name": "Jane Doe"
+        }
+      },
+      "context": {
+        "actionId": "actxr1mLqZz1T35FA",
+        "baseId": "appLkNDICXNqxSDhG",
+        "enterpriseAccountId": "entUBq2RGdihxl3vU",
+        "interfaceId": "pbdyGA3PsOziEHPDE",
+        "workspaceId": "wspmhESAta6clCCwF"
+      },
+      "id": "01FYFFDE39BDDBC0HWK51R6GPF",
+      "modelId": "appLkNDICXNqxSDhG",
+      "modelType": "base",
+      "origin": {
+        "ipAddress": "1.2.3.4",
+        "sessionId": "sesE3ulSADiRNhqAv",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
+      },
+      "payload": {
+        "name": "My newly created base!"
+      },
+      "payloadVersion": "1.0",
+      "timestamp": "2022-02-01T21:25:05.663Z"
+    }
+  ],
+  "pagination": {
+    "next": "MDFHUk5OMlM4MFhTNkY0R0M2QVlZTVZNNDQ=",
+    "previous": "MDFHUk5ITVhNMEE4UFozTlg1SlFaRlMyOFM="
+  }
+}

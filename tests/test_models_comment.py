@@ -10,24 +10,8 @@ NOW = datetime.datetime.now().isoformat()
 
 
 @pytest.fixture
-def comment_json():
-    author = fake_user("author")
-    mentioned = fake_user("mentioned")
-    return {
-        "author": author,
-        "createdTime": NOW,
-        "id": fake_id("com"),
-        "lastUpdatedTime": None,
-        "text": f"Hello, @[{mentioned['id']}]!",
-        "mentioned": {
-            mentioned["id"]: {
-                "displayName": mentioned["name"],
-                "id": mentioned["id"],
-                "email": mentioned["email"],
-                "type": "user",
-            }
-        },
-    }
+def comment_json(sample_json):
+    return sample_json("Comment")
 
 
 @pytest.fixture
@@ -42,7 +26,9 @@ def comments_url(base, table):
 
 
 def test_parse(comment_json):
-    Comment.parse_obj(comment_json)
+    c = Comment.parse_obj(comment_json)
+    assert isinstance(c.created_time, datetime.datetime)
+    assert isinstance(c.last_updated_time, datetime.datetime)
 
 
 def test_missing_attributes(comment_json):

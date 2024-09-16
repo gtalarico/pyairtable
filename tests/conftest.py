@@ -1,4 +1,6 @@
+import importlib
 import json
+import re
 from collections import OrderedDict
 from pathlib import Path
 from posixpath import join as urljoin
@@ -163,11 +165,16 @@ def schema_obj(api, sample_json):
     """
 
     def _get_schema_obj(name: str, *, context: Any = None) -> Any:
-        from pyairtable.models import schema
+        if name.startswith("pyairtable."):
+            # pyairtable.models.Webhook.created_time -> ('pyairtable.models', 'Webhook.created_time')
+            match = re.match(r"(pyairtable\.[a-z_.]+)\.([A-Z].+)$", name)
+            modpath, name = match.groups()
+        else:
+            modpath = "pyairtable.models.schema"
 
         obj_name, _, obj_path = name.partition(".")
         obj_data = sample_json(obj_name)
-        obj_cls = getattr(schema, obj_name)
+        obj_cls = getattr(importlib.import_module(modpath), obj_name)
 
         if context:
             obj = obj_cls.from_api(obj_data, api, context=context)
