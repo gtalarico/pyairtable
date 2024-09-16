@@ -99,8 +99,13 @@ Changes to the ORM in 3.0
       * - ``Model._get_meta(name)``
         - ``Model.meta.get(name)``
 
+Breaking type changes
+---------------------------------------------
 
-Miscellaneous name changes
+* ``pyairtable.api.types.CreateAttachmentDict`` is now a ``Union`` instead of a ``TypedDict``,
+  which may change some type checking behavior in code that uses it.
+
+Breaking name changes
 ---------------------------------------------
 
     * - | ``pyairtable.api.enterprise.ClaimUsersResponse``

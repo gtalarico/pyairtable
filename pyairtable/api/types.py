@@ -440,6 +440,18 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
     """
     if not isinstance(obj, dict):
         raise TypeError(f"expected dict, got {type(obj)}")
+
+    # special case for handling a Union
+    if getattr(cls, "__origin__", None) is Union:
+        typeddict_classes = list(getattr(cls, "__args__", []))
+        while typeddict_cls := typeddict_classes.pop():
+            try:
+                return cast(T, assert_typed_dict(typeddict_cls, obj))
+            except pydantic.ValidationError:
+                # raise the last exception if we've tried everything
+                if not typeddict_classes:
+                    raise
+
     # mypy complains cls isn't Hashable, but it is; see https://github.com/python/mypy/issues/2412
     model = _create_model_from_typeddict(cls)  # type: ignore
     model(**obj)
