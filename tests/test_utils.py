@@ -39,11 +39,14 @@ def test_date_utils(date_obj, date_str):
 
 
 def test_attachment():
-    assert utils.attachment("https://url.com") == {"url": "https://url.com"}
-    assert utils.attachment("https://url.com", filename="test.jpg") == {
-        "url": "https://url.com",
-        "filename": "test.jpg",
-    }
+    with pytest.deprecated_call():
+        assert utils.attachment("https://url.com") == {"url": "https://url.com"}
+
+    with pytest.deprecated_call():
+        assert utils.attachment("https://url.com", filename="test.jpg") == {
+            "url": "https://url.com",
+            "filename": "test.jpg",
+        }
 
 
 @pytest.mark.parametrize(

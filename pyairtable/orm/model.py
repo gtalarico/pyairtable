@@ -684,6 +684,7 @@ class SaveResult:
             "Model.save() now returns SaveResult instead of bool; switch"
             " to checking Model.save().created instead before the 4.0 release.",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.created
 

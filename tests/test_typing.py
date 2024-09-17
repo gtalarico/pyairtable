@@ -9,6 +9,7 @@ from typing_extensions import assert_type
 
 import pyairtable
 import pyairtable.api.types as T
+import pyairtable.orm.lists as L
 from pyairtable import orm
 
 if TYPE_CHECKING:
@@ -72,7 +73,14 @@ if TYPE_CHECKING:
         logins = orm.fields.MultipleCollaboratorsField("Logins")
 
     assert_type(Actor().name, str)
-    assert_type(Actor().logins, List[T.CollaboratorDict])
+    assert_type(
+        Actor().logins,
+        L.ChangeTrackingList[Union[T.CollaboratorDict, T.CollaboratorEmailDict]],
+    )
+    Actor().logins.append({"id": "usr123"})
+    Actor().logins.append({"email": "alice@example.com"})
+    Actor().logins = [{"id": "usr123"}]
+    Actor().logins = [{"email": "alice@example.com"}]
 
     class Movie(orm.Model):
         name = orm.fields.TextField("Name")
@@ -84,9 +92,10 @@ if TYPE_CHECKING:
     movie = Movie()
     assert_type(movie.name, str)
     assert_type(movie.rating, Optional[int])
-    assert_type(movie.actors, List[Actor])
-    assert_type(movie.prequels, List[Movie])
+    assert_type(movie.actors, L.ChangeTrackingList[Actor])
+    assert_type(movie.prequels, L.ChangeTrackingList[Movie])
     assert_type(movie.prequel, Optional[Movie])
+    assert_type(movie.actors[0], Actor)
     assert_type(movie.actors[0].name, str)
 
     class EveryField(orm.Model):
@@ -137,14 +146,17 @@ if TYPE_CHECKING:
         required_select = orm.fields.RequiredSelectField("Status")
         required_url = orm.fields.RequiredUrlField("URL")
 
+    # fmt: off
     record = EveryField()
     assert_type(record.aitext, Optional[T.AITextDict])
-    assert_type(record.attachments, List[T.AttachmentDict])
+    assert_type(record.attachments, L.AttachmentsList)
+    assert_type(record.attachments[0], Union[T.AttachmentDict, T.CreateAttachmentDict])
+    assert_type(record.attachments.upload("", b""), None)
     assert_type(record.autonumber, int)
     assert_type(record.barcode, Optional[T.BarcodeDict])
     assert_type(record.button, T.ButtonDict)
     assert_type(record.checkbox, bool)
-    assert_type(record.collaborator, Optional[T.CollaboratorDict])
+    assert_type(record.collaborator, Optional[Union[T.CollaboratorDict, T.CollaboratorEmailDict]])
     assert_type(record.count, Optional[int])
     assert_type(record.created_by, T.CollaboratorDict)
     assert_type(record.created, datetime.datetime)
@@ -157,8 +169,10 @@ if TYPE_CHECKING:
     assert_type(record.integer, Optional[int])
     assert_type(record.last_modified_by, Optional[T.CollaboratorDict])
     assert_type(record.last_modified, Optional[datetime.datetime])
-    assert_type(record.multi_user, List[T.CollaboratorDict])
-    assert_type(record.multi_select, List[str])
+    assert_type(record.multi_user, L.ChangeTrackingList[Union[T.CollaboratorDict, T.CollaboratorEmailDict]])
+    assert_type(record.multi_user[0], Union[T.CollaboratorDict, T.CollaboratorEmailDict])
+    assert_type(record.multi_select, L.ChangeTrackingList[str])
+    assert_type(record.multi_select[0], str)
     assert_type(record.number, Optional[Union[int, float]])
     assert_type(record.percent, Optional[Union[int, float]])
     assert_type(record.phone, str)
@@ -168,7 +182,7 @@ if TYPE_CHECKING:
     assert_type(record.url, str)
     assert_type(record.required_aitext, T.AITextDict)
     assert_type(record.required_barcode, T.BarcodeDict)
-    assert_type(record.required_collaborator, T.CollaboratorDict)
+    assert_type(record.required_collaborator, Union[T.CollaboratorDict, T.CollaboratorEmailDict])
     assert_type(record.required_count, int)
     assert_type(record.required_currency, Union[int, float])
     assert_type(record.required_date, datetime.date)
@@ -184,3 +198,18 @@ if TYPE_CHECKING:
     assert_type(record.required_rich_text, str)
     assert_type(record.required_select, str)
     assert_type(record.required_url, str)
+    # fmt: on
+
+    # Check that the type system allows create-style dicts in all places
+    record.attachments.append({"id": "att123"})
+    record.attachments.append({"url": "example.com"})
+    record.attachments.append({"url": "example.com", "filename": "a.jpg"})
+    record.attachments = [{"id": "att123"}]
+    record.attachments = [{"url": "example.com"}]
+    record.attachments = [{"url": "example.com", "filename": "a.jpg"}]
+    record.collaborator = {"id": "usr123"}
+    record.collaborator = {"email": "alice@example.com"}
+    record.required_collaborator = {"id": "usr123"}
+    record.required_collaborator = {"email": "alice@example.com"}
+    record.multi_user.append({"id": "usr123"})
+    record.multi_user.append({"email": "alice@example.com"})

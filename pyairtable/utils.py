@@ -1,6 +1,7 @@
 import inspect
 import re
 import textwrap
+import warnings
 from datetime import date, datetime
 from functools import partial, wraps
 from typing import (
@@ -20,7 +21,7 @@ from typing import (
 import requests
 from typing_extensions import ParamSpec, Protocol
 
-from pyairtable.api.types import CreateAttachmentDict
+from pyairtable.api.types import CreateAttachmentByUrl
 
 P = ParamSpec("P")
 R = TypeVar("R", covariant=True)
@@ -72,7 +73,7 @@ def date_from_iso_str(value: str) -> date:
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
-def attachment(url: str, filename: str = "") -> CreateAttachmentDict:
+def attachment(url: str, filename: str = "") -> CreateAttachmentByUrl:
     """
     Build a ``dict`` in the expected format for creating attachments.
 
@@ -83,7 +84,7 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentDict:
     Note:
         Attachment field values **must** be an array of
         :class:`~pyairtable.api.types.AttachmentDict` or
-        :class:`~pyairtable.api.types.CreateAttachmentDict`;
+        :class:`~pyairtable.api.types.CreateAttachmentByUrl`;
         it is not valid to pass a single item to the API.
 
     Usage:
@@ -106,6 +107,11 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentDict:
 
 
     """
+    warnings.warn(
+        "attachment(url, filename) is deprecated; use {'url': url, 'filename': filename} instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return {"url": url} if not filename else {"url": url, "filename": filename}
 
 
@@ -253,3 +259,36 @@ def coerce_list_str(value: Optional[Union[str, Iterable[str]]]) -> List[str]:
     if isinstance(value, str):
         return [value]
     return list(value)
+
+
+# [[[cog]]]
+# import re
+# contents = "".join(open(cog.inFile).readlines()[:cog.firstLineNum])
+# functions = re.findall(r"^def ([a-z]\w+)\(", contents, re.MULTILINE)
+# partials = re.findall(r"^([A-Za-z]\w+) = partial\(", contents, re.MULTILINE)
+# constants = re.findall(r"^([A-Z][A-Z_]+) = ", contents, re.MULTILINE)
+# cog.outl("__all__ = [")
+# for name in sorted(functions + partials + constants):
+#     cog.outl(f'    "{name}",')
+# cog.outl("]")
+# [[[out]]]
+__all__ = [
+    "attachment",
+    "cache_unless_forced",
+    "chunked",
+    "coerce_iso_str",
+    "coerce_list_str",
+    "date_from_iso_str",
+    "date_to_iso_str",
+    "datetime_from_iso_str",
+    "datetime_to_iso_str",
+    "docstring_from",
+    "enterprise_only",
+    "is_airtable_id",
+    "is_base_id",
+    "is_field_id",
+    "is_record_id",
+    "is_table_id",
+    "is_user_id",
+]
+# [[[end]]] (checksum: 2e24ae7bd070c354cece2852ade7cdf9)

@@ -14,7 +14,9 @@ from pyairtable.testing import fake_attachment, fake_id, fake_record, fake_user
         (T.ButtonDict, {"label": "My Button", "url": "http://example.com"}),
         (T.ButtonDict, {"label": "My Button", "url": None}),
         (T.CollaboratorDict, fake_user()),
-        (T.CreateAttachmentDict, {"url": "http://example.com", "filename": "test.jpg"}),
+        (T.CreateAttachmentById, {"id": "att123"}),
+        (T.CreateAttachmentByUrl, {"url": "http://example.com"}),
+        (T.CreateAttachmentDict, {"id": "att123"}),
         (T.CreateAttachmentDict, {"url": "http://example.com"}),
         (T.CreateRecordDict, {"fields": {}}),
         (T.RecordDeletedDict, {"deleted": True, "id": fake_id()}),
@@ -35,6 +37,15 @@ def test_assert_typed_dict(cls, value):
         T.assert_typed_dicts(cls, [value, -1])
 
 
+def test_assert_typed_dict__fail_union():
+    """
+    Test that we get the correct error message when assert_typed_dict
+    fails when called with a union of TypedDicts.
+    """
+    with pytest.raises(pydantic.ValidationError):
+        T.assert_typed_dict(T.CreateAttachmentDict, {"not": "good"})
+
+
 @pytest.mark.parametrize(
     "cls,value",
     [
@@ -42,7 +53,8 @@ def test_assert_typed_dict(cls, value):
         (T.BarcodeDict, {"type": "upc"}),
         (T.ButtonDict, {}),
         (T.CollaboratorDict, {}),
-        (T.CreateAttachmentDict, {}),
+        (T.CreateAttachmentById, {}),
+        (T.CreateAttachmentByUrl, {}),
         (T.CreateRecordDict, {}),
         (T.RecordDeletedDict, {}),
         (T.RecordDict, {}),
