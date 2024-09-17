@@ -110,6 +110,7 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentByUrl:
     warnings.warn(
         "attachment(url, filename) is deprecated; use {'url': url, 'filename': filename} instead.",
         DeprecationWarning,
+        stacklevel=2,
     )
     return {"url": url} if not filename else {"url": url, "filename": filename}
 

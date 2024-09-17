@@ -138,11 +138,11 @@ def test_integration_orm(Contact, Address):
     )
 
     assert contact.first_name == "John"
-    assert contact.save()
+    assert contact.save().created
     assert contact.id
 
     contact.first_name = "Not Gui"
-    assert not contact.save()
+    assert not contact.save().created
 
     rv_address = contact.address[0]
     assert rv_address.exists()

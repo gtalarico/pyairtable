@@ -281,7 +281,14 @@ def test_integration_formula_composition(table: Table, cols):
 def test_integration_attachment(table, cols, valid_img_url):
     rec = table.create({cols.ATTACHMENT: [{"url": valid_img_url}]})
     rv_get = table.get(rec["id"])
-    assert rv_get["fields"]["attachment"][0]["url"].endswith("logo.png")
+    att = rv_get["fields"]["attachment"][0]
+    assert att["filename"] in (
+        valid_img_url.rpartition("/")[-1],  # sometimes taken from URL
+        "a." + valid_img_url.rpartition(".")[-1],  # default if not
+    )
+    original = requests.get(valid_img_url).content
+    attached = requests.get(att["url"]).content
+    assert original == attached
 
 
 def test_integration_attachment_multiple(table, cols, valid_img_url):
