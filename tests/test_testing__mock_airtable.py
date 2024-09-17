@@ -11,18 +11,6 @@ def mock_airtable(requests_mock):
         yield m
 
 
-@pytest.fixture
-def mock_records(mock_airtable, table):
-    mock_records = [T.fake_record() for _ in range(5)]
-    mock_airtable.add_records(table, mock_records)
-    return mock_records
-
-
-@pytest.fixture
-def mock_record(mock_records):
-    return mock_records[0]
-
-
 def test_not_reentrant():
     """
     Test that nested MockAirtable contexts raise an error.
@@ -44,19 +32,22 @@ def test_multiple_nested_contexts():
                 pass
 
 
-def test_add_records__ids(mock_airtable, mock_records, table):
-    mock_airtable.add_records(table.base.id, table.name, mock_records)
-    assert table.all() == mock_records
+def test_add_records__ids(mock_airtable, table):
+    fake_records = [T.fake_record() for _ in range(3)]
+    mock_airtable.add_records(table.base.id, table.name, fake_records)
+    assert table.all() == fake_records
 
 
-def test_add_records__ids_kwarg(mock_airtable, mock_records, table):
-    mock_airtable.add_records(table.base.id, table.name, records=mock_records)
-    assert table.all() == mock_records
+def test_add_records__ids_kwarg(mock_airtable, table):
+    fake_records = [T.fake_record() for _ in range(3)]
+    mock_airtable.add_records(table.base.id, table.name, records=fake_records)
+    assert table.all() == fake_records
 
 
-def test_add_records__kwarg(mock_airtable, mock_records, table):
-    mock_airtable.add_records(table, records=mock_records)
-    assert table.all() == mock_records
+def test_add_records__kwarg(mock_airtable, table):
+    fake_records = [T.fake_record() for _ in range(3)]
+    mock_airtable.add_records(table, records=fake_records)
+    assert table.all() == fake_records
 
 
 def test_add_records__missing_kwarg(mock_airtable, table):
@@ -80,6 +71,42 @@ def test_add_records__invalid_kwarg(mock_airtable, table):
         match="add_records got unexpected keyword arguments: asdf",
     ):
         mock_airtable.add_records(table, records=[], asdf=1)
+
+
+@pytest.fixture
+def mock_records(mock_airtable, table):
+    mock_records = [T.fake_record() for _ in range(5)]
+    mock_airtable.add_records(table, mock_records)
+    return mock_records
+
+
+@pytest.fixture
+def mock_record(mock_records):
+    return mock_records[0]
+
+
+def test_set_records(mock_airtable, mock_records, table):
+    replace = [T.fake_record()]
+    mock_airtable.set_records(table, replace)
+    assert table.all() == replace
+
+
+def test_set_records__ids(mock_airtable, mock_records, table):
+    replace = [T.fake_record()]
+    mock_airtable.set_records(table.base.id, table.name, replace)
+    assert table.all() == replace
+
+
+def test_set_records__ids_kwarg(mock_airtable, mock_records, table):
+    replace = [T.fake_record()]
+    mock_airtable.set_records(table.base.id, table.name, records=replace)
+    assert table.all() == replace
+
+
+def test_set_records__kwarg(mock_airtable, mock_records, table):
+    replace = [T.fake_record()]
+    mock_airtable.set_records(table, records=replace)
+    assert table.all() == replace
 
 
 @pytest.mark.parametrize(

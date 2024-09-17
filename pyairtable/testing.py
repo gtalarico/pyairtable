@@ -408,6 +408,46 @@ class MockAirtable:
         )
         return coerced
 
+    @overload
+    def set_records(
+        self,
+        base_id: str,
+        table_id_or_name: str,
+        /,
+        records: Iterable[Dict[str, Any]],
+    ) -> None: ...
+
+    @overload
+    def set_records(
+        self,
+        table: Table,
+        /,
+        records: Iterable[Dict[str, Any]],
+    ) -> None: ...
+
+    def set_records(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Set the mock records for a particular base and table, replacing any existing records.
+        See :meth:`~MockAirtable.add_records` for more information.
+
+        Args:
+            base_id: |arg_base_id|
+                *This must be the first positional argument.*
+            table_id_or_name: |arg_table_id_or_name|
+                This should be the same ID or name used in the code under test.
+                *This must be the second positional argument.*
+            table: An instance of :class:`~pyairtable.Table`.
+                *This is an alternative to providing base and table IDs,
+                and must be the first positional argument.*
+            records: A sequence of :class:`~pyairtable.api.types.RecordDict`,
+                :class:`~pyairtable.api.types.UpdateRecordDict`,
+                :class:`~pyairtable.api.types.CreateRecordDict`,
+                or :class:`~pyairtable.api.types.Fields`.
+        """
+        base_id, table_name, records = _extract_args(args, kwargs, ["records"])
+        self.records[(base_id, table_name)].clear()
+        self.add_records(base_id, table_name, records=records)
+
     def clear(self) -> None:
         """
         Clear all records from the mock Airtable instance.
