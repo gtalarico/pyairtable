@@ -7,6 +7,7 @@ users, and attachments, as well as to mock the Airtable API itself.
 
 import datetime
 import inspect
+import mimetypes
 import random
 import string
 from collections import defaultdict
@@ -27,6 +28,7 @@ from typing import (
 )
 from unittest import mock
 
+import urllib3
 from typing_extensions import Self, TypeAlias
 
 from pyairtable.api import retrying
@@ -176,12 +178,15 @@ def fake_attachment(url: str = "", filename: str = "") -> AttachmentDict:
         'type': 'text/plain',
     }
     """
+    if not filename:
+        filename = (urllib3.util.parse_url(url).path or "").split("/")[-1]
+        filename = filename or "foo.txt"
     return {
         "id": fake_id("att"),
         "url": url or "https://example.com/",
-        "filename": filename or "foo.txt",
+        "filename": filename,
         "size": 100,
-        "type": "text/plain",
+        "type": mimetypes.guess_type(filename)[0] or "text/plain",
     }
 
 
