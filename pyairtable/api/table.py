@@ -1,6 +1,10 @@
+import base64
+import mimetypes
+import os
 import posixpath
 import urllib.parse
 import warnings
+from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Union, overload
 
 import pyairtable.models
@@ -11,6 +15,7 @@ from pyairtable.api.types import (
     RecordDict,
     RecordId,
     UpdateRecordDict,
+    UploadAttachmentResultDict,
     UpsertResultDict,
     WritableFields,
     assert_typed_dict,
@@ -657,12 +662,22 @@ class Table:
     def create_field(
         self,
         name: str,
-        type: str,
+        field_type: str,
         description: Optional[str] = None,
         options: Optional[Dict[str, Any]] = None,
     ) -> FieldSchema:
         """
         Create a field on the table.
+
+        Usage:
+            >>> table.create_field("Attachments", "multipleAttachment")
+            FieldSchema(
+                id='fldslc6jG0XedVMNx',
+                name='Attachments',
+                type='multipleAttachment',
+                description=None,
+                options=MultipleAttachmentsFieldOptions(is_reversed=False)
+            )
 
         Args:
             name: The unique name of the field.
@@ -671,7 +686,7 @@ class Table:
             options: Only available for some field types. For more information, read about the
                 `Airtable field model <https://airtable.com/developers/web/api/field-model>`__.
         """
-        request: Dict[str, Any] = {"name": name, "type": type}
+        request: Dict[str, Any] = {"name": name, "type": field_type}
         if description:
             request["description"] = description
         if options:
@@ -690,6 +705,73 @@ class Table:
         if self._schema:
             self._schema.fields.append(field_schema)
         return field_schema
+
+    def upload_attachment(
+        self,
+        record_id: RecordId,
+        field: str,
+        filename: Union[str, Path],
+        content: Optional[Union[str, bytes]] = None,
+        content_type: Optional[str] = None,
+    ) -> UploadAttachmentResultDict:
+        """
+        Upload an attachment to the Airtable API, either by supplying the path to the file
+        or by providing the content directly as a variable.
+
+        See `Upload attachment <https://airtable.com/developers/web/api/upload-attachment>`__.
+
+        Usage:
+            >>> table.upload_attachment("recAdw9EjV90xbZ", "Attachments", "/tmp/example.jpg")
+            {
+                'id': 'recAdw9EjV90xbZ',
+                'createdTime': '2023-05-22T21:24:15.333134Z',
+                'fields': {
+                    'Attachments': [
+                        {
+                            'id': 'attW8eG2x0ew1Af',
+                            'url': 'https://content.airtable.com/...',
+                            'filename': 'example.jpg'
+                        }
+                    ]
+                }
+            }
+
+        Args:
+            record_id: |arg_record_id|
+            field: The ID or name of the ``multipleAttachments`` type field.
+            filename: The path to the file to upload. If ``content`` is provided, this
+                argument is still used to tell Airtable what name to give the file.
+            content: The content of the file as a string or bytes object. If no value
+                is provided, pyAirtable will attempt to read the contents of ``filename``.
+            content_type: The MIME type of the file. If not provided, the library will attempt to
+                guess the content type based on ``filename``.
+
+        Returns:
+            A full list of attachments in the given field, including the new attachment.
+        """
+        if content is None:
+            with open(filename, "rb") as fp:
+                content = fp.read()
+            return self.upload_attachment(
+                record_id, field, filename, content, content_type
+            )
+
+        filename = os.path.basename(filename)
+        if content_type is None:
+            if not (content_type := mimetypes.guess_type(filename)[0]):
+                warnings.warn(f"Could not guess content-type for {filename!r}")
+                content_type = "application/octet-stream"
+
+        # TODO: figure out how to handle the atypical subdomain in a more graceful fashion
+        url = f"https://content.airtable.com/v0/{self.base.id}/{record_id}/{field}/uploadAttachment"
+        content = content.encode() if isinstance(content, str) else content
+        payload = {
+            "contentType": content_type,
+            "filename": filename,
+            "file": base64.encodebytes(content).decode("utf8"),  # API needs Unicode
+        }
+        response = self.api.post(url, json=payload)
+        return assert_typed_dict(UploadAttachmentResultDict, response)
 
 
 # These are at the bottom of the module to avoid circular imports

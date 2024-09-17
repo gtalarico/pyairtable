@@ -56,10 +56,10 @@ class Webhook(CanDeleteModel, url="bases/{base.id}/webhooks/{self.id}"):
     are_notifications_enabled: bool
     cursor_for_next_payload: int
     is_hook_enabled: bool
-    last_successful_notification_time: Optional[str]
+    last_successful_notification_time: Optional[datetime]
     notification_url: Optional[str]
     last_notification_result: Optional["WebhookNotificationResult"]
-    expiration_time: Optional[str]
+    expiration_time: Optional[datetime]
     specification: "WebhookSpecification"
 
     def enable_notifications(self) -> None:

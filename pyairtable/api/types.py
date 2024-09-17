@@ -76,7 +76,20 @@ class AttachmentDict(TypedDict, total=False):
     thumbnails: Dict[str, Dict[str, Union[str, int]]]
 
 
-class CreateAttachmentDict(TypedDict, total=False):
+class CreateAttachmentById(TypedDict):
+    """
+    A ``dict`` representing a new attachment to be written to the Airtable API.
+
+    >>> new_attachment = {"id": "attW8eG2x0ew1Af"}
+    >>> existing = record["fields"].setdefault("Attachments", [])
+    >>> existing.append(new_attachment)
+    >>> table.update(existing["id"], existing["fields"])
+    """
+
+    id: str
+
+
+class CreateAttachmentByUrl(TypedDict, total=False):
     """
     A ``dict`` representing a new attachment to be written to the Airtable API.
 
@@ -91,6 +104,9 @@ class CreateAttachmentDict(TypedDict, total=False):
 
     url: Required[str]
     filename: str
+
+
+CreateAttachmentDict: TypeAlias = Union[CreateAttachmentById, CreateAttachmentByUrl]
 
 
 class BarcodeDict(TypedDict, total=False):
@@ -353,6 +369,33 @@ class UserAndScopesDict(TypedDict, total=False):
     scopes: List[str]
 
 
+class UploadAttachmentResultDict(TypedDict):
+    """
+    A ``dict`` representing the payload returned by
+    `Upload attachment <https://airtable.com/developers/web/api/upload-attachment>`__.
+
+    Usage:
+        >>> table.upload_attachment("recAdw9EjV90xbZ", "Attachments", "/tmp/example.jpg")
+        {
+            'id': 'recAdw9EjV90xbZ',
+            'createdTime': '2023-05-22T21:24:15.333134Z',
+            'fields': {
+                'Attachments': [
+                    {
+                        'id': 'attW8eG2x0ew1Af',
+                        'url': 'https://content.airtable.com/...',
+                        'filename': 'example.jpg'
+                    }
+                ]
+            }
+        }
+    """
+
+    id: RecordId
+    createdTime: str
+    fields: Dict[str, List[AttachmentDict]]
+
+
 @lru_cache
 def _create_model_from_typeddict(cls: Type[T]) -> Type[pydantic.BaseModel]:
     """
@@ -400,6 +443,18 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
     """
     if not isinstance(obj, dict):
         raise TypeError(f"expected dict, got {type(obj)}")
+
+    # special case for handling a Union
+    if getattr(cls, "__origin__", None) is Union:
+        typeddict_classes = list(getattr(cls, "__args__", []))
+        while typeddict_cls := typeddict_classes.pop():
+            try:
+                return cast(T, assert_typed_dict(typeddict_cls, obj))
+            except pydantic.ValidationError:
+                # raise the last exception if we've tried everything
+                if not typeddict_classes:
+                    raise
+
     # mypy complains cls isn't Hashable, but it is; see https://github.com/python/mypy/issues/2412
     model = _create_model_from_typeddict(cls)  # type: ignore
     model(**obj)

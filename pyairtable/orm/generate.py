@@ -144,7 +144,7 @@ class FieldBuilder:
             try:
                 self.lookup[self.schema.options.linked_table_id]
             except KeyError:
-                return fields._ValidatingListField
+                return fields._ListField
         return fields.FIELD_TYPES_TO_CLASSES[field_type]
 
     def __str__(self) -> str:
@@ -162,7 +162,7 @@ class FieldBuilder:
             kwargs["model"] = linked_model.class_name
             generic = repr(linked_model.class_name)
 
-        if cls is fields._ValidatingListField:
+        if cls is fields._ListField:
             generic = "str"
 
         if self.schema.type in ("formula", "rollup"):

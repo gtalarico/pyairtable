@@ -583,6 +583,37 @@ comments on a particular record, just like their :class:`~pyairtable.Table` equi
     >>> comment.delete()
 
 
+Attachments in the ORM
+----------------------
+
+When retrieving attachments from the API, pyAirtable will return a list of
+:class:`~pyairtable.api.types.AttachmentDict`.
+
+    >>> model = YourModel.from_id("recMNxslc6jG0XedV")
+    >>> model.attachments
+    [
+        {
+          'id': 'attMNxslc6jG0XedV',
+          'url': 'https://dl.airtable.com/...',
+          'filename': 'example.jpg',
+          'size': 12345,
+          'type': 'image/jpeg'
+        },
+        ...
+    ]
+
+You can append your own values to this list, and as long as they have
+either a ``"id"`` or ``"url"`` key, they will be saved back to the API.
+
+    >>> model.attachments.append({"url": "https://example.com/example.jpg"})
+    >>> model.save()
+
+You can also use :meth:`~pyairtable.orm.lists.AttachmentsList.upload` to
+directly upload content to Airtable:
+
+.. automethod:: pyairtable.orm.lists.AttachmentsList.upload
+
+
 ORM Limitations
 ------------------
 

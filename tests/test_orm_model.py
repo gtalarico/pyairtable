@@ -10,6 +10,8 @@ from pyairtable.orm import fields as f
 from pyairtable.orm.model import SaveResult
 from pyairtable.testing import fake_id, fake_meta, fake_record
 
+NOW = datetime.now(timezone.utc).isoformat()
+
 
 class FakeModel(Model):
     Meta = fake_meta()
