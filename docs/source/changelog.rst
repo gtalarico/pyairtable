@@ -46,6 +46,7 @@ Changelog
 * Added support for `Upload attachment <https://airtable.com/developers/web/api/upload-attachment>`_
   via :meth:`Table.upload_attachment <pyairtable.Table.upload_attachment>`
   or :meth:`AttachmentsList.upload <pyairtable.orm.lists.AttachmentsList.upload>`.
+* Added :class:`pyairtable.testing.MockAirtable` for easier testing.
 
 2.3.3 (2024-03-22)
 ------------------------

@@ -3,6 +3,7 @@ from functools import partialmethod
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import requests
+from requests import PreparedRequest
 from requests.sessions import Session
 from typing_extensions import TypeAlias
 
@@ -273,13 +274,16 @@ class Api:
                 json=json,
             )
 
-        response = self.session.send(prepared, timeout=self.timeout)
-        return self._process_response(response)
+        return self._perform_request(prepared)
 
     get = partialmethod(request, "GET")
     post = partialmethod(request, "POST")
     patch = partialmethod(request, "PATCH")
     delete = partialmethod(request, "DELETE")
+
+    def _perform_request(self, prepared: PreparedRequest) -> Any:
+        response = self.session.send(prepared, timeout=self.timeout)
+        return self._process_response(response)
 
     def _process_response(self, response: requests.Response) -> Any:
         try:

@@ -299,3 +299,14 @@ and :meth:`~pyairtable.Table.add_comment` methods will return instances of
     >>> table.comments("recMNxslc6jG0XedV")[0].text
     'Never mind!'
     >>> comment.delete()
+
+Testing Your Code
+-----------------
+
+pyAirtable provides a :class:`~pyairtable.testing.MockAirtable` class that can be used to
+test your code without making real requests to Airtable.
+
+.. autoclass:: pyairtable.testing.MockAirtable
+   :noindex:
+
+For more information, see :mod:`pyairtable.testing`.
