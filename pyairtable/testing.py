@@ -206,7 +206,7 @@ class MockAirtable:
         table = Api.base("baseId").table("tableName")
 
         with MockAirtable() as m:
-            m.add_record("baseId", "tableName", {"Name": "Alice"})
+            m.add_records(table, [{"Name": "Alice"}])
             records = table.all()
             assert len(table.all()) == 1
 
