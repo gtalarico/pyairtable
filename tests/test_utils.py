@@ -4,6 +4,7 @@ from functools import partial
 import pytest
 
 from pyairtable import utils
+from pyairtable.testing import fake_record
 
 utc_tz = partial(datetime, tzinfo=timezone.utc)
 
@@ -97,3 +98,53 @@ def test_converter(func, input, expected):
         return
 
     assert func(input) == expected
+
+
+def test_fieldgetter():
+    get_a = utils.fieldgetter("A")
+    get_abc = utils.fieldgetter("A", "B", "C")
+
+    assert get_a(fake_record(A=1)) == 1
+    assert get_a({"fields": {"A": 1}}) == 1
+    assert get_abc(fake_record(A=1, C=3)) == (1, None, 3)
+    assert get_abc({"fields": {"A": 1, "C": 3}}) == (1, None, 3)
+
+    record = fake_record(A="one", B="two")
+    assert get_a(record) == "one"
+    assert get_abc(record) == ("one", "two", None)
+    assert utils.fieldgetter("id")(record) == record["id"]
+    assert utils.fieldgetter("createdTime")(record) == record["createdTime"]
+
+
+def test_fieldgetter__required():
+    """
+    Test that required=True means all fields are required.
+    """
+    require_ab = utils.fieldgetter("A", "B", required=True)
+    record = fake_record(A="one", B="two")
+    assert require_ab(record) == ("one", "two")
+    with pytest.raises(KeyError):
+        require_ab(fake_record(A="one"))
+
+
+def test_fieldgetter__required_list():
+    """
+    Test that required=["A", "B"] means only A and B are required.
+    """
+    get_abc_require_ab = utils.fieldgetter("A", "B", "C", required=["A", "B"])
+    record = fake_record(A="one", B="two")
+    assert get_abc_require_ab(record) == ("one", "two", None)
+    with pytest.raises(KeyError):
+        get_abc_require_ab(fake_record(A="one", C="three"))
+
+
+def test_fieldgetter__required_str():
+    """
+    Test that required="Bravo" means only Bravo is required,
+    rather than ["B", "r", "a", "v", "o"].
+    """
+    get_abc_require_b = utils.fieldgetter("Alpha", "Bravo", required="Bravo")
+    record = fake_record(Alpha="one", Bravo="two")
+    assert get_abc_require_b(record) == ("one", "two")
+    with pytest.raises(KeyError):
+        get_abc_require_b(fake_record(Alpha="one"))

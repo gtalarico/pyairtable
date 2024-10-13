@@ -107,8 +107,7 @@ class Base:
         Build a new :class:`Table` instance using this instance of :class:`Base`.
 
         Args:
-            id_or_name: An Airtable table ID or name. Table name should be unencoded,
-                as shown on browser.
+            id_or_name: |arg_table_id_or_name|
             validate: |kwarg_validate_metadata|
             force: |kwarg_force_metadata|
 

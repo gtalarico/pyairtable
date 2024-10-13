@@ -319,6 +319,9 @@ class UpdateRecordDict(TypedDict):
     fields: WritableFields
 
 
+AnyRecordDict: TypeAlias = Union[RecordDict, CreateRecordDict, UpdateRecordDict]
+
+
 class RecordDeletedDict(TypedDict):
     """
     A ``dict`` representing the payload returned by the Airtable API to confirm a deletion.

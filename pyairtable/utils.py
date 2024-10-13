@@ -21,7 +21,7 @@ from typing import (
 import requests
 from typing_extensions import ParamSpec, Protocol
 
-from pyairtable.api.types import CreateAttachmentByUrl
+from pyairtable.api.types import AnyRecordDict, CreateAttachmentByUrl, FieldValue
 
 P = ParamSpec("P")
 R = TypeVar("R", covariant=True)
@@ -89,7 +89,7 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentByUrl:
 
     Usage:
         >>> table = Table(...)
-        >>> profile_url = "https://myprofile.com/id/profile.jpg
+        >>> profile_url = "https://example.com/profile.jpg"
         >>> rec = table.create({"Profile Photo": [attachment(profile_url)]})
         {
             'id': 'recZXOZ5gT9vVGHfL',
@@ -97,8 +97,8 @@ def attachment(url: str, filename: str = "") -> CreateAttachmentByUrl:
                 'attachment': [
                     {
                         'id': 'attu6kbaST3wUuNTA',
-                        'url': 'https://aws1.discourse-cdn.com/airtable/original/2X/4/411e4fac00df06a5e316a0585a831549e11d0705.png',
-                        'filename': '411e4fac00df06a5e316a0585a831549e11d0705.png'
+                        'url': 'https://content.airtable.com/...',
+                        'filename': 'profile.jpg'
                     }
                 ]
             },
@@ -206,13 +206,13 @@ def docstring_from(obj: Any, append: str = "") -> Callable[[F], F]:
     return _wrapper
 
 
-class FetchMethod(Protocol, Generic[C, R]):
+class _FetchMethod(Protocol, Generic[C, R]):
     def __get__(self, instance: C, owner: Any) -> Callable[..., R]: ...
 
     def __call__(self_, self: C, *, force: bool = False) -> R: ...
 
 
-def cache_unless_forced(func: Callable[[C], R]) -> FetchMethod[C, R]:
+def cache_unless_forced(func: Callable[[C], R]) -> _FetchMethod[C, R]:
     """
     Wrap a method (e.g. ``Base.shares()``) in a decorator that will save
     a memoized version of the return value for future reuse, but will also
@@ -232,7 +232,7 @@ def cache_unless_forced(func: Callable[[C], R]) -> FetchMethod[C, R]:
     _inner.__annotations__["force"] = bool
     _append_docstring_text(_inner, "Args:\n\tforce: |kwarg_force_metadata|")
 
-    return cast(FetchMethod[C, R], _inner)
+    return cast(_FetchMethod[C, R], _inner)
 
 
 def coerce_iso_str(value: Any) -> Optional[str]:
@@ -261,6 +261,56 @@ def coerce_list_str(value: Optional[Union[str, Iterable[str]]]) -> List[str]:
     return list(value)
 
 
+def fieldgetter(
+    *fields: str,
+    required: Union[bool, Iterable[str]] = False,
+) -> Callable[[AnyRecordDict], Any]:
+    """
+    Create a function that extracts ID, created time, or field values from a record.
+    Intended to be used in similar situations as
+    `operator.itemgetter <https://docs.python.org/3/library/operator.html#operator.itemgetter>`_.
+
+    >>> record = {"id": "rec001", "fields": {"Name": "Alice"}}
+    >>> fieldgetter("Name")(record)
+    'Alice'
+    >>> fieldgetter("id")(record)
+    'rec001'
+    >>> fieldgetter("id", "Name", "Missing")(record)
+    ('rec001', 'Alice', None)
+
+    Args:
+        fields: The field names to extract from the record. The values
+            ``"id"`` and ``"createdTime"`` are special cased; all other
+            values are interpreted as field names.
+        required: If True, will raise KeyError if a value is missing.
+            If False, missing values will return as None.
+            If a sequence of field names is provided, only those names
+            will be required.
+    """
+    if isinstance(required, str):
+        required = {required}
+    elif required is True:
+        required = set(fields)
+    elif required is False:
+        required = []
+    else:
+        required = set(required)
+
+    def _get_field(record: AnyRecordDict, field: str) -> FieldValue:
+        src = record if field in ("id", "createdTime") else record["fields"]
+        if field in required and field not in src:
+            raise KeyError(field)
+        return src.get(field)
+
+    if len(fields) == 1:
+        return partial(_get_field, field=fields[0])
+
+    def _getter(record: AnyRecordDict) -> Any:
+        return tuple(_get_field(record, field) for field in fields)
+
+    return _getter
+
+
 # [[[cog]]]
 # import re
 # contents = "".join(open(cog.inFile).readlines()[:cog.firstLineNum])
@@ -284,6 +334,7 @@ __all__ = [
     "datetime_to_iso_str",
     "docstring_from",
     "enterprise_only",
+    "fieldgetter",
     "is_airtable_id",
     "is_base_id",
     "is_field_id",
@@ -291,4 +342,4 @@ __all__ = [
     "is_table_id",
     "is_user_id",
 ]
-# [[[end]]] (checksum: 2e24ae7bd070c354cece2852ade7cdf9)
+# [[[end]]] (checksum: 7cf950d19fee128ae3f395ddbc475c0f)

@@ -2,6 +2,9 @@
 
 .. |arg_record_id| replace:: An Airtable record ID.
 
+.. |arg_table_id_or_name| replace:: An Airtable table ID or name.
+        Table name should be unencoded, as shown on browser.
+
 .. |kwarg_view| replace:: The name or ID of a view.
     If set, only the records in that view will be returned.
     The records will be sorted according to the order of the view.
