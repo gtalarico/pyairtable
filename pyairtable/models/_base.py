@@ -24,9 +24,6 @@ class AirtableModel(pydantic.BaseModel):
         # Allow both base_invite_links= and baseInviteLinks= in constructor
         allow_population_by_field_name = True
 
-        # We'll assume this in a couple different places
-        underscore_attrs_are_private = True
-
     _raw: Any = pydantic.PrivateAttr()
 
     def __init__(self, **data: Any) -> None:
@@ -125,7 +122,7 @@ class RestfulModel(AirtableModel):
 
     _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
     _url: str = pydantic.PrivateAttr(default="")
-    _url_context: Any = None
+    _url_context: Any = pydantic.PrivateAttr(default=None)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
