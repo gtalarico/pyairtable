@@ -6,6 +6,11 @@ sphinxext-opengraph
 revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@40f4b09fa5c199e3844153ef973a1155a56981dd
 sphinx-autodoc-typehints
 autodoc-pydantic<2
+sphinxcontrib-applehelp==1.0.4
+sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-serializinghtml==1.1.5
 
 # Packaging
 wheel==0.38.1
