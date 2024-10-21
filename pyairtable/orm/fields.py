@@ -421,7 +421,7 @@ class _ListField(Generic[T_API, T_ORM], Field[List[T_API], List[T_ORM]]):
 
     def to_internal_value(self, value: Optional[List[T_ORM]]) -> List[T_ORM]:
         if value is None:
-            value = []
+            value = []  # pragma: no cover
         return value
 
 

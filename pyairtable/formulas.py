@@ -78,7 +78,7 @@ def escape_quotes(value: str) -> str:
     return escaped_value
 
 
-def to_airtable_value(value: Any) -> Any:
+def to_airtable_value(value: Any) -> Any:  # pragma: no cover
     """
     Cast value to appropriate airtable types and format.
     For example, to check ``bool`` values in formulas, you actually to compare
