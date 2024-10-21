@@ -43,10 +43,19 @@ Changelog
 * Changed the return type of :meth:`Model.save <pyairtable.orm.Model.save>`
   from ``bool`` to :class:`~pyairtable.orm.SaveResult`.
   - `PR #387 <https://github.com/gtalarico/pyairtable/pull/387>`_
+* Added :class:`pyairtable.testing.MockAirtable` for easier testing.
+  - `PR #388 <https://github.com/gtalarico/pyairtable/pull/388>`_
 * Added support for `Upload attachment <https://airtable.com/developers/web/api/upload-attachment>`_
   via :meth:`Table.upload_attachment <pyairtable.Table.upload_attachment>`
   or :meth:`AttachmentsList.upload <pyairtable.orm.lists.AttachmentsList.upload>`.
-* Added :class:`pyairtable.testing.MockAirtable` for easier testing.
+  - `PR #389 <https://github.com/gtalarico/pyairtable/pull/389>`_
+
+2.3.4 (2024-10-21)
+------------------------
+
+* Fixed a crash at import time under Python 3.13.
+  - `PR #395 <https://github.com/gtalarico/pyairtable/pull/395>`_,
+    `PR #396 <https://github.com/gtalarico/pyairtable/pull/396>`_.
 
 2.3.3 (2024-03-22)
 ------------------------
