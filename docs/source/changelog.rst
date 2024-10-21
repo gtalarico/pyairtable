@@ -2,6 +2,12 @@
 Changelog
 =========
 
+2.3.4 (2024-10-21)
+------------------------
+
+* Fixed a crash at import time under Python 3.13.
+  - `PR #396 <https://github.com/gtalarico/pyairtable/pull/396>`_.
+
 2.3.3 (2024-03-22)
 ------------------------
 
