@@ -117,7 +117,7 @@ def cascade_api(
         obj._set_api(api, context=context)
 
     # Find and apply API/context to nested models in every Pydantic field.
-    for field_name in type(obj).__fields__:
+    for field_name in type(obj).model_fields:
         if field_value := getattr(obj, field_name, None):
             cascade_api(field_value, api, context=context)
 
@@ -300,7 +300,7 @@ def update_forward_refs(
         if id(obj) in memo:
             return
         memo.add(id(obj))
-        obj.update_forward_refs()
+        obj.model_rebuild()
         return update_forward_refs(vars(obj), memo=memo)
     # If it's a mapping, update refs for any AirtableModel instances.
     for value in obj.values():
