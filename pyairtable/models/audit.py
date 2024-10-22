@@ -18,8 +18,8 @@ class AuditLogResponse(AirtableModel):
     pagination: Optional["AuditLogResponse.Pagination"] = None
 
     class Pagination(AirtableModel):
-        next: Optional[str]
-        previous: Optional[str]
+        next: Optional[str] = None
+        previous: Optional[str] = None
 
 
 class AuditLogEvent(AirtableModel):

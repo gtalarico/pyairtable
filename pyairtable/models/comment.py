@@ -54,7 +54,7 @@ class Comment(
     created_time: datetime
 
     #: The ISO 8601 timestamp of when the comment was last edited.
-    last_updated_time: Optional[datetime]
+    last_updated_time: Optional[datetime] = None
 
     #: The account which created the comment.
     author: Collaborator

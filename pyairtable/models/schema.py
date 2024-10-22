@@ -24,10 +24,10 @@ _FD = partial(pydantic.Field, default_factory=dict)
 def _F(classname: str, **kwargs: Any) -> Any:
     def _create_default_from_classname() -> Any:
         this_module = importlib.import_module(__name__)
-        obj = this_module
+        obj: Any = this_module
         for segment in classname.split("."):
             obj = getattr(obj, segment)
-        return obj
+        return obj()
 
     kwargs["default_factory"] = _create_default_from_classname
     return pydantic.Field(**kwargs)
@@ -180,7 +180,7 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
         url="meta/bases/{base.id}/interfaces/{key}",
     ):
         created_time: datetime
-        first_publish_time: Optional[datetime]
+        first_publish_time: Optional[datetime] = None
         group_collaborators: List["GroupCollaborator"] = _FL()
         individual_collaborators: List["IndividualCollaborator"] = _FL()
         invite_links: List["InterfaceInviteLink"] = _FL()
@@ -784,8 +784,8 @@ class FormulaFieldConfig(AirtableModel):
 class FormulaFieldOptions(AirtableModel):
     formula: str
     is_valid: bool
-    referenced_field_ids: Optional[List[str]]
-    result: Optional["FieldConfig"]
+    referenced_field_ids: Optional[List[str]] = None
+    result: Optional["FieldConfig"] = None
 
 
 class LastModifiedByFieldConfig(AirtableModel):
@@ -807,8 +807,8 @@ class LastModifiedTimeFieldConfig(AirtableModel):
 
 class LastModifiedTimeFieldOptions(AirtableModel):
     is_valid: bool
-    referenced_field_ids: Optional[List[str]]
-    result: Optional[Union["DateFieldConfig", "DateTimeFieldConfig"]]
+    referenced_field_ids: Optional[List[str]] = None
+    result: Optional[Union["DateFieldConfig", "DateTimeFieldConfig"]] = None
 
 
 class ManualSortFieldConfig(AirtableModel):
@@ -862,10 +862,10 @@ class MultipleLookupValuesFieldConfig(AirtableModel):
 
 
 class MultipleLookupValuesFieldOptions(AirtableModel):
-    field_id_in_linked_table: Optional[str] = None
     is_valid: bool
+    field_id_in_linked_table: Optional[str] = None
     record_link_field_id: Optional[str] = None
-    result: Optional["FieldConfig"]
+    result: Optional["FieldConfig"] = None
 
 
 class MultipleRecordLinksFieldConfig(AirtableModel):
@@ -960,8 +960,8 @@ class RollupFieldOptions(AirtableModel):
     field_id_in_linked_table: Optional[str] = None
     is_valid: bool
     record_link_field_id: Optional[str] = None
-    referenced_field_ids: Optional[List[str]]
-    result: Optional["FieldConfig"]
+    referenced_field_ids: Optional[List[str]] = None
+    result: Optional["FieldConfig"] = None
 
 
 class SingleCollaboratorFieldConfig(AirtableModel):
@@ -1013,7 +1013,7 @@ class UnknownFieldConfig(AirtableModel):
     """
 
     type: str
-    options: Optional[Dict[str, Any]]
+    options: Optional[Dict[str, Any]] = None
 
 
 class _FieldSchemaBase(
