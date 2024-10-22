@@ -61,7 +61,7 @@ def test_lookup_field_type_annotation(result_schema, expected):
         "type": "multipleLookupValues",
         "options": {"isValid": True, "result": result_schema},
     }
-    obj = schema.MultipleLookupValuesFieldSchema.parse_obj(struct)
+    obj = schema.MultipleLookupValuesFieldSchema.model_validate(struct)
     assert generate.lookup_field_type_annotation(obj) == expected
 
 

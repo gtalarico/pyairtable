@@ -53,7 +53,7 @@ class Enterprise:
         params = {"include": ["collaborations"] if collaborations else []}
         url = self.api.build_url(f"meta/groups/{group_id}")
         payload = self.api.get(url, params=params)
-        return UserGroup.parse_obj(payload)
+        return UserGroup.model_validate(payload)
 
     def user(self, id_or_email: str, collaborations: bool = True) -> UserInfo:
         """
@@ -219,7 +219,7 @@ class Enterprise:
             offset_field=offset_field,
         )
         for count, response in enumerate(iter_requests, start=1):
-            parsed = AuditLogResponse.parse_obj(response)
+            parsed = AuditLogResponse.model_validate(response)
             yield parsed
             if not parsed.events:
                 return

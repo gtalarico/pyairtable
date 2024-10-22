@@ -17,7 +17,7 @@ NOW = datetime.now(timezone.utc).isoformat()
 
 @pytest.fixture()
 def table_schema(sample_json, api, base) -> TableSchema:
-    return TableSchema.parse_obj(sample_json("TableSchema"))
+    return TableSchema.model_validate(sample_json("TableSchema"))
 
 
 @pytest.fixture
