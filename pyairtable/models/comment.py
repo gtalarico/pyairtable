@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, Optional
 
-from pyairtable._compat import pydantic
+import pydantic
 
 from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, rebuild_models
 from .collaborator import Collaborator

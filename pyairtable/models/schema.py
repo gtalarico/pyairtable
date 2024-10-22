@@ -3,9 +3,9 @@ from datetime import datetime
 from functools import partial
 from typing import Any, Dict, Iterable, List, Literal, Optional, TypeVar, Union, cast
 
+import pydantic
 from typing_extensions import TypeAlias
 
-from pyairtable._compat import pydantic
 from pyairtable.api.types import AddCollaboratorDict
 
 from ._base import (

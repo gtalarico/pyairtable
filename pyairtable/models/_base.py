@@ -3,10 +3,9 @@ from functools import partial
 from typing import Any, ClassVar, Dict, Iterable, Mapping, Optional, Set, Type, Union
 
 import inflection
-from pydantic import ConfigDict
+import pydantic
 from typing_extensions import Self as SelfType
 
-from pyairtable._compat import pydantic
 from pyairtable.utils import (
     _append_docstring_text,
     datetime_from_iso_str,
@@ -19,7 +18,7 @@ class AirtableModel(pydantic.BaseModel):
     Base model for any data structures that will be loaded from the Airtable API.
     """
 
-    model_config = ConfigDict(
+    model_config = pydantic.ConfigDict(
         extra="ignore",
         alias_generator=partial(inflection.camelize, uppercase_first_letter=False),
         populate_by_name=True,

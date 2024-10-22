@@ -1,6 +1,6 @@
+import pydantic
 import pytest
 
-from pyairtable._compat import pydantic
 from pyairtable.api import types as T
 from pyairtable.testing import fake_attachment, fake_id, fake_record, fake_user
 

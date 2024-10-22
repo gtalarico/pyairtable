@@ -4,9 +4,9 @@ from functools import partial
 from hmac import HMAC
 from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
+import pydantic
 from typing_extensions import Self as SelfType
 
-from pyairtable._compat import pydantic
 from pyairtable.api.types import RecordId
 
 from ._base import AirtableModel, CanDeleteModel, rebuild_models

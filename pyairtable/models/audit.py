@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+import pydantic
 from typing_extensions import TypeAlias
 
-from pyairtable._compat import pydantic
 from pyairtable.models._base import AirtableModel, rebuild_models
 
 

@@ -1,7 +1,8 @@
 import datetime
 from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
-from pyairtable._compat import pydantic
+import pydantic
+
 from pyairtable.models._base import AirtableModel, rebuild_models
 from pyairtable.models.audit import AuditLogResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
