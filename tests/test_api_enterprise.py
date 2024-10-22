@@ -62,8 +62,8 @@ def fake_audit_log_events(counter, page_size=N_AUDIT_PAGE_SIZE):
             "timestamp": datetime.datetime.now().isoformat(),
             "action": "viewBase",
             "actor": {"type": "anonymousUser"},
-            "model_id": (base_id := fake_id("app")),
-            "model_type": "base",
+            "modelId": (base_id := fake_id("app")),
+            "modelType": "base",
             "payload": {"name": "The Base Name"},
             "payloadVersion": "1.0",
             "context": {

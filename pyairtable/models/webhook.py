@@ -338,7 +338,7 @@ class WebhookPayload(AirtableModel):
 
     class FieldChanged(AirtableModel):
         current: "WebhookPayload.FieldInfo"
-        previous: Optional["WebhookPayload.FieldInfo"]
+        previous: Optional["WebhookPayload.FieldInfo"] = None
 
     class TableChanged(AirtableModel):
         changed_views_by_id: Dict[str, "WebhookPayload.ViewChanged"] = FD()
@@ -346,7 +346,7 @@ class WebhookPayload(AirtableModel):
         changed_records_by_id: Dict[RecordId, "WebhookPayload.RecordChanged"] = FD()
         created_fields_by_id: Dict[str, "WebhookPayload.FieldInfo"] = FD()
         created_records_by_id: Dict[RecordId, "WebhookPayload.RecordCreated"] = FD()
-        changed_metadata: Optional["WebhookPayload.TableChanged.ChangedMetadata"]
+        changed_metadata: Optional["WebhookPayload.TableChanged.ChangedMetadata"] = None
         destroyed_field_ids: List[str] = FL()
         destroyed_record_ids: List[RecordId] = FL()
 
@@ -360,14 +360,14 @@ class WebhookPayload(AirtableModel):
         destroyed_record_ids: List[RecordId] = FL()
 
     class TableCreated(AirtableModel):
-        metadata: Optional["WebhookPayload.TableInfo"]
+        metadata: Optional["WebhookPayload.TableInfo"] = None
         fields_by_id: Dict[str, "WebhookPayload.FieldInfo"] = FD()
         records_by_id: Dict[RecordId, "WebhookPayload.RecordCreated"] = FD()
 
     class RecordChanged(AirtableModel):
         current: "WebhookPayload.CellValuesByFieldId"
-        previous: Optional["WebhookPayload.CellValuesByFieldId"]
-        unchanged: Optional["WebhookPayload.CellValuesByFieldId"]
+        previous: Optional["WebhookPayload.CellValuesByFieldId"] = None
+        unchanged: Optional["WebhookPayload.CellValuesByFieldId"] = None
 
     class CellValuesByFieldId(AirtableModel):
         cell_values_by_field_id: Dict[str, Any]

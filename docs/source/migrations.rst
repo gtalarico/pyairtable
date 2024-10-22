@@ -118,6 +118,10 @@ Breaking name changes
         | has become :class:`pyairtable.exceptions.MissingValueError`
     * - | ``pyairtable.orm.fields.MultipleValues``
         | has become :class:`pyairtable.exceptions.MultipleValuesError`
+    * - | ``pyairtable.models.AuditLogEvent.model_id``
+        | has become :data:`pyairtable.models.AuditLogEvent.object_id`
+    * - | ``pyairtable.models.AuditLogEvent.model_type``
+        | has become :data:`pyairtable.models.AuditLogEvent.object_type`
 
 
 Migrating from 2.2 to 2.3

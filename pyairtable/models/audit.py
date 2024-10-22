@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import TypeAlias
 
+from pyairtable._compat import pydantic
 from pyairtable.models._base import AirtableModel, update_forward_refs
 
 
@@ -28,14 +29,18 @@ class AuditLogEvent(AirtableModel):
 
     See `Audit log events <https://airtable.com/developers/web/api/audit-log-events>`__
     for more information on how to interpret this data structure.
+
+    To avoid namespace conflicts with the Pydantic library, the
+    ``modelId`` and ``modelType`` fields from the Airtable API are
+    represented as fields named ``object_id`` and ``object_type``.
     """
 
     id: str
     timestamp: datetime
     action: str
     actor: "AuditLogActor"
-    model_id: str
-    model_type: str
+    object_id: str = pydantic.Field(alias="modelId")
+    object_type: str = pydantic.Field(alias="modelType")
     payload: "AuditLogPayload"
     payload_version: str
     context: "AuditLogEvent.Context"
