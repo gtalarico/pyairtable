@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 from pyairtable._compat import pydantic
 
-from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, update_forward_refs
+from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, rebuild_models
 from .collaborator import Collaborator
 
 
@@ -88,4 +88,4 @@ class Mentioned(AirtableModel):
     email: Optional[str] = None
 
 
-update_forward_refs(vars())
+rebuild_models(vars())

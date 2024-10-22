@@ -13,7 +13,7 @@ from ._base import (
     CanDeleteModel,
     CanUpdateModel,
     RestfulModel,
-    update_forward_refs,
+    rebuild_models,
 )
 
 _T = TypeVar("_T", bound=Any)
@@ -1370,4 +1370,4 @@ def parse_field_schema(obj: Dict[str, Any]) -> FieldSchema:
     return _HasFieldSchema.model_validate({"field_schema": obj}).field_schema
 
 
-update_forward_refs(vars())
+rebuild_models(vars())

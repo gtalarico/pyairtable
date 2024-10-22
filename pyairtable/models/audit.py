@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from typing_extensions import TypeAlias
 
 from pyairtable._compat import pydantic
-from pyairtable.models._base import AirtableModel, update_forward_refs
+from pyairtable.models._base import AirtableModel, rebuild_models
 
 
 class AuditLogResponse(AirtableModel):
@@ -78,4 +78,4 @@ class AuditLogActor(AirtableModel):
 AuditLogPayload: TypeAlias = Dict[str, Any]
 
 
-update_forward_refs(vars())
+rebuild_models(vars())

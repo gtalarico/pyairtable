@@ -9,7 +9,7 @@ from typing_extensions import Self as SelfType
 from pyairtable._compat import pydantic
 from pyairtable.api.types import RecordId
 
-from ._base import AirtableModel, CanDeleteModel, update_forward_refs
+from ._base import AirtableModel, CanDeleteModel, rebuild_models
 
 # Shortcuts to avoid lots of line wrapping
 FD: Callable[[], Any] = partial(pydantic.Field, default_factory=dict)
@@ -383,4 +383,4 @@ class WebhookPayloads(AirtableModel):
     payloads: List[WebhookPayload]
 
 
-update_forward_refs(vars())
+rebuild_models(vars())

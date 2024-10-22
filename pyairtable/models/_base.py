@@ -273,7 +273,7 @@ class CanUpdateModel(RestfulModel):
         super().__setattr__(name, value)
 
 
-def update_forward_refs(
+def rebuild_models(
     obj: Union[Type[AirtableModel], Mapping[str, Any]],
     memo: Optional[Set[int]] = None,
 ) -> None:
@@ -301,11 +301,11 @@ def update_forward_refs(
             return
         memo.add(id(obj))
         obj.model_rebuild()
-        return update_forward_refs(vars(obj), memo=memo)
+        return rebuild_models(vars(obj), memo=memo)
     # If it's a mapping, update refs for any AirtableModel instances.
     for value in obj.values():
         if isinstance(value, type) and issubclass(value, AirtableModel):
-            update_forward_refs(value, memo=memo)
+            rebuild_models(value, memo=memo)
 
 
 import pyairtable.api.api  # noqa
