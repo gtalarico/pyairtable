@@ -15,12 +15,11 @@ Updated minimum dependencies
 ---------------------------------------------
 
 * pyAirtable 3.0 is tested on Python 3.9 or higher. It may continue to work on Python 3.8
-for some time, but bug reports related to Python 3.8 compatibility will not be accepted.
-
+  for some time, but bug reports related to Python 3.8 compatibility will not be accepted.
 * pyAirtable 3.0 requires Pydantic 2. If your project still uses Pydantic 1,
-you will need to continue to use pyAirtable 2.x until you can upgrade Pydantic.
-Read the `Pydantic v2 migration guide <https://docs.pydantic.dev/latest/migration/>`__
-for more information.
+  you will need to continue to use pyAirtable 2.x until you can upgrade Pydantic.
+  Read the `Pydantic v2 migration guide <https://docs.pydantic.dev/latest/migration/>`__
+  for more information.
 
 Deprecated metadata module removed
 ---------------------------------------------
