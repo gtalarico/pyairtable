@@ -33,6 +33,7 @@ API: pyairtable.api.enterprise
 .. automodule:: pyairtable.api.enterprise
     :members:
     :exclude-members: Enterprise
+    :inherited-members: BaseModel, AirtableModel
 
 
 API: pyairtable.api.types
@@ -61,7 +62,7 @@ API: pyairtable.models
 
 .. automodule:: pyairtable.models
     :members:
-    :inherited-members: AirtableModel
+    :inherited-members: BaseModel, AirtableModel
 
 
 API: pyairtable.models.comment
@@ -70,7 +71,7 @@ API: pyairtable.models.comment
 .. automodule:: pyairtable.models.comment
     :members:
     :exclude-members: Comment
-    :inherited-members: AirtableModel
+    :inherited-members: BaseModel, AirtableModel
 
 
 API: pyairtable.models.schema
@@ -78,6 +79,7 @@ API: pyairtable.models.schema
 
 .. automodule:: pyairtable.models.schema
     :members:
+    :inherited-members: BaseModel, AirtableModel
 
 
 API: pyairtable.models.webhook
@@ -86,7 +88,7 @@ API: pyairtable.models.webhook
 .. automodule:: pyairtable.models.webhook
     :members:
     :exclude-members: Webhook, WebhookNotification, WebhookPayload
-    :inherited-members: AirtableModel
+    :inherited-members: BaseModel, AirtableModel
 
 
 API: pyairtable.orm

@@ -279,7 +279,7 @@ class Base:
             spec = WebhookSpecification.from_api(spec, self.api)
 
         create = CreateWebhook(notification_url=notify_url, specification=spec)
-        request = create.dict(by_alias=True, exclude_unset=True)
+        request = create.model_dump(by_alias=True, exclude_unset=True)
         response = self.api.post(self.webhooks_url, json=request)
         return CreateWebhookResponse.from_api(response, self.api)
 

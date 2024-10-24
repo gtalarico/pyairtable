@@ -6,9 +6,8 @@ and return values to various pyAirtable methods.
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
+import pydantic
 from typing_extensions import Required, TypeAlias, TypedDict
-
-from pyairtable._compat import pydantic
 
 T = TypeVar("T")
 
@@ -397,13 +396,12 @@ class UploadAttachmentResultDict(TypedDict):
 
 
 @lru_cache
-def _create_model_from_typeddict(cls: Type[T]) -> Type[pydantic.BaseModel]:
+def _create_model_from_typeddict(cls: Type[T]) -> pydantic.TypeAdapter[Any]:
     """
     Create a pydantic model from a TypedDict to use as a validator.
     Memoizes the result so we don't have to call this more than once per class.
     """
-    # Mypy can't tell that we are using pydantic v1.
-    return pydantic.create_model_from_typeddict(cls)  # type: ignore[no-any-return, operator, unused-ignore]
+    return pydantic.TypeAdapter(cls)
 
 
 def assert_typed_dict(cls: Type[T], obj: Any) -> T:
@@ -456,8 +454,8 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
                     raise
 
     # mypy complains cls isn't Hashable, but it is; see https://github.com/python/mypy/issues/2412
-    model = _create_model_from_typeddict(cls)  # type: ignore
-    model(**obj)
+    model = _create_model_from_typeddict(cls)  # type: ignore[arg-type]
+    model.validate_python(obj)
     return cast(T, obj)
 
 

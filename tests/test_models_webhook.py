@@ -31,7 +31,7 @@ def payload_json(sample_json):
 )
 def test_parse(sample_json, clsname):
     cls = attrgetter(clsname)(pyairtable.models.webhook)
-    cls.parse_obj(sample_json(clsname))
+    cls.model_validate(sample_json(clsname))
 
 
 @pytest.mark.parametrize(
@@ -67,7 +67,7 @@ def test_delete(webhook: Webhook, requests_mock):
 
 def test_error_payload(payload_json):
     payload_json.update({"error": True, "code": "INVALID_HOOK"})
-    payload = WebhookPayload.parse_obj(payload_json)
+    payload = WebhookPayload.model_validate(payload_json)
     assert payload.error is True
     assert payload.error_code == "INVALID_HOOK"
 

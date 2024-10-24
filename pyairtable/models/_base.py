@@ -3,9 +3,9 @@ from functools import partial
 from typing import Any, ClassVar, Dict, Iterable, Mapping, Optional, Set, Type, Union
 
 import inflection
+import pydantic
 from typing_extensions import Self as SelfType
 
-from pyairtable._compat import pydantic
 from pyairtable.utils import (
     _append_docstring_text,
     datetime_from_iso_str,
@@ -18,30 +18,29 @@ class AirtableModel(pydantic.BaseModel):
     Base model for any data structures that will be loaded from the Airtable API.
     """
 
-    class Config:
-        # Ignore field names we don't recognize, so applications don't crash
-        # if Airtable decides to add new attributes.
-        extra = "ignore"
-
-        # Convert e.g. "base_invite_links" to "baseInviteLinks" for (de)serialization
-        alias_generator = partial(inflection.camelize, uppercase_first_letter=False)
-
-        # Allow both base_invite_links= and baseInviteLinks= in constructor
-        allow_population_by_field_name = True
+    model_config = pydantic.ConfigDict(
+        extra="ignore",
+        alias_generator=partial(inflection.camelize, uppercase_first_letter=False),
+        populate_by_name=True,
+    )
 
     _raw: Any = pydantic.PrivateAttr()
 
     def __init__(self, **data: Any) -> None:
-        self._raw = data.copy()
+        raw = data.copy()
+
         # Convert JSON-serializable input data to the types expected by our model.
         # For now this only converts ISO 8601 strings to datetime objects.
-        for field_model in self.__fields__.values():
-            for name in {field_model.name, field_model.alias}:
-                if not (value := data.get(name)):
+        for field_name, field_model in self.model_fields.items():
+            for name in {field_name, field_model.alias}:
+                if not name or not (value := data.get(name)):
                     continue
-                if isinstance(value, str) and field_model.type_ is datetime:
+                if isinstance(value, str) and field_model.annotation is datetime:
                     data[name] = datetime_from_iso_str(value)
+
         super().__init__(**data)
+
+        self._raw = raw  # must happen *after* __init__
 
     @classmethod
     def from_api(
@@ -117,7 +116,7 @@ def cascade_api(
         obj._set_api(api, context=context)
 
     # Find and apply API/context to nested models in every Pydantic field.
-    for field_name in type(obj).__fields__:
+    for field_name in type(obj).model_fields:
         if field_value := getattr(obj, field_name, None):
             cascade_api(field_value, api, context=context)
 
@@ -166,7 +165,7 @@ class RestfulModel(AirtableModel):
             obj = self._api.get(self._url)
         copyable = type(self).from_api(obj, self._api, context=self._url_context)
         self.__dict__.update(
-            {key: copyable.__dict__.get(key) for key in type(self).__fields__}
+            {key: copyable.__dict__.get(key) for key in type(self).model_fields}
         )
 
 
@@ -248,7 +247,7 @@ class CanUpdateModel(RestfulModel):
             raise RuntimeError("save() called with no URL specified")
         include = set(self.__writable) if self.__writable else None
         exclude = set(self.__readonly) if self.__readonly else None
-        data = self.dict(
+        data = self.model_dump(
             by_alias=True,
             include=include,
             exclude=exclude,
@@ -264,8 +263,7 @@ class CanUpdateModel(RestfulModel):
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Prevents implementers from changing values on readonly or non-writable fields.
-        # Mypy can't tell that we are using pydantic v1.
-        if name in self.__class__.__fields__:  # type: ignore[operator, unused-ignore]
+        if name in self.__class__.model_fields:
             if self.__readonly and name in self.__readonly:
                 raise AttributeError(name)
             if self.__writable is not None and name not in self.__writable:
@@ -274,7 +272,7 @@ class CanUpdateModel(RestfulModel):
         super().__setattr__(name, value)
 
 
-def update_forward_refs(
+def rebuild_models(
     obj: Union[Type[AirtableModel], Mapping[str, Any]],
     memo: Optional[Set[int]] = None,
 ) -> None:
@@ -301,12 +299,12 @@ def update_forward_refs(
         if id(obj) in memo:
             return
         memo.add(id(obj))
-        obj.update_forward_refs()
-        return update_forward_refs(vars(obj), memo=memo)
+        obj.model_rebuild()
+        return rebuild_models(vars(obj), memo=memo)
     # If it's a mapping, update refs for any AirtableModel instances.
     for value in obj.values():
         if isinstance(value, type) and issubclass(value, AirtableModel):
-            update_forward_refs(value, memo=memo)
+            rebuild_models(value, memo=memo)
 
 
 import pyairtable.api.api  # noqa

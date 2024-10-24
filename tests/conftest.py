@@ -179,7 +179,7 @@ def schema_obj(api, sample_json):
         if context:
             obj = obj_cls.from_api(obj_data, api, context=context)
         else:
-            obj = obj_cls.parse_obj(obj_data)
+            obj = obj_cls.model_validate(obj_data)
 
         if obj_path:
             obj = eval(f"obj.{obj_path}", None, {"obj": obj})

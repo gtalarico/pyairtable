@@ -26,7 +26,7 @@ def comments_url(base, table):
 
 
 def test_parse(comment_json):
-    c = Comment.parse_obj(comment_json)
+    c = Comment.model_validate(comment_json)
     assert isinstance(c.created_time, datetime.datetime)
     assert isinstance(c.last_updated_time, datetime.datetime)
 
@@ -37,7 +37,7 @@ def test_missing_attributes(comment_json):
     """
     del comment_json["lastUpdatedTime"]
     del comment_json["mentioned"]
-    comment = Comment.parse_obj(comment_json)
+    comment = Comment.model_validate(comment_json)
     assert comment.mentioned == {}
     assert comment.last_updated_time is None
 

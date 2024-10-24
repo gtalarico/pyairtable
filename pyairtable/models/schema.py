@@ -3,9 +3,9 @@ from datetime import datetime
 from functools import partial
 from typing import Any, Dict, Iterable, List, Literal, Optional, TypeVar, Union, cast
 
+import pydantic
 from typing_extensions import TypeAlias
 
-from pyairtable._compat import pydantic
 from pyairtable.api.types import AddCollaboratorDict
 
 from ._base import (
@@ -13,7 +13,7 @@ from ._base import (
     CanDeleteModel,
     CanUpdateModel,
     RestfulModel,
-    update_forward_refs,
+    rebuild_models,
 )
 
 _T = TypeVar("_T", bound=Any)
@@ -24,10 +24,10 @@ _FD = partial(pydantic.Field, default_factory=dict)
 def _F(classname: str, **kwargs: Any) -> Any:
     def _create_default_from_classname() -> Any:
         this_module = importlib.import_module(__name__)
-        obj = this_module
+        obj: Any = this_module
         for segment in classname.split("."):
             obj = getattr(obj, segment)
-        return obj
+        return obj()
 
     kwargs["default_factory"] = _create_default_from_classname
     return pydantic.Field(**kwargs)
@@ -180,7 +180,7 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
         url="meta/bases/{base.id}/interfaces/{key}",
     ):
         created_time: datetime
-        first_publish_time: Optional[datetime]
+        first_publish_time: Optional[datetime] = None
         group_collaborators: List["GroupCollaborator"] = _FL()
         individual_collaborators: List["IndividualCollaborator"] = _FL()
         invite_links: List["InterfaceInviteLink"] = _FL()
@@ -310,7 +310,7 @@ class TableSchema(
     id: str
     name: str
     primary_field_id: str
-    description: Optional[str]
+    description: Optional[str] = None
     fields: List["FieldSchema"]
     views: List["ViewSchema"]
 
@@ -345,8 +345,8 @@ class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):
     id: str
     type: str
     name: str
-    personal_for_user_id: Optional[str]
-    visible_field_ids: Optional[List[str]]
+    personal_for_user_id: Optional[str] = None
+    visible_field_ids: Optional[List[str]] = None
 
 
 class GroupCollaborator(AirtableModel):
@@ -383,7 +383,7 @@ class InviteLink(CanDeleteModel, url="{invite_links._url}/{self.id}"):
     id: str
     type: str
     created_time: datetime
-    invited_email: Optional[str]
+    invited_email: Optional[str] = None
     referred_by_user_id: str
     permission_level: str
     restricted_to_email_domains: List[str] = _FL()
@@ -561,15 +561,15 @@ class UserInfo(
     state: str
     is_sso_required: bool
     is_two_factor_auth_enabled: bool
-    last_activity_time: Optional[datetime]
-    created_time: Optional[datetime]
-    enterprise_user_type: Optional[str]
-    invited_to_airtable_by_user_id: Optional[str]
+    last_activity_time: Optional[datetime] = None
+    created_time: Optional[datetime] = None
+    enterprise_user_type: Optional[str] = None
+    invited_to_airtable_by_user_id: Optional[str] = None
     is_managed: bool = False
     is_admin: bool = False
     is_super_admin: bool = False
     groups: List[NestedId] = _FL()
-    collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
+    collaborations: "Collaborations" = _F("Collaborations")
 
     def logout(self) -> None:
         self._api.post(self._url + "/logout")
@@ -588,7 +588,7 @@ class UserGroup(AirtableModel):
     created_time: datetime
     updated_time: datetime
     members: List["UserGroup.Member"]
-    collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
+    collaborations: "Collaborations" = _F("Collaborations")
 
     class Member(AirtableModel):
         user_id: str
@@ -617,8 +617,8 @@ class AITextFieldConfig(AirtableModel):
 
 
 class AITextFieldOptions(AirtableModel):
-    prompt: Optional[List[Union[str, "AITextFieldOptions.PromptField"]]]
-    referenced_field_ids: Optional[List[str]]
+    prompt: List[Union[str, "AITextFieldOptions.PromptField"]] = _FL()
+    referenced_field_ids: List[str] = _FL()
 
     class PromptField(AirtableModel):
         field: NestedFieldId
@@ -673,7 +673,7 @@ class CountFieldConfig(AirtableModel):
 
 class CountFieldOptions(AirtableModel):
     is_valid: bool
-    record_link_field_id: Optional[str]
+    record_link_field_id: Optional[str] = None
 
 
 class CreatedByFieldConfig(AirtableModel):
@@ -784,8 +784,8 @@ class FormulaFieldConfig(AirtableModel):
 class FormulaFieldOptions(AirtableModel):
     formula: str
     is_valid: bool
-    referenced_field_ids: Optional[List[str]]
-    result: Optional["FieldConfig"]
+    referenced_field_ids: Optional[List[str]] = None
+    result: Optional["FieldConfig"] = None
 
 
 class LastModifiedByFieldConfig(AirtableModel):
@@ -807,8 +807,8 @@ class LastModifiedTimeFieldConfig(AirtableModel):
 
 class LastModifiedTimeFieldOptions(AirtableModel):
     is_valid: bool
-    referenced_field_ids: Optional[List[str]]
-    result: Optional[Union["DateFieldConfig", "DateTimeFieldConfig"]]
+    referenced_field_ids: Optional[List[str]] = None
+    result: Optional[Union["DateFieldConfig", "DateTimeFieldConfig"]] = None
 
 
 class ManualSortFieldConfig(AirtableModel):
@@ -862,10 +862,10 @@ class MultipleLookupValuesFieldConfig(AirtableModel):
 
 
 class MultipleLookupValuesFieldOptions(AirtableModel):
-    field_id_in_linked_table: Optional[str]
     is_valid: bool
-    record_link_field_id: Optional[str]
-    result: Optional["FieldConfig"]
+    field_id_in_linked_table: Optional[str] = None
+    record_link_field_id: Optional[str] = None
+    result: Optional["FieldConfig"] = None
 
 
 class MultipleRecordLinksFieldConfig(AirtableModel):
@@ -881,8 +881,8 @@ class MultipleRecordLinksFieldOptions(AirtableModel):
     is_reversed: bool
     linked_table_id: str
     prefers_single_record_link: bool
-    inverse_link_field_id: Optional[str]
-    view_id_for_record_selection: Optional[str]
+    inverse_link_field_id: Optional[str] = None
+    view_id_for_record_selection: Optional[str] = None
 
 
 class MultipleSelectsFieldConfig(AirtableModel):
@@ -957,11 +957,11 @@ class RollupFieldConfig(AirtableModel):
 
 
 class RollupFieldOptions(AirtableModel):
-    field_id_in_linked_table: Optional[str]
+    field_id_in_linked_table: Optional[str] = None
     is_valid: bool
-    record_link_field_id: Optional[str]
-    referenced_field_ids: Optional[List[str]]
-    result: Optional["FieldConfig"]
+    record_link_field_id: Optional[str] = None
+    referenced_field_ids: Optional[List[str]] = None
+    result: Optional["FieldConfig"] = None
 
 
 class SingleCollaboratorFieldConfig(AirtableModel):
@@ -995,7 +995,7 @@ class SingleSelectFieldOptions(AirtableModel):
     class Choice(AirtableModel):
         id: str
         name: str
-        color: Optional[str]
+        color: Optional[str] = None
 
 
 class UrlFieldConfig(AirtableModel):
@@ -1013,7 +1013,7 @@ class UnknownFieldConfig(AirtableModel):
     """
 
     type: str
-    options: Optional[Dict[str, Any]]
+    options: Optional[Dict[str, Any]] = None
 
 
 class _FieldSchemaBase(
@@ -1024,7 +1024,7 @@ class _FieldSchemaBase(
 ):
     id: str
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
 
 
 # This section is auto-generated so that FieldSchema and FieldConfig are kept aligned.
@@ -1367,7 +1367,7 @@ def parse_field_schema(obj: Dict[str, Any]) -> FieldSchema:
     Given a ``dict`` representing a field schema,
     parse it into the appropriate FieldSchema subclass.
     """
-    return _HasFieldSchema.parse_obj({"field_schema": obj}).field_schema
+    return _HasFieldSchema.model_validate({"field_schema": obj}).field_schema
 
 
-update_forward_refs(vars())
+rebuild_models(vars())

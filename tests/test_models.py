@@ -8,7 +8,7 @@ from pyairtable.models._base import (
     CanDeleteModel,
     CanUpdateModel,
     RestfulModel,
-    update_forward_refs,
+    rebuild_models,
 )
 
 
@@ -132,7 +132,7 @@ def test_save__nested_reload(requests_mock, api):
             id: int
             name: str
 
-    update_forward_refs(Parent)
+    rebuild_models(Parent)
 
     parent_data = {
         "id": 1,
@@ -248,7 +248,7 @@ def test_update_forward_refs():
     Outer.Inner.Outer = Outer
 
     # This will cause RecursionError if we're not careful
-    update_forward_refs(Outer)
+    rebuild_models(Outer)
 
 
 def test_restfulmodel__set_url(api, base):

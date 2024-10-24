@@ -12,6 +12,9 @@
         {
           "id": "fldoaIqdn5szURHpw",
           "name": "Pictures",
+          "options": {
+            "isReversed": false
+          },
           "type": "multipleAttachments"
         },
         {

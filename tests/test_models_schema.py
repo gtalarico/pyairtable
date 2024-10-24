@@ -21,12 +21,12 @@ from pyairtable.testing import fake_id
 )
 def test_parse(sample_json, clsname):
     cls = attrgetter(clsname)(schema)
-    cls.parse_obj(sample_json(clsname))
+    cls.model_validate(sample_json(clsname))
 
 
 @pytest.mark.parametrize("cls", schema.FieldSchema.__args__)
 def test_parse_field(sample_json, cls):
-    cls.parse_obj(sample_json("field_schema/" + cls.__name__))
+    cls.model_validate(sample_json("field_schema/" + cls.__name__))
 
 
 @pytest.mark.parametrize(
@@ -44,7 +44,7 @@ def test_parse_field(sample_json, cls):
 )
 def test_find_in_collection(clsname, method, id_or_name, sample_json):
     cls = attrgetter(clsname)(schema)
-    obj = cls.parse_obj(sample_json(clsname))
+    obj = cls.model_validate(sample_json(clsname))
     assert getattr(obj, method)(id_or_name)
 
 
@@ -97,7 +97,7 @@ def test_find():
     and skips any models that are marked as deleted.
     """
 
-    collection = Outer.parse_obj(
+    collection = Outer.model_validate(
         {
             "inners": [
                 {"id": "0001", "name": "One"},

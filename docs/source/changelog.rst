@@ -51,6 +51,8 @@ Changelog
   - `PR #389 <https://github.com/gtalarico/pyairtable/pull/389>`_
 * Dropped support for Python 3.8.
   - `PR #395 <https://github.com/gtalarico/pyairtable/pull/395>`_
+* Dropped support for Pydantic 1.x.
+  - `PR #397 <https://github.com/gtalarico/pyairtable/pull/397>`_
 
 2.3.4 (2024-10-21)
 ------------------------

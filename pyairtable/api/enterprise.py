@@ -1,8 +1,9 @@
 import datetime
 from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
-from pyairtable._compat import pydantic
-from pyairtable.models._base import AirtableModel, update_forward_refs
+import pydantic
+
+from pyairtable.models._base import AirtableModel, rebuild_models
 from pyairtable.models.audit import AuditLogResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.utils import (
@@ -53,7 +54,7 @@ class Enterprise:
         params = {"include": ["collaborations"] if collaborations else []}
         url = self.api.build_url(f"meta/groups/{group_id}")
         payload = self.api.get(url, params=params)
-        return UserGroup.parse_obj(payload)
+        return UserGroup.model_validate(payload)
 
     def user(self, id_or_email: str, collaborations: bool = True) -> UserInfo:
         """
@@ -219,7 +220,7 @@ class Enterprise:
             offset_field=offset_field,
         )
         for count, response in enumerate(iter_requests, start=1):
-            parsed = AuditLogResponse.parse_obj(response)
+            parsed = AuditLogResponse.model_validate(response)
             yield parsed
             if not parsed.events:
                 return
@@ -405,7 +406,7 @@ class ManageUsersResponse(AirtableModel):
         message: str
 
 
-update_forward_refs(vars())
+rebuild_models(vars())
 
 
 # These are at the bottom of the module to avoid circular imports

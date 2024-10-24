@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Dict, Optional
 
-from pyairtable._compat import pydantic
+import pydantic
 
-from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, update_forward_refs
+from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, rebuild_models
 from .collaborator import Collaborator
 
 
@@ -54,7 +54,7 @@ class Comment(
     created_time: datetime
 
     #: The ISO 8601 timestamp of when the comment was last edited.
-    last_updated_time: Optional[datetime]
+    last_updated_time: Optional[datetime] = None
 
     #: The account which created the comment.
     author: Collaborator
@@ -88,4 +88,4 @@ class Mentioned(AirtableModel):
     email: Optional[str] = None
 
 
-update_forward_refs(vars())
+rebuild_models(vars())
