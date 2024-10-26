@@ -202,7 +202,7 @@ def mock_base_metadata(base, sample_json, requests_mock):
 @pytest.fixture
 def mock_workspace_metadata(workspace, sample_json, requests_mock):
     workspace_json = sample_json("WorkspaceCollaborators")
-    requests_mock.get(workspace.url, json=workspace_json)
+    requests_mock.get(workspace.urls.meta, json=workspace_json)
 
 
 @pytest.fixture

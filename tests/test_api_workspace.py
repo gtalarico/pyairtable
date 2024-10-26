@@ -16,7 +16,9 @@ def workspace(api, workspace_id):
 
 @pytest.fixture
 def mock_info(workspace, requests_mock, sample_json):
-    return requests_mock.get(workspace.url, json=sample_json("WorkspaceCollaborators"))
+    return requests_mock.get(
+        workspace.urls.meta, json=sample_json("WorkspaceCollaborators")
+    )
 
 
 def test_collaborators(workspace, mock_info):
@@ -39,7 +41,7 @@ def test_bases(workspace, mock_info):
 
 
 def test_create_base(workspace, requests_mock, sample_json):
-    url = workspace.api.build_url("meta/bases")
+    url = workspace.api.urls.bases
     requests_mock.get(url, json=sample_json("Bases"))
     requests_mock.post(url, json={"id": "appLkNDICXNqxSDhG"})
     base = workspace.create_base("Base Name", [])
@@ -48,7 +50,9 @@ def test_create_base(workspace, requests_mock, sample_json):
 
 
 def test_delete(workspace, requests_mock):
-    m = requests_mock.delete(workspace.url, json={"id": workspace.id, "deleted": True})
+    m = requests_mock.delete(
+        workspace.urls.meta, json={"id": workspace.id, "deleted": True}
+    )
     workspace.delete()
     assert m.call_count == 1
 
@@ -73,7 +77,7 @@ def test_move_base(
     expected,
     requests_mock,
 ):
-    m = requests_mock.post(workspace.url + "/moveBase")
+    m = requests_mock.post(workspace.urls.move_base)
     workspace.move_base(locals()[base_param], locals()[workspace_param], **kwargs)
     assert m.call_count == 1
     assert m.request_history[-1].json() == {

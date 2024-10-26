@@ -161,9 +161,9 @@ def test_workspace_collaborators__add(api, kind, id, requests_mock, sample_json)
     """
     workspace_json = sample_json("WorkspaceCollaborators")
     workspace = api.workspace(workspace_json["id"])
-    requests_mock.get(workspace.url, json=workspace_json)
-    m = requests_mock.post(f"{workspace.url}/collaborators", body="")
+    requests_mock.get(workspace.urls.meta, json=workspace_json)
     method = getattr(workspace.collaborators(), f"add_{kind}")
+    m = requests_mock.post(workspace.urls.collaborators, body="")
     method(id, "read")
     assert m.call_count == 1
     assert m.last_request.json() == {
