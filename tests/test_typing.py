@@ -10,6 +10,7 @@ from typing_extensions import assert_type
 import pyairtable
 import pyairtable.api.types as T
 import pyairtable.orm.lists as L
+import pyairtable.utils
 from pyairtable import orm
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
     # Ensure the type signatures for pyairtable.Api don't change.
     api = pyairtable.Api(access_token)
-    assert_type(api.build_url("foo", "bar"), str)
+    assert_type(api.build_url("foo", "bar"), pyairtable.utils.Url)
     assert_type(api.base(base_id), pyairtable.Base)
     assert_type(api.table(base_id, table_name), pyairtable.Table)
     assert_type(api.whoami(), T.UserAndScopesDict)
