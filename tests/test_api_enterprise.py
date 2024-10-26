@@ -19,19 +19,24 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
     m.json_group = sample_json("UserGroup")
     m.user_id = m.json_user["id"]
     m.group_id = m.json_group["id"]
-    m.get_info = requests_mock.get(enterprise.url, json=sample_json("EnterpriseInfo"))
-    m.get_user = requests_mock.get(
-        f"{enterprise.url}/users/{m.user_id}", json=m.json_user
+    m.get_info = requests_mock.get(
+        enterprise_url := "https://api.airtable.com/v0/meta/enterpriseAccounts/entUBq2RGdihxl3vU",
+        json=sample_json("EnterpriseInfo"),
     )
-    m.get_users = requests_mock.get(f"{enterprise.url}/users", json=m.json_users)
+    m.get_user = requests_mock.get(
+        f"{enterprise_url}/users/usrL2PNC5o3H4lBEi",
+        json=m.json_user,
+    )
+    m.get_users = requests_mock.get(
+        f"{enterprise_url}/users",
+        json=m.json_users,
+    )
     m.get_group = requests_mock.get(
-        enterprise.api.build_url(f"meta/groups/{m.json_group['id']}"),
+        "https://api.airtable.com/v0/meta/groups/ugp1mKGb3KXUyQfOZ",
         json=m.json_group,
     )
     m.get_audit_log = requests_mock.get(
-        enterprise.api.build_url(
-            f"meta/enterpriseAccounts/{enterprise.id}/auditLogEvents"
-        ),
+        f"{enterprise_url}/auditLogEvents",
         response_list=[
             {
                 "json": {
@@ -45,11 +50,11 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
         ],
     )
     m.remove_user = requests_mock.post(
-        enterprise.url + f"/users/{m.user_id}/remove",
+        f"{enterprise_url}/users/{m.user_id}/remove",
         json=sample_json("UserRemoved"),
     )
     m.claim_users = requests_mock.post(
-        enterprise.url + "/users/claim",
+        f"{enterprise_url}/claim/users",
         json={"errors": []},
     )
     return m
@@ -240,7 +245,7 @@ def test_remove_user(enterprise, enterprise_mocks, kwargs, expected):
 @pytest.fixture
 def user_info(enterprise, enterprise_mocks):
     user_info = enterprise.user(enterprise_mocks.user_id)
-    assert user_info._url == f"{enterprise.url}/users/{user_info.id}"
+    assert user_info._url == f"{enterprise.urls.users}/{user_info.id}"
     return user_info
 
 
@@ -293,7 +298,7 @@ def test_delete_users(enterprise, requests_mock):
         ],
     }
     emails = [f"foo{n}@bar.com" for n in range(5)]
-    m = requests_mock.delete(enterprise.url + "/users", json=response)
+    m = requests_mock.delete(enterprise.urls.users, json=response)
     parsed = enterprise.delete_users(emails)
     assert m.call_count == 1
     assert m.last_request.qs == {"email": emails}
@@ -305,7 +310,7 @@ def test_delete_users(enterprise, requests_mock):
 @pytest.mark.parametrize("action", ["grant", "revoke"])
 def test_manage_admin_access(enterprise, enterprise_mocks, requests_mock, action):
     user = enterprise.user(enterprise_mocks.user_id)
-    m = requests_mock.post(f"{enterprise.url}/users/{action}AdminAccess", json={})
+    m = requests_mock.post(enterprise.urls.admin_access(action), json={})
     method = getattr(enterprise, f"{action}_admin")
     result = method(
         fake_user_id := fake_id("usr"),

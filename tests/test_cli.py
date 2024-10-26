@@ -27,14 +27,12 @@ def mock_metadata(
     user_info = sample_json("UserInfo")
     user_group = sample_json("UserGroup")
     enterprise_info = sample_json("EnterpriseInfo")
-    requests_mock.get(api.build_url("meta/whoami"), json={"id": user_id})
-    requests_mock.get(enterprise.url, json=enterprise_info)
-    requests_mock.get(f"{enterprise.url}/users/{user_id}", json=user_info)
-    requests_mock.get(f"{enterprise.url}/users", json={"users": [user_info]})
+    requests_mock.get(api.urls.whoami, json={"id": user_id})
+    requests_mock.get(enterprise.urls.meta, json=enterprise_info)
+    requests_mock.get(enterprise.urls.users, json={"users": [user_info]})
+    requests_mock.get(enterprise.urls.user(user_id), json=user_info)
     for group_id in enterprise_info["groupIds"]:
-        requests_mock.get(
-            enterprise.api.build_url(f"meta/groups/{group_id}"), json=user_group
-        )
+        requests_mock.get(enterprise.urls.group(group_id), json=user_group)
 
 
 @pytest.fixture
