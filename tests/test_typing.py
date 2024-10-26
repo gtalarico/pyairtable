@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     # Ensure the type signatures for pyairtable.Base don't change.
     base = pyairtable.Base(api, base_id)
     assert_type(base.table(table_name), pyairtable.Table)
-    assert_type(base.url, str)
+    assert_type(base.id, str)
 
     # Ensure the type signatures for pyairtable.Table don't change.
     table = pyairtable.Table(None, base, table_name)

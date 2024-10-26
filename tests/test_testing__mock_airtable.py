@@ -246,7 +246,7 @@ def test_passthrough(mock_airtable, requests_mock, base, monkeypatch):
     """
     Test that we can temporarily pass through unhandled methods to the requests library.
     """
-    requests_mock.get(base.meta_url("tables"), json={"tables": []})
+    requests_mock.get(base.urls.tables, json={"tables": []})
 
     with monkeypatch.context() as mctx:
         mctx.setattr(mock_airtable, "passthrough", True)

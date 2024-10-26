@@ -9,7 +9,7 @@ from pyairtable.testing import fake_id
 
 @pytest.fixture
 def mock_tables_endpoint(base, requests_mock, sample_json):
-    return requests_mock.get(base.meta_url("tables"), json=sample_json("BaseSchema"))
+    return requests_mock.get(base.urls.tables, json=sample_json("BaseSchema"))
 
 
 def test_constructor(api):
@@ -58,10 +58,6 @@ def test_repr(api, kwargs, expected):
     assert repr(base) == expected
 
 
-def test_url(base):
-    assert base.url == "https://api.airtable.com/v0/appLkNDICXNqxSDhG"
-
-
 def test_schema(base: Base, mock_tables_endpoint):
     table_schema = base.schema().table("tbltp8DGLhqbUmjK1")
     assert table_schema.name == "Apartments"
@@ -80,7 +76,7 @@ def test_table(base: Base, requests_mock):
     assert isinstance(rv, Table)
     assert rv.base == base
     assert rv.name == "tablename"
-    assert rv.url == f"https://api.airtable.com/v0/{base.id}/tablename"
+    assert rv.urls.records == f"https://api.airtable.com/v0/{base.id}/tablename"
 
 
 def test_table_validate(base: Base, mock_tables_endpoint):
@@ -114,14 +110,14 @@ def test_tables(base: Base, mock_tables_endpoint):
 
 
 def test_collaborators(base: Base, requests_mock, sample_json):
-    requests_mock.get(base.meta_url(), json=sample_json("BaseCollaborators"))
+    requests_mock.get(base.urls.meta, json=sample_json("BaseCollaborators"))
     result = base.collaborators()
     assert result.individual_collaborators.via_base[0].email == "foo@bam.com"
     assert result.group_collaborators.via_workspace[0].group_id == "ugp1mKGb3KXUyQfOZ"
 
 
 def test_shares(base: Base, requests_mock, sample_json):
-    requests_mock.get(base.meta_url("shares"), json=sample_json("BaseShares"))
+    requests_mock.get(base.urls.shares, json=sample_json("BaseShares"))
     result = base.shares()
     assert result[0].state == "enabled"
     assert result[1].effective_email_domain_allow_list == []
@@ -129,7 +125,7 @@ def test_shares(base: Base, requests_mock, sample_json):
 
 def test_webhooks(base: Base, requests_mock, sample_json):
     m = requests_mock.get(
-        base.webhooks_url,
+        base.urls.webhooks,
         json={"webhooks": [sample_json("Webhook")]},
     )
     webhooks = base.webhooks()
@@ -140,7 +136,7 @@ def test_webhooks(base: Base, requests_mock, sample_json):
 
 
 def test_webhook(base: Base, requests_mock, sample_json):
-    requests_mock.get(base.webhooks_url, json={"webhooks": [sample_json("Webhook")]})
+    requests_mock.get(base.urls.webhooks, json={"webhooks": [sample_json("Webhook")]})
     webhook = base.webhook("ach00000000000001")
     assert webhook.id == "ach00000000000001"
     assert webhook.notification_url == "https://example.com/receive-ping"
@@ -171,7 +167,7 @@ def test_add_webhook(base: Base, requests_mock):
             }
         }
     }
-    m = requests_mock.post(base.webhooks_url, json=_callback)
+    m = requests_mock.post(base.urls.webhooks, json=_callback)
     result = base.add_webhook("https://example.com/cb", spec)
 
     assert m.call_count == 1
@@ -187,7 +183,7 @@ def test_name(api, base, requests_mock):
     or if it is available in cached schema information.
     """
     requests_mock.get(
-        base.meta_url(),
+        base.urls.meta,
         json={
             "id": base.id,
             "name": "Mocked Base Name",
@@ -286,7 +282,7 @@ def test_delete(base, requests_mock):
     """
     Test that Base.delete() hits the right endpoint.
     """
-    m = requests_mock.delete(base.meta_url(), json={"id": base.id, "deleted": True})
+    m = requests_mock.delete(base.urls.meta, json={"id": base.id, "deleted": True})
     base.delete()
     assert m.call_count == 1
 
@@ -295,7 +291,7 @@ def test_delete__enterprise_only_table(api, base, requests_mock):
     """
     Test that Base.delete() explains why it might be getting a 404.
     """
-    requests_mock.delete(base.meta_url(), status_code=404)
+    requests_mock.delete(base.urls.meta, status_code=404)
     with pytest.raises(HTTPError) as excinfo:
         base.delete()
     assert "Base.delete() requires an enterprise billing plan" in str(excinfo)

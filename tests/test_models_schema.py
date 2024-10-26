@@ -9,6 +9,16 @@ from pyairtable.models._base import AirtableModel
 from pyairtable.testing import fake_id
 
 
+@pytest.fixture
+def mock_base_metadata(base, sample_json, requests_mock):
+    base_json = sample_json("BaseCollaborators")
+    requests_mock.get(base.urls.meta, json=base_json)
+    requests_mock.get(base.urls.tables, json=sample_json("BaseSchema"))
+    requests_mock.get(base.urls.shares, json=sample_json("BaseShares"))
+    for pbd_id, pbd_json in base_json["interfaces"].items():
+        requests_mock.get(base.urls.interface(pbd_id), json=pbd_json)
+
+
 @pytest.mark.parametrize(
     "clsname",
     [
@@ -128,8 +138,8 @@ def test_base_collaborators__add(
     Test that we can call base.collaborators().add_{user,group}
     to grant access to the base.
     """
-    m = requests_mock.post(base.meta_url("collaborators"), body="")
     method = getattr(base.collaborators(), f"add_{kind}")
+    m = requests_mock.post(base.urls.collaborators, body="")
     method(id, "read")
     assert m.call_count == 1
     assert m.last_request.json() == {
@@ -229,7 +239,7 @@ def test_invite_link__delete(
 
 @pytest.fixture
 def interface_url(base):
-    return base.meta_url("interfaces", "pbdLkNDICXNqxSDhG")
+    return base.urls.interface("pbdLkNDICXNqxSDhG")
 
 
 @pytest.mark.parametrize("kind", ("user", "group"))
