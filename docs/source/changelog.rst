@@ -53,12 +53,14 @@ Changelog
   - `PR #395 <https://github.com/gtalarico/pyairtable/pull/395>`_
 * Dropped support for Pydantic 1.x.
   - `PR #397 <https://github.com/gtalarico/pyairtable/pull/397>`_
+* Refactored methods/properties for constructing URLs in the API.
+  - `PR #399 <https://github.com/gtalarico/pyairtable/pull/399>`_
 
 2.3.4 (2024-10-21)
 ------------------------
 
 * Fixed a crash at import time under Python 3.13.
-    `PR #396 <https://github.com/gtalarico/pyairtable/pull/396>`_
+  - `PR #396 <https://github.com/gtalarico/pyairtable/pull/396>`_
 
 2.3.3 (2024-03-22)
 ------------------------

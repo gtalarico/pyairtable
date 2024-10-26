@@ -27,6 +27,37 @@ Deprecated metadata module removed
 The 3.0 release removed the ``pyairtable.metadata`` module. For supported alternatives,
 see :doc:`metadata`.
 
+Changes to generating URLs
+---------------------------------------------
+
+The following properties and methods for constructing URLs have been renamed or removed.
+These methods now return instances of :class:`~pyairtable.utils.Url`, which is a
+subclass of ``str`` that has some overloaded operators. See docs for more details.
+
+.. list-table::
+    :header-rows: 1
+
+    * - Building a URL in 2.x
+      - Building a URL in 3.0
+    * - ``table.url``
+      - ``table.urls.records``
+    * - ``table.record_url(record_id)``
+      - ``table.urls.record(record_id)``
+    * - ``table.meta_url("one", "two")``
+      - ``table.urls.meta / "one" / "two"``
+    * - ``table.meta_url(*parts)``
+      - ``table.urls.meta // parts``
+    * - ``base.url``
+      - (removed; was invalid)
+    * - ``base.meta_url("one", "two")``
+      - ``base.urls.meta / "one" / "two"``
+    * - ``base.webhooks_url()``
+      - ``base.urls.webhooks``
+    * - ``enterprise.url``
+      - ``enterprise.urls.meta``
+    * - ``workspace.url``
+      - ``workspace.urls.meta``
+
 Changes to the formulas module
 ---------------------------------------------
 
