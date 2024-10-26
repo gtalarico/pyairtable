@@ -1,9 +1,9 @@
 import base64
 import mimetypes
 import os
-import posixpath
 import urllib.parse
 import warnings
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Union, overload
 
@@ -23,7 +23,7 @@ from pyairtable.api.types import (
 )
 from pyairtable.formulas import Formula, to_formula_str
 from pyairtable.models.schema import FieldSchema, TableSchema, parse_field_schema
-from pyairtable.utils import is_table_id
+from pyairtable.utils import Url, UrlBuilder, is_table_id
 
 
 class Table:
@@ -44,6 +44,36 @@ class Table:
 
     # Cached schema information to reduce API calls
     _schema: Optional[TableSchema] = None
+
+    class _urls(UrlBuilder):
+        #: URL for retrieving all records in the table
+        records = Url("{base.id}/{self.id_or_name}")
+
+        #: URL for retrieving all records in the table via POST,
+        #: when the request is too large to fit into GET parameters.
+        records_post = records / "listRecords"
+        fields = Url("meta/bases/{base.id}/tables/{self.id_or_name}/fields")
+
+        def record(self, record_id: RecordId) -> Url:
+            """
+            URL for a specific record in the table.
+            """
+            return self.records / record_id
+
+        def record_comments(self, record_id: RecordId) -> Url:
+            """
+            URL for comments on a specific record in the table.
+            """
+            return self.record(record_id) / "comments"
+
+        def upload_attachment(self, record_id: RecordId, field: str) -> Url:
+            """
+            URL for uploading an attachment to a specific field in a specific record.
+            """
+            url = self.build_url(f"{{base.id}}/{record_id}/{field}/uploadAttachment")
+            return url.replace_url(netloc="content.airtable.com")
+
+    urls = cached_property(_urls)
 
     @overload
     def __init__(
@@ -158,26 +188,26 @@ class Table:
         return self.schema().id
 
     @property
-    def url(self) -> str:
+    def id_or_name(self, quoted: bool = True) -> str:
         """
-        Build the URL for this table.
-        """
-        token = self._schema.id if self._schema else self.name
-        return self.api.build_url(self.base.id, urllib.parse.quote(token, safe=""))
+        Return the table ID if it is known, otherwise the table name used for the constructor.
+        This is the URL component used to identify the table in Airtable's API.
 
-    def meta_url(self, *components: str) -> str:
-        """
-        Build a URL to a metadata endpoint for this table.
-        """
-        return self.api.build_url(
-            f"meta/bases/{self.base.id}/tables/{self.id}", *components
-        )
+        Args:
+            quoted: Whether to return a URL-encoded value.
 
-    def record_url(self, record_id: RecordId, *components: str) -> str:
+        Usage:
+
+            >>> table = base.table("Apartments")
+            >>> table.id_or_name
+            'Apartments'
+            >>> table.schema()
+            >>> table.id_or_name
+            'tblXXXXXXXXXXXXXX'
         """
-        Build the URL for the given record ID, with optional trailing components.
-        """
-        return posixpath.join(self.url, record_id, *components)
+        value = self._schema.id if self._schema else self.name
+        value = value if not quoted else urllib.parse.quote(value, safe="")
+        return value
 
     @property
     def api(self) -> "pyairtable.api.api.Api":
@@ -204,7 +234,7 @@ class Table:
         """
         if self.api.use_field_ids:
             options.setdefault("use_field_ids", self.api.use_field_ids)
-        record = self.api.get(self.record_url(record_id), options=options)
+        record = self.api.get(self.urls.record(record_id), options=options)
         return assert_typed_dict(RecordDict, record)
 
     def iterate(self, **options: Any) -> Iterator[List[RecordDict]]:
@@ -241,8 +271,8 @@ class Table:
             options.setdefault("use_field_ids", self.api.use_field_ids)
         for page in self.api.iterate_requests(
             method="get",
-            url=self.url,
-            fallback=("post", f"{self.url}/listRecords"),
+            url=self.urls.records,
+            fallback=("post", self.urls.records_post),
             options=options,
         ):
             yield assert_typed_dicts(RecordDict, page.get("records", []))
@@ -316,7 +346,7 @@ class Table:
         if use_field_ids is None:
             use_field_ids = self.api.use_field_ids
         created = self.api.post(
-            url=self.url,
+            url=self.urls.records,
             json={
                 "fields": fields,
                 "typecast": typecast,
@@ -363,7 +393,7 @@ class Table:
         for chunk in self.api.chunked(records):
             new_records = [{"fields": fields} for fields in chunk]
             response = self.api.post(
-                url=self.url,
+                url=self.urls.records,
                 json={
                     "records": new_records,
                     "typecast": typecast,
@@ -402,7 +432,7 @@ class Table:
         method = "put" if replace else "patch"
         updated = self.api.request(
             method=method,
-            url=self.record_url(record_id),
+            url=self.urls.record(record_id),
             json={
                 "fields": fields,
                 "typecast": typecast,
@@ -442,7 +472,7 @@ class Table:
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in chunk]
             response = self.api.request(
                 method=method,
-                url=self.url,
+                url=self.urls.records,
                 json={
                     "records": chunk_records,
                     "typecast": typecast,
@@ -510,7 +540,7 @@ class Table:
             ]
             response = self.api.request(
                 method=method,
-                url=self.url,
+                url=self.urls.records,
                 json={
                     "records": formatted_records,
                     "typecast": typecast,
@@ -541,7 +571,7 @@ class Table:
         """
         return assert_typed_dict(
             RecordDeletedDict,
-            self.api.delete(self.record_url(record_id)),
+            self.api.delete(self.urls.record(record_id)),
         )
 
     def batch_delete(self, record_ids: Iterable[RecordId]) -> List[RecordDeletedDict]:
@@ -566,7 +596,7 @@ class Table:
         record_ids = list(record_ids)
 
         for chunk in self.api.chunked(record_ids):
-            result = self.api.delete(self.url, params={"records[]": chunk})
+            result = self.api.delete(self.urls.records, params={"records[]": chunk})
             deleted_records += assert_typed_dicts(RecordDeletedDict, result["records"])
 
         return deleted_records
@@ -603,11 +633,10 @@ class Table:
         Args:
             record_id: |arg_record_id|
         """
-        url = self.record_url(record_id, "comments")
+        url = self.urls.record_comments(record_id)
+        ctx = {"record_url": self.urls.record(record_id)}
         return [
-            pyairtable.models.Comment.from_api(
-                comment, self.api, context={"record_url": self.record_url(record_id)}
-            )
+            pyairtable.models.Comment.from_api(comment, self.api, context=ctx)
             for page in self.api.iterate_requests("GET", url)
             for comment in page["comments"]
         ]
@@ -632,10 +661,10 @@ class Table:
             record_id: |arg_record_id|
             text: The text of the comment. Use ``@[usrIdentifier]`` to mention users.
         """
-        url = self.record_url(record_id, "comments")
+        url = self.urls.record_comments(record_id)
         response = self.api.post(url, json={"text": text})
         return pyairtable.models.Comment.from_api(
-            response, self.api, context={"record_url": self.record_url(record_id)}
+            response, self.api, context={"record_url": self.urls.record(record_id)}
         )
 
     def schema(self, *, force: bool = False) -> TableSchema:
@@ -691,7 +720,7 @@ class Table:
             request["description"] = description
         if options:
             request["options"] = options
-        response = self.api.post(self.meta_url("fields"), json=request)
+        response = self.api.post(self.urls.fields, json=request)
         # This hopscotch ensures that the FieldSchema object we return has an API and a URL,
         # and that developers don't need to reload our schema to be able to access it.
         field_schema = parse_field_schema(response)
@@ -763,7 +792,7 @@ class Table:
                 content_type = "application/octet-stream"
 
         # TODO: figure out how to handle the atypical subdomain in a more graceful fashion
-        url = f"https://content.airtable.com/v0/{self.base.id}/{record_id}/{field}/uploadAttachment"
+        url = self.urls.upload_attachment(record_id, field)
         content = content.encode() if isinstance(content, str) else content
         payload = {
             "contentType": content_type,

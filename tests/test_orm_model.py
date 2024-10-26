@@ -223,8 +223,8 @@ def test_from_ids(mock_api):
     contacts = FakeModel.from_ids(fake_ids)
     mock_api.assert_called_once_with(
         method="get",
-        url=FakeModel.meta.table.url,
-        fallback=("post", FakeModel.meta.table.url + "/listRecords"),
+        url=FakeModel.meta.table.urls.records,
+        fallback=("post", FakeModel.meta.table.urls.records_post),
         options={
             "formula": (
                 "OR(%s)" % ", ".join(f"RECORD_ID()='{id}'" for id in sorted(fake_ids))
@@ -295,7 +295,10 @@ def test_get_fields_by_id(fake_records_by_id):
     """
     with Mocker() as mock:
         mock.get(
-            f"{FakeModelByIds.meta.table.url}?&returnFieldsByFieldId=1&cellFormat=json",
+            FakeModelByIds.meta.table.urls.records.add_qs(
+                returnFieldsByFieldId=1,
+                cellFormat="json",
+            ),
             json=fake_records_by_id,
             complete_qs=True,
             status_code=200,

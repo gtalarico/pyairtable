@@ -697,13 +697,12 @@ def test_link_field__cycle(requests_mock):
     rec_b = {"id": id_b, "createdTime": DATETIME_S, "fields": {"Friends": [id_c]}}
     rec_c = {"id": id_c, "createdTime": DATETIME_S, "fields": {"Friends": [id_a]}}
 
-    requests_mock.get(Person.meta.table.record_url(id_a), json=rec_a)
+    requests_mock.get(Person.meta.table.urls.record(id_a), json=rec_a)
     a = Person.from_id(id_a)
 
+    url = Person.meta.table.urls.records
     for record in (rec_a, rec_b, rec_c):
-        url_re = re.compile(
-            re.escape(Person.meta.table.url + "?filterByFormula=") + ".*" + record["id"]
-        )
+        url_re = re.compile(re.escape(f"{url}?filterByFormula=") + ".*" + record["id"])
         requests_mock.get(url_re, json={"records": [record]})
 
     assert a.friends[0].id == id_b
@@ -718,7 +717,7 @@ def test_link_field__load_many(requests_mock):
     """
 
     person_id = fake_id("rec", "A")
-    person_url = Person.meta.table.record_url(person_id)
+    person_url = Person.meta.table.urls.record(person_id)
     friend_ids = [fake_id("rec", c) for c in "123456789ABCDEF"]
 
     person_json = {
@@ -740,7 +739,7 @@ def test_link_field__load_many(requests_mock):
     # The mocked URL specifically includes every record ID in our test set,
     # to ensure the library isn't somehow dropping records from its query.
     url_regex = ".*".join(
-        [re.escape(Person.meta.table.url + "?filterByFormula="), *friend_ids]
+        [re.escape(Person.meta.table.urls.records + "?filterByFormula="), *friend_ids]
     )
     mock_list = requests_mock.get(
         re.compile(url_regex),
@@ -796,10 +795,10 @@ def test_link_field__save(requests_mock, mutation):
         }
 
     requests_mock.get(
-        Book.meta.table.url,
+        Book.meta.table.urls.records,
         json={"records": [b1.to_record(), b2.to_record()]},
     )
-    m = requests_mock.patch(Author.meta.table.record_url(author.id), json=_cb)
+    m = requests_mock.patch(Author.meta.table.urls.record(author.id), json=_cb)
     exec(mutation, {}, {"author": author, "book": b2})
     assert author._changed["Books"]
     author.save()
@@ -1020,7 +1019,7 @@ def test_datetime_timezones(requests_mock):
             "fields": request.json()["fields"],
         }
 
-    m = requests_mock.patch(M.meta.table.record_url(obj.id), json=patch_callback)
+    m = requests_mock.patch(M.meta.table.urls.record(obj.id), json=patch_callback)
 
     # Test that we parse the "Z" into UTC correctly
     assert obj.dt.date() == datetime.date(2024, 2, 29)
