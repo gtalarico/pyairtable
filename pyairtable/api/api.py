@@ -1,5 +1,4 @@
 import posixpath
-from functools import partialmethod
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import requests
@@ -265,13 +264,41 @@ class Api:
                 json=json,
             )
 
-        response = self.session.send(prepared, timeout=self.timeout)
+        response = self.session.request(
+            method=method,
+            url=url,
+            params=request_params,
+            json=json,
+        )
         return self._process_response(response)
 
-    get = partialmethod(request, "GET")
-    post = partialmethod(request, "POST")
-    patch = partialmethod(request, "PATCH")
-    delete = partialmethod(request, "DELETE")
+    def get(self, url: str, **kwargs: Any) -> Any:
+        """
+        Make a GET request to the Airtable API.
+        See :meth:`~Api.request` for keyword arguments.
+        """
+        return self.request("GET", url, **kwargs)
+
+    def post(self, url: str, **kwargs: Any) -> Any:
+        """
+        Make a POST request to the Airtable API.
+        See :meth:`~Api.request` for keyword arguments.
+        """
+        return self.request("POST", url, **kwargs)
+
+    def patch(self, url: str, **kwargs: Any) -> Any:
+        """
+        Make a PATCH request to the Airtable API.
+        See :meth:`~Api.request` for keyword arguments.
+        """
+        return self.request("PATCH", url, **kwargs)
+
+    def delete(self, url: str, **kwargs: Any) -> Any:
+        """
+        Make a DELETE request to the Airtable API.
+        See :meth:`~Api.request` for keyword arguments.
+        """
+        return self.request("DELETE", url, **kwargs)
 
     def _process_response(self, response: requests.Response) -> Any:
         try:
