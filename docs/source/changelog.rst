@@ -2,6 +2,13 @@
 Changelog
 =========
 
+2.3.5 (2024-10-29)
+------------------------
+
+* Fix for environment variables not getting passed to the ``requests``
+  library (`#398 <https://github.com/gtalarico/pyairtable/issues/398>`_).
+  - `PR #401 <https://github.com/gtalarico/pyairtable/pull/401>`_
+
 2.3.4 (2024-10-21)
 ------------------------
 
