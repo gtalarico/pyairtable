@@ -259,7 +259,7 @@ class MockAirtable:
 
     # The list of APIs that are mocked by this class.
     mocked = [
-        "Api._perform_request",
+        "Api.request",
         "Table.iterate",
         "Table.get",
         "Table.create",
@@ -294,7 +294,7 @@ class MockAirtable:
     def __enter__(self) -> Self:
         if self._stack:
             raise RuntimeError("MockAirtable is not reentrant")
-        if hasattr(Api._perform_request, "mock"):
+        if hasattr(Api.request, "mock"):
             raise RuntimeError("MockAirtable cannot be nested")
         self._reset()
         self._stack = ExitStack()
@@ -456,11 +456,11 @@ class MockAirtable:
 
     # side effects
 
-    def _api__perform_request(self, method: str, url: str, **kwargs: Any) -> Any:
+    def _api_request(self, api: Api, method: str, url: str, **kwargs: Any) -> Any:
         if not self.passthrough:
             raise RuntimeError("unhandled call to Api.request")
-        mocked = self._mocks["Api._perform_request"]
-        return mocked.temp_original(method, url, **kwargs)
+        mocked = self._mocks["Api.request"]
+        return mocked.temp_original(api, method, url, **kwargs)
 
     def _table_iterate(self, table: Table, **options: Any) -> List[List[RecordDict]]:
         return [list(self.records[(table.base.id, table.name)].values())]
