@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import pydantic
 
@@ -62,6 +62,12 @@ class Comment(
     #: Users or groups that were mentioned in the text.
     mentioned: Dict[str, "Mentioned"] = pydantic.Field(default_factory=dict)
 
+    #: The comment ID of the parent comment, if this comment is a threaded reply.
+    parent_comment_id: Optional[str] = None
+
+    #: List of reactions to this comment.
+    reactions: List["Reaction"] = pydantic.Field(default_factory=list)
+
 
 class Mentioned(AirtableModel):
     """
@@ -86,6 +92,30 @@ class Mentioned(AirtableModel):
     type: str
     display_name: str
     email: Optional[str] = None
+
+
+class Reaction(AirtableModel):
+    """
+    A reaction to a comment.
+    """
+
+    class EmojiInfo(AirtableModel):
+        unicode_character: str
+
+    class ReactingUser(AirtableModel):
+        user_id: str
+        email: Optional[str] = None
+        name: Optional[str] = None
+
+    emoji_info: EmojiInfo = pydantic.Field(alias="emoji")
+    reacting_user: ReactingUser
+
+    @property
+    def emoji(self) -> str:
+        """
+        The emoji character used for the reaction.
+        """
+        return chr(int(self.emoji_info.unicode_character, 16))
 
 
 rebuild_models(vars())

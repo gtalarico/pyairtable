@@ -270,10 +270,14 @@ class WebhookSpecification(AirtableModel):
         watch_schemas_of_field_ids: List[str] = FL()
 
     class SourceOptions(AirtableModel):
-        form_submission: Optional["WebhookSpecification.FormSubmission"] = None
+        form_submission: Optional["FormSubmission"] = None
+        form_page_submission: Optional["FormPageSubmission"] = None
 
-    class FormSubmission(AirtableModel):
-        view_id: str
+        class FormSubmission(AirtableModel):
+            view_id: str
+
+        class FormPageSubmission(AirtableModel):
+            page_id: str
 
     class Includes(AirtableModel):
         include_cell_values_in_field_ids: List[str] = FL()

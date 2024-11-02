@@ -14,5 +14,15 @@
             "email": "alice@example.com",
             "type": "user"
         }
-    }
+    },
+    "parentCommentId": "comkNDICXNqxSDhGL",
+    "reactions": [
+        {
+            "emoji": {"unicodeCharacter": "1f44d"},
+            "reactingUser": {
+                "userId": "usr0000000reacted",
+                "email": "carol@example.com"
+            }
+        }
+    ]
 }

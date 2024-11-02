@@ -168,6 +168,7 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
 
     id: str
     name: str
+    created_time: datetime
     permission_level: str
     workspace_id: str
     interfaces: Dict[str, "BaseCollaborators.InterfaceCollaborators"] = _FD()
@@ -179,6 +180,8 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
         _Collaborators,
         url="meta/bases/{base.id}/interfaces/{key}",
     ):
+        id: str
+        name: str
         created_time: datetime
         first_publish_time: Optional[datetime] = None
         group_collaborators: List["GroupCollaborator"] = _FL()
@@ -219,6 +222,7 @@ class BaseShares(AirtableModel):
         created_time: datetime
         share_id: str
         type: str
+        can_be_synced: Optional[bool] = None
         is_password_protected: bool
         block_installation_id: Optional[str] = None
         restricted_to_email_domains: List[str] = _FL()
@@ -434,6 +438,8 @@ class EnterpriseInfo(AirtableModel):
     user_ids: List[str]
     workspace_ids: List[str]
     email_domains: List["EnterpriseInfo.EmailDomain"]
+    root_enterprise_id: str = pydantic.Field(alias="rootEnterpriseAccountId")
+    descendant_enterprise_ids: List[str] = _FL(alias="descendantEnterpriseAccountIds")
 
     class EmailDomain(AirtableModel):
         email_domain: str
@@ -559,6 +565,7 @@ class UserInfo(
     name: str
     email: str
     state: str
+    is_service_account: bool
     is_sso_required: bool
     is_two_factor_auth_enabled: bool
     last_activity_time: Optional[datetime] = None
