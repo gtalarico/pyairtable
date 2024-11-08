@@ -1,4 +1,5 @@
 import datetime
+from functools import cached_property, partialmethod
 from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
 import pydantic
@@ -7,6 +8,8 @@ from pyairtable.models._base import AirtableModel, rebuild_models
 from pyairtable.models.audit import AuditLogResponse
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.utils import (
+    Url,
+    UrlBuilder,
     cache_unless_forced,
     coerce_iso_str,
     coerce_list_str,
@@ -24,14 +27,58 @@ class Enterprise:
     ['wspmhESAta6clCCwF', ...]
     """
 
+    class _urls(UrlBuilder):
+        #: URL for retrieving basic information about the enterprise.
+        meta = Url("meta/enterpriseAccounts/{id}")
+
+        #: URL for retrieving information about all users.
+        users = meta / "users"
+
+        #: URL for retrieving information about all user groups.
+        groups = Url("meta/groups")
+
+        #: URL for claiming a user into an enterprise.
+        claim_users = meta / "claim/users"
+
+        #: URL for retrieving audit log events.
+        audit_log = meta / "auditLogEvents"
+
+        def user(self, user_id: str) -> Url:
+            """
+            URL for retrieving information about a single user.
+            """
+            return self.users / user_id
+
+        def group(self, group_id: str) -> Url:
+            """
+            URL for retrieving information about a single user group.
+            """
+            return self.groups / group_id
+
+        def admin_access(self, action: Literal["grant", "revoke"]) -> Url:
+            """
+            URL for granting or revoking admin access to one or more users.
+            """
+            return self.meta / f"users/{action}AdminAccess"
+
+        def remove_user(self, user_id: str) -> Url:
+            """
+            URL for removing a user from the enterprise.
+            """
+            return self.user(user_id) / "remove"
+
+        #: URL for granting admin access to one or more users.
+        grant_admin = partialmethod(admin_access, "grant")
+
+        #: URL for revoking admin access from one or more users.
+        revoke_admin = partialmethod(admin_access, "revoke")
+
+    urls = cached_property(_urls)
+
     def __init__(self, api: "pyairtable.api.api.Api", workspace_id: str):
         self.api = api
         self.id = workspace_id
         self._info: Optional[EnterpriseInfo] = None
-
-    @property
-    def url(self) -> str:
-        return self.api.build_url("meta/enterpriseAccounts", self.id)
 
     @cache_unless_forced
     def info(self) -> EnterpriseInfo:
@@ -39,7 +86,7 @@ class Enterprise:
         Retrieve basic information about the enterprise, caching the result.
         """
         params = {"include": ["collaborators", "inviteLinks"]}
-        response = self.api.get(self.url, params=params)
+        response = self.api.get(self.urls.meta, params=params)
         return EnterpriseInfo.from_api(response, self.api)
 
     def group(self, group_id: str, collaborations: bool = True) -> UserGroup:
@@ -52,8 +99,7 @@ class Enterprise:
                 from Airtable. This may result in faster responses.
         """
         params = {"include": ["collaborations"] if collaborations else []}
-        url = self.api.build_url(f"meta/groups/{group_id}")
-        payload = self.api.get(url, params=params)
+        payload = self.api.get(self.urls.group(group_id), params=params)
         return UserGroup.model_validate(payload)
 
     def user(self, id_or_email: str, collaborations: bool = True) -> UserInfo:
@@ -89,7 +135,7 @@ class Enterprise:
             (emails if "@" in value else user_ids).append(value)
 
         response = self.api.get(
-            url=f"{self.url}/users",
+            url=self.urls.users,
             params={
                 "id": user_ids,
                 "email": emails,
@@ -212,10 +258,9 @@ class Enterprise:
         }
         params = {k: v for (k, v) in params.items() if v}
         offset_field = "next" if sort_asc else "previous"
-        url = self.api.build_url(f"meta/enterpriseAccounts/{self.id}/auditLogEvents")
         iter_requests = self.api.iterate_requests(
             method="GET",
-            url=url,
+            url=self.urls.audit_log,
             params=params,
             offset_field=offset_field,
         )
@@ -246,7 +291,7 @@ class Enterprise:
                 workspaces. If the user is not the sole owner of any workspaces,
                 this is optional and will be ignored if provided.
         """
-        url = f"{self.url}/users/{user_id}/remove"
+        url = self.urls.remove_user(user_id)
         payload: Dict[str, Any] = {"isDryRun": False}
         if replacement:
             payload["replacementOwnerId"] = replacement
@@ -277,7 +322,7 @@ class Enterprise:
                 for (key, value) in users.items()
             ]
         }
-        response = self.api.post(f"{self.url}/users/claim", json=payload)
+        response = self.api.post(self.urls.claim_users, json=payload)
         return ManageUsersResponse.from_api(response, self.api, context=self)
 
     def delete_users(self, emails: Iterable[str]) -> "DeleteUsersResponse":
@@ -287,7 +332,7 @@ class Enterprise:
         Args:
             emails: A list or other iterable of email addresses.
         """
-        response = self.api.delete(f"{self.url}/users", params={"email": list(emails)})
+        response = self.api.delete(self.urls.users, params={"email": list(emails)})
         return DeleteUsersResponse.from_api(response, self.api, context=self)
 
     def grant_admin(self, *users: Union[str, UserInfo]) -> "ManageUsersResponse":
@@ -311,10 +356,10 @@ class Enterprise:
         return self._post_admin_access("revoke", users)
 
     def _post_admin_access(
-        self, action: str, users: Iterable[Union[str, UserInfo]]
+        self, action: Literal["grant", "revoke"], users: Iterable[Union[str, UserInfo]]
     ) -> "ManageUsersResponse":
         response = self.api.post(
-            f"{self.url}/users/{action}AdminAccess",
+            self.urls.admin_access(action),
             json={
                 "users": [
                     {"email": user_id} if "@" in user_id else {"id": user_id}

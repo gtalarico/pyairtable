@@ -47,24 +47,24 @@ def record_mocks(requests_mock):
 
     # for Model.all
     mocks.get_authors = requests_mock.get(
-        Author.meta.table.url,
+        Author.meta.table.urls.records,
         json={"records": list(mocks.authors.values())},
     )
     mocks.get_books = requests_mock.get(
-        Book.meta.table.url,
+        Book.meta.table.urls.records,
         json={"records": list(mocks.books.values())},
     )
 
     # for Model.from_id
     mocks.get_author = {
         record_id: requests_mock.get(
-            Author.meta.table.record_url(record_id), json=record_data
+            Author.meta.table.urls.record(record_id), json=record_data
         )
         for record_id, record_data in mocks.authors.items()
     }
     mocks.get_book = {
         record_id: requests_mock.get(
-            Book.meta.table.record_url(record_id), json=record_data
+            Book.meta.table.urls.record(record_id), json=record_data
         )
         for record_id, record_data in mocks.books.items()
     }

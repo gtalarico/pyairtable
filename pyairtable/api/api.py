@@ -1,4 +1,4 @@
-import posixpath
+from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import requests
@@ -11,7 +11,13 @@ from pyairtable.api.params import options_to_json_and_params, options_to_params
 from pyairtable.api.types import UserAndScopesDict, assert_typed_dict
 from pyairtable.api.workspace import Workspace
 from pyairtable.models.schema import Bases
-from pyairtable.utils import cache_unless_forced, chunked, enterprise_only
+from pyairtable.utils import (
+    Url,
+    UrlBuilder,
+    cache_unless_forced,
+    chunked,
+    enterprise_only,
+)
 
 T = TypeVar("T")
 TimeoutTuple: TypeAlias = Tuple[int, int]
@@ -40,9 +46,15 @@ class Api:
     # Cached metadata to reduce API calls
     _bases: Optional[Dict[str, "pyairtable.api.base.Base"]] = None
 
-    endpoint_url: str
+    endpoint_url: Url
     session: Session
     use_field_ids: bool
+
+    class _urls(UrlBuilder):
+        whoami = Url("meta/whoami")
+        bases = Url("meta/bases")
+
+    urls = cached_property(_urls)
 
     def __init__(
         self,
@@ -77,7 +89,7 @@ class Api:
         else:
             self.session = retrying._RetryingSession(retry_strategy)
 
-        self.endpoint_url = endpoint_url
+        self.endpoint_url = Url(endpoint_url)
         self.timeout = timeout
         self.api_key = api_key
         self.use_field_ids = use_field_ids
@@ -102,7 +114,7 @@ class Api:
         Return the current user ID and (if connected via OAuth) the list of scopes.
         See `Get user ID & scopes <https://airtable.com/developers/web/api/get-user-id-scopes>`_ for more information.
         """
-        data = self.request("GET", self.build_url("meta/whoami"))
+        data = self.request("GET", self.urls.whoami)
         return assert_typed_dict(UserAndScopesDict, data)
 
     def workspace(self, workspace_id: str) -> Workspace:
@@ -136,7 +148,7 @@ class Api:
         """
         Return a schema object that represents all bases available via the API.
         """
-        url = self.build_url("meta/bases")
+        url = self.urls.bases
         data = {
             "bases": [
                 base_info
@@ -211,12 +223,12 @@ class Api:
         base = self.base(base_id, validate=validate, force=force)
         return base.table(table_name, validate=validate, force=force)
 
-    def build_url(self, *components: str) -> str:
+    def build_url(self, *components: str) -> Url:
         """
         Build a URL to the Airtable API endpoint with the given URL components,
         including the API version number.
         """
-        return posixpath.join(self.endpoint_url, self.VERSION, *components)
+        return self.endpoint_url / self.VERSION // components
 
     def request(
         self,

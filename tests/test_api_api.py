@@ -7,7 +7,7 @@ from pyairtable import Api, Base, Table  # noqa
 
 @pytest.fixture
 def mock_bases_endpoint(api, requests_mock, sample_json):
-    return requests_mock.get(api.build_url("meta/bases"), json=sample_json("Bases"))
+    return requests_mock.get(api.urls.bases, json=sample_json("Bases"))
 
 
 def test_repr(api):

@@ -546,7 +546,7 @@ class Collaborations(AirtableModel):
 class UserInfo(
     CanUpdateModel,
     CanDeleteModel,
-    url="{enterprise.url}/users/{self.id}",
+    url="{enterprise.urls.users}/{self.id}",
     writable=["state", "email", "first_name", "last_name"],
 ):
     """

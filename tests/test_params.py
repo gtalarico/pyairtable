@@ -30,7 +30,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
             "&returnFieldsByFieldId=1"
             ""
         )
-        mock_url = "{0}?{1}".format(table.url, url_params)
+        mock_url = "{0}?{1}".format(table.urls.records, url_params)
         m.get(mock_url, status_code=200, json=mock_response_iterator)
         response = table.all(**params)
     for n, resp in enumerate(response):
