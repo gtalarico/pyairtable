@@ -20,7 +20,24 @@
         "options": {
             "filters": {
                 "dataTypes": ["tableData"],
-                "recordChangeScope": "tbltp8DGLhqbUmjK1"
+                "changeTypes": ["add", "remove", "update"],
+                "fromSources": ["client"],
+                "recordChangeScope": "tbltp8DGLhqbUmjK1",
+                "sourceOptions": {
+                    "formPageSubmission": {
+                        "pageId": "pbdLkNDICXNqxSDhG"
+                    },
+                    "formSubmission": {
+                        "viewId": "viwLkNDICXNqxSDhG"
+                    }
+                },
+                "watchDataInFieldIds": ["fldLkNDICXNqxSDhG"],
+                "watchSchemasOfFieldIds": ["fldLkNDICXNqxSDhG"]
+            },
+            "includes": {
+                "includeCellValuesInFieldIds": "all",
+                "includePreviousCellValues": false,
+                "includePreviousFieldDefinitions": false
             }
         }
     }

@@ -2,7 +2,7 @@ import base64
 from datetime import datetime
 from functools import partial
 from hmac import HMAC
-from typing import Any, Callable, Dict, Iterator, List, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
 
 import pydantic
 from typing_extensions import Self as SelfType
@@ -280,7 +280,7 @@ class WebhookSpecification(AirtableModel):
             page_id: str
 
     class Includes(AirtableModel):
-        include_cell_values_in_field_ids: List[str] = FL()
+        include_cell_values_in_field_ids: Union[None, List[str], Literal["all"]] = None
         include_previous_cell_values: bool = False
         include_previous_field_definitions: bool = False
 
