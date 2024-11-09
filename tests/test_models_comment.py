@@ -25,10 +25,12 @@ def comments_url(base, table):
     return f"https://api.airtable.com/v0/{base.id}/{table.name}/{RECORD_ID}/comments"
 
 
-def test_parse(comment_json):
-    c = Comment.model_validate(comment_json)
-    assert isinstance(c.created_time, datetime.datetime)
-    assert isinstance(c.last_updated_time, datetime.datetime)
+def test_parse(comment):
+    assert isinstance(comment.created_time, datetime.datetime)
+    assert isinstance(comment.last_updated_time, datetime.datetime)
+    assert comment.author.id == "usrLkNDICXNqxSDhG"
+    assert comment.mentioned["usr00000mentioned"].display_name == "Alice Doe"
+    assert comment.reactions[0].emoji == "👍"
 
 
 def test_missing_attributes(comment_json):

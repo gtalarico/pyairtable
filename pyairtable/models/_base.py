@@ -24,7 +24,7 @@ class AirtableModel(pydantic.BaseModel):
         populate_by_name=True,
     )
 
-    _raw: Any = pydantic.PrivateAttr()
+    _raw: Dict[str, Any] = pydantic.PrivateAttr()
 
     def __init__(self, **data: Any) -> None:
         raw = data.copy()

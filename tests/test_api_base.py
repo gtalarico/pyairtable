@@ -186,6 +186,7 @@ def test_name(api, base, requests_mock):
         base.urls.meta,
         json={
             "id": base.id,
+            "createdTime": "2021-01-01T00:00:00.000Z",
             "name": "Mocked Base Name",
             "permissionLevel": "create",
             "workspaceId": "wspFake",
