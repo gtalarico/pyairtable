@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock, call, patch
 
 import pytest
@@ -17,11 +17,12 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
     m.json_user = sample_json("UserInfo")
     m.json_users = {"users": [m.json_user]}
     m.json_group = sample_json("UserGroup")
+    m.json_enterprise = sample_json("EnterpriseInfo")
     m.user_id = m.json_user["id"]
     m.group_id = m.json_group["id"]
     m.get_info = requests_mock.get(
         enterprise_url := "https://api.airtable.com/v0/meta/enterpriseAccounts/entUBq2RGdihxl3vU",
-        json=sample_json("EnterpriseInfo"),
+        json=m.json_enterprise,
     )
     m.get_user = requests_mock.get(
         f"{enterprise_url}/users/usrL2PNC5o3H4lBEi",
@@ -64,7 +65,7 @@ def fake_audit_log_events(counter, page_size=N_AUDIT_PAGE_SIZE):
     return [
         {
             "id": str(counter * 1000 + n),
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "action": "viewBase",
             "actor": {"type": "anonymousUser"},
             "modelId": (base_id := fake_id("app")),
@@ -92,6 +93,35 @@ def test_info(enterprise, enterprise_mocks):
 
     assert enterprise.info(force=True).id == "entUBq2RGdihxl3vU"
     assert enterprise_mocks.get_info.call_count == 2
+    assert "aggregated" not in enterprise_mocks.get_info.last_request.qs
+    assert "descendants" not in enterprise_mocks.get_info.last_request.qs
+
+
+def test_info__aggregated_descendants(enterprise, enterprise_mocks):
+    enterprise_mocks.json_enterprise["aggregated"] = {
+        "groupIds": ["ugp1mKGb3KXUyQfOZ"],
+        "userIds": ["usrL2PNC5o3H4lBEi"],
+        "workspaceIds": ["wspmhESAta6clCCwF"],
+    }
+    enterprise_mocks.json_enterprise["descendants"] = {
+        (sub_ent_id := fake_id("ent")): {
+            "groupIds": ["ugp1mKGb3KXUyDESC"],
+            "userIds": ["usrL2PNC5o3H4DESC"],
+            "workspaceIds": ["wspmhESAta6clDESC"],
+        }
+    }
+    info = enterprise.info(aggregated=True, descendants=True)
+    assert enterprise_mocks.get_info.call_count == 1
+    assert enterprise_mocks.get_info.last_request.qs["include"] == [
+        "aggregated",
+        "descendants",
+    ]
+    assert info.aggregated.group_ids == ["ugp1mKGb3KXUyQfOZ"]
+    assert info.aggregated.user_ids == ["usrL2PNC5o3H4lBEi"]
+    assert info.aggregated.workspace_ids == ["wspmhESAta6clCCwF"]
+    assert info.descendants[sub_ent_id].group_ids == ["ugp1mKGb3KXUyDESC"]
+    assert info.descendants[sub_ent_id].user_ids == ["usrL2PNC5o3H4DESC"]
+    assert info.descendants[sub_ent_id].workspace_ids == ["wspmhESAta6clDESC"]
 
 
 def test_user(enterprise, enterprise_mocks):
@@ -117,6 +147,34 @@ def test_user__no_collaboration(enterprise, enterprise_mocks):
     assert not user.collaborations.workspaces
 
 
+def test_user__descendants(enterprise, enterprise_mocks):
+    enterprise_mocks.json_users["users"][0]["descendants"] = {
+        (other_ent_id := fake_id("ent")): {
+            "lastActivityTime": "2021-01-01T12:34:56Z",
+            "isAdmin": True,
+            "groups": [{"id": (fake_group_id := fake_id("ugp"))}],
+        }
+    }
+    user = enterprise.user(enterprise_mocks.user_id, descendants=True)
+    d = user.descendants[other_ent_id]
+    assert d.last_activity_time == datetime(2021, 1, 1, 12, 34, 56, tzinfo=timezone.utc)
+    assert d.is_admin is True
+    assert d.groups[0].id == fake_group_id
+
+
+def test_user__aggregates(enterprise, enterprise_mocks):
+    enterprise_mocks.json_users["users"][0]["aggregated"] = {
+        "lastActivityTime": "2021-01-01T12:34:56Z",
+        "isAdmin": True,
+        "groups": [{"id": (fake_group_id := fake_id("ugp"))}],
+    }
+    user = enterprise.user(enterprise_mocks.user_id, aggregated=True)
+    a = user.aggregated
+    assert a.last_activity_time == datetime(2021, 1, 1, 12, 34, 56, tzinfo=timezone.utc)
+    assert a.is_admin is True
+    assert a.groups[0].id == fake_group_id
+
+
 @pytest.mark.parametrize(
     "search_for",
     (
@@ -131,6 +189,36 @@ def test_users(enterprise, search_for):
     assert isinstance(user := results[0], UserInfo)
     assert user.id == "usrL2PNC5o3H4lBEi"
     assert user.state == "provisioned"
+
+
+def test_users__descendants(enterprise, enterprise_mocks):
+    enterprise_mocks.json_users["users"][0]["descendants"] = {
+        (other_ent_id := fake_id("ent")): {
+            "lastActivityTime": "2021-01-01T12:34:56Z",
+            "isAdmin": True,
+            "groups": [{"id": (fake_group_id := fake_id("ugp"))}],
+        }
+    }
+    users = enterprise.users([enterprise_mocks.user_id], descendants=True)
+    assert len(users) == 1
+    d = users[0].descendants[other_ent_id]
+    assert d.last_activity_time == datetime(2021, 1, 1, 12, 34, 56, tzinfo=timezone.utc)
+    assert d.is_admin is True
+    assert d.groups[0].id == fake_group_id
+
+
+def test_users__aggregates(enterprise, enterprise_mocks):
+    enterprise_mocks.json_users["users"][0]["aggregated"] = {
+        "lastActivityTime": "2021-01-01T12:34:56Z",
+        "isAdmin": True,
+        "groups": [{"id": (fake_group_id := fake_id("ugp"))}],
+    }
+    users = enterprise.users([enterprise_mocks.user_id], aggregated=True)
+    assert len(users) == 1
+    a = users[0].aggregated
+    assert a.last_activity_time == datetime(2021, 1, 1, 12, 34, 56, tzinfo=timezone.utc)
+    assert a.is_admin is True
+    assert a.groups[0].id == fake_group_id
 
 
 def test_group(enterprise, enterprise_mocks):

@@ -81,11 +81,26 @@ class Enterprise:
         self._info: Optional[EnterpriseInfo] = None
 
     @cache_unless_forced
-    def info(self) -> EnterpriseInfo:
+    def info(
+        self,
+        *,
+        aggregated: bool = False,
+        descendants: bool = False,
+    ) -> EnterpriseInfo:
         """
         Retrieve basic information about the enterprise, caching the result.
+        Calls `Get enterprise <https://airtable.com/developers/web/api/get-enterprise>`__.
+
+        Args:
+            aggregated: if ``True``, include aggregated values across the enterprise.
+            descendants: if ``True``, include information about the enterprise's descendant orgs.
         """
-        params = {"include": ["collaborators", "inviteLinks"]}
+        include = []
+        if aggregated:
+            include.append("aggregated")
+        if descendants:
+            include.append("descendants")
+        params = {"include": include}
         response = self.api.get(self.urls.meta, params=params)
         return EnterpriseInfo.from_api(response, self.api)
 
@@ -102,7 +117,14 @@ class Enterprise:
         payload = self.api.get(self.urls.group(group_id), params=params)
         return UserGroup.model_validate(payload)
 
-    def user(self, id_or_email: str, collaborations: bool = True) -> UserInfo:
+    def user(
+        self,
+        id_or_email: str,
+        *,
+        collaborations: bool = True,
+        aggregated: bool = False,
+        descendants: bool = False,
+    ) -> UserInfo:
         """
         Retrieve information on a single user with the given ID or email.
 
@@ -110,13 +132,26 @@ class Enterprise:
             id_or_email: A user ID (``usrQBq2RGdihxl3vU``) or email address.
             collaborations: If ``False``, no collaboration data will be requested
                 from Airtable. This may result in faster responses.
+            aggregated: If ``True``, includes the user's aggregated values
+                across this enterprise account and its descendants.
+            descendants: If ``True``, includes information about the user
+                in a ``dict`` keyed per descendant enterprise account.
         """
-        return self.users([id_or_email], collaborations=collaborations)[0]
+        users = self.users(
+            [id_or_email],
+            collaborations=collaborations,
+            aggregated=aggregated,
+            descendants=descendants,
+        )
+        return users[0]
 
     def users(
         self,
         ids_or_emails: Iterable[str],
+        *,
         collaborations: bool = True,
+        aggregated: bool = False,
+        descendants: bool = False,
     ) -> List[UserInfo]:
         """
         Retrieve information on the users with the given IDs or emails.
@@ -128,18 +163,30 @@ class Enterprise:
                 or email addresses (or both).
             collaborations: If ``False``, no collaboration data will be requested
                 from Airtable. This may result in faster responses.
+            aggregated: If ``True``, includes the user's aggregated values
+                across this enterprise account and its descendants.
+            descendants: If ``True``, includes information about the user
+                in a ``dict`` keyed per descendant enterprise account.
         """
         user_ids: List[str] = []
         emails: List[str] = []
         for value in ids_or_emails:
             (emails if "@" in value else user_ids).append(value)
 
+        include = []
+        if collaborations:
+            include.append("collaborations")
+        if aggregated:
+            include.append("aggregated")
+        if descendants:
+            include.append("descendants")
+
         response = self.api.get(
             url=self.urls.users,
             params={
                 "id": user_ids,
                 "email": emails,
-                "include": ["collaborations"] if collaborations else [],
+                "include": include,
             },
         )
         # key by user ID to avoid returning duplicates
