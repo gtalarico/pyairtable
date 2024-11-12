@@ -432,10 +432,19 @@ class EnterpriseInfo(AirtableModel):
     user_ids: List[str]
     workspace_ids: List[str]
     email_domains: List["EnterpriseInfo.EmailDomain"]
+    root_enterprise_id: str = pydantic.Field(alias="rootEnterpriseAccountId")
+    descendant_enterprise_ids: List[str] = _FL(alias="descendantEnterpriseAccountIds")
+    aggregated: Optional["EnterpriseInfo.AggregatedIds"] = None
+    descendants: Dict[str, "EnterpriseInfo.AggregatedIds"] = _FD()
 
     class EmailDomain(AirtableModel):
         email_domain: str
         is_sso_required: bool
+
+    class AggregatedIds(AirtableModel):
+        group_ids: List[str] = _FL()
+        user_ids: List[str] = _FL()
+        workspace_ids: List[str] = _FL()
 
 
 class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
@@ -566,9 +575,24 @@ class UserInfo(
     is_managed: bool = False
     groups: List[NestedId] = _FL()
     collaborations: "Collaborations" = pydantic.Field(default_factory=Collaborations)
+    descendants: Dict[str, "UserInfo.DescendantIds"] = _FD()
+    aggregated: Optional["UserInfo.AggregatedIds"] = None
 
     def logout(self) -> None:
         self._api.post(self._url + "/logout")
+
+    class DescendantIds(AirtableModel):
+        last_activity_time: Optional[str] = None
+        collaborations: Optional["Collaborations"] = None
+        is_admin: bool = False
+        is_managed: bool = False
+        groups: List[NestedId] = _FL()
+
+    class AggregatedIds(AirtableModel):
+        last_activity_time: Optional[str] = None
+        collaborations: Optional["Collaborations"] = None
+        is_admin: bool = False
+        groups: List[NestedId] = _FL()
 
 
 class UserGroup(AirtableModel):

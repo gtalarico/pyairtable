@@ -210,9 +210,9 @@ def cache_unless_forced(func: Callable[[C], R]) -> FetchMethod[C, R]:
         attr = "_cached_" + attr.lstrip("_")
 
     @wraps(func)
-    def _inner(self: C, *, force: bool = False) -> R:
+    def _inner(self: C, *, force: bool = False, **kwargs: Any) -> R:
         if force or getattr(self, attr, None) is None:
-            setattr(self, attr, func(self))
+            setattr(self, attr, func(self, **kwargs))
         return cast(R, getattr(self, attr))
 
     _inner.__annotations__["force"] = bool
