@@ -12,7 +12,7 @@
       {
         "baseId": "appLkNDICXNqxSDhG",
         "createdTime": "2019-01-03T12:33:12.421Z",
-        "grantedByUserId": "usrqccqnMB2eHylqB",
+        "grantedByUserId": "usrogvSbotRtzdtZW",
         "interfaceId": "pbdyGA3PsOziEHPDE",
         "permissionLevel": "edit"
       }
@@ -38,6 +38,7 @@
   ],
   "id": "usrL2PNC5o3H4lBEi",
   "invitedToAirtableByUserId": "usrsOEchC9xuwRgKk",
+  "isAdmin": true,
   "isManaged": true,
   "isServiceAccount": false,
   "isSsoRequired": true,

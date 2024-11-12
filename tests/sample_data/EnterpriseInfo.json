@@ -1,5 +1,8 @@
 {
   "createdTime": "2019-01-03T12:33:12.421Z",
+  "descendantEnterpriseAccountIds": [
+    "entJ9ZQ5vz9ZQ5vz9"
+  ],
   "emailDomains": [
     {
       "emailDomain": "foobar.com",

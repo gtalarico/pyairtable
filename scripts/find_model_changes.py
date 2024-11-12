@@ -38,7 +38,7 @@ SCAN_MODELS = {
     "pyairtable.models.schema:BaseCollaborators": "operations:get-base-collaborators:response:schema",
     "pyairtable.models.schema:BaseCollaborators.IndividualCollaborators": "operations:get-base-collaborators:response:schema:@individualCollaborators",
     "pyairtable.models.schema:BaseCollaborators.GroupCollaborators": "operations:get-base-collaborators:response:schema:@groupCollaborators",
-    "pyairtable.models.schema:BaseCollaborators.InterfaceCollaborators": "operations:get-base-collaborators:response:schema:@interfaces:additionalProperties",
+    "pyairtable.models.schema:BaseCollaborators.InterfaceCollaborators": "operations:get-base-collaborators:response:schema:@interfaces:*",
     "pyairtable.models.schema:BaseCollaborators.InviteLinks": "operations:get-base-collaborators:response:schema:@inviteLinks",
     "pyairtable.models.schema:BaseShares": "operations:list-shares:response:schema",
     "pyairtable.models.schema:BaseShares.Info": "operations:list-shares:response:schema:@shares:items",
@@ -48,6 +48,7 @@ SCAN_MODELS = {
     "pyairtable.models.schema:InterfaceInviteLink": "schemas:invite-link",
     "pyairtable.models.schema:EnterpriseInfo": "operations:get-enterprise:response:schema",
     "pyairtable.models.schema:EnterpriseInfo.EmailDomain": "operations:get-enterprise:response:schema:@emailDomains:items",
+    "pyairtable.models.schema:EnterpriseInfo.AggregatedIds": "operations:get-enterprise:response:schema:@aggregated",
     "pyairtable.models.schema:WorkspaceCollaborators": "operations:get-workspace-collaborators:response:schema",
     "pyairtable.models.schema:WorkspaceCollaborators.Restrictions": "operations:get-workspace-collaborators:response:schema:@workspaceRestrictions",
     "pyairtable.models.schema:WorkspaceCollaborators.GroupCollaborators": "operations:get-workspace-collaborators:response:schema:@groupCollaborators",
@@ -63,6 +64,8 @@ SCAN_MODELS = {
     "pyairtable.models.schema:Collaborations.InterfaceCollaboration": "schemas:collaborations:@interfaceCollaborations:items",
     "pyairtable.models.schema:Collaborations.WorkspaceCollaboration": "schemas:collaborations:@workspaceCollaborations:items",
     "pyairtable.models.schema:UserInfo": "operations:get-user-by-id:response:schema",
+    "pyairtable.models.schema:UserInfo.AggregatedIds": "operations:get-user-by-id:response:schema:@aggregated",
+    "pyairtable.models.schema:UserInfo.DescendantIds": "operations:get-user-by-id:response:schema:@descendants:*",
     "pyairtable.models.schema:UserGroup": "operations:get-user-group:response:schema",
     "pyairtable.models.schema:UserGroup.Member": "operations:get-user-group:response:schema:@members:items",
     "pyairtable.models.webhook:Webhook": "operations:list-webhooks:response:schema:@webhooks:items",
@@ -71,15 +74,15 @@ SCAN_MODELS = {
     "pyairtable.models.webhook:WebhookPayloads": "operations:list-webhook-payloads:response:schema",
     "pyairtable.models.webhook:WebhookPayload": "schemas:webhooks-payload",
     "pyairtable.models.webhook:WebhookPayload.ActionMetadata": "schemas:webhooks-action",
-    "pyairtable.models.webhook:WebhookPayload.FieldChanged": "schemas:webhooks-table-changed:@changedFieldsById:additionalProperties",
-    "pyairtable.models.webhook:WebhookPayload.FieldInfo": "schemas:webhooks-table-changed:@changedFieldsById:additionalProperties:@current",
-    "pyairtable.models.webhook:WebhookPayload.RecordChanged": "schemas:webhooks-changed-record:additionalProperties",
-    "pyairtable.models.webhook:WebhookPayload.RecordCreated": "schemas:webhooks-created-record:additionalProperties",
+    "pyairtable.models.webhook:WebhookPayload.FieldChanged": "schemas:webhooks-table-changed:@changedFieldsById:*",
+    "pyairtable.models.webhook:WebhookPayload.FieldInfo": "schemas:webhooks-table-changed:@changedFieldsById:*:@current",
+    "pyairtable.models.webhook:WebhookPayload.RecordChanged": "schemas:webhooks-changed-record:*",
+    "pyairtable.models.webhook:WebhookPayload.RecordCreated": "schemas:webhooks-created-record:*",
     "pyairtable.models.webhook:WebhookPayload.TableChanged": "schemas:webhooks-table-changed",
     "pyairtable.models.webhook:WebhookPayload.TableChanged.ChangedMetadata": "schemas:webhooks-table-changed:@changedMetadata",
     "pyairtable.models.webhook:WebhookPayload.TableInfo": "schemas:webhooks-table-changed:@changedMetadata:@current",
     "pyairtable.models.webhook:WebhookPayload.TableCreated": "schemas:webhooks-table-created",
-    "pyairtable.models.webhook:WebhookPayload.ViewChanged": "schemas:webhooks-table-changed:@changedViewsById:additionalProperties",
+    "pyairtable.models.webhook:WebhookPayload.ViewChanged": "schemas:webhooks-table-changed:@changedViewsById:*",
     "pyairtable.models.webhook:CreateWebhook": "operations:create-a-webhook:request:schema",
     "pyairtable.models.webhook:CreateWebhookResponse": "operations:create-a-webhook:response:schema",
     "pyairtable.models.webhook:WebhookSpecification": "operations:create-a-webhook:request:schema:@specification",
@@ -115,6 +118,7 @@ def main() -> None:
         model_module = importlib.import_module(modname)
         model_cls = attrgetter(clsname)(model_module)
         initdata_path = initdata_path.replace(":@", ":properties:")
+        initdata_path = re.sub(r":\*(:|$)", r":additionalProperties\1", initdata_path)
         issues.extend(scan_schema(model_cls, initdata.get_nested(initdata_path)))
 
     if not issues:
@@ -169,14 +173,16 @@ class ApiData(Dict[str, Any]):
         """
         get_from = self
         traversed = []
-        while separator in path:
-            next_key, path = path.split(separator, 1)
-            traversed.append(next_key)
-            try:
+        try:
+            while separator in path:
+                next_key, path = path.split(separator, 1)
+                traversed.append(next_key)
                 get_from = get_from[next_key]
-            except KeyError:
-                raise KeyError(*traversed)
-        return get_from[path]
+            traversed.append(path)
+            return get_from[path]
+        except KeyError as exc:
+            exc.args = tuple(traversed)
+            raise exc
 
     @cached_property
     def by_operation(self) -> Dict[str, Dict[str, Any]]:
