@@ -2,6 +2,14 @@
 Changelog
 =========
 
+2.3.6 (2024-11-11)
+------------------------
+
+* Fix for `#404 <https://github.com/gtalarico/pyairtable/issues/404>`_
+  related to `enterprise endpoint changes <https://airtable.com/developers/web/api/changelog#anchor-2024-11-11>`__.
+  - `PR #405 <https://github.com/gtalarico/pyairtable/pull/405>`_,
+    `PR #406 <https://github.com/gtalarico/pyairtable/pull/406>`_
+
 2.3.5 (2024-10-29)
 ------------------------
 
