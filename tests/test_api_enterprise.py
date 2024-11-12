@@ -62,6 +62,17 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
         f"{enterprise_url}/claim/users",
         json={"errors": []},
     )
+    m.create_descendants = requests_mock.post(
+        f"{enterprise_url}/descendants", json={"id": fake_id("ent")}
+    )
+    m.move_groups_json = {}
+    m.move_groups = requests_mock.post(
+        f"{enterprise_url}/moveGroups", json=m.move_groups_json
+    )
+    m.move_workspaces_json = {}
+    m.move_workspaces = requests_mock.post(
+        f"{enterprise_url}/moveWorkspaces", json=m.move_workspaces_json
+    )
     return m
 
 
@@ -424,10 +435,27 @@ def test_manage_admin_access(enterprise, enterprise_mocks, requests_mock, action
     }
 
 
-def test_create_descendant(enterprise, requests_mock):
-    sub_ent_id = fake_id("ent")
-    m = requests_mock.post(enterprise.urls.descendants, json={"id": sub_ent_id})
+def test_create_descendant(enterprise, enterprise_mocks):
     descendant = enterprise.create_descendant("Some name")
-    assert m.call_count == 1
-    assert m.last_request.json() == {"name": "Some name"}
+    assert enterprise_mocks.create_descendants.call_count == 1
+    assert enterprise_mocks.create_descendants.last_request.json() == {
+        "name": "Some name"
+    }
     assert isinstance(descendant, Enterprise)
+
+
+def test_move_groups(api, enterprise, enterprise_mocks):
+    other_id = fake_id("ent")
+    group_ids = [fake_id("ugp") for _ in range(3)]
+    enterprise_mocks.move_groups_json["movedGroups"] = [
+        {"id": group_id} for group_id in group_ids
+    ]
+    for target in [other_id, api.enterprise(other_id)]:
+        enterprise_mocks.move_groups.reset()
+        result = enterprise.move_groups(group_ids, target)
+        assert enterprise_mocks.move_groups.call_count == 1
+        assert enterprise_mocks.move_groups.last_request.json() == {
+            "targetEnterpriseAccountId": other_id,
+            "groupIds": group_ids,
+        }
+        assert set(m.id for m in result.moved_groups) == set(group_ids)
