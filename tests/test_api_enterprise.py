@@ -459,3 +459,20 @@ def test_move_groups(api, enterprise, enterprise_mocks):
             "groupIds": group_ids,
         }
         assert set(m.id for m in result.moved_groups) == set(group_ids)
+
+
+def test_move_workspaces(api, enterprise, enterprise_mocks):
+    other_id = fake_id("ent")
+    workspace_ids = [fake_id("wsp") for _ in range(3)]
+    enterprise_mocks.move_workspaces_json["movedWorkspaces"] = [
+        {"id": workspace_id} for workspace_id in workspace_ids
+    ]
+    for target in [other_id, api.enterprise(other_id)]:
+        enterprise_mocks.move_workspaces.reset()
+        result = enterprise.move_workspaces(workspace_ids, target)
+        assert enterprise_mocks.move_workspaces.call_count == 1
+        assert enterprise_mocks.move_workspaces.last_request.json() == {
+            "targetEnterpriseAccountId": other_id,
+            "workspaceIds": workspace_ids,
+        }
+        assert set(m.id for m in result.moved_workspaces) == set(workspace_ids)

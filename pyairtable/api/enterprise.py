@@ -50,6 +50,9 @@ class Enterprise:
         #: URL for moving user groups between enterprise accounts.
         move_groups = meta / "moveGroups"
 
+        #: URL for moving workspaces between enterprise accounts.
+        move_workspaces = meta / "moveWorkspaces"
+
         def user(self, user_id: str) -> Url:
             """
             URL for retrieving information about a single user.
@@ -469,6 +472,32 @@ class Enterprise:
         )
         return MoveGroupsResponse.from_api(response, self.api, context=self)
 
+    def move_workspaces(
+        self,
+        workspace_ids: Iterable[str],
+        target: Union[str, Self],
+    ) -> "MoveWorkspacesResponse":
+        """
+        Move one or more workspaces from the current enterprise account
+        into a different enterprise account within the same organization.
+
+        See `Move workspaces <https://airtable.com/developers/web/api/move-workspaces>`__.
+
+        Args:
+            workspace_ids: The list of workspace IDs.
+            target: The ID of the target enterprise, or an instance of :class:`~pyairtable.Enterprise`.
+        """
+        if isinstance(target, Enterprise):
+            target = target.id
+        response = self.api.post(
+            self.urls.move_workspaces,
+            json={
+                "workspaceIds": workspace_ids,
+                "targetEnterpriseAccountId": target,
+            },
+        )
+        return MoveWorkspacesResponse.from_api(response, self.api, context=self)
+
 
 class UserRemoved(AirtableModel):
     """
@@ -570,6 +599,15 @@ class MoveGroupsResponse(AirtableModel):
     """
 
     moved_groups: List[NestedId] = pydantic.Field(default_factory=list)
+    errors: List[MoveError] = pydantic.Field(default_factory=list)
+
+
+class MoveWorkspacesResponse(AirtableModel):
+    """
+    Returned by `Move workspaces <https://airtable.com/developers/web/api/move-workspaces>`__.
+    """
+
+    moved_workspaces: List[NestedId] = pydantic.Field(default_factory=list)
     errors: List[MoveError] = pydantic.Field(default_factory=list)
 
 
