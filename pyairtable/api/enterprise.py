@@ -323,6 +323,8 @@ class Enterprise:
         self,
         user_id: str,
         replacement: Optional[str] = None,
+        *,
+        descendants: bool = False,
     ) -> "UserRemoved":
         """
         Unshare a user from all enterprise workspaces, bases, and interfaces.
@@ -337,11 +339,14 @@ class Enterprise:
                 specify a replacement user ID to be added as the new owner of such
                 workspaces. If the user is not the sole owner of any workspaces,
                 this is optional and will be ignored if provided.
+            descendants: If ``True``, removes the user from descendant enterprise accounts.
         """
         url = self.urls.remove_user(user_id)
         payload: Dict[str, Any] = {"isDryRun": False}
         if replacement:
             payload["replacementOwnerId"] = replacement
+        if descendants:
+            payload["removeFromDescendants"] = True
         response = self.api.post(url, json=payload)
         return UserRemoved.from_api(response, self.api, context=self)
 

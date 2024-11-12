@@ -321,6 +321,10 @@ def test_audit_log__sortorder(
             {"replacement": "otherUser"},
             {"isDryRun": False, "replacementOwnerId": "otherUser"},
         ),
+        (
+            {"descendants": True},
+            {"isDryRun": False, "removeFromDescendants": True},
+        ),
     ],
 )
 def test_remove_user(enterprise, enterprise_mocks, kwargs, expected):
