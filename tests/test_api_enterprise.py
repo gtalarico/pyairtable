@@ -3,7 +3,11 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
-from pyairtable.api.enterprise import DeleteUsersResponse, ManageUsersResponse
+from pyairtable.api.enterprise import (
+    DeleteUsersResponse,
+    Enterprise,
+    ManageUsersResponse,
+)
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.testing import fake_id
 
@@ -418,3 +422,12 @@ def test_manage_admin_access(enterprise, enterprise_mocks, requests_mock, action
             {"id": user.id},
         ]
     }
+
+
+def test_create_descendant(enterprise, requests_mock):
+    sub_ent_id = fake_id("ent")
+    m = requests_mock.post(enterprise.urls.descendants, json={"id": sub_ent_id})
+    descendant = enterprise.create_descendant("Some name")
+    assert m.call_count == 1
+    assert m.last_request.json() == {"name": "Some name"}
+    assert isinstance(descendant, Enterprise)

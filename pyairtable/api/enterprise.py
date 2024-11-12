@@ -3,6 +3,7 @@ from functools import cached_property, partialmethod
 from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
 import pydantic
+from typing_extensions import Self
 
 from pyairtable.models._base import AirtableModel, rebuild_models
 from pyairtable.models.audit import AuditLogResponse
@@ -42,6 +43,9 @@ class Enterprise:
 
         #: URL for retrieving audit log events.
         audit_log = meta / "auditLogEvents"
+
+        #: URL for managing descendant enterprise accounts.
+        descendants = meta / "descendants"
 
         def user(self, user_id: str) -> Url:
             """
@@ -421,6 +425,20 @@ class Enterprise:
             },
         )
         return ManageUsersResponse.from_api(response, self.api, context=self)
+
+    def create_descendant(self, name: str) -> Self:
+        """
+        Creates a descendant enterprise account of the enterprise account.
+        Descendant enterprise accounts can only be created for root enterprise accounts
+        with the Enterprise Hub feature enabled.
+
+        See `Create descendant enterprise <https://airtable.com/developers/web/api/create-descendant-enterprise>`__.
+
+        Args:
+            name: The name to give the new account.
+        """
+        response = self.api.post(self.urls.descendants, json={"name": name})
+        return self.__class__(self.api, response["id"])
 
 
 class UserRemoved(AirtableModel):
