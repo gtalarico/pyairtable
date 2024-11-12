@@ -1,4 +1,4 @@
-import datetime
+from datetime import date, datetime
 from functools import cached_property, partialmethod
 from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
@@ -205,8 +205,8 @@ class Enterprise:
         sort_asc: Optional[bool] = False,
         previous: Optional[str] = None,
         next: Optional[str] = None,
-        start_time: Optional[Union[str, datetime.date, datetime.datetime]] = None,
-        end_time: Optional[Union[str, datetime.date, datetime.datetime]] = None,
+        start_time: Optional[Union[str, date, datetime]] = None,
+        end_time: Optional[Union[str, date, datetime]] = None,
         user_id: Optional[Union[str, Iterable[str]]] = None,
         event_type: Optional[Union[str, Iterable[str]]] = None,
         model_id: Optional[Union[str, Iterable[str]]] = None,
@@ -436,6 +436,8 @@ class UserRemoved(AirtableModel):
             workspace_id: str
             workspace_name: str
             user_id: str = ""
+            deleted_time: Optional[datetime] = None
+            enterprise_account_id: Optional[str] = None
 
     class Unshared(AirtableModel):
         bases: List["UserRemoved.Unshared.Base"]
@@ -447,6 +449,8 @@ class UserRemoved(AirtableModel):
             base_id: str
             base_name: str
             former_permission_level: str
+            deleted_time: Optional[datetime] = None
+            enterprise_account_id: Optional[str] = None
 
         class Interface(AirtableModel):
             user_id: str
@@ -454,12 +458,16 @@ class UserRemoved(AirtableModel):
             interface_id: str
             interface_name: str
             former_permission_level: str
+            deleted_time: Optional[datetime] = None
+            enterprise_account_id: Optional[str] = None
 
         class Workspace(AirtableModel):
             user_id: str
             former_permission_level: str
             workspace_id: str
             workspace_name: str
+            deleted_time: Optional[datetime] = None
+            enterprise_account_id: Optional[str] = None
 
 
 class DeleteUsersResponse(AirtableModel):

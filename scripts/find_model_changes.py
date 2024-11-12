@@ -19,6 +19,18 @@ API_INTRO = f"{API_PREFIX}/introduction"
 INITDATA_RE = r"<script[^>]*>\s*window\.initData = (\{.*\})\s*</script>"
 
 SCAN_MODELS = {
+    "pyairtable.api.enterprise:UserRemoved": "operations:remove-user-from-enterprise:response:schema",
+    "pyairtable.api.enterprise:UserRemoved.Shared": "operations:remove-user-from-enterprise:response:schema:@shared",
+    "pyairtable.api.enterprise:UserRemoved.Shared.Workspace": "operations:remove-user-from-enterprise:response:schema:@shared:@workspaces:items",
+    "pyairtable.api.enterprise:UserRemoved.Unshared": "operations:remove-user-from-enterprise:response:schema:@unshared",
+    "pyairtable.api.enterprise:UserRemoved.Unshared.Base": "operations:remove-user-from-enterprise:response:schema:@unshared:@bases:items",
+    "pyairtable.api.enterprise:UserRemoved.Unshared.Interface": "operations:remove-user-from-enterprise:response:schema:@unshared:@interfaces:items",
+    "pyairtable.api.enterprise:UserRemoved.Unshared.Workspace": "operations:remove-user-from-enterprise:response:schema:@unshared:@workspaces:items",
+    "pyairtable.api.enterprise:DeleteUsersResponse": "operations:delete-users-by-email:response:schema",
+    "pyairtable.api.enterprise:DeleteUsersResponse.UserInfo": "operations:delete-users-by-email:response:schema:@deletedUsers:items",
+    "pyairtable.api.enterprise:DeleteUsersResponse.Error": "operations:delete-users-by-email:response:schema:@errors:items",
+    "pyairtable.api.enterprise:ManageUsersResponse": "operations:manage-user-membership:response:schema",
+    "pyairtable.api.enterprise:ManageUsersResponse.Error": "operations:manage-user-membership:response:schema:@errors:items",
     "pyairtable.models.audit:AuditLogResponse": "operations:audit-log-events:response:schema",
     "pyairtable.models.audit:AuditLogEvent": "operations:audit-log-events:response:schema:@events:items",
     "pyairtable.models.audit:AuditLogEvent.Context": "operations:audit-log-events:response:schema:@events:items:@context",
