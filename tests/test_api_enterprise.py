@@ -3,7 +3,11 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
-from pyairtable.api.enterprise import DeleteUsersResponse, ManageUsersResponse
+from pyairtable.api.enterprise import (
+    DeleteUsersResponse,
+    Enterprise,
+    ManageUsersResponse,
+)
 from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
 from pyairtable.testing import fake_id
 
@@ -57,6 +61,17 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
     m.claim_users = requests_mock.post(
         f"{enterprise_url}/claim/users",
         json={"errors": []},
+    )
+    m.create_descendants = requests_mock.post(
+        f"{enterprise_url}/descendants", json={"id": fake_id("ent")}
+    )
+    m.move_groups_json = {}
+    m.move_groups = requests_mock.post(
+        f"{enterprise_url}/moveGroups", json=m.move_groups_json
+    )
+    m.move_workspaces_json = {}
+    m.move_workspaces = requests_mock.post(
+        f"{enterprise_url}/moveWorkspaces", json=m.move_workspaces_json
     )
     return m
 
@@ -321,6 +336,10 @@ def test_audit_log__sortorder(
             {"replacement": "otherUser"},
             {"isDryRun": False, "replacementOwnerId": "otherUser"},
         ),
+        (
+            {"descendants": True},
+            {"isDryRun": False, "removeFromDescendants": True},
+        ),
     ],
 )
 def test_remove_user(enterprise, enterprise_mocks, kwargs, expected):
@@ -414,3 +433,46 @@ def test_manage_admin_access(enterprise, enterprise_mocks, requests_mock, action
             {"id": user.id},
         ]
     }
+
+
+def test_create_descendant(enterprise, enterprise_mocks):
+    descendant = enterprise.create_descendant("Some name")
+    assert enterprise_mocks.create_descendants.call_count == 1
+    assert enterprise_mocks.create_descendants.last_request.json() == {
+        "name": "Some name"
+    }
+    assert isinstance(descendant, Enterprise)
+
+
+def test_move_groups(api, enterprise, enterprise_mocks):
+    other_id = fake_id("ent")
+    group_ids = [fake_id("ugp") for _ in range(3)]
+    enterprise_mocks.move_groups_json["movedGroups"] = [
+        {"id": group_id} for group_id in group_ids
+    ]
+    for target in [other_id, api.enterprise(other_id)]:
+        enterprise_mocks.move_groups.reset()
+        result = enterprise.move_groups(group_ids, target)
+        assert enterprise_mocks.move_groups.call_count == 1
+        assert enterprise_mocks.move_groups.last_request.json() == {
+            "targetEnterpriseAccountId": other_id,
+            "groupIds": group_ids,
+        }
+        assert set(m.id for m in result.moved_groups) == set(group_ids)
+
+
+def test_move_workspaces(api, enterprise, enterprise_mocks):
+    other_id = fake_id("ent")
+    workspace_ids = [fake_id("wsp") for _ in range(3)]
+    enterprise_mocks.move_workspaces_json["movedWorkspaces"] = [
+        {"id": workspace_id} for workspace_id in workspace_ids
+    ]
+    for target in [other_id, api.enterprise(other_id)]:
+        enterprise_mocks.move_workspaces.reset()
+        result = enterprise.move_workspaces(workspace_ids, target)
+        assert enterprise_mocks.move_workspaces.call_count == 1
+        assert enterprise_mocks.move_workspaces.last_request.json() == {
+            "targetEnterpriseAccountId": other_id,
+            "workspaceIds": workspace_ids,
+        }
+        assert set(m.id for m in result.moved_workspaces) == set(workspace_ids)

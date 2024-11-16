@@ -1,12 +1,13 @@
-import datetime
+from datetime import date, datetime
 from functools import cached_property, partialmethod
 from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
 
 import pydantic
+from typing_extensions import Self
 
 from pyairtable.models._base import AirtableModel, rebuild_models
 from pyairtable.models.audit import AuditLogResponse
-from pyairtable.models.schema import EnterpriseInfo, UserGroup, UserInfo
+from pyairtable.models.schema import EnterpriseInfo, NestedId, UserGroup, UserInfo
 from pyairtable.utils import (
     Url,
     UrlBuilder,
@@ -42,6 +43,15 @@ class Enterprise:
 
         #: URL for retrieving audit log events.
         audit_log = meta / "auditLogEvents"
+
+        #: URL for managing descendant enterprise accounts.
+        descendants = meta / "descendants"
+
+        #: URL for moving user groups between enterprise accounts.
+        move_groups = meta / "moveGroups"
+
+        #: URL for moving workspaces between enterprise accounts.
+        move_workspaces = meta / "moveWorkspaces"
 
         def user(self, user_id: str) -> Url:
             """
@@ -205,8 +215,8 @@ class Enterprise:
         sort_asc: Optional[bool] = False,
         previous: Optional[str] = None,
         next: Optional[str] = None,
-        start_time: Optional[Union[str, datetime.date, datetime.datetime]] = None,
-        end_time: Optional[Union[str, datetime.date, datetime.datetime]] = None,
+        start_time: Optional[Union[str, date, datetime]] = None,
+        end_time: Optional[Union[str, date, datetime]] = None,
         user_id: Optional[Union[str, Iterable[str]]] = None,
         event_type: Optional[Union[str, Iterable[str]]] = None,
         model_id: Optional[Union[str, Iterable[str]]] = None,
@@ -323,6 +333,8 @@ class Enterprise:
         self,
         user_id: str,
         replacement: Optional[str] = None,
+        *,
+        descendants: bool = False,
     ) -> "UserRemoved":
         """
         Unshare a user from all enterprise workspaces, bases, and interfaces.
@@ -337,11 +349,14 @@ class Enterprise:
                 specify a replacement user ID to be added as the new owner of such
                 workspaces. If the user is not the sole owner of any workspaces,
                 this is optional and will be ignored if provided.
+            descendants: If ``True``, removes the user from descendant enterprise accounts.
         """
         url = self.urls.remove_user(user_id)
         payload: Dict[str, Any] = {"isDryRun": False}
         if replacement:
             payload["replacementOwnerId"] = replacement
+        if descendants:
+            payload["removeFromDescendants"] = True
         response = self.api.post(url, json=payload)
         return UserRemoved.from_api(response, self.api, context=self)
 
@@ -417,6 +432,72 @@ class Enterprise:
         )
         return ManageUsersResponse.from_api(response, self.api, context=self)
 
+    def create_descendant(self, name: str) -> Self:
+        """
+        Creates a descendant enterprise account of the enterprise account.
+        Descendant enterprise accounts can only be created for root enterprise accounts
+        with the Enterprise Hub feature enabled.
+
+        See `Create descendant enterprise <https://airtable.com/developers/web/api/create-descendant-enterprise>`__.
+
+        Args:
+            name: The name to give the new account.
+        """
+        response = self.api.post(self.urls.descendants, json={"name": name})
+        return self.__class__(self.api, response["id"])
+
+    def move_groups(
+        self,
+        group_ids: Iterable[str],
+        target: Union[str, Self],
+    ) -> "MoveGroupsResponse":
+        """
+        Move one or more user groups from the current enterprise account
+        into a different enterprise account within the same organization.
+
+        See `Move user groups <https://airtable.com/developers/web/api/move-user-groups>`__.
+
+        Args:
+            group_ids: User group IDs.
+            target: The ID of the target enterprise, or an instance of :class:`~pyairtable.Enterprise`.
+        """
+        if isinstance(target, Enterprise):
+            target = target.id
+        response = self.api.post(
+            self.urls.move_groups,
+            json={
+                "groupIds": group_ids,
+                "targetEnterpriseAccountId": target,
+            },
+        )
+        return MoveGroupsResponse.from_api(response, self.api, context=self)
+
+    def move_workspaces(
+        self,
+        workspace_ids: Iterable[str],
+        target: Union[str, Self],
+    ) -> "MoveWorkspacesResponse":
+        """
+        Move one or more workspaces from the current enterprise account
+        into a different enterprise account within the same organization.
+
+        See `Move workspaces <https://airtable.com/developers/web/api/move-workspaces>`__.
+
+        Args:
+            workspace_ids: The list of workspace IDs.
+            target: The ID of the target enterprise, or an instance of :class:`~pyairtable.Enterprise`.
+        """
+        if isinstance(target, Enterprise):
+            target = target.id
+        response = self.api.post(
+            self.urls.move_workspaces,
+            json={
+                "workspaceIds": workspace_ids,
+                "targetEnterpriseAccountId": target,
+            },
+        )
+        return MoveWorkspacesResponse.from_api(response, self.api, context=self)
+
 
 class UserRemoved(AirtableModel):
     """
@@ -436,6 +517,8 @@ class UserRemoved(AirtableModel):
             workspace_id: str
             workspace_name: str
             user_id: str = ""
+            deleted_time: Optional[datetime] = None
+            enterprise_account_id: Optional[str] = None
 
     class Unshared(AirtableModel):
         bases: List["UserRemoved.Unshared.Base"]
@@ -447,6 +530,8 @@ class UserRemoved(AirtableModel):
             base_id: str
             base_name: str
             former_permission_level: str
+            deleted_time: Optional[datetime] = None
+            enterprise_account_id: Optional[str] = None
 
         class Interface(AirtableModel):
             user_id: str
@@ -454,12 +539,16 @@ class UserRemoved(AirtableModel):
             interface_id: str
             interface_name: str
             former_permission_level: str
+            deleted_time: Optional[datetime] = None
+            enterprise_account_id: Optional[str] = None
 
         class Workspace(AirtableModel):
             user_id: str
             former_permission_level: str
             workspace_id: str
             workspace_name: str
+            deleted_time: Optional[datetime] = None
+            enterprise_account_id: Optional[str] = None
 
 
 class DeleteUsersResponse(AirtableModel):
@@ -496,6 +585,30 @@ class ManageUsersResponse(AirtableModel):
         email: Optional[str] = None
         type: str
         message: str
+
+
+class MoveError(AirtableModel):
+    id: str
+    type: str
+    message: str
+
+
+class MoveGroupsResponse(AirtableModel):
+    """
+    Returned by `Move user groups <https://airtable.com/developers/web/api/move-user-groups>`__.
+    """
+
+    moved_groups: List[NestedId] = pydantic.Field(default_factory=list)
+    errors: List[MoveError] = pydantic.Field(default_factory=list)
+
+
+class MoveWorkspacesResponse(AirtableModel):
+    """
+    Returned by `Move workspaces <https://airtable.com/developers/web/api/move-workspaces>`__.
+    """
+
+    moved_workspaces: List[NestedId] = pydantic.Field(default_factory=list)
+    errors: List[MoveError] = pydantic.Field(default_factory=list)
 
 
 rebuild_models(vars())
