@@ -2,59 +2,76 @@
 Changelog
 =========
 
-3.0 (TBD)
+3.0 (2024-11-15)
 ------------------------
 
-* Rewrite of :mod:`pyairtable.formulas` module. See :ref:`Building Formulas`.
-  - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_
-* :class:`~pyairtable.orm.fields.TextField` and
-  :class:`~pyairtable.orm.fields.CheckboxField` return ``""``
-  or ``False`` instead of ``None``.
-  - `PR #347 <https://github.com/gtalarico/pyairtable/pull/347>`_
-* Changed the type of :data:`~pyairtable.orm.Model.created_time`
-  from ``str`` to ``datetime``, along with all other timestamp fields
-  used in :ref:`API: pyairtable.models`.
-  - `PR #352 <https://github.com/gtalarico/pyairtable/pull/352>`_
-* Added ORM field type :class:`~pyairtable.orm.fields.SingleLinkField`
-  for record links that should only contain one record.
-  - `PR #354 <https://github.com/gtalarico/pyairtable/pull/354>`_
-* Support ``use_field_ids`` in the :ref:`ORM`.
-  - `PR #355 <https://github.com/gtalarico/pyairtable/pull/355>`_
-* Removed the ``pyairtable.metadata`` module.
-  - `PR #360 <https://github.com/gtalarico/pyairtable/pull/360>`_
-* Renamed ``return_fields_by_field_id=`` to ``use_field_ids=``.
-  - `PR #362 <https://github.com/gtalarico/pyairtable/pull/362>`_
-* Added ORM fields that :ref:`require a non-null value <Required Values>`.
-  - `PR #363 <https://github.com/gtalarico/pyairtable/pull/363>`_
-* Refactored methods for accessing ORM model configuration.
-  - `PR #366 <https://github.com/gtalarico/pyairtable/pull/366>`_
-* Added support for :ref:`memoization of ORM models <memoizing linked records>`.
-  - `PR #369 <https://github.com/gtalarico/pyairtable/pull/369>`_
-* Added `Enterprise.grant_access <pyairtable.Enterprise.grant_access>`
-  and `Enterprise.revoke_access <pyairtable.Enterprise.revoke_access>`.
-  - `PR #373 <https://github.com/gtalarico/pyairtable/pull/373>`_
-* Added command line utility and ORM module generator. See :doc:`cli`.
-  - `PR #376 <https://github.com/gtalarico/pyairtable/pull/376>`_
-* Changed the behavior of :meth:`Model.save <pyairtable.orm.Model.save>`
-  to no longer send unmodified field values to the API.
-  - `PR #381 <https://github.com/gtalarico/pyairtable/pull/381>`_
-* Added ``use_field_ids=`` parameter to :class:`~pyairtable.Api`.
-  - `PR #386 <https://github.com/gtalarico/pyairtable/pull/386>`_
-* Changed the return type of :meth:`Model.save <pyairtable.orm.Model.save>`
-  from ``bool`` to :class:`~pyairtable.orm.SaveResult`.
-  - `PR #387 <https://github.com/gtalarico/pyairtable/pull/387>`_
-* Added :class:`pyairtable.testing.MockAirtable` for easier testing.
-  - `PR #388 <https://github.com/gtalarico/pyairtable/pull/388>`_
+* Added support for `new enterprise API endpoints <https://airtable.com/developers/web/api/changelog#anchor-2024-11-11>`__.
+  - `PR #407 <https://github.com/gtalarico/pyairtable/pull/407>`_
+* Refactored methods/properties for constructing URLs in the API.
+  - `PR #399 <https://github.com/gtalarico/pyairtable/pull/399>`_
+* Dropped support for Pydantic 1.x.
+  - `PR #397 <https://github.com/gtalarico/pyairtable/pull/397>`_
+* Dropped support for Python 3.8.
+  - `PR #395 <https://github.com/gtalarico/pyairtable/pull/395>`_
 * Added support for `Upload attachment <https://airtable.com/developers/web/api/upload-attachment>`_
   via :meth:`Table.upload_attachment <pyairtable.Table.upload_attachment>`
   or :meth:`AttachmentsList.upload <pyairtable.orm.lists.AttachmentsList.upload>`.
   - `PR #389 <https://github.com/gtalarico/pyairtable/pull/389>`_
-* Dropped support for Python 3.8.
-  - `PR #395 <https://github.com/gtalarico/pyairtable/pull/395>`_
-* Dropped support for Pydantic 1.x.
-  - `PR #397 <https://github.com/gtalarico/pyairtable/pull/397>`_
-* Refactored methods/properties for constructing URLs in the API.
-  - `PR #399 <https://github.com/gtalarico/pyairtable/pull/399>`_
+* Added :class:`pyairtable.testing.MockAirtable` for easier testing.
+  - `PR #388 <https://github.com/gtalarico/pyairtable/pull/388>`_
+* Changed the return type of :meth:`Model.save <pyairtable.orm.Model.save>`
+  from ``bool`` to :class:`~pyairtable.orm.SaveResult`.
+  - `PR #387 <https://github.com/gtalarico/pyairtable/pull/387>`_
+* Added ``use_field_ids=`` parameter to :class:`~pyairtable.Api`.
+  - `PR #386 <https://github.com/gtalarico/pyairtable/pull/386>`_
+* Changed the behavior of :meth:`Model.save <pyairtable.orm.Model.save>`
+  to no longer send unmodified field values to the API.
+  - `PR #381 <https://github.com/gtalarico/pyairtable/pull/381>`_
+* Added command line utility and ORM module generator. See :doc:`cli`.
+  - `PR #376 <https://github.com/gtalarico/pyairtable/pull/376>`_
+* Added `Enterprise.grant_access <pyairtable.Enterprise.grant_access>`
+  and `Enterprise.revoke_access <pyairtable.Enterprise.revoke_access>`.
+  - `PR #373 <https://github.com/gtalarico/pyairtable/pull/373>`_
+* Added support for :ref:`memoization of ORM models <memoizing linked records>`.
+  - `PR #369 <https://github.com/gtalarico/pyairtable/pull/369>`_
+* Refactored methods for accessing ORM model configuration.
+  - `PR #366 <https://github.com/gtalarico/pyairtable/pull/366>`_
+* Added ORM fields that :ref:`require a non-null value <Required Values>`.
+  - `PR #363 <https://github.com/gtalarico/pyairtable/pull/363>`_
+* Renamed ``return_fields_by_field_id=`` to ``use_field_ids=``.
+  - `PR #362 <https://github.com/gtalarico/pyairtable/pull/362>`_
+* Removed the ``pyairtable.metadata`` module.
+  - `PR #360 <https://github.com/gtalarico/pyairtable/pull/360>`_
+* Support ``use_field_ids`` in the :ref:`ORM`.
+  - `PR #355 <https://github.com/gtalarico/pyairtable/pull/355>`_
+* Added ORM field type :class:`~pyairtable.orm.fields.SingleLinkField`
+  for record links that should only contain one record.
+  - `PR #354 <https://github.com/gtalarico/pyairtable/pull/354>`_
+* Changed the type of :data:`~pyairtable.orm.Model.created_time`
+  from ``str`` to ``datetime``, along with all other timestamp fields
+  used in :ref:`API: pyairtable.models`.
+  - `PR #352 <https://github.com/gtalarico/pyairtable/pull/352>`_
+* :class:`~pyairtable.orm.fields.TextField` and
+  :class:`~pyairtable.orm.fields.CheckboxField` return ``""``
+  or ``False`` instead of ``None``.
+  - `PR #347 <https://github.com/gtalarico/pyairtable/pull/347>`_
+* Rewrite of :mod:`pyairtable.formulas` module. See :ref:`Building Formulas`.
+  - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_
+
+2.3.6 (2024-11-11)
+------------------------
+
+* Fix for `#404 <https://github.com/gtalarico/pyairtable/issues/404>`_
+  related to `enterprise endpoint changes <https://airtable.com/developers/web/api/changelog#anchor-2024-11-11>`__.
+  - `PR #405 <https://github.com/gtalarico/pyairtable/pull/405>`_,
+    `PR #406 <https://github.com/gtalarico/pyairtable/pull/406>`_
+
+2.3.5 (2024-10-29)
+------------------------
+
+* Fix for environment variables not getting passed to the ``requests``
+  library (`#398 <https://github.com/gtalarico/pyairtable/issues/398>`_).
+  - `PR #401 <https://github.com/gtalarico/pyairtable/pull/401>`_
 
 2.3.4 (2024-10-21)
 ------------------------
