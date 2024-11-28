@@ -1,6 +1,6 @@
-from .api import Api
-from .base import Base
-from .table import Table
+from pyairtable.api.api import Api
+from pyairtable.api.base import Base
+from pyairtable.api.table import Table
 
 __all__ = [
     "Api",

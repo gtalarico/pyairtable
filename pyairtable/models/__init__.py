@@ -12,10 +12,10 @@ Due to its complexity, the :mod:`pyairtable.models.schema` module is
 documented separately, and none of its classes are exposed here.
 """
 
-from .audit import AuditLogEvent, AuditLogResponse
-from .collaborator import Collaborator
-from .comment import Comment
-from .webhook import Webhook, WebhookNotification, WebhookPayload
+from pyairtable.models.audit import AuditLogEvent, AuditLogResponse
+from pyairtable.models.collaborator import Collaborator
+from pyairtable.models.comment import Comment
+from pyairtable.models.webhook import Webhook, WebhookNotification, WebhookPayload
 
 __all__ = [
     "AuditLogResponse",
