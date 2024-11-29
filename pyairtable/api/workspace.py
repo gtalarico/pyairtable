@@ -1,8 +1,12 @@
 from functools import cached_property
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from pyairtable.models.schema import WorkspaceCollaborators
 from pyairtable.utils import Url, UrlBuilder, cache_unless_forced, enterprise_only
+
+if TYPE_CHECKING:
+    from pyairtable.api.api import Api
+    from pyairtable.api.base import Base
 
 
 class Workspace:
@@ -33,7 +37,7 @@ class Workspace:
 
     urls = cached_property(_urls)
 
-    def __init__(self, api: "pyairtable.api.api.Api", workspace_id: str):
+    def __init__(self, api: "Api", workspace_id: str):
         self.api = api
         self.id = workspace_id
 
@@ -41,7 +45,7 @@ class Workspace:
         self,
         name: str,
         tables: Sequence[Dict[str, Any]],
-    ) -> "pyairtable.api.base.Base":
+    ) -> "Base":
         """
         Create a base in the given workspace.
 
@@ -73,7 +77,7 @@ class Workspace:
         return WorkspaceCollaborators.from_api(payload, self.api, context=self)
 
     @enterprise_only
-    def bases(self) -> List["pyairtable.api.base.Base"]:
+    def bases(self) -> List["Base"]:
         """
         Retrieve all bases within the workspace.
         """
@@ -103,7 +107,7 @@ class Workspace:
     @enterprise_only
     def move_base(
         self,
-        base: Union[str, "pyairtable.api.base.Base"],
+        base: Union[str, "Base"],
         target: Union[str, "Workspace"],
         index: Optional[int] = None,
     ) -> None:
@@ -123,8 +127,3 @@ class Workspace:
         if index is not None:
             payload["targetIndex"] = index
         self.api.post(self.urls.move_base, json=payload)
-
-
-# These are at the bottom of the module to avoid circular imports
-import pyairtable.api.api  # noqa
-import pyairtable.api.base  # noqa

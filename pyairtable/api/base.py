@@ -1,8 +1,7 @@
 import warnings
 from functools import cached_property
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
-import pyairtable.api.api
 import pyairtable.api.table
 from pyairtable.models.schema import BaseCollaborators, BaseSchema, BaseShares
 from pyairtable.models.webhook import (
@@ -12,6 +11,9 @@ from pyairtable.models.webhook import (
     WebhookSpecification,
 )
 from pyairtable.utils import Url, UrlBuilder, cache_unless_forced, enterprise_only
+
+if TYPE_CHECKING:
+    from pyairtable.api.api import Api
 
 
 class Base:
@@ -25,7 +27,7 @@ class Base:
     """
 
     #: The connection to the Airtable API.
-    api: "pyairtable.api.api.Api"
+    api: "Api"
 
     #: The base ID, in the format ``appXXXXXXXXXXXXXX``
     id: str
@@ -67,7 +69,7 @@ class Base:
 
     def __init__(
         self,
-        api: Union["pyairtable.api.api.Api", str],
+        api: Union["Api", str],
         base_id: str,
         *,
         name: Optional[str] = None,
@@ -99,7 +101,10 @@ class Base:
                 category=DeprecationWarning,
                 stacklevel=2,
             )
-            api = pyairtable.api.api.Api(api)
+
+            from pyairtable import Api
+
+            api = Api(api)
 
         self.api = api
         self.id = base_id

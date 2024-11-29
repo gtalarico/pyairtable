@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from pyairtable import Api, Base, Table  # noqa
+from pyairtable import Api, Base, Table
 
 
 @pytest.fixture

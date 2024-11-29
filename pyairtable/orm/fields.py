@@ -50,7 +50,7 @@ from typing import (
 from typing_extensions import Self as SelfType
 from typing_extensions import TypeAlias
 
-from pyairtable import utils
+from pyairtable import formulas, utils
 from pyairtable.api.types import (
     AITextDict,
     AttachmentDict,
@@ -69,7 +69,7 @@ from pyairtable.exceptions import (
 from pyairtable.orm.lists import AttachmentsList, ChangeTrackingList
 
 if TYPE_CHECKING:
-    from pyairtable.orm import Model  # noqa
+    from pyairtable.orm import Model
 
 
 _ClassInfo: TypeAlias = Union[type, Tuple["_ClassInfo", ...]]
@@ -610,7 +610,7 @@ class LinkField(
             lazy: If ``True``, this field will return empty objects with only IDs;
                 call :meth:`~pyairtable.orm.Model.fetch` to retrieve values.
         """
-        from pyairtable.orm import Model  # noqa, avoid circular import
+        from pyairtable.orm import Model
 
         if not (
             model is _LinkFieldOptions.LinkSelf
@@ -1588,7 +1588,3 @@ __all__ = [
     "UrlField",
 ]
 # [[[end]]] (checksum: 87b0a100c9e30523d9aab8cc935c7960)
-
-
-# Delayed import to avoid circular dependency
-from pyairtable import formulas  # noqa
