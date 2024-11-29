@@ -1,6 +1,17 @@
 from datetime import datetime
 from functools import partial
-from typing import Any, ClassVar, Dict, Iterable, Mapping, Optional, Set, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Set,
+    Type,
+    Union,
+)
 
 import inflection
 import pydantic
@@ -11,6 +22,9 @@ from pyairtable.utils import (
     datetime_from_iso_str,
     datetime_to_iso_str,
 )
+
+if TYPE_CHECKING:
+    from pyairtable.api.api import Api
 
 
 class AirtableModel(pydantic.BaseModel):
@@ -46,7 +60,7 @@ class AirtableModel(pydantic.BaseModel):
     def from_api(
         cls,
         obj: Dict[str, Any],
-        api: "pyairtable.api.api.Api",
+        api: "Api",
         *,
         context: Optional[Any] = None,
     ) -> SelfType:
@@ -73,7 +87,7 @@ def _context_name(obj: Any) -> str:
 
 def cascade_api(
     obj: Any,
-    api: "pyairtable.api.api.Api",
+    api: "Api",
     *,
     context: Optional[Any] = None,
 ) -> None:
@@ -132,7 +146,7 @@ class RestfulModel(AirtableModel):
 
     __url_pattern: ClassVar[str] = ""
 
-    _api: "pyairtable.api.api.Api" = pydantic.PrivateAttr()
+    _api: "Api" = pydantic.PrivateAttr()
     _url: str = pydantic.PrivateAttr(default="")
     _url_context: Any = pydantic.PrivateAttr(default=None)
 
@@ -140,7 +154,7 @@ class RestfulModel(AirtableModel):
         cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
         super().__init_subclass__()
 
-    def _set_api(self, api: "pyairtable.api.api.Api", context: Dict[str, Any]) -> None:
+    def _set_api(self, api: "Api", context: Dict[str, Any]) -> None:
         """
         Set a link to the API and build the REST URL used for this resource.
         """
@@ -305,6 +319,3 @@ def rebuild_models(
     for value in obj.values():
         if isinstance(value, type) and issubclass(value, AirtableModel):
             rebuild_models(value, memo=memo)
-
-
-import pyairtable.api.api  # noqa
