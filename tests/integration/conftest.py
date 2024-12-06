@@ -10,20 +10,21 @@ def valid_img_url():
     return "https://github.com/gtalarico/pyairtable/raw/9f243cb0935ad7112859f990434612efdaf49c67/docs/source/_static/logo.png"
 
 
-@pytest.fixture
-def cols():
-    class Columns:
-        # Table should have these Columns
-        TEXT = "text"  # Text
-        TEXT_ID = "fldzbVdWW4xJdZ1em"  # for returnFieldsByFieldId
-        NUM = "number"  # Number, float
-        NUM_ID = "fldFLyuxGuWobyMV2"  # for returnFieldsByFieldId
-        BOOL = "boolean"  # Boolean
-        DATETIME = "datetime"  # Datetime
-        ATTACHMENT = "attachment"  # attachment
-        ATTACHMENT_ID = "fld5VP9oPeCpvIumr"  # for upload_attachment
+class Columns:
+    # Table should have these Columns
+    TEXT = "text"  # Text
+    TEXT_ID = "fldzbVdWW4xJdZ1em"  # for returnFieldsByFieldId
+    NUM = "number"  # Number, float
+    NUM_ID = "fldFLyuxGuWobyMV2"  # for returnFieldsByFieldId
+    BOOL = "boolean"  # Boolean
+    DATETIME = "datetime"  # Datetime
+    ATTACHMENT = "attachment"  # attachment
+    ATTACHMENT_ID = "fld5VP9oPeCpvIumr"  # for upload_attachment
 
-    return Columns
+
+@pytest.fixture
+def cols() -> Columns:
+    return Columns()
 
 
 @pytest.fixture

@@ -6,7 +6,7 @@ import pytest
 import requests
 
 from pyairtable import Table
-from pyairtable import formulas as fo
+from pyairtable.formulas import AND, EQ, FIND, OR, RECORD_ID, Field, match
 from pyairtable.utils import date_to_iso_str, datetime_to_iso_str
 
 pytestmark = [pytest.mark.integration]
@@ -150,17 +150,17 @@ def test_integration_field_equals(table: Table, cols):
     rv_create = table.create(values)
 
     # match all - finds
-    rv_first = table.first(formula=fo.match(values))
+    rv_first = table.first(formula=match(values))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
     # match all - does not find
     values = {cols.TEXT: TEXT_VALUE, cols.NUM: 0}
-    rv_first = table.first(formula=fo.match(values))
+    rv_first = table.first(formula=match(values))
     assert rv_first is None
 
     # match all w/ match_any=True - does not find
     values = {cols.TEXT: TEXT_VALUE, cols.NUM: 0}
-    rv_first = table.first(formula=fo.match(values, match_any=True))
+    rv_first = table.first(formula=match(values, match_any=True))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 
@@ -226,7 +226,7 @@ def test_batch_upsert(table: Table, cols):
 
 def test_integration_formula_datetime(table: Table, cols):
     now = datetime.now(timezone.utc)
-    formula = fo.match({cols.DATETIME: now})
+    formula = match({cols.DATETIME: now})
     rv_create = table.create({cols.DATETIME: datetime_to_iso_str(now)})
     rv_first = table.first(formula=formula)
     assert rv_first and rv_first["id"] == rv_create["id"]
@@ -243,7 +243,7 @@ def test_integration_formula_date_filter(table: Table, cols):
         rec = table.create({cols.DATETIME: dt_str})
         created.append(rec)
 
-    formula = fo.FIND(date_str, fo.Field(cols.DATETIME))
+    formula = FIND(date_str, Field(cols.DATETIME))
     rv_all = table.all(formula=formula)
     print("repr", repr(formula), "\nstr", str(formula))
     assert rv_all
@@ -253,12 +253,12 @@ def test_integration_formula_date_filter(table: Table, cols):
 def test_integration_field_equals_with_quotes(table: Table, cols):
     VALUE = "Contact's Name {}".format(uuid4())
     rv_create = table.create({cols.TEXT: VALUE})
-    rv_first = table.first(formula=fo.match({cols.TEXT: VALUE}))
+    rv_first = table.first(formula=match({cols.TEXT: VALUE}))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
     VALUE = 'Some "Quote"  {}'.format(uuid4())
     rv_create = table.create({cols.TEXT: VALUE})
-    rv_first = table.first(formula=fo.match({cols.TEXT: VALUE}))
+    rv_first = table.first(formula=match({cols.TEXT: VALUE}))
     assert rv_first and rv_first["id"] == rv_create["id"]
 
 
@@ -268,10 +268,10 @@ def test_integration_formula_composition(table: Table, cols):
     bool_ = True
     rv_create = table.create({cols.TEXT: text, cols.NUM: num, cols.BOOL: bool_})
 
-    formula = fo.AND(
-        fo.EQ(fo.Field(cols.TEXT), text),
-        fo.EQ(fo.Field(cols.NUM), num),
-        fo.EQ(fo.Field(cols.BOOL), bool_),  # not needs to be int()
+    formula = AND(
+        EQ(Field(cols.TEXT), text),
+        EQ(Field(cols.NUM), num),
+        EQ(Field(cols.BOOL), bool_),  # not needs to be int()
     )
     rv_first = table.first(formula=formula)
 
@@ -362,3 +362,42 @@ def test_integration_comments(api, table: Table, cols):
 
     # Test that we can delete the comment
     comments[0].delete()
+
+
+def test_pagination(cols, api, table):
+    """
+    Test that we can paginate through records as expected.
+    """
+    # Start by creating 500 unique records
+    created = table.batch_create([{cols.TEXT: f"Record {i}"} for i in range(500)])
+    formula = OR(RECORD_ID().eq(record["id"]) for record in created[:-1])
+
+    # The formula ought to be longer than the maximum URL length,
+    # so we know we'll convert the request to a POST.
+    assert len(str(formula)) > api.MAX_URL_LENGTH
+    assert created[-1]["id"] not in str(formula)
+
+    for page_size in [10, 50]:
+        paginator = table.iterate(formula=formula, page_size=page_size)
+
+        # Test that each page is the expected size
+        assert len(page1 := next(paginator)) == page_size
+        assert len(page2 := next(paginator)) == page_size
+
+        # Test that we don't keep getting the same records
+        page1_ids = {record["id"] for record in page1}
+        page2_ids = {record["id"] for record in page2}
+        assert page1_ids != page2_ids
+
+    for max_records in [10, 50]:
+        # Test that max_records actually limits the number of records returned,
+        # not just the size of each page of records.
+        records = table.all(formula=formula, max_records=max_records)
+        assert len(records) == max_records
+
+    # Test the combination of each.
+    paginator = table.iterate(formula=formula, page_size=10, max_records=25)
+    pages = list(paginator)
+    ids = {record["id"] for page in pages for record in page}
+    assert [len(page) for page in pages] == [10, 10, 5]
+    assert len(ids) == 25
