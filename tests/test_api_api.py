@@ -116,6 +116,42 @@ def test_iterate_requests(api: Api, requests_mock):
     assert responses == [response["json"] for response in response_list]
 
 
+def test_iterate_requests__post(api: Api, requests_mock):
+    url = "https://example.com"
+    # prepare a few pages of dummy responses
+    response_list = [
+        {"json": {"page": 0, "offset": 1}},
+        {"json": {"page": 1, "offset": 2}},
+        {"json": {"page": 2}},
+    ]
+    m = requests_mock.post(url, response_list=response_list)
+    # construct a request that will get converted from GET to POST
+    formula = "X" * (api.MAX_URL_LENGTH + 1)
+    pages = list(
+        api.iterate_requests(
+            "GET",
+            url=url,
+            fallback=("POST", url),
+            options={"formula": formula},
+        )
+    )
+    # ensure we got the responses we expected
+    assert pages == [
+        {"page": 0, "offset": 1},
+        {"page": 1, "offset": 2},
+        {"page": 2},
+    ]
+    # ensure we made three POST requests
+    assert m.call_count == 3
+    assert len(pages) == 3
+    requests = [r.json() for r in m.request_history]
+    assert requests == [
+        {"filterByFormula": formula},
+        {"filterByFormula": formula, "offset": "1"},
+        {"filterByFormula": formula, "offset": "2"},
+    ]
+
+
 def test_iterate_requests__invalid_type(api: Api, requests_mock):
     url = "https://example.com"
     response_list = [{"json": {"page": n, "offset": n + 1}} for n in range(1, 3)]
