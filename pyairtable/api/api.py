@@ -394,7 +394,7 @@ class Api:
                 return
             if not (offset := _get_offset_field(response)):
                 return
-            params = {**params, offset_field: offset}
+            options = {**options, offset_field: offset}
 
     def chunked(self, iterable: Sequence[T]) -> Iterator[Sequence[T]]:
         """
