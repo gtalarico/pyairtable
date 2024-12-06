@@ -1,4 +1,4 @@
-__version__ = "3.0.0"
+__version__ = "3.0.1"
 
 from pyairtable.api import Api, Base, Table
 from pyairtable.api.enterprise import Enterprise
