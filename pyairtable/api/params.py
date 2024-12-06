@@ -74,6 +74,9 @@ OPTIONS_TO_PARAMETERS = {
     # get webhook payloads
     "limit": "limit",
     "cursor": "cursor",
+    # get audit log events
+    "next": "next",
+    "previous": "previous",
 }
 
 

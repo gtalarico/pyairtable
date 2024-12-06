@@ -2,6 +2,14 @@
 Changelog
 =========
 
+3.0.1 (2024-12-06)
+------------------------
+
+* Fix for `#415 <https://github.com/gtalarico/pyairtable/issues/415>`_
+  which caused an endless loop when making a request via `POST /listRecords`.
+  - `PR #416 <https://github.com/gtalarico/pyairtable/pull/416>`_,
+    `PR #417 <https://github.com/gtalarico/pyairtable/pull/417>`_
+
 3.0 (2024-11-15)
 ------------------------
 
@@ -57,6 +65,14 @@ Changelog
   - `PR #347 <https://github.com/gtalarico/pyairtable/pull/347>`_
 * Rewrite of :mod:`pyairtable.formulas` module. See :ref:`Building Formulas`.
   - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_
+
+2.3.7 (2024-12-06)
+------------------------
+
+* Fix for `#415 <https://github.com/gtalarico/pyairtable/issues/415>`_
+  which caused an endless loop when making a request via `POST /listRecords`.
+  - `PR #416 <https://github.com/gtalarico/pyairtable/pull/416>`_,
+    `PR #417 <https://github.com/gtalarico/pyairtable/pull/417>`_
 
 2.3.6 (2024-11-11)
 ------------------------
