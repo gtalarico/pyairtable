@@ -3,8 +3,13 @@ from typing import Dict, List, Optional
 
 import pydantic
 
-from ._base import AirtableModel, CanDeleteModel, CanUpdateModel, rebuild_models
-from .collaborator import Collaborator
+from pyairtable.models._base import (
+    AirtableModel,
+    CanDeleteModel,
+    CanUpdateModel,
+    rebuild_models,
+)
+from pyairtable.models.collaborator import Collaborator
 
 
 class Comment(

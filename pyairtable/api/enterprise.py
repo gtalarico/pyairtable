@@ -1,6 +1,16 @@
 from datetime import date, datetime
 from functools import cached_property, partialmethod
-from typing import Any, Dict, Iterable, Iterator, List, Literal, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
 import pydantic
 from typing_extensions import Self
@@ -16,6 +26,9 @@ from pyairtable.utils import (
     coerce_list_str,
     enterprise_only,
 )
+
+if TYPE_CHECKING:
+    from pyairtable.api.api import Api
 
 
 @enterprise_only
@@ -85,7 +98,7 @@ class Enterprise:
 
     urls = cached_property(_urls)
 
-    def __init__(self, api: "pyairtable.api.api.Api", workspace_id: str):
+    def __init__(self, api: "Api", workspace_id: str):
         self.api = api
         self.id = workspace_id
         self._info: Optional[EnterpriseInfo] = None
@@ -612,8 +625,3 @@ class MoveWorkspacesResponse(AirtableModel):
 
 
 rebuild_models(vars())
-
-
-# These are at the bottom of the module to avoid circular imports
-import pyairtable.api.api  # noqa
-import pyairtable.api.base  # noqa

@@ -5,10 +5,19 @@ import urllib.parse
 import warnings
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Union,
+    overload,
+)
 
 import pyairtable.models
-from pyairtable.api.retrying import Retry
 from pyairtable.api.types import (
     FieldName,
     RecordDeletedDict,
@@ -25,6 +34,11 @@ from pyairtable.formulas import Formula, to_formula_str
 from pyairtable.models.schema import FieldSchema, TableSchema, parse_field_schema
 from pyairtable.utils import Url, UrlBuilder, is_table_id
 
+if TYPE_CHECKING:
+    from pyairtable.api.api import Api, TimeoutTuple
+    from pyairtable.api.base import Base
+    from pyairtable.api.retrying import Retry
+
 
 class Table:
     """
@@ -37,7 +51,7 @@ class Table:
     """
 
     #: The base that this table belongs to.
-    base: "pyairtable.api.base.Base"
+    base: "Base"
 
     #: Can be either the table name or the table ID (``tblXXXXXXXXXXXXXX``).
     name: str
@@ -82,8 +96,8 @@ class Table:
         base_id: str,
         table_name: str,
         *,
-        timeout: Optional["pyairtable.api.api.TimeoutTuple"] = None,
-        retry_strategy: Optional[Retry] = None,
+        timeout: Optional["TimeoutTuple"] = None,
+        retry_strategy: Optional["Retry"] = None,
         endpoint_url: str = "https://api.airtable.com",
     ): ...
 
@@ -91,7 +105,7 @@ class Table:
     def __init__(
         self,
         api_key: None,
-        base_id: "pyairtable.api.base.Base",
+        base_id: "Base",
         table_name: str,
     ): ...
 
@@ -99,14 +113,14 @@ class Table:
     def __init__(
         self,
         api_key: None,
-        base_id: "pyairtable.api.base.Base",
+        base_id: "Base",
         table_name: TableSchema,
     ): ...
 
     def __init__(
         self,
         api_key: Union[None, str],
-        base_id: Union["pyairtable.api.base.Base", str],
+        base_id: Union["Base", str],
         table_name: Union[str, TableSchema],
         **kwargs: Any,
     ):
@@ -210,7 +224,7 @@ class Table:
         return value
 
     @property
-    def api(self) -> "pyairtable.api.api.Api":
+    def api(self) -> "Api":
         """
         The API connection used by the table's :class:`~pyairtable.Base`.
         """
@@ -801,8 +815,3 @@ class Table:
         }
         response = self.api.post(url, json=payload)
         return assert_typed_dict(UploadAttachmentResultDict, response)
-
-
-# These are at the bottom of the module to avoid circular imports
-import pyairtable.api.api  # noqa
-import pyairtable.api.base  # noqa

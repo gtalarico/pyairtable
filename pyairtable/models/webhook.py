@@ -8,8 +8,7 @@ import pydantic
 from typing_extensions import Self as SelfType
 
 from pyairtable.api.types import RecordId
-
-from ._base import AirtableModel, CanDeleteModel, rebuild_models
+from pyairtable.models._base import AirtableModel, CanDeleteModel, rebuild_models
 
 # Shortcuts to avoid lots of line wrapping
 FD: Callable[[], Any] = partial(pydantic.Field, default_factory=dict)

@@ -7,8 +7,7 @@ import pydantic
 from typing_extensions import TypeAlias
 
 from pyairtable.api.types import AddCollaboratorDict
-
-from ._base import (
+from pyairtable.models._base import (
     AirtableModel,
     CanDeleteModel,
     CanUpdateModel,

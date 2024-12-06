@@ -2,7 +2,7 @@ from typing import Optional
 
 from typing_extensions import TypeAlias
 
-from ._base import AirtableModel
+from pyairtable.models._base import AirtableModel
 
 UserId: TypeAlias = str
 

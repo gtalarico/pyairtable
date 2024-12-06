@@ -6,8 +6,10 @@ from requests.sessions import Session
 from typing_extensions import TypeAlias
 
 from pyairtable.api import retrying
+from pyairtable.api.base import Base
 from pyairtable.api.enterprise import Enterprise
 from pyairtable.api.params import options_to_json_and_params, options_to_params
+from pyairtable.api.table import Table
 from pyairtable.api.types import UserAndScopesDict, assert_typed_dict
 from pyairtable.api.workspace import Workspace
 from pyairtable.models.schema import Bases
@@ -44,7 +46,7 @@ class Api:
     MAX_URL_LENGTH = 16000
 
     # Cached metadata to reduce API calls
-    _bases: Optional[Dict[str, "pyairtable.api.base.Base"]] = None
+    _bases: Optional[Dict[str, "Base"]] = None
 
     endpoint_url: Url
     session: Session
@@ -126,7 +128,7 @@ class Api:
         *,
         validate: bool = False,
         force: bool = False,
-    ) -> "pyairtable.api.base.Base":
+    ) -> "Base":
         """
         Return a new :class:`Base` instance that uses this instance of :class:`Api`.
 
@@ -141,7 +143,7 @@ class Api:
         if validate:
             info = self._base_info(force=force).base(base_id)
             return self._base_from_info(info)
-        return pyairtable.api.base.Base(self, base_id)
+        return Base(self, base_id)
 
     @cache_unless_forced
     def _base_info(self) -> Bases:
@@ -158,15 +160,15 @@ class Api:
         }
         return Bases.from_api(data, self)
 
-    def _base_from_info(self, base_info: Bases.Info) -> "pyairtable.api.base.Base":
-        return pyairtable.api.base.Base(
+    def _base_from_info(self, base_info: Bases.Info) -> "Base":
+        return Base(
             self,
             base_info.id,
             name=base_info.name,
             permission_level=base_info.permission_level,
         )
 
-    def bases(self, *, force: bool = False) -> List["pyairtable.api.base.Base"]:
+    def bases(self, *, force: bool = False) -> List["Base"]:
         """
         Retrieve the base's schema and return a list of :class:`Base` instances.
 
@@ -189,7 +191,7 @@ class Api:
         workspace_id: str,
         name: str,
         tables: Sequence[Dict[str, Any]],
-    ) -> "pyairtable.api.base.Base":
+    ) -> "Base":
         """
         Create a base in the given workspace.
 
@@ -210,7 +212,7 @@ class Api:
         *,
         validate: bool = False,
         force: bool = False,
-    ) -> "pyairtable.api.table.Table":
+    ) -> "Table":
         """
         Build a new :class:`Table` instance that uses this instance of :class:`Api`.
 
@@ -407,7 +409,3 @@ class Api:
         Build an object representing an enterprise account.
         """
         return Enterprise(self, enterprise_account_id)
-
-
-import pyairtable.api.base  # noqa
-import pyairtable.api.table  # noqa

@@ -1,9 +1,9 @@
 __version__ = "3.0.0"
 
-from .api import Api, Base, Table
-from .api.enterprise import Enterprise
-from .api.retrying import retry_strategy
-from .api.workspace import Workspace
+from pyairtable.api import Api, Base, Table
+from pyairtable.api.enterprise import Enterprise
+from pyairtable.api.retrying import retry_strategy
+from pyairtable.api.workspace import Workspace
 
 __all__ = [
     "Api",
