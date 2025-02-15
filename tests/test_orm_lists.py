@@ -15,6 +15,7 @@ class Fake(Model):
     Meta = fake_meta()
     attachments = F.AttachmentsField("Files")
     readonly_attachments = F.AttachmentsField("Other Files", readonly=True)
+    others = F.LinkField["Fake"]("Others", F.LinkSelf)
 
 
 @pytest.fixture
@@ -115,3 +116,30 @@ def test_attachment_upload__unsaved_value(mock_upload):
     mock_upload.assert_called_once()
     assert len(instance.attachments) == 1
     assert instance.attachments[0]["url"] != unsaved_url
+
+
+@pytest.mark.parametrize(
+    "op,retval,new_value",
+    [
+        (mock.call.append(4), None, [1, 2, 3, 4]),
+        (mock.call.insert(1, 4), None, [1, 4, 2, 3]),
+        (mock.call.remove(2), None, [1, 3]),
+        (mock.call.clear(), None, []),
+        (mock.call.extend([4, 5]), None, [1, 2, 3, 4, 5]),
+        (mock.call.pop(), 3, [1, 2]),
+    ],
+)
+def test_change_tracking_list(op, retval, new_value):
+    """
+    Test that ChangeTrackingList performs operations normally
+    and records (on the model instance) that the field changed.
+    """
+    instance = Fake.from_record(fake_record())
+    ctl = F.ChangeTrackingList[int]([1, 2, 3], field=Fake.others, model=instance)
+    assert not instance._changed.get("Others")
+
+    fn = getattr(ctl, op._mock_parent._mock_name)
+    result = fn(*op.args, **op.kwargs)
+    assert result == retval
+    assert ctl == new_value
+    assert instance._changed["Others"] is True

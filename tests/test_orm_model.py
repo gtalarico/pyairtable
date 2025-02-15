@@ -1,3 +1,4 @@
+import pickle
 from datetime import datetime, timezone
 from functools import partial
 from unittest import mock
@@ -463,3 +464,47 @@ def test_save_bool_deprecated():
 
     with pytest.deprecated_call():
         assert bool(SaveResult(fake_id(), created=True)) is True
+
+
+def test_pickling():
+    """
+    Test that a model instance can be pickled and unpickled.
+    """
+    instance = FakeModel.from_record(fake_record(one="one", two="two"))
+    pickled = pickle.dumps(instance)
+    unpickled = pickle.loads(pickled)
+    assert isinstance(unpickled, FakeModel)
+    assert unpickled is not instance
+    assert unpickled.id == instance.id
+    assert unpickled.created_time == instance.created_time
+    assert unpickled._fields == instance._fields
+
+
+class LinkedModel(Model):
+    Meta = fake_meta()
+    name = f.TextField("Name")
+    links = f.LinkField("Link", FakeModel)
+
+
+def test_pickling_with_change_tracking_list():
+    """
+    Test that a model with a ChangeTrackingList can be pickled and unpickled.
+    """
+    fake_models = [FakeModel.from_record(fake_record()) for _ in range(5)]
+    instance = LinkedModel.from_record(fake_record())
+    instance.links = fake_models
+    instance._changed.clear()  # Don't want to pickle that part.
+
+    # Now we need to be able to pickle and unpickle the model instance.
+    # We can't pickle/unpickle the list itself on its own, because it needs
+    # to retain references to the field and model.
+    pickled = pickle.dumps(instance)
+    unpickled = pickle.loads(pickled)
+    assert isinstance(unpickled, LinkedModel)
+    unpickled_link_ids = [link.id for link in unpickled.links]
+    assert unpickled_link_ids == [link.id for link in fake_models]
+
+    # Make sure change tracking still works.
+    assert "Link" not in unpickled._changed
+    unpickled.links.append(FakeModel.from_record(fake_record()))
+    assert unpickled._changed["Link"] is True
