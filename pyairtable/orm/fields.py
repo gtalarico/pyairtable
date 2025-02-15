@@ -521,6 +521,13 @@ class _ListFieldBase(
             return self
         return self._get_list_value(instance)
 
+    def __set__(self, instance: "Model", value: Optional[List[T_ORM]]) -> None:
+        if isinstance(value, list) and not isinstance(value, self.list_class):
+            assert isinstance(self.list_class, type)
+            assert issubclass(self.list_class, ChangeTrackingList)
+            value = self.list_class(value, field=self, model=instance)
+        super().__set__(instance, value)
+
     def _get_list_value(self, instance: "Model") -> T_ORM_List:
         value = instance._fields.get(self.field_name)
         # If Airtable returns no value, substitute an empty list.
@@ -712,10 +719,15 @@ class LinkField(
         # If the list contains record IDs, replace the contents with instances.
         # Other code may already have references to this specific list, so
         # we replace the existing list's values.
-        records[: self._max_retrieve] = [
-            new_records[cast(RecordId, value)] if isinstance(value, RecordId) else value
-            for value in records[: self._max_retrieve]
-        ]
+        with records.disable_tracking():
+            records[: self._max_retrieve] = [
+                (
+                    new_records[cast(RecordId, value)]
+                    if isinstance(value, RecordId)
+                    else value
+                )
+                for value in records[: self._max_retrieve]
+            ]
 
     def _get_list_value(self, instance: "Model") -> ChangeTrackingList[T_Linked]:
         """

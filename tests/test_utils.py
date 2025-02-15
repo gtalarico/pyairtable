@@ -233,3 +233,25 @@ def test_url_cannot_append_after_params():
         v / "foo"
     with pytest.raises(ValueError):
         v // ["foo", "bar"]
+
+
+@pytest.mark.parametrize(
+    "docstring,expected",
+    [
+        ("", ""),
+        (
+            "This is a\ndocstring.",
+            "|enterprise_only|\n\nThis is a\ndocstring.",
+        ),
+        (
+            "\t  This is a\n\t  docstring.",
+            "\t  |enterprise_only|\n\n\t  This is a\n\t  docstring.",
+        ),
+    ],
+)
+def test_enterprise_docstring(docstring, expected):
+    @utils.enterprise_only
+    class Foo:
+        __doc__ = docstring
+
+    assert Foo.__doc__ == expected

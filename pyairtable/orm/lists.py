@@ -50,8 +50,13 @@ class ChangeTrackingList(List[T]):
             self._tracking_enabled = prev
 
     def _on_change(self) -> None:
-        if self._tracking_enabled:
-            self._model._changed[self._field.field_name] = True
+        try:
+            if not self._tracking_enabled:
+                return
+        except AttributeError:
+            # This means we're being unpickled and won't call __init__.
+            return
+        self._model._changed[self._field.field_name] = True
 
     @overload
     def __setitem__(self, index: SupportsIndex, value: T, /) -> None: ...

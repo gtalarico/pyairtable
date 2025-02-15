@@ -632,6 +632,8 @@ def test_link_field():
     collection = [Book(), Book(), Book()]
     author = Author()
     author.books = collection
+    assert isinstance(author._fields["Books"], f.ChangeTrackingList)
+
     assert author.books == collection
 
     with pytest.raises(TypeError):
