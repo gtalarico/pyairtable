@@ -227,9 +227,10 @@ def test_from_ids(mock_api):
         url=FakeModel.meta.table.urls.records,
         fallback=("post", FakeModel.meta.table.urls.records_post),
         options={
+            **FakeModel.meta.request_kwargs,
             "formula": (
                 "OR(%s)" % ", ".join(f"RECORD_ID()='{id}'" for id in sorted(fake_ids))
-            )
+            ),
         },
     )
     assert len(contacts) == len(fake_records)
@@ -251,6 +252,15 @@ def test_from_ids__no_fetch(mock_all):
     assert mock_all.call_count == 0
     assert len(contacts) == 10
     assert set(contact.id for contact in contacts) == set(fake_ids)
+
+
+@mock.patch("pyairtable.Table.all")
+def test_from_ids__use_field_ids(mock_all):
+    fake_ids = [fake_id() for _ in range(10)]
+    mock_all.return_value = [fake_record(id=id) for id in fake_ids]
+    FakeModelByIds.from_ids(fake_ids)
+    assert mock_all.call_count == 1
+    assert mock_all.mock_calls[-1].kwargs["use_field_ids"] is True
 
 
 @pytest.mark.parametrize(

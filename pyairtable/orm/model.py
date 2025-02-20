@@ -449,10 +449,7 @@ class Model:
             # Only retrieve records that aren't already memoized
             formula = OR(EQ(RECORD_ID(), record_id) for record_id in sorted(remaining))
             by_id.update(
-                {
-                    record["id"]: cls.from_record(record, memoize=memoize)
-                    for record in cls.meta.table.all(formula=formula)
-                }
+                {obj.id: obj for obj in cls.all(formula=formula, memoize=memoize)}
             )
 
         # Ensure we return records in the same order, and raise KeyError if any are missing

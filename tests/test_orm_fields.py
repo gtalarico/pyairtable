@@ -877,7 +877,10 @@ def test_single_link_field__multiple_values():
     book = Book.from_record(fake_record(Author=[a1, a2, a3]))
     with mock.patch("pyairtable.Table.all", return_value=records) as m:
         book.author
-        m.assert_called_once_with(formula=OR(RECORD_ID().eq(records[0]["id"])))
+        m.assert_called_once_with(
+            **Book.meta.request_kwargs,
+            formula=OR(RECORD_ID().eq(records[0]["id"])),
+        )
 
     assert book.author.id == a1
     assert book.author.name == "Author 1"
@@ -954,6 +957,34 @@ def test_link_field__populate(field_type, requests_mock):
     # calling .populate() on the wrong model raises an exception
     with pytest.raises(RuntimeError):
         T.link.populate(Linked())
+
+
+@pytest.mark.parametrize("field_type", (f.LinkField, f.SingleLinkField))
+def test_link_field__populate_with_field_ids(field_type, requests_mock):
+    """
+    Test that implementers can use Model.link_field.populate(instance)
+    when the linked model uses field IDs rather than field names.
+    """
+    field_id = fake_id("fld")
+    record_ids = [fake_id("rec", n) for n in range(3)]
+    records = [
+        fake_record(id=record_id, Name=f"link{n}")
+        for n, record_id in enumerate(record_ids)
+    ]
+
+    class Linked(Model):
+        Meta = fake_meta(use_field_ids=True)
+        name = f.TextField(field_id)
+
+    class T(Model):
+        Meta = fake_meta()
+        link = field_type("Link", Linked)
+
+    m = requests_mock.get(Linked.meta.table.urls.records, json={"records": records})
+    obj = T.from_record(fake_record(Link=record_ids))
+    obj.link
+    assert m.call_count == 1
+    assert m.last_request.qs.get("returnFieldsByFieldId") == ["1"]
 
 
 def test_lookup_field():
