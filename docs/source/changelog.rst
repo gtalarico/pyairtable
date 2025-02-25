@@ -7,8 +7,7 @@ Changelog
 
 * Fix for `#415 <https://github.com/gtalarico/pyairtable/issues/415>`_
   which caused an endless loop when making a request via `POST /listRecords`.
-  - `PR #416 <https://github.com/gtalarico/pyairtable/pull/416>`_,
-    `PR #417 <https://github.com/gtalarico/pyairtable/pull/417>`_
+  - `PR #416 <https://github.com/gtalarico/pyairtable/pull/416>`_, `PR #417 <https://github.com/gtalarico/pyairtable/pull/417>`_
 
 3.0 (2024-11-15)
 ------------------------
@@ -71,16 +70,14 @@ Changelog
 
 * Fix for `#415 <https://github.com/gtalarico/pyairtable/issues/415>`_
   which caused an endless loop when making a request via `POST /listRecords`.
-  - `PR #416 <https://github.com/gtalarico/pyairtable/pull/416>`_,
-    `PR #417 <https://github.com/gtalarico/pyairtable/pull/417>`_
+  - `PR #416 <https://github.com/gtalarico/pyairtable/pull/416>`_, `PR #417 <https://github.com/gtalarico/pyairtable/pull/417>`_
 
 2.3.6 (2024-11-11)
 ------------------------
 
 * Fix for `#404 <https://github.com/gtalarico/pyairtable/issues/404>`_
   related to `enterprise endpoint changes <https://airtable.com/developers/web/api/changelog#anchor-2024-11-11>`__.
-  - `PR #405 <https://github.com/gtalarico/pyairtable/pull/405>`_,
-    `PR #406 <https://github.com/gtalarico/pyairtable/pull/406>`_
+  - `PR #405 <https://github.com/gtalarico/pyairtable/pull/405>`_, `PR #406 <https://github.com/gtalarico/pyairtable/pull/406>`_
 
 2.3.5 (2024-10-29)
 ------------------------

@@ -3,7 +3,7 @@ cogapp
 Sphinx==4.5.0
 sphinx-autoapi
 sphinxext-opengraph
-revitron-sphinx-theme @ git+https://github.com/gtalarico/revitron-sphinx-theme.git@40f4b09fa5c199e3844153ef973a1155a56981dd
+revitron-sphinx-theme @ git+https://github.com/mesozoic/revitron-sphinx-theme.git@7ee572e9e4255c9aaa6b383656ff807fdac1011b
 sphinx-autodoc-typehints
 autodoc-pydantic>=2
 sphinxcontrib-applehelp==1.0.4
