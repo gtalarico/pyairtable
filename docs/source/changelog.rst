@@ -2,6 +2,16 @@
 Changelog
 =========
 
+3.0.2 (2025-02-25)
+------------------------
+
+* Fixed broken search feature in the library docs.
+  - `PR #423 <https://github.com/gtalarico/pyairtable/pull/423>`_
+* Fix for `#421 <https://github.com/gtalarico/pyairtable/issues/421>`_
+  which prevented ORM link fields from fetching records of models
+  that used field IDs instead of field names.
+  - `PR #422 <https://github.com/gtalarico/pyairtable/pull/422>`_
+
 3.0.1 (2024-12-06)
 ------------------------
 
