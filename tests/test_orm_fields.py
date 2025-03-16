@@ -413,6 +413,7 @@ def test_writable_fields(test_case):
         f.LastModifiedTimeField,
         f.LookupField,
         f.ManualSortField,
+        f.MultilineTextField,
         f.MultipleCollaboratorsField,
         f.MultipleSelectField,
         f.NumberField,
@@ -422,9 +423,8 @@ def test_writable_fields(test_case):
         f.RatingField,
         f.RichTextField,
         f.SelectField,
-        f.TextField,
         f.SingleLineTextField,
-        f.MultilineTextField,
+        f.TextField,
         f.UrlField,
     ],
 )

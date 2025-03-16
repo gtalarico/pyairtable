@@ -187,6 +187,8 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Lookup <https://airtable.com/developers/web/api/field-model#lookup>`__
    * - :class:`~pyairtable.orm.fields.ManualSortField` 🔒
      - (undocumented)
+   * - :class:`~pyairtable.orm.fields.MultilineTextField`
+     - `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.MultipleCollaboratorsField`
      - `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__
    * - :class:`~pyairtable.orm.fields.MultipleSelectField`
@@ -203,6 +205,8 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__
    * - :class:`~pyairtable.orm.fields.SelectField`
      - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
+   * - :class:`~pyairtable.orm.fields.SingleLineTextField`
+     - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
    * - :class:`~pyairtable.orm.fields.SingleLinkField`
      - `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__
    * - :class:`~pyairtable.orm.fields.TextField`
@@ -243,6 +247,8 @@ See :ref:`Required Values` for more details.
      - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
    * - :class:`~pyairtable.orm.fields.RequiredIntegerField`
      - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredMultilineTextField`
+     - `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.RequiredNumberField`
      - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
    * - :class:`~pyairtable.orm.fields.RequiredPercentField`
@@ -255,11 +261,41 @@ See :ref:`Required Values` for more details.
      - `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__
    * - :class:`~pyairtable.orm.fields.RequiredSelectField`
      - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
+   * - :class:`~pyairtable.orm.fields.RequiredSingleLineTextField`
+     - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
    * - :class:`~pyairtable.orm.fields.RequiredTextField`
      - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.RequiredUrlField`
      - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
-.. [[[end]]] (checksum: 43c56200ca513d3a0603bb5a6ddbb1ef)
+.. [[[end]]] (checksum: 658b792ee9eb180dc5600d76663c8a7e)
+
+
+Type Annotations
+------------------
+
+pyAirtable uses type annotations to provide hints to type checkers like mypy.
+Type annotations improve code readability and help catch errors during development.
+
+Basic field types like :class:`~pyairtable.orm.fields.TextField` and :class:`~pyairtable.orm.fields.IntegerField`
+will have their types inferred from the field's configuration. For example:
+
+.. code-block:: python
+
+    from pyairtable.orm import Model, fields as F
+
+    class Person(Model):
+        class Meta: ...
+
+        name = F.TextField("Name")
+        account_id = F.IntegerField("Account ID")
+        edited_by = F.LastModifiedByField("Last Modified By")
+
+    record = Person()
+    reveal_type(record.name)  # Revealed type is 'builtins.str*'
+    reveal_type(record.account_id)  # Revealed type is 'builtins.int*'
+    reveal_type(record.edited_by)  # Revealed type is 'pyairtable.api.types.CollaboratorDict'
+
+You may need to provide type hints to complex fields that involve lists. See below for examples.
 
 
 Formula, Rollup, and Lookup Fields
@@ -363,6 +399,7 @@ One reason to use these fields (sparingly!) might be to avoid adding defensive
 null-handling checks all over your code, if you are confident that the workflows
 around your Airtable base will not produce an empty value (or that an empty value
 is enough of a problem that your code should raise an exception).
+
 
 Linked Records
 ----------------
@@ -508,14 +545,8 @@ This code will perform a series of API calls at the beginning to fetch
 all records from the Books and Authors tables, so that ``author.books``
 does not need to request linked records one at a time during the loop.
 
-.. note::
-    Memoization does not affect whether pyAirtable will make an API call.
-    It only affects whether pyAirtable will reuse a model instance that
-    was already created, or create a new one. For example, calling
-    ``model.all(memoize=True)`` N times will still result in N calls to the API.
-
-You can also set ``memoize = True`` in the ``Meta`` configuration for your model,
-which indicates that you always want to memoize models retrieved from the API:
+If you always want to memoize models retrieved from the API, you can set
+``memoize = True`` in the ``Meta`` configuration for your model:
 
 .. code-block:: python
 
@@ -532,17 +563,38 @@ which indicates that you always want to memoize models retrieved from the API:
     Author.first().books  # this will memoize all books created
     Book.all(memoize=False)  # this will skip memoization
 
-The following methods support the ``memoize=`` keyword argument.
-You can pass ``memoize=False`` to override memoization that is
-enabled on the model configuration.
 
-   * :meth:`Model.all <pyairtable.orm.Model.all>`
-   * :meth:`Model.first <pyairtable.orm.Model.first>`
-   * :meth:`Model.from_record <pyairtable.orm.Model.from_record>`
-   * :meth:`Model.from_id <pyairtable.orm.Model.from_id>`
-   * :meth:`Model.from_ids <pyairtable.orm.Model.from_ids>`
-   * :meth:`LinkField.populate <pyairtable.orm.fields.LinkField.populate>`
-   * :meth:`SingleLinkField.populate <pyairtable.orm.fields.SingleLinkField.populate>`
+The following methods support the ``memoize=`` keyword argument to control
+whether the ORM saves the models it creates for later reuse. If a model is
+configured to memoize by default, pass ``memoize=False`` to override it.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Retrieval function
+     - Will it reuse saved models?
+     - Will it call the API?
+   * - :meth:`Model.all <pyairtable.orm.Model.all>`
+     - Never
+     - Always
+   * - :meth:`Model.first <pyairtable.orm.Model.first>`
+     - Never
+     - Always
+   * - :meth:`Model.from_record <pyairtable.orm.Model.from_record>`
+     - Never
+     - Never
+   * - :meth:`Model.from_id <pyairtable.orm.Model.from_id>`
+     - Yes
+     - Yes, unless ``fetch=True``
+   * - :meth:`Model.from_ids <pyairtable.orm.Model.from_ids>`
+     - Yes
+     - Yes, unless ``fetch=True``
+   * - :meth:`LinkField.populate <pyairtable.orm.fields.LinkField.populate>`
+     - Yes
+     - Yes, unless ``lazy=True``
+   * - :meth:`SingleLinkField.populate <pyairtable.orm.fields.SingleLinkField.populate>`
+     - Yes
+     - Yes, unless ``lazy=True``
 
 
 Comments
