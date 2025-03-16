@@ -209,7 +209,9 @@ def _append_docstring_text(obj: Any, text: str, *, skip_empty: bool = True) -> N
 
 def docstring_from(obj: Any, append: str = "") -> Callable[[F], F]:
     def _wrapper(func: F) -> F:
-        func.__doc__ = obj.__doc__ + append
+        func.__doc__ = obj.__doc__
+        if append:
+            _append_docstring_text(func, append)
         return func
 
     return _wrapper

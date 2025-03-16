@@ -27,11 +27,13 @@ which allows us to define methods and type annotations for getting and setting a
 
 import abc
 import importlib
+import re
 from datetime import date, datetime, timedelta
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     ClassVar,
     Dict,
     Generic,
@@ -332,49 +334,168 @@ _Requires: TypeAlias = _Requires_API_ORM[T, T]
 AnyField: TypeAlias = Field[Any, Any, Any]
 
 
+# ======================================================
+# Helpers for field class documentation
+# ======================================================
+
+
+T_Field = TypeVar("T_Field", bound=Type[Field[Any, Any, Any]])
+
+
+def _use_inherited_docstring(cls: T_Field) -> T_Field:
+    """
+    Reuses the class's first parent class's docstring if it's undocumented.
+    """
+    from_cls: Type[Any] = cls
+    while len(from_cls.__mro__) > 1 and not from_cls.__doc__:
+        from_cls = from_cls.__mro__[1]
+        if from_cls is Field:
+            raise RuntimeError(f"{cls} needs a docstring")  # pragma: no cover
+    cls.__doc__ = from_cls.__doc__
+    return cls
+
+
+def _maybe_readonly_docstring(cls: T_Field) -> T_Field:
+    """
+    Modifies the class docstring to indicate read-only vs. writable.
+    """
+    _use_inherited_docstring(cls)
+    if cls.readonly:
+        cls.__doc__ = re.sub(
+            r"Accepts (?:only )?((?:[^.`]+|`[^`]+`)+)\.",
+            r"Read only. Returns \1.",
+            cls.__doc__ or "",
+        )
+    return cls
+
+
+def _field_api_docstring(*refs_tags: str) -> Callable[[T_Field], T_Field]:
+    """
+    Appends the class docstring with a link to the Airtable API documentation for the field type.
+    If the class is undocumented, reuses the class's first parent class's docstring.
+    """
+    if len(refs_tags) == 1:
+        refs_tags = (refs_tags[0], refs_tags[0].lower().replace(" ", ""))
+    joiner = " and " if len(refs_tags) == 4 else ", "
+    link_text = "For more about this field type, see %s." % joiner.join(
+        f"`{ref} <https://airtable.com/developers/web/api/field-model#{tag}>`__"
+        for (ref, tag) in zip(refs_tags[::2], refs_tags[1::2])
+    )
+
+    def _wrapper(cls: T_Field) -> T_Field:
+        _use_inherited_docstring(cls)
+        _maybe_readonly_docstring(cls)
+        utils._append_docstring_text(cls, link_text)
+        return cls
+
+    return _wrapper
+
+
+def _required_value_docstring(cls: T_Field) -> T_Field:
+    """
+    Appends the class's docstring so that it includes a note about required values.
+    If the class is undocumented, reuses the class's first parent class's docstring.
+    """
+    _use_inherited_docstring(cls)
+    _maybe_readonly_docstring(cls)
+    append = "If the Airtable API returns ``null``, "
+    if not cls.readonly:
+        append += "or if a caller sets this field to ``None`` or ``''``, "
+    append += "this field raises :class:`~pyairtable.exceptions.MissingValueError`."
+    utils._append_docstring_text(cls, append)
+    return cls
+
+
+# ======================================================
+# Field types that contain text values
+# ======================================================
+
+
 class _StringField(_BasicFieldWithMissingValue[str]):
     """
-    Base class for fields that return Unicode strings.
+    Accepts ``str``.
+    Returns ``""`` instead of ``None`` if the field is empty.
     """
 
     missing_value = ""
     valid_types = str
 
 
+@_field_api_docstring("Email", "emailtext")
+class EmailField(_StringField, _FieldSchema[S.EmailFieldSchema]):
+    pass
+
+
+@_field_api_docstring("Sync source")
+class ExternalSyncSourceField(
+    _StringField, _FieldSchema[S.ExternalSyncSourceFieldSchema]
+):
+
+    readonly = True
+
+
+class ManualSortField(_StringField, _FieldSchema[S.ManualSortFieldSchema]):
+    """
+    Read-only. Returns ``""`` instead of ``None`` if the field is empty.
+
+    The ``manualSort`` field type is used to define a manual sort order for a list view.
+    Its use or behavior via the API is not documented.
+    """
+
+    readonly = True
+
+
+@_field_api_docstring("Long text", "multilinetext")
+class MultilineTextField(_StringField, _FieldSchema[S.MultilineTextFieldSchema]):
+    pass
+
+
+@_field_api_docstring("Phone")
+class PhoneNumberField(_StringField, _FieldSchema[S.PhoneNumberFieldSchema]):
+    pass
+
+
+@_field_api_docstring("Rich text")
+class RichTextField(_StringField, _FieldSchema[S.RichTextFieldSchema]):
+    pass
+
+
+@_field_api_docstring("Single select", "select")
+class SelectField(Field[str, str, None], _FieldSchema[S.SingleSelectFieldSchema]):
+    """
+    Represents a single select dropdown field. Accepts ``str`` or ``None``.
+
+    This will return ``None`` if no value is set, and will only return ``""``
+    if an empty dropdown option is available and selected.
+    """
+
+    valid_types = str
+
+
+@_field_api_docstring("Single line text", "simpletext")
+class SingleLineTextField(_StringField, _FieldSchema[S.SingleLineTextFieldSchema]):
+    pass
+
+
+@_field_api_docstring("Single line text", "simpletext", "Long text", "multilinetext")
 class TextField(
     _StringField,
     _FieldSchema[Union[S.SingleLineTextFieldSchema, S.MultilineTextFieldSchema]],
 ):
-    """
-    Deprecated; use :class:`~SingleLineTextField` or :class:`~MultilineTextField`.
-
-    Accepts ``str``.
-    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
-
-    See `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
-    and `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
-    """
+    pass
 
 
-class SingleLineTextField(_StringField, _FieldSchema[S.SingleLineTextFieldSchema]):
-    """
-    Accepts ``str``.
-    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
-
-    See `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
-    """
+@_field_api_docstring("Url", "urltext")
+class UrlField(_StringField, _FieldSchema[S.UrlFieldSchema]):
+    pass
 
 
-class MultilineTextField(_StringField, _FieldSchema[S.MultilineTextFieldSchema]):
-    """
-    Accepts ``str``.
-    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
-
-    See `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
-    """
+# ======================================================
+# Field types that contain numeric values
+# ======================================================
 
 
-class _NumericField(_BasicField[T]):
+class _NumericFieldBase(_BasicField[T]):
     """
     Base class for Number, Float, and Integer. Shares a common validation rule.
     """
@@ -388,51 +509,79 @@ class _NumericField(_BasicField[T]):
         super().valid_or_raise(value)
 
 
-class _NumberField(_NumericField[Union[int, float]]):
+class _NumberField(_NumericFieldBase[Union[int, float]]):
+    """
+    Number field with unspecified precision. Accepts either ``int`` or ``float``.
+    """
+
     valid_types = (int, float)
 
 
-class _IntegerField(_NumericField[int]):
+class _IntegerField(_NumericFieldBase[int]):
+    """
+    Number field with integer precision. Accepts only ``int`` values.
+    """
+
     valid_types = int
 
 
-class _FloatField(_NumericField[float]):
+class _FloatField(_NumericFieldBase[float]):
+    """
+    Number field with decimal precision. Accepts only ``float`` values.
+    """
+
     valid_types = float
 
 
+@_field_api_docstring("Number", "decimalorintegernumber")
 class NumberField(_NumberField, _FieldSchema[S.NumberFieldSchema]):
-    """
-    Number field with unspecified precision. Accepts either ``int`` or ``float``.
-
-    See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
-    """
+    pass
 
 
 # This cannot inherit from NumberField because valid_types would be more restrictive
 # in the subclass than what is defined in the parent class.
+@_field_api_docstring("Number", "decimalorintegernumber")
 class IntegerField(_IntegerField, _FieldSchema[S.NumberFieldSchema]):
-    """
-    Number field with integer precision. Accepts only ``int`` values.
-
-    See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
-    """
+    pass
 
 
 # This cannot inherit from NumberField because valid_types would be more restrictive
 # in the subclass than what is defined in the parent class.
+@_field_api_docstring("Number", "decimalorintegernumber")
 class FloatField(_FloatField, _FieldSchema[S.NumberFieldSchema]):
+    pass
+
+
+@_field_api_docstring("Checkbox")
+class CheckboxField(Field[bool, bool, bool], _FieldSchema[S.CheckboxFieldSchema]):
     """
-    Number field with decimal precision. Accepts only ``float`` values.
-
-    See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
+    Accepts ``bool``.
+    Returns ``False`` instead of ``None`` if the field is empty.
     """
 
+    missing_value = False
+    valid_types = bool
 
+
+@_field_api_docstring("Count", "count")
+class CountField(_IntegerField, _FieldSchema[S.CountFieldSchema]):
+    readonly = True
+
+
+@_field_api_docstring("Currency", "currencynumber")
+class CurrencyField(_NumberField, _FieldSchema[S.CurrencyFieldSchema]):
+    pass
+
+
+@_field_api_docstring("Percent", "percentnumber")
+class PercentField(_NumberField, _FieldSchema[S.PercentFieldSchema]):
+    pass
+
+
+@_field_api_docstring("Rating")
 class RatingField(_IntegerField, _FieldSchema[S.RatingFieldSchema]):
     """
     Accepts ``int`` values that are greater than zero.
-
-    See `Rating <https://airtable.com/developers/web/api/field-model#rating>`__.
     """
 
     def valid_or_raise(self, value: int) -> None:
@@ -441,19 +590,16 @@ class RatingField(_IntegerField, _FieldSchema[S.RatingFieldSchema]):
             raise ValueError("rating cannot be below 1")
 
 
-class CheckboxField(Field[bool, bool, bool], _FieldSchema[S.CheckboxFieldSchema]):
-    """
-    Accepts ``bool``.
-    Returns ``False`` instead of ``None`` if the field is empty on the Airtable base.
-
-    See `Checkbox <https://airtable.com/developers/web/api/field-model#checkbox>`__.
-    """
-
-    missing_value = False
-    valid_types = bool
+# ======================================================
+# Field types that contain dates or datetimes
+# ======================================================
 
 
 class _DatetimeField(Field[str, datetime, None]):
+    """
+    Accepts only `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_ values.
+    """
+
     valid_types = datetime
 
     def to_record_value(self, value: datetime) -> str:
@@ -469,19 +615,15 @@ class _DatetimeField(Field[str, datetime, None]):
         return utils.datetime_from_iso_str(value)
 
 
+@_field_api_docstring("Date and time")
 class DatetimeField(_DatetimeField, _FieldSchema[S.DateTimeFieldSchema]):
-    """
-    DateTime field. Accepts only `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_ values.
-
-    See `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__.
-    """
+    pass
 
 
+@_field_api_docstring("Date", "dateonly")
 class DateField(Field[str, date, None], _FieldSchema[S.DateFieldSchema]):
     """
-    Date field. Accepts only `date <https://docs.python.org/3/library/datetime.html#date-objects>`_ values.
-
-    See `Date <https://airtable.com/developers/web/api/field-model#dateonly>`__.
+    Accepts only `date <https://docs.python.org/3/library/datetime.html#date-objects>`_ values.
     """
 
     valid_types = date
@@ -499,12 +641,10 @@ class DateField(Field[str, date, None], _FieldSchema[S.DateFieldSchema]):
         return utils.date_from_iso_str(value)
 
 
+@_field_api_docstring("Duration", "durationnumber")
 class DurationField(Field[int, timedelta, None], _FieldSchema[S.DurationFieldSchema]):
     """
     Duration field. Accepts only `timedelta <https://docs.python.org/3/library/datetime.html#timedelta-objects>`_ values.
-
-    See `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__.
-    Airtable's API returns this as a number of seconds.
     """
 
     valid_types = timedelta
@@ -522,13 +662,9 @@ class DurationField(Field[int, timedelta, None], _FieldSchema[S.DurationFieldSch
         return timedelta(seconds=value)
 
 
-class _DictField(_BasicField[T]):
-    """
-    Generic field type that stores a single dict. Not for use via API;
-    should be subclassed by concrete field types (below).
-    """
-
-    valid_types = dict
+# ======================================================
+# Field types that contain complex values (dicts, lists)
+# ======================================================
 
 
 class _ListFieldBase(
@@ -630,6 +766,7 @@ class _LinkFieldOptions(Enum):
 LinkSelf = _LinkFieldOptions.LinkSelf
 
 
+@_field_api_docstring("Link to another record", "foreignkey")
 class LinkField(
     Generic[T_Linked],
     _ListFieldBase[
@@ -644,8 +781,6 @@ class LinkField(
 
     Can also be used with a lookup field that pulls from a MultipleRecordLinks field,
     provided the field is created with ``readonly=True``.
-
-    See `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__.
     """
 
     _linked_model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]]
@@ -888,11 +1023,11 @@ class SingleLinkField(
 
     @utils.docstring_from(
         LinkField.__init__,
-        append="""
-            raise_if_many: If ``True``, this field will raise a
-                :class:`~pyairtable.orm.fields.MultipleValues` exception upon
-                being accessed if the underlying field contains multiple values.
-        """,
+        append=(
+            "    raise_if_many: If ``True``, this field will raise a"
+            " :class:`~pyairtable.orm.fields.MultipleValues` exception upon"
+            " being accessed if the underlying field contains multiple values."
+        ),
     )
     def __init__(
         self,
@@ -972,24 +1107,25 @@ class SingleLinkField(
         return self._link_field.linked_model
 
 
-# Many of these are "passthrough" subclasses for now. E.g. there is no real
-# difference between `field = TextField()` and `field = PhoneNumberField()`.
-#
-# But we might choose to add more type-specific functionality later, so
-# we'll allow implementers to get as specific as they care to and they might
-# get some extra functionality for free in the future.
+class _DictField(_BasicField[T]):
+    """
+    Generic field type that stores a single dict. Not for use via API;
+    should be subclassed by concrete field types (below).
+    """
+
+    valid_types = dict
 
 
+@_field_api_docstring("AI Text")
 class AITextField(_DictField[AITextDict], _FieldSchema[S.AITextFieldSchema]):
     """
-    Read-only field that returns a `dict`. For more information, read the
-    `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`_
-    documentation.
+    Read-only field that returns a ``dict``.
     """
 
     readonly = True
 
 
+@_field_api_docstring("Attachments", "multipleattachment")
 class AttachmentsField(
     _ListFieldBase[
         AttachmentDict, Union[AttachmentDict, CreateAttachmentDict], AttachmentsList
@@ -999,91 +1135,89 @@ class AttachmentsField(
     contains_type=dict,
 ):
     """
-    Accepts a list of dicts in the format detailed in
-    `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`_.
+    Accepts a list of :class:`~pyairtable.api.types.AttachmentDict` or
+    :class:`~pyairtable.api.types.CreateAttachmentDict`.
     """
 
 
+@_field_api_docstring("Barcode")
 class BarcodeField(_DictField[BarcodeDict], _FieldSchema[S.BarcodeFieldSchema]):
     """
-    Accepts a `dict` that should conform to the format detailed in the
-    `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`_
-    documentation.
+    Accepts a list of :class:`~pyairtable.api.types.BarcodeDict`.
     """
 
 
+@_field_api_docstring("Button")
+@_required_value_docstring
+class ButtonField(
+    _DictField[ButtonDict],
+    _Requires[ButtonDict],
+    _FieldSchema[S.ButtonFieldSchema],
+):
+    """
+    Read-only field that returns a :class:`~pyairtable.api.types.ButtonDict`.
+    """
+
+    readonly = True
+
+
+@_field_api_docstring("Collaborator")
 class CollaboratorField(
     _DictField[Union[CollaboratorDict, CollaboratorEmailDict]],
     _FieldSchema[S.SingleCollaboratorFieldSchema],
 ):
     """
-    Accepts a `dict` that should conform to the format detailed in the
-    `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`_
-    documentation.
+    Accepts a :class:`~pyairtable.api.types.CollaboratorDict` or
+    :class:`~pyairtable.api.types.CollaboratorEmailDict`.
     """
 
 
-class CountField(_IntegerField, _FieldSchema[S.CountFieldSchema]):
-    """
-    Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
-
-    See `Count <https://airtable.com/developers/web/api/field-model#count>`__.
-    """
-
-    valid_types = int
-    readonly = True
-
-
-class CurrencyField(_NumberField, _FieldSchema[S.CurrencyFieldSchema]):
-    """
-    Accepts either ``int`` or ``float``.
-
-    See `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__.
-    """
-
-
-class EmailField(_StringField, _FieldSchema[S.EmailFieldSchema]):
-    """
-    Equivalent to :class:`~TextField`.
-
-    See `Email <https://airtable.com/developers/web/api/field-model#email>`__.
-    """
-
-
-class ExternalSyncSourceField(
-    _StringField, _FieldSchema[S.ExternalSyncSourceFieldSchema]
+@_field_api_docstring("Created by")
+@_required_value_docstring
+class CreatedByField(
+    _DictField[CollaboratorDict],
+    _Requires[CollaboratorDict],
+    _FieldSchema[S.CreatedByFieldSchema],
 ):
     """
-    Equivalent to :class:`TextField(readonly=True) <TextField>`.
-
-    See `Sync source <https://airtable.com/developers/web/api/field-model#syncsource>`__.
+    Returns a :class:`~pyairtable.api.types.CollaboratorDict`.
     """
 
     readonly = True
 
 
+@_field_api_docstring("Created time")
+@_required_value_docstring
+class CreatedTimeField(
+    _DatetimeField,
+    _Requires_API_ORM[str, datetime],
+    _FieldSchema[S.CreatedTimeFieldSchema],
+):
+
+    readonly = True
+
+
+@_field_api_docstring("Last modified by")
+@_required_value_docstring
 class LastModifiedByField(
     _DictField[CollaboratorDict], _FieldSchema[S.LastModifiedByFieldSchema]
 ):
     """
-    See `Last modified by <https://airtable.com/developers/web/api/field-model#lastmodifiedby>`__.
+    Read-only. Returns a :class:`~pyairtable.api.types.CollaboratorDict`.
     """
 
     readonly = True
 
 
+@_field_api_docstring("Last modified time")
 class LastModifiedTimeField(
     _DatetimeField, _FieldSchema[S.LastModifiedTimeFieldSchema]
 ):
-    """
-    Equivalent to :class:`DatetimeField(readonly=True) <DatetimeField>`.
-
-    See `Last modified time <https://airtable.com/developers/web/api/field-model#lastmodifiedtime>`__.
-    """
 
     readonly = True
 
 
+@_field_api_docstring("Lookup")
 class LookupField(_ListField[T], _FieldSchema[S.MultipleLookupValuesFieldSchema]):
     """
     Generic field class for a lookup, which returns a list of values.
@@ -1099,385 +1233,153 @@ class LookupField(_ListField[T], _FieldSchema[S.MultipleLookupValuesFieldSchema]
     >>> rec = MyTable.first()
     >>> rec.lookup
     ["First value", "Second value", ...]
-
-    See `Lookup <https://airtable.com/developers/web/api/field-model#lookup>`__.
     """
 
     readonly = True
 
 
-class ManualSortField(
-    _BasicFieldWithMissingValue[str], _FieldSchema[S.ManualSortFieldSchema]
-):
-    """
-    Field configuration for ``manualSort`` field type (not documented).
-    """
-
-    readonly = True
-
-
+@_field_api_docstring("Multiple collaborators", "multicollaborator")
 class MultipleCollaboratorsField(
     _ListField[Union[CollaboratorDict, CollaboratorEmailDict]],
     _FieldSchema[S.MultipleCollaboratorsFieldSchema],
     contains_type=dict,
 ):
     """
-    Accepts a list of dicts in the format detailed in
-    `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`_.
+    Accepts a list of :class:`~pyairtable.api.types.CollaboratorDict` or
+    :class:`~pyairtable.api.types.CollaboratorEmailDict`.
     """
 
 
+@_field_api_docstring("Multiple select", "multiselect")
 class MultipleSelectField(
     _ListField[str], _FieldSchema[S.MultipleSelectsFieldSchema], contains_type=str
 ):
     """
     Accepts a list of ``str``.
-
-    See `Multiple select <https://airtable.com/developers/web/api/field-model#multiselect>`__.
     """
 
 
-class PercentField(_NumberField, _FieldSchema[S.PercentFieldSchema]):
-    """
-    Equivalent to :class:`~NumberField`.
+# ======================================================
+# Derived field types that disallow None or empty string
+# ======================================================
 
-    See `Percent <https://airtable.com/developers/web/api/field-model#percentnumber>`__.
-    """
 
-
-class PhoneNumberField(_StringField, _FieldSchema[S.PhoneNumberFieldSchema]):
-    """
-    Equivalent to :class:`~TextField`.
-
-    See `Phone <https://airtable.com/developers/web/api/field-model#phone>`__.
-    """
-
-
-class RichTextField(_StringField, _FieldSchema[S.RichTextFieldSchema]):
-    """
-    Equivalent to :class:`~TextField`.
-
-    See `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__.
-    """
-
-
-class SelectField(Field[str, str, None], _FieldSchema[S.SingleSelectFieldSchema]):
-    """
-    Represents a single select dropdown field. This will return ``None`` if no value is set,
-    and will only return ``""`` if an empty dropdown option is available and selected.
-
-    See `Single select <https://airtable.com/developers/web/api/field-model#select>`__.
-    """
-
-    valid_types = str
-
-
-class UrlField(_StringField, _FieldSchema[S.UrlFieldSchema]):
-    """
-    Equivalent to :class:`~TextField`.
-
-    See `Url <https://airtable.com/developers/web/api/field-model#urltext>`__.
-    """
-
-
-class RequiredAITextField(AITextField, _Requires[AITextDict]):
-    """
-    Read-only field that returns a `dict`. For more information, read the
-    `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`_
-    documentation.
-
-    If the Airtable API returns ``null``, this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredBarcodeField(BarcodeField, _Requires[BarcodeDict]):
-    """
-    Accepts a `dict` that should conform to the format detailed in the
-    `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`_
-    documentation.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredCollaboratorField(
-    CollaboratorField,
-    _Requires[Union[CollaboratorDict, CollaboratorEmailDict]],
-):
-    """
-    Accepts a `dict` that should conform to the format detailed in the
-    `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`_
-    documentation.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredCountField(CountField, _Requires[int]):
-    """
-    Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
-
-    See `Count <https://airtable.com/developers/web/api/field-model#count>`__.
-
-    If the Airtable API returns ``null``, this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredCurrencyField(CurrencyField, _Requires[Union[int, float]]):
-    """
-    Equivalent to :class:`~NumberField`.
-
-    See `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredDateField(DateField, _Requires_API_ORM[str, date]):
-    """
-    Date field. Accepts only `date <https://docs.python.org/3/library/datetime.html#date-objects>`_ values.
-
-    See `Date <https://airtable.com/developers/web/api/field-model#dateonly>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredDatetimeField(DatetimeField, _Requires_API_ORM[str, datetime]):
-    """
-    DateTime field. Accepts only `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_ values.
-
-    See `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredDurationField(DurationField, _Requires_API_ORM[int, timedelta]):
-    """
-    Duration field. Accepts only `timedelta <https://docs.python.org/3/library/datetime.html#timedelta-objects>`_ values.
-
-    See `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__.
-    Airtable's API returns this as a number of seconds.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredEmailField(EmailField, _Requires[str]):
-    """
-    Equivalent to :class:`~TextField`.
-
-    See `Email <https://airtable.com/developers/web/api/field-model#email>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredFloatField(FloatField, _Requires[float]):
-    """
-    Number field with decimal precision. Accepts only ``float`` values.
-
-    See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredIntegerField(IntegerField, _Requires[int]):
-    """
-    Number field with integer precision. Accepts only ``int`` values.
-
-    See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredNumberField(NumberField, _Requires[Union[int, float]]):
-    """
-    Number field with unspecified precision. Accepts either ``int`` or ``float``.
-
-    See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredPercentField(PercentField, _Requires[Union[int, float]]):
-    """
-    Equivalent to :class:`~NumberField`.
-
-    See `Percent <https://airtable.com/developers/web/api/field-model#percentnumber>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredPhoneNumberField(PhoneNumberField, _Requires[str]):
-    """
-    Equivalent to :class:`~TextField`.
-
-    See `Phone <https://airtable.com/developers/web/api/field-model#phone>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredRatingField(RatingField, _Requires[int]):
-    """
-    Accepts ``int`` values that are greater than zero.
-
-    See `Rating <https://airtable.com/developers/web/api/field-model#rating>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredRichTextField(RichTextField, _Requires[str]):
-    """
-    Equivalent to :class:`~TextField`.
-
-    See `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredSelectField(SelectField, _Requires_API_ORM[str, str]):
-    """
-    Represents a single select dropdown field. This will return ``None`` if no value is set,
-    and will only return ``""`` if an empty dropdown option is available and selected.
-
-    See `Single select <https://airtable.com/developers/web/api/field-model#select>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredTextField(TextField, _Requires[str]):
-    """
-    Accepts ``str``.
-    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
-
-    See `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
-    and `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredSingleLineTextField(SingleLineTextField, _Requires[str]):
-    """
-    Accepts ``str``.
-    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
-
-    See `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredMultilineTextField(MultilineTextField, _Requires[str]):
-    """
-    Accepts ``str``.
-    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
-
-    See `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
-class RequiredUrlField(UrlField, _Requires[str]):
-    """
-    Equivalent to :class:`~TextField`.
-
-    See `Url <https://airtable.com/developers/web/api/field-model#urltext>`__.
-
-    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
-    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-
+@_field_api_docstring("Auto number", "autonumber")
+@_required_value_docstring
 class AutoNumberField(
     _IntegerField,
     _Requires[int],
     _FieldSchema[S.AutoNumberFieldSchema],
 ):
-    """
-    Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
-
-    See `Auto number <https://airtable.com/developers/web/api/field-model#autonumber>`__.
-
-    If the Airtable API returns ``null``, this field will raise :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
     readonly = True
 
 
-class ButtonField(
-    _DictField[ButtonDict],
-    _Requires[ButtonDict],
-    _FieldSchema[S.ButtonFieldSchema],
+@_required_value_docstring
+class RequiredAITextField(AITextField, _Requires[AITextDict]):
+    pass
+
+
+@_required_value_docstring
+class RequiredBarcodeField(BarcodeField, _Requires[BarcodeDict]):
+    pass
+
+
+@_required_value_docstring
+class RequiredCollaboratorField(
+    CollaboratorField,
+    _Requires[Union[CollaboratorDict, CollaboratorEmailDict]],
 ):
-    """
-    Read-only field that returns a `dict`. For more information, read the
-    `Button <https://airtable.com/developers/web/api/field-model#button>`_
-    documentation.
-
-    If the Airtable API returns ``null``, this field will raise :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-    readonly = True
+    pass
 
 
-class CreatedByField(
-    _DictField[CollaboratorDict],
-    _Requires[CollaboratorDict],
-    _FieldSchema[S.CreatedByFieldSchema],
-):
-    """
-    See `Created by <https://airtable.com/developers/web/api/field-model#createdby>`__.
-
-    If the Airtable API returns ``null``, this field will raise :class:`~pyairtable.orm.fields.MissingValue`.
-    """
-
-    readonly = True
+@_required_value_docstring
+class RequiredCountField(CountField, _Requires[int]):
+    pass
 
 
-class CreatedTimeField(
-    _DatetimeField,
-    _Requires_API_ORM[str, datetime],
-    _FieldSchema[S.CreatedTimeFieldSchema],
-):
-    """
-    Equivalent to :class:`DatetimeField(readonly=True) <DatetimeField>`.
+@_required_value_docstring
+class RequiredCurrencyField(CurrencyField, _Requires[Union[int, float]]):
+    pass
 
-    See `Created time <https://airtable.com/developers/web/api/field-model#createdtime>`__.
 
-    If the Airtable API returns ``null``, this field will raise :class:`~pyairtable.orm.fields.MissingValue`.
-    """
+@_required_value_docstring
+class RequiredDateField(DateField, _Requires_API_ORM[str, date]):
+    pass
 
-    readonly = True
+
+@_required_value_docstring
+class RequiredDatetimeField(DatetimeField, _Requires_API_ORM[str, datetime]):
+    pass
+
+
+@_required_value_docstring
+class RequiredDurationField(DurationField, _Requires_API_ORM[int, timedelta]):
+    pass
+
+
+@_required_value_docstring
+class RequiredEmailField(EmailField, _Requires[str]):
+    pass
+
+
+@_required_value_docstring
+class RequiredFloatField(FloatField, _Requires[float]):
+    pass
+
+
+@_required_value_docstring
+class RequiredIntegerField(IntegerField, _Requires[int]):
+    pass
+
+
+@_required_value_docstring
+class RequiredNumberField(NumberField, _Requires[Union[int, float]]):
+    pass
+
+
+@_required_value_docstring
+class RequiredPercentField(PercentField, _Requires[Union[int, float]]):
+    pass
+
+
+@_required_value_docstring
+class RequiredPhoneNumberField(PhoneNumberField, _Requires[str]):
+    pass
+
+
+@_required_value_docstring
+class RequiredRatingField(RatingField, _Requires[int]):
+    pass
+
+
+@_required_value_docstring
+class RequiredRichTextField(RichTextField, _Requires[str]):
+    pass
+
+
+@_required_value_docstring
+class RequiredSelectField(SelectField, _Requires_API_ORM[str, str]):
+    pass
+
+
+@_required_value_docstring
+class RequiredTextField(TextField, _Requires[str]):
+    pass
+
+
+@_required_value_docstring
+class RequiredSingleLineTextField(SingleLineTextField, _Requires[str]):
+    pass
+
+
+@_required_value_docstring
+class RequiredMultilineTextField(MultilineTextField, _Requires[str]):
+    pass
+
+
+@_required_value_docstring
+class RequiredUrlField(UrlField, _Requires[str]):
+    pass
 
 
 #: Set of all Field subclasses exposed by the library.

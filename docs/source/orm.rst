@@ -170,7 +170,7 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
    * - :class:`~pyairtable.orm.fields.DurationField`
      - `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__
    * - :class:`~pyairtable.orm.fields.EmailField`
-     - `Email <https://airtable.com/developers/web/api/field-model#email>`__
+     - `Email <https://airtable.com/developers/web/api/field-model#emailtext>`__
    * - :class:`~pyairtable.orm.fields.ExternalSyncSourceField` 🔒
      - `Sync source <https://airtable.com/developers/web/api/field-model#syncsource>`__
    * - :class:`~pyairtable.orm.fields.FloatField`
@@ -190,7 +190,7 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
    * - :class:`~pyairtable.orm.fields.MultilineTextField`
      - `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.MultipleCollaboratorsField`
-     - `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__
+     - `Multiple collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__
    * - :class:`~pyairtable.orm.fields.MultipleSelectField`
      - `Multiple select <https://airtable.com/developers/web/api/field-model#multiselect>`__
    * - :class:`~pyairtable.orm.fields.NumberField`
@@ -202,7 +202,7 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
    * - :class:`~pyairtable.orm.fields.RatingField`
      - `Rating <https://airtable.com/developers/web/api/field-model#rating>`__
    * - :class:`~pyairtable.orm.fields.RichTextField`
-     - `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__
+     - `Rich text <https://airtable.com/developers/web/api/field-model#richtext>`__
    * - :class:`~pyairtable.orm.fields.SelectField`
      - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
    * - :class:`~pyairtable.orm.fields.SingleLineTextField`
@@ -242,7 +242,7 @@ See :ref:`Required Values` for more details.
    * - :class:`~pyairtable.orm.fields.RequiredDurationField`
      - `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__
    * - :class:`~pyairtable.orm.fields.RequiredEmailField`
-     - `Email <https://airtable.com/developers/web/api/field-model#email>`__
+     - `Email <https://airtable.com/developers/web/api/field-model#emailtext>`__
    * - :class:`~pyairtable.orm.fields.RequiredFloatField`
      - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
    * - :class:`~pyairtable.orm.fields.RequiredIntegerField`
@@ -258,7 +258,7 @@ See :ref:`Required Values` for more details.
    * - :class:`~pyairtable.orm.fields.RequiredRatingField`
      - `Rating <https://airtable.com/developers/web/api/field-model#rating>`__
    * - :class:`~pyairtable.orm.fields.RequiredRichTextField`
-     - `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__
+     - `Rich text <https://airtable.com/developers/web/api/field-model#richtext>`__
    * - :class:`~pyairtable.orm.fields.RequiredSelectField`
      - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
    * - :class:`~pyairtable.orm.fields.RequiredSingleLineTextField`
@@ -267,7 +267,7 @@ See :ref:`Required Values` for more details.
      - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.RequiredUrlField`
      - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
-.. [[[end]]] (checksum: 658b792ee9eb180dc5600d76663c8a7e)
+.. [[[end]]] (checksum: 3ed2090cb24140caa19860a20b0f5a33)
 
 
 Type Annotations
