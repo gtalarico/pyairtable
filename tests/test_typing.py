@@ -12,6 +12,7 @@ import pyairtable.api.types as T
 import pyairtable.orm.lists as L
 import pyairtable.utils
 from pyairtable import orm
+from pyairtable.models import schema
 
 if TYPE_CHECKING:
     # This section does not actually get executed; it is only parsed by mypy.
@@ -70,8 +71,9 @@ if TYPE_CHECKING:
 
     # Test type annotations for the ORM
     class Actor(orm.Model):
-        name = orm.fields.TextField("Name")
+        name = orm.fields.SingleLineTextField("Name")
         logins = orm.fields.MultipleCollaboratorsField("Logins")
+        bio = orm.fields.MultilineTextField("Bio")
 
     assert_type(Actor().name, str)
     assert_type(
@@ -147,6 +149,7 @@ if TYPE_CHECKING:
         required_select = orm.fields.RequiredSelectField("Status")
         required_url = orm.fields.RequiredUrlField("URL")
 
+    # Check the types of values returned from these fields
     # fmt: off
     record = EveryField()
     assert_type(record.aitext, Optional[T.AITextDict])
@@ -199,6 +202,58 @@ if TYPE_CHECKING:
     assert_type(record.required_rich_text, str)
     assert_type(record.required_select, str)
     assert_type(record.required_url, str)
+
+    # Check the types of each field schema
+    assert_type(Movie.name.field_schema(), Union[schema.SingleLineTextFieldSchema, schema.MultilineTextFieldSchema])
+    assert_type(Actor.name.field_schema(), schema.SingleLineTextFieldSchema)
+    assert_type(Actor.bio.field_schema(), schema.MultilineTextFieldSchema)
+    assert_type(EveryField.aitext.field_schema(), schema.AITextFieldSchema)
+    assert_type(EveryField.attachments.field_schema(), schema.MultipleAttachmentsFieldSchema)
+    assert_type(EveryField.autonumber.field_schema(), schema.AutoNumberFieldSchema)
+    assert_type(EveryField.barcode.field_schema(), schema.BarcodeFieldSchema)
+    assert_type(EveryField.button.field_schema(), schema.ButtonFieldSchema)
+    assert_type(EveryField.checkbox.field_schema(), schema.CheckboxFieldSchema)
+    assert_type(EveryField.collaborator.field_schema(), schema.SingleCollaboratorFieldSchema)
+    assert_type(EveryField.count.field_schema(), schema.CountFieldSchema)
+    assert_type(EveryField.created_by.field_schema(), schema.CreatedByFieldSchema)
+    assert_type(EveryField.created.field_schema(), schema.CreatedTimeFieldSchema)
+    assert_type(EveryField.currency.field_schema(), schema.CurrencyFieldSchema)
+    assert_type(EveryField.date.field_schema(), schema.DateFieldSchema)
+    assert_type(EveryField.datetime.field_schema(), schema.DateTimeFieldSchema)
+    assert_type(EveryField.duration.field_schema(), schema.DurationFieldSchema)
+    assert_type(EveryField.email.field_schema(), schema.EmailFieldSchema)
+    assert_type(EveryField.float.field_schema(), schema.NumberFieldSchema)
+    assert_type(EveryField.integer.field_schema(), schema.NumberFieldSchema)
+    assert_type(EveryField.last_modified_by.field_schema(), schema.LastModifiedByFieldSchema)
+    assert_type(EveryField.last_modified.field_schema(), schema.LastModifiedTimeFieldSchema)
+    assert_type(EveryField.multi_user.field_schema(), schema.MultipleCollaboratorsFieldSchema)
+    assert_type(EveryField.multi_select.field_schema(), schema.MultipleSelectsFieldSchema)
+    assert_type(EveryField.number.field_schema(), schema.NumberFieldSchema)
+    assert_type(EveryField.percent.field_schema(), schema.PercentFieldSchema)
+    assert_type(EveryField.phone.field_schema(), schema.PhoneNumberFieldSchema)
+    assert_type(EveryField.rating.field_schema(), schema.RatingFieldSchema)
+    assert_type(EveryField.rich_text.field_schema(), schema.RichTextFieldSchema)
+    assert_type(EveryField.select.field_schema(), schema.SingleSelectFieldSchema)
+    assert_type(EveryField.url.field_schema(), schema.UrlFieldSchema)
+    assert_type(EveryField.required_aitext.field_schema(), schema.AITextFieldSchema)
+    assert_type(EveryField.required_barcode.field_schema(), schema.BarcodeFieldSchema)
+    assert_type(EveryField.required_collaborator.field_schema(), schema.SingleCollaboratorFieldSchema)
+    assert_type(EveryField.required_count.field_schema(), schema.CountFieldSchema)
+    assert_type(EveryField.required_currency.field_schema(), schema.CurrencyFieldSchema)
+    assert_type(EveryField.required_date.field_schema(), schema.DateFieldSchema)
+    assert_type(EveryField.required_datetime.field_schema(), schema.DateTimeFieldSchema)
+    assert_type(EveryField.required_duration.field_schema(), schema.DurationFieldSchema)
+    assert_type(EveryField.required_email.field_schema(), schema.EmailFieldSchema)
+    assert_type(EveryField.required_float.field_schema(), schema.NumberFieldSchema)
+    assert_type(EveryField.required_integer.field_schema(), schema.NumberFieldSchema)
+    assert_type(EveryField.required_number.field_schema(), schema.NumberFieldSchema)
+    assert_type(EveryField.required_percent.field_schema(), schema.PercentFieldSchema)
+    assert_type(EveryField.required_phone.field_schema(), schema.PhoneNumberFieldSchema)
+    assert_type(EveryField.required_rating.field_schema(), schema.RatingFieldSchema)
+    assert_type(EveryField.required_rich_text.field_schema(), schema.RichTextFieldSchema)
+    assert_type(EveryField.required_select.field_schema(), schema.SingleSelectFieldSchema)
+    assert_type(EveryField.required_url.field_schema(), schema.UrlFieldSchema)
+    assert_type(EveryField.meta.table.schema().field("Anything"), schema.FieldSchema)
     # fmt: on
 
     # Check that the type system allows create-style dicts in all places

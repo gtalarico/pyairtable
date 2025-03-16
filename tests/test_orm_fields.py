@@ -8,6 +8,7 @@ from requests_mock import NoMockAddress
 
 import pyairtable.exceptions
 from pyairtable.formulas import OR, RECORD_ID
+from pyairtable.models import schema
 from pyairtable.orm import fields as f
 from pyairtable.orm.lists import AttachmentsList
 from pyairtable.orm.model import Model
@@ -157,6 +158,7 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.EmailField, str),
         (f.FloatField, float),
         (f.IntegerField, int),
+        (f.MultilineTextField, str),
         (f.MultipleCollaboratorsField, list),
         (f.MultipleSelectField, list),
         (f.NumberField, (int, float)),
@@ -165,7 +167,7 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.RatingField, int),
         (f.RichTextField, str),
         (f.SelectField, str),
-        (f.TextField, str),
+        (f.SingleLineTextField, str),
         (f.TextField, str),
         (f.UrlField, str),
         (f.RequiredBarcodeField, dict),
@@ -174,15 +176,17 @@ TYPE_VALIDATION_TEST_VALUES = {
         (f.RequiredDateField, (datetime.date, datetime.datetime)),
         (f.RequiredDatetimeField, datetime.datetime),
         (f.RequiredDurationField, datetime.timedelta),
+        (f.RequiredEmailField, str),
         (f.RequiredFloatField, float),
         (f.RequiredIntegerField, int),
+        (f.RequiredMultilineTextField, str),
         (f.RequiredNumberField, (int, float)),
         (f.RequiredPercentField, (int, float)),
-        (f.RequiredRatingField, int),
-        (f.RequiredSelectField, str),
-        (f.RequiredEmailField, str),
         (f.RequiredPhoneNumberField, str),
+        (f.RequiredRatingField, int),
         (f.RequiredRichTextField, str),
+        (f.RequiredSelectField, str),
+        (f.RequiredSingleLineTextField, str),
         (f.RequiredTextField, str),
         (f.RequiredUrlField, str),
     ],
@@ -311,6 +315,8 @@ def test_readonly_fields(test_case):
         # If a 2-tuple, the API and ORM values should be identical.
         (f.Field, object()),  # accepts any value, but Airtable API *will* complain
         (f.TextField, "name"),
+        (f.SingleLineTextField, "name"),
+        (f.MultilineTextField, "some\nthing\nbig"),
         (f.EmailField, "x@y.com"),
         (f.NumberField, 1),
         (f.NumberField, 1.5),
@@ -344,6 +350,8 @@ def test_readonly_fields(test_case):
         (f.RequiredPhoneNumberField, "any value"),
         (f.RequiredRichTextField, "any value"),
         (f.RequiredTextField, "any value"),
+        (f.RequiredSingleLineTextField, "any value"),
+        (f.RequiredMultilineTextField, "any value"),
         (f.RequiredUrlField, "any value"),
         # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.DateField, DATE_S, DATE_V),
@@ -415,6 +423,8 @@ def test_writable_fields(test_case):
         f.RichTextField,
         f.SelectField,
         f.TextField,
+        f.SingleLineTextField,
+        f.MultilineTextField,
         f.UrlField,
     ],
 )
@@ -449,12 +459,14 @@ def test_accepts_null(field_type):
         f.RequiredEmailField,
         f.RequiredFloatField,
         f.RequiredIntegerField,
+        f.RequiredMultilineTextField,
         f.RequiredNumberField,
         f.RequiredPercentField,
         f.RequiredPhoneNumberField,
         f.RequiredRatingField,
         f.RequiredRichTextField,
         f.RequiredSelectField,
+        f.RequiredSingleLineTextField,
         f.RequiredTextField,
         f.RequiredUrlField,
     ],
@@ -1167,3 +1179,34 @@ def test_attachments__set_invalid_type():
 
     with pytest.raises(TypeError):
         T().attachments = [1, 2, 3]
+
+
+def test_field_schema(table, mock_table_schema):
+    """
+    Test that an ORM field can retrieve its own field schema.
+    """
+
+    class Apartment(Model):
+        class Meta:
+            api_key = fake_id("pat")
+            base_id = table.base.id
+            table_name = "Apartments"
+
+        name = f.TextField("Name")
+        pictures = f.AttachmentsField("Pictures")
+
+    name = Apartment.name.field_schema()
+    assert isinstance(name, schema.SingleLineTextFieldSchema)
+    assert name.id == "fld1VnoyuotSTyxW1"
+
+    pictures = Apartment.pictures.field_schema()
+    assert isinstance(pictures, schema.MultipleAttachmentsFieldSchema)
+    assert pictures.id == "fldoaIqdn5szURHpw"
+    assert pictures.options.is_reversed is False
+
+
+def test_field_schema__detached(table, requests_mock):
+    with pytest.raises(RuntimeError):
+        f.TextField("Detached Field").field_schema()
+    with pytest.raises(RuntimeError):
+        f._FieldSchema().field_schema()

@@ -2,6 +2,11 @@
 Changelog
 =========
 
+3.1.0 (TBD)
+------------------------
+
+* Added ``Field.field_schema()`` to type-annotated ORM fields.
+
 3.0.2 (2025-02-25)
 ------------------------
 

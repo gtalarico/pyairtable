@@ -66,6 +66,7 @@ from pyairtable.exceptions import (
     MultipleValuesError,
     UnsavedRecordError,
 )
+from pyairtable.models import schema as S
 from pyairtable.orm.lists import AttachmentsList, ChangeTrackingList
 
 if TYPE_CHECKING:
@@ -270,7 +271,7 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
         return formulas.LTE(self, value)
 
 
-class _FieldWithRequiredValue(Generic[T_API, T_ORM], Field[T_API, T_ORM, T_ORM]):
+class _Requires_API_ORM(Generic[T_API, T_ORM], Field[T_API, T_ORM, T_ORM]):
     """
     A mix-in for a Field class which indicates two things:
 
@@ -300,18 +301,53 @@ class _FieldWithRequiredValue(Generic[T_API, T_ORM], Field[T_API, T_ORM, T_ORM])
         super().__set__(instance, value)
 
 
+T_FieldSchema = TypeVar("T_FieldSchema", bound=S.FieldSchema)
+
+
+class _FieldSchema(Generic[T_FieldSchema]):
+    """
+    A mix-in for a Field class which indicates that its field has a particular schema.
+    """
+
+    def field_schema(self) -> T_FieldSchema:
+        """
+        Retrieve the schema for the given field.
+        """
+        if not isinstance(self, Field):
+            raise RuntimeError("field_schema() must be called on a Field instance")
+        if not self._model:
+            raise RuntimeError(f"{self._description} was not defined on a Model")
+        return cast(
+            T_FieldSchema, self._model.meta.table.schema().field(self.field_name)
+        )
+
+
 #: A generic Field with internal and API representations that are the same type.
 _BasicField: TypeAlias = Field[T, T, None]
 _BasicFieldWithMissingValue: TypeAlias = Field[T, T, T]
-_BasicFieldWithRequiredValue: TypeAlias = _FieldWithRequiredValue[T, T]
+_Requires: TypeAlias = _Requires_API_ORM[T, T]
 
 
 #: An alias for any type of Field.
 AnyField: TypeAlias = Field[Any, Any, Any]
 
 
-class TextField(_BasicFieldWithMissingValue[str]):
+class _StringField(_BasicFieldWithMissingValue[str]):
     """
+    Base class for fields that return Unicode strings.
+    """
+
+    missing_value = ""
+    valid_types = str
+
+
+class TextField(
+    _StringField,
+    _FieldSchema[Union[S.SingleLineTextFieldSchema, S.MultilineTextFieldSchema]],
+):
+    """
+    Deprecated; use :class:`~SingleLineTextField` or :class:`~MultilineTextField`.
+
     Accepts ``str``.
     Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
 
@@ -319,11 +355,26 @@ class TextField(_BasicFieldWithMissingValue[str]):
     and `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
     """
 
-    missing_value = ""
-    valid_types = str
+
+class SingleLineTextField(_StringField, _FieldSchema[S.SingleLineTextFieldSchema]):
+    """
+    Accepts ``str``.
+    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
+
+    See `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
+    """
 
 
-class _NumericField(Generic[T], _BasicField[T]):
+class MultilineTextField(_StringField, _FieldSchema[S.MultilineTextFieldSchema]):
+    """
+    Accepts ``str``.
+    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
+
+    See `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
+    """
+
+
+class _NumericField(_BasicField[T]):
     """
     Base class for Number, Float, and Integer. Shares a common validation rule.
     """
@@ -334,44 +385,50 @@ class _NumericField(Generic[T], _BasicField[T]):
             raise TypeError(
                 f"{self.__class__.__name__} value must be {self.valid_types}; got {type(value)}"
             )
-        return super().valid_or_raise(value)
+        super().valid_or_raise(value)
 
 
-class NumberField(_NumericField[Union[int, float]]):
+class _NumberField(_NumericField[Union[int, float]]):
+    valid_types = (int, float)
+
+
+class _IntegerField(_NumericField[int]):
+    valid_types = int
+
+
+class _FloatField(_NumericField[float]):
+    valid_types = float
+
+
+class NumberField(_NumberField, _FieldSchema[S.NumberFieldSchema]):
     """
     Number field with unspecified precision. Accepts either ``int`` or ``float``.
 
     See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
     """
 
-    valid_types = (int, float)
-
 
 # This cannot inherit from NumberField because valid_types would be more restrictive
 # in the subclass than what is defined in the parent class.
-class IntegerField(_NumericField[int]):
+class IntegerField(_IntegerField, _FieldSchema[S.NumberFieldSchema]):
     """
     Number field with integer precision. Accepts only ``int`` values.
 
     See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
     """
 
-    valid_types = int
-
 
 # This cannot inherit from NumberField because valid_types would be more restrictive
 # in the subclass than what is defined in the parent class.
-class FloatField(_NumericField[float]):
+class FloatField(_FloatField, _FieldSchema[S.NumberFieldSchema]):
     """
     Number field with decimal precision. Accepts only ``float`` values.
 
     See `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
     """
 
-    valid_types = float
 
-
-class RatingField(IntegerField):
+class RatingField(_IntegerField, _FieldSchema[S.RatingFieldSchema]):
     """
     Accepts ``int`` values that are greater than zero.
 
@@ -384,7 +441,7 @@ class RatingField(IntegerField):
             raise ValueError("rating cannot be below 1")
 
 
-class CheckboxField(_BasicFieldWithMissingValue[bool]):
+class CheckboxField(Field[bool, bool, bool], _FieldSchema[S.CheckboxFieldSchema]):
     """
     Accepts ``bool``.
     Returns ``False`` instead of ``None`` if the field is empty on the Airtable base.
@@ -396,13 +453,7 @@ class CheckboxField(_BasicFieldWithMissingValue[bool]):
     valid_types = bool
 
 
-class DatetimeField(Field[str, datetime, None]):
-    """
-    DateTime field. Accepts only `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_ values.
-
-    See `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__.
-    """
-
+class _DatetimeField(Field[str, datetime, None]):
     valid_types = datetime
 
     def to_record_value(self, value: datetime) -> str:
@@ -418,7 +469,15 @@ class DatetimeField(Field[str, datetime, None]):
         return utils.datetime_from_iso_str(value)
 
 
-class DateField(Field[str, date, None]):
+class DatetimeField(_DatetimeField, _FieldSchema[S.DateTimeFieldSchema]):
+    """
+    DateTime field. Accepts only `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_ values.
+
+    See `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__.
+    """
+
+
+class DateField(Field[str, date, None], _FieldSchema[S.DateFieldSchema]):
     """
     Date field. Accepts only `date <https://docs.python.org/3/library/datetime.html#date-objects>`_ values.
 
@@ -440,7 +499,7 @@ class DateField(Field[str, date, None]):
         return utils.date_from_iso_str(value)
 
 
-class DurationField(Field[int, timedelta, None]):
+class DurationField(Field[int, timedelta, None], _FieldSchema[S.DurationFieldSchema]):
     """
     Duration field. Accepts only `timedelta <https://docs.python.org/3/library/datetime.html#timedelta-objects>`_ values.
 
@@ -463,7 +522,7 @@ class DurationField(Field[int, timedelta, None]):
         return timedelta(seconds=value)
 
 
-class _DictField(Generic[T], _BasicField[T]):
+class _DictField(_BasicField[T]):
     """
     Generic field type that stores a single dict. Not for use via API;
     should be subclassed by concrete field types (below).
@@ -556,7 +615,7 @@ class _ListFieldBase(
                     raise TypeError(f"expected {self.contains_type}; got {type(obj)}")
 
 
-class _ListField(Generic[T], _ListFieldBase[T, T, ChangeTrackingList[T]]):
+class _ListField(_ListFieldBase[T, T, ChangeTrackingList[T]]):
     """
     Generic type for a field that stores a list of values.
     Not for direct use; should be subclassed by concrete field types (below).
@@ -573,7 +632,12 @@ LinkSelf = _LinkFieldOptions.LinkSelf
 
 class LinkField(
     Generic[T_Linked],
-    _ListFieldBase[RecordId, T_Linked, ChangeTrackingList[T_Linked]],
+    _ListFieldBase[
+        RecordId,
+        T_Linked,
+        ChangeTrackingList[T_Linked],
+    ],
+    _FieldSchema[S.MultipleRecordLinksFieldSchema],
 ):
     """
     Represents a MultipleRecordLinks field. Returns and accepts lists of Models.
@@ -769,7 +833,11 @@ class LinkField(
                 raise TypeError(f"expected {self.linked_model}; got {type(obj)}")
 
 
-class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
+class SingleLinkField(
+    Generic[T_Linked],
+    Field[List[str], T_Linked, None],
+    _FieldSchema[S.MultipleRecordLinksFieldSchema],
+):
     """
     Represents a MultipleRecordLinks field which we assume will only ever contain one link.
     Returns and accepts a single instance of the linked model, which will be converted to/from
@@ -912,7 +980,7 @@ class SingleLinkField(Generic[T_Linked], Field[List[str], T_Linked, None]):
 # get some extra functionality for free in the future.
 
 
-class AITextField(_DictField[AITextDict]):
+class AITextField(_DictField[AITextDict], _FieldSchema[S.AITextFieldSchema]):
     """
     Read-only field that returns a `dict`. For more information, read the
     `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`_
@@ -924,10 +992,9 @@ class AITextField(_DictField[AITextDict]):
 
 class AttachmentsField(
     _ListFieldBase[
-        AttachmentDict,
-        Union[AttachmentDict, CreateAttachmentDict],
-        AttachmentsList,
+        AttachmentDict, Union[AttachmentDict, CreateAttachmentDict], AttachmentsList
     ],
+    _FieldSchema[S.MultipleAttachmentsFieldSchema],
     list_class=AttachmentsList,
     contains_type=dict,
 ):
@@ -937,7 +1004,7 @@ class AttachmentsField(
     """
 
 
-class BarcodeField(_DictField[BarcodeDict]):
+class BarcodeField(_DictField[BarcodeDict], _FieldSchema[S.BarcodeFieldSchema]):
     """
     Accepts a `dict` that should conform to the format detailed in the
     `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`_
@@ -945,7 +1012,10 @@ class BarcodeField(_DictField[BarcodeDict]):
     """
 
 
-class CollaboratorField(_DictField[Union[CollaboratorDict, CollaboratorEmailDict]]):
+class CollaboratorField(
+    _DictField[Union[CollaboratorDict, CollaboratorEmailDict]],
+    _FieldSchema[S.SingleCollaboratorFieldSchema],
+):
     """
     Accepts a `dict` that should conform to the format detailed in the
     `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`_
@@ -953,25 +1023,26 @@ class CollaboratorField(_DictField[Union[CollaboratorDict, CollaboratorEmailDict
     """
 
 
-class CountField(IntegerField):
+class CountField(_IntegerField, _FieldSchema[S.CountFieldSchema]):
     """
     Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
 
     See `Count <https://airtable.com/developers/web/api/field-model#count>`__.
     """
 
+    valid_types = int
     readonly = True
 
 
-class CurrencyField(NumberField):
+class CurrencyField(_NumberField, _FieldSchema[S.CurrencyFieldSchema]):
     """
-    Equivalent to :class:`~NumberField`.
+    Accepts either ``int`` or ``float``.
 
     See `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__.
     """
 
 
-class EmailField(TextField):
+class EmailField(_StringField, _FieldSchema[S.EmailFieldSchema]):
     """
     Equivalent to :class:`~TextField`.
 
@@ -979,7 +1050,9 @@ class EmailField(TextField):
     """
 
 
-class ExternalSyncSourceField(TextField):
+class ExternalSyncSourceField(
+    _StringField, _FieldSchema[S.ExternalSyncSourceFieldSchema]
+):
     """
     Equivalent to :class:`TextField(readonly=True) <TextField>`.
 
@@ -989,7 +1062,9 @@ class ExternalSyncSourceField(TextField):
     readonly = True
 
 
-class LastModifiedByField(_DictField[CollaboratorDict]):
+class LastModifiedByField(
+    _DictField[CollaboratorDict], _FieldSchema[S.LastModifiedByFieldSchema]
+):
     """
     See `Last modified by <https://airtable.com/developers/web/api/field-model#lastmodifiedby>`__.
     """
@@ -997,7 +1072,9 @@ class LastModifiedByField(_DictField[CollaboratorDict]):
     readonly = True
 
 
-class LastModifiedTimeField(DatetimeField):
+class LastModifiedTimeField(
+    _DatetimeField, _FieldSchema[S.LastModifiedTimeFieldSchema]
+):
     """
     Equivalent to :class:`DatetimeField(readonly=True) <DatetimeField>`.
 
@@ -1007,7 +1084,7 @@ class LastModifiedTimeField(DatetimeField):
     readonly = True
 
 
-class LookupField(Generic[T], _ListField[T]):
+class LookupField(_ListField[T], _FieldSchema[S.MultipleLookupValuesFieldSchema]):
     """
     Generic field class for a lookup, which returns a list of values.
 
@@ -1029,7 +1106,9 @@ class LookupField(Generic[T], _ListField[T]):
     readonly = True
 
 
-class ManualSortField(TextField):
+class ManualSortField(
+    _BasicFieldWithMissingValue[str], _FieldSchema[S.ManualSortFieldSchema]
+):
     """
     Field configuration for ``manualSort`` field type (not documented).
     """
@@ -1038,7 +1117,9 @@ class ManualSortField(TextField):
 
 
 class MultipleCollaboratorsField(
-    _ListField[Union[CollaboratorDict, CollaboratorEmailDict]], contains_type=dict
+    _ListField[Union[CollaboratorDict, CollaboratorEmailDict]],
+    _FieldSchema[S.MultipleCollaboratorsFieldSchema],
+    contains_type=dict,
 ):
     """
     Accepts a list of dicts in the format detailed in
@@ -1046,7 +1127,9 @@ class MultipleCollaboratorsField(
     """
 
 
-class MultipleSelectField(_ListField[str], contains_type=str):
+class MultipleSelectField(
+    _ListField[str], _FieldSchema[S.MultipleSelectsFieldSchema], contains_type=str
+):
     """
     Accepts a list of ``str``.
 
@@ -1054,7 +1137,7 @@ class MultipleSelectField(_ListField[str], contains_type=str):
     """
 
 
-class PercentField(NumberField):
+class PercentField(_NumberField, _FieldSchema[S.PercentFieldSchema]):
     """
     Equivalent to :class:`~NumberField`.
 
@@ -1062,7 +1145,7 @@ class PercentField(NumberField):
     """
 
 
-class PhoneNumberField(TextField):
+class PhoneNumberField(_StringField, _FieldSchema[S.PhoneNumberFieldSchema]):
     """
     Equivalent to :class:`~TextField`.
 
@@ -1070,7 +1153,7 @@ class PhoneNumberField(TextField):
     """
 
 
-class RichTextField(TextField):
+class RichTextField(_StringField, _FieldSchema[S.RichTextFieldSchema]):
     """
     Equivalent to :class:`~TextField`.
 
@@ -1078,7 +1161,7 @@ class RichTextField(TextField):
     """
 
 
-class SelectField(Field[str, str, None]):
+class SelectField(Field[str, str, None], _FieldSchema[S.SingleSelectFieldSchema]):
     """
     Represents a single select dropdown field. This will return ``None`` if no value is set,
     and will only return ``""`` if an empty dropdown option is available and selected.
@@ -1089,7 +1172,7 @@ class SelectField(Field[str, str, None]):
     valid_types = str
 
 
-class UrlField(TextField):
+class UrlField(_StringField, _FieldSchema[S.UrlFieldSchema]):
     """
     Equivalent to :class:`~TextField`.
 
@@ -1097,87 +1180,7 @@ class UrlField(TextField):
     """
 
 
-# Auto-generate Required*Field classes for anything above this line
-# fmt: off
-r"""[[[cog]]]
-import re
-from collections import namedtuple
-
-with open(cog.inFile) as fp:
-    src = "".join(fp.readlines()[:cog.firstLineNum])
-
-Match = namedtuple('Match', 'cls generic bases annotation cls_kwargs doc readonly')
-expr = (
-    r'(?m)'
-    r'^class ([A-Z]\w+Field)'
-        r'\('
-            # This particular regex will not pick up Field subclasses that have
-            # multiple inheritance, which excludes anything using _NotNullField.
-            r'(?:(Generic\[.+?\]), )?'
-            r'([_A-Z][_A-Za-z]+)(?:\[(.+?)\])?'
-            r'((?:, [a-z_]+=.+)+)?'
-        r'\):\n'
-    r'    \"\"\"\n    ((?:.|\n)+?)    \"\"\"(?:\n|    (?!readonly =).*)*'
-    r'(    readonly = True)?'
-)
-classes = {
-    match.cls: match
-    for group in re.findall(expr, src)
-    if (match := Match(*group))
-}
-
-for cls, match in sorted(classes.items()):
-    if cls in {
-        # checkbox values are either `True` or missing
-        "CheckboxField",
-
-        # null value will be converted to an empty list
-        "AttachmentsField",
-        "LinkField",
-        "LookupField",
-        "MultipleCollaboratorsField",
-        "MultipleSelectField",
-
-        # unsupported
-        "SingleLinkField",
-
-        # illogical
-        "LastModifiedByField",
-        "LastModifiedTimeField",
-        "ExternalSyncSourceField",
-        "ManualSortField",
-    }:
-        continue
-
-    # skip if we've already included Required
-    if cls.startswith("Required") or "Required" in match.bases:
-        continue
-
-    base, typn = match.cls, match.annotation
-    typn_bases = match.bases
-    while not typn:
-        typn = classes[typn_bases].annotation
-        typn_bases = classes[typn_bases].bases
-
-    if typn.endswith(", None"):
-        typn = typn[:-len(", None")]
-
-    mixin = ("_" if re.match(r"^[A-Za-z_.]+(\[\w+(, \w+)*\])?,", typn) else "_Basic") + "FieldWithRequiredValue"
-    base = base if not match.generic else f"{base}, {match.generic}"
-    cog.outl(f"\n\nclass Required{cls}({base}, {mixin}[{typn}]):")
-    cog.outl('    \"\"\"')
-    cog.outl('    ' + match.doc)
-    cog.out( '    If the Airtable API returns ``null``, ')
-    if not match.readonly:
-        cog.out('or if a caller sets this field to ``None``,\n    ')
-    cog.outl('this field raises :class:`~pyairtable.orm.fields.MissingValue`.')
-    cog.outl('    \"\"\"')
-
-cog.outl('\n')
-[[[out]]]"""
-
-
-class RequiredAITextField(AITextField, _BasicFieldWithRequiredValue[AITextDict]):
+class RequiredAITextField(AITextField, _Requires[AITextDict]):
     """
     Read-only field that returns a `dict`. For more information, read the
     `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`_
@@ -1187,7 +1190,7 @@ class RequiredAITextField(AITextField, _BasicFieldWithRequiredValue[AITextDict])
     """
 
 
-class RequiredBarcodeField(BarcodeField, _BasicFieldWithRequiredValue[BarcodeDict]):
+class RequiredBarcodeField(BarcodeField, _Requires[BarcodeDict]):
     """
     Accepts a `dict` that should conform to the format detailed in the
     `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`_
@@ -1198,7 +1201,10 @@ class RequiredBarcodeField(BarcodeField, _BasicFieldWithRequiredValue[BarcodeDic
     """
 
 
-class RequiredCollaboratorField(CollaboratorField, _BasicFieldWithRequiredValue[Union[CollaboratorDict, CollaboratorEmailDict]]):
+class RequiredCollaboratorField(
+    CollaboratorField,
+    _Requires[Union[CollaboratorDict, CollaboratorEmailDict]],
+):
     """
     Accepts a `dict` that should conform to the format detailed in the
     `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`_
@@ -1209,7 +1215,7 @@ class RequiredCollaboratorField(CollaboratorField, _BasicFieldWithRequiredValue[
     """
 
 
-class RequiredCountField(CountField, _BasicFieldWithRequiredValue[int]):
+class RequiredCountField(CountField, _Requires[int]):
     """
     Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
 
@@ -1219,7 +1225,7 @@ class RequiredCountField(CountField, _BasicFieldWithRequiredValue[int]):
     """
 
 
-class RequiredCurrencyField(CurrencyField, _BasicFieldWithRequiredValue[Union[int, float]]):
+class RequiredCurrencyField(CurrencyField, _Requires[Union[int, float]]):
     """
     Equivalent to :class:`~NumberField`.
 
@@ -1230,7 +1236,7 @@ class RequiredCurrencyField(CurrencyField, _BasicFieldWithRequiredValue[Union[in
     """
 
 
-class RequiredDateField(DateField, _FieldWithRequiredValue[str, date]):
+class RequiredDateField(DateField, _Requires_API_ORM[str, date]):
     """
     Date field. Accepts only `date <https://docs.python.org/3/library/datetime.html#date-objects>`_ values.
 
@@ -1241,7 +1247,7 @@ class RequiredDateField(DateField, _FieldWithRequiredValue[str, date]):
     """
 
 
-class RequiredDatetimeField(DatetimeField, _FieldWithRequiredValue[str, datetime]):
+class RequiredDatetimeField(DatetimeField, _Requires_API_ORM[str, datetime]):
     """
     DateTime field. Accepts only `datetime <https://docs.python.org/3/library/datetime.html#datetime-objects>`_ values.
 
@@ -1252,7 +1258,7 @@ class RequiredDatetimeField(DatetimeField, _FieldWithRequiredValue[str, datetime
     """
 
 
-class RequiredDurationField(DurationField, _FieldWithRequiredValue[int, timedelta]):
+class RequiredDurationField(DurationField, _Requires_API_ORM[int, timedelta]):
     """
     Duration field. Accepts only `timedelta <https://docs.python.org/3/library/datetime.html#timedelta-objects>`_ values.
 
@@ -1264,7 +1270,7 @@ class RequiredDurationField(DurationField, _FieldWithRequiredValue[int, timedelt
     """
 
 
-class RequiredEmailField(EmailField, _BasicFieldWithRequiredValue[str]):
+class RequiredEmailField(EmailField, _Requires[str]):
     """
     Equivalent to :class:`~TextField`.
 
@@ -1275,7 +1281,7 @@ class RequiredEmailField(EmailField, _BasicFieldWithRequiredValue[str]):
     """
 
 
-class RequiredFloatField(FloatField, _BasicFieldWithRequiredValue[float]):
+class RequiredFloatField(FloatField, _Requires[float]):
     """
     Number field with decimal precision. Accepts only ``float`` values.
 
@@ -1286,7 +1292,7 @@ class RequiredFloatField(FloatField, _BasicFieldWithRequiredValue[float]):
     """
 
 
-class RequiredIntegerField(IntegerField, _BasicFieldWithRequiredValue[int]):
+class RequiredIntegerField(IntegerField, _Requires[int]):
     """
     Number field with integer precision. Accepts only ``int`` values.
 
@@ -1297,7 +1303,7 @@ class RequiredIntegerField(IntegerField, _BasicFieldWithRequiredValue[int]):
     """
 
 
-class RequiredNumberField(NumberField, _BasicFieldWithRequiredValue[Union[int, float]]):
+class RequiredNumberField(NumberField, _Requires[Union[int, float]]):
     """
     Number field with unspecified precision. Accepts either ``int`` or ``float``.
 
@@ -1308,7 +1314,7 @@ class RequiredNumberField(NumberField, _BasicFieldWithRequiredValue[Union[int, f
     """
 
 
-class RequiredPercentField(PercentField, _BasicFieldWithRequiredValue[Union[int, float]]):
+class RequiredPercentField(PercentField, _Requires[Union[int, float]]):
     """
     Equivalent to :class:`~NumberField`.
 
@@ -1319,7 +1325,7 @@ class RequiredPercentField(PercentField, _BasicFieldWithRequiredValue[Union[int,
     """
 
 
-class RequiredPhoneNumberField(PhoneNumberField, _BasicFieldWithRequiredValue[str]):
+class RequiredPhoneNumberField(PhoneNumberField, _Requires[str]):
     """
     Equivalent to :class:`~TextField`.
 
@@ -1330,7 +1336,7 @@ class RequiredPhoneNumberField(PhoneNumberField, _BasicFieldWithRequiredValue[st
     """
 
 
-class RequiredRatingField(RatingField, _BasicFieldWithRequiredValue[int]):
+class RequiredRatingField(RatingField, _Requires[int]):
     """
     Accepts ``int`` values that are greater than zero.
 
@@ -1341,7 +1347,7 @@ class RequiredRatingField(RatingField, _BasicFieldWithRequiredValue[int]):
     """
 
 
-class RequiredRichTextField(RichTextField, _BasicFieldWithRequiredValue[str]):
+class RequiredRichTextField(RichTextField, _Requires[str]):
     """
     Equivalent to :class:`~TextField`.
 
@@ -1352,7 +1358,7 @@ class RequiredRichTextField(RichTextField, _BasicFieldWithRequiredValue[str]):
     """
 
 
-class RequiredSelectField(SelectField, _FieldWithRequiredValue[str, str]):
+class RequiredSelectField(SelectField, _Requires_API_ORM[str, str]):
     """
     Represents a single select dropdown field. This will return ``None`` if no value is set,
     and will only return ``""`` if an empty dropdown option is available and selected.
@@ -1364,7 +1370,7 @@ class RequiredSelectField(SelectField, _FieldWithRequiredValue[str, str]):
     """
 
 
-class RequiredTextField(TextField, _BasicFieldWithRequiredValue[str]):
+class RequiredTextField(TextField, _Requires[str]):
     """
     Accepts ``str``.
     Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
@@ -1377,7 +1383,31 @@ class RequiredTextField(TextField, _BasicFieldWithRequiredValue[str]):
     """
 
 
-class RequiredUrlField(UrlField, _BasicFieldWithRequiredValue[str]):
+class RequiredSingleLineTextField(SingleLineTextField, _Requires[str]):
+    """
+    Accepts ``str``.
+    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
+
+    See `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__.
+
+    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
+    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
+    """
+
+
+class RequiredMultilineTextField(MultilineTextField, _Requires[str]):
+    """
+    Accepts ``str``.
+    Returns ``""`` instead of ``None`` if the field is empty on the Airtable base.
+
+    See `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
+
+    If the Airtable API returns ``null``, or if a caller sets this field to ``None``,
+    this field raises :class:`~pyairtable.orm.fields.MissingValue`.
+    """
+
+
+class RequiredUrlField(UrlField, _Requires[str]):
     """
     Equivalent to :class:`~TextField`.
 
@@ -1388,11 +1418,11 @@ class RequiredUrlField(UrlField, _BasicFieldWithRequiredValue[str]):
     """
 
 
-# [[[end]]] (checksum: 5078434bb8fd65fa8f0be48de6915c2d)
-# fmt: on
-
-
-class AutoNumberField(RequiredIntegerField):
+class AutoNumberField(
+    _IntegerField,
+    _Requires[int],
+    _FieldSchema[S.AutoNumberFieldSchema],
+):
     """
     Equivalent to :class:`IntegerField(readonly=True) <IntegerField>`.
 
@@ -1404,7 +1434,11 @@ class AutoNumberField(RequiredIntegerField):
     readonly = True
 
 
-class ButtonField(_DictField[ButtonDict], _BasicFieldWithRequiredValue[ButtonDict]):
+class ButtonField(
+    _DictField[ButtonDict],
+    _Requires[ButtonDict],
+    _FieldSchema[S.ButtonFieldSchema],
+):
     """
     Read-only field that returns a `dict`. For more information, read the
     `Button <https://airtable.com/developers/web/api/field-model#button>`_
@@ -1416,7 +1450,11 @@ class ButtonField(_DictField[ButtonDict], _BasicFieldWithRequiredValue[ButtonDic
     readonly = True
 
 
-class CreatedByField(_BasicFieldWithRequiredValue[CollaboratorDict]):
+class CreatedByField(
+    _DictField[CollaboratorDict],
+    _Requires[CollaboratorDict],
+    _FieldSchema[S.CreatedByFieldSchema],
+):
     """
     See `Created by <https://airtable.com/developers/web/api/field-model#createdby>`__.
 
@@ -1426,7 +1464,11 @@ class CreatedByField(_BasicFieldWithRequiredValue[CollaboratorDict]):
     readonly = True
 
 
-class CreatedTimeField(RequiredDatetimeField):
+class CreatedTimeField(
+    _DatetimeField,
+    _Requires_API_ORM[str, datetime],
+    _FieldSchema[S.CreatedTimeFieldSchema],
+):
     """
     Equivalent to :class:`DatetimeField(readonly=True) <DatetimeField>`.
 
@@ -1568,6 +1610,7 @@ __all__ = [
     "LinkSelf",
     "LookupField",
     "ManualSortField",
+    "MultilineTextField",
     "MultipleCollaboratorsField",
     "MultipleSelectField",
     "NumberField",
@@ -1585,18 +1628,21 @@ __all__ = [
     "RequiredEmailField",
     "RequiredFloatField",
     "RequiredIntegerField",
+    "RequiredMultilineTextField",
     "RequiredNumberField",
     "RequiredPercentField",
     "RequiredPhoneNumberField",
     "RequiredRatingField",
     "RequiredRichTextField",
     "RequiredSelectField",
+    "RequiredSingleLineTextField",
     "RequiredTextField",
     "RequiredUrlField",
     "RichTextField",
     "SelectField",
+    "SingleLineTextField",
     "SingleLinkField",
     "TextField",
     "UrlField",
 ]
-# [[[end]]] (checksum: 87b0a100c9e30523d9aab8cc935c7960)
+# [[[end]]] (checksum: 5a8ecad26031895bfaac551e751b7278)
