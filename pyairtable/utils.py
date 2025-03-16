@@ -442,6 +442,12 @@ class UrlBuilder:
     ...which ensures the URLs are built only once and are accessible via ``.urls``,
     and have the ``SomeObject`` instance available as context, and build
     readable docstrings for the ``SomeObject`` class documentation.
+
+    .. warning::
+
+        This class is intended for use within pyAirtable only, and is tailored
+        to the type of documentation this library produces. Its behavior may
+        change in the future in ways that are not suitable for other projects.
     """
 
     context: Any
