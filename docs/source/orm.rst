@@ -666,6 +666,30 @@ directly upload content to Airtable:
 .. automethod:: pyairtable.orm.lists.AttachmentsList.upload
 
 
+ORM Metadata
+------------------
+
+Access to the configuration of a model and the schema of its underlying base/table
+are available through the :attr:`~pyairtable.orm.Model.meta` attribute:
+
+.. code-block:: python
+
+    >>> model = YourModel()
+    >>> model.meta.base_id
+    'appaPqizdsNHDvlEm'
+    >>> model.meta.table_name
+    'YourModel'
+    >>> model.meta.table.schema()
+    TableSchema(id='appaPqizdsNHDvlEm', name='YourModel', ...)
+
+For convenience, the schema of ORM-defined fields can be accessed via those field definitions:
+
+.. code-block:: python
+
+    >>> YourModel.name.field_schema()
+    FieldSchema(id='fldMNxslc6jG0XedV', name='Name', type='singleLineText', ...)
+
+
 ORM Limitations
 ------------------
 
