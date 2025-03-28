@@ -10,9 +10,12 @@ from urllib.parse import quote, urlencode
 import pytest
 from mock import Mock
 from requests import HTTPError
+from requests_mock import Mocker
 
 from pyairtable import Api, Base, Table, Workspace
 from pyairtable.api.enterprise import Enterprise
+from pyairtable.models.schema import TableSchema
+from pyairtable.testing import fake_id
 
 
 @pytest.fixture
@@ -57,6 +60,21 @@ def base(api: Api, base_id) -> Base:
 @pytest.fixture()
 def table(base: Base, constants) -> Table:
     return base.table(constants["TABLE_NAME"])
+
+
+@pytest.fixture()
+def table_schema(sample_json, api, base) -> TableSchema:
+    return TableSchema.model_validate(sample_json("TableSchema"))
+
+
+@pytest.fixture
+def mock_table_schema(table, requests_mock, sample_json) -> Mocker:
+    table_schema = sample_json("TableSchema")
+    table_schema["id"] = table.name = fake_id("tbl")
+    return requests_mock.get(
+        table.base.urls.tables + "?include=visibleFieldIds",
+        json={"tables": [table_schema]},
+    )
 
 
 @pytest.fixture

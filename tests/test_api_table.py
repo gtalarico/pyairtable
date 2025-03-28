@@ -20,7 +20,7 @@ def table_schema(sample_json, api, base) -> TableSchema:
 
 
 @pytest.fixture
-def mock_schema(table, requests_mock, sample_json):
+def mock_table_schema(table, requests_mock, sample_json):
     table_schema = sample_json("TableSchema")
     table_schema["id"] = table.name = fake_id("tbl")
     return requests_mock.get(
@@ -443,7 +443,7 @@ def test_batch_delete(table: Table, container, mock_records):
     assert resp == expected
 
 
-def test_create_field(table, mock_schema, requests_mock, sample_json):
+def test_create_field(table, mock_table_schema, requests_mock, sample_json):
     """
     Tests the API for creating a field (but without actually performing the operation).
     """
@@ -454,7 +454,7 @@ def test_create_field(table, mock_schema, requests_mock, sample_json):
 
     # Ensure we have pre-loaded our schema
     table.schema()
-    assert mock_schema.call_count == 1
+    assert mock_table_schema.call_count == 1
 
     # Create the field
     choices = ["Todo", "In progress", "Done"]
@@ -482,10 +482,10 @@ def test_create_field(table, mock_schema, requests_mock, sample_json):
 
     # Test that the schema has been updated without a second API call
     assert table._schema.field(fld.id).name == "Status"
-    assert mock_schema.call_count == 1
+    assert mock_table_schema.call_count == 1
 
 
-def test_delete_view(table, mock_schema, requests_mock):
+def test_delete_view(table, mock_table_schema, requests_mock):
     view = table.schema().view("Grid view")
     m = requests_mock.delete(view._url)
     view.delete()

@@ -202,6 +202,11 @@ def test_every_field(Everything):
             f.AITextField,
             f.RequiredAITextField,
             f.ManualSortField,
+            # These are so similar to TextField we don't need to integration test them
+            f.SingleLineTextField,
+            f.MultilineTextField,
+            f.RequiredSingleLineTextField,
+            f.RequiredMultilineTextField,
         }:
             continue
         assert field_class in classes_used

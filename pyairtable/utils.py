@@ -209,7 +209,9 @@ def _append_docstring_text(obj: Any, text: str, *, skip_empty: bool = True) -> N
 
 def docstring_from(obj: Any, append: str = "") -> Callable[[F], F]:
     def _wrapper(func: F) -> F:
-        func.__doc__ = obj.__doc__ + append
+        func.__doc__ = obj.__doc__
+        if append:
+            _append_docstring_text(func, append)
         return func
 
     return _wrapper
@@ -440,6 +442,12 @@ class UrlBuilder:
     ...which ensures the URLs are built only once and are accessible via ``.urls``,
     and have the ``SomeObject`` instance available as context, and build
     readable docstrings for the ``SomeObject`` class documentation.
+
+    .. warning::
+
+        This class is intended for use within pyAirtable only, and is tailored
+        to the type of documentation this library produces. Its behavior may
+        change in the future in ways that are not suitable for other projects.
     """
 
     context: Any
