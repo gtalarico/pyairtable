@@ -172,32 +172,6 @@ class WebhookNotification(AirtableModel):
     use :meth:`Webhook.payloads <pyairtable.models.Webhook.payloads>` to retrieve
     the actual payloads describing the change(s) which triggered the webhook.
 
-    You will also need some way to persist the ``cursor`` of the webhook payload,
-    so that on subsequent calls you do not retrieve the same payloads again.
-
-    Usage:
-        .. code-block:: python
-
-            from flask import Flask, request
-            from pyairtable import Api
-            from pyairtable.models import WebhookNotification
-
-            app = Flask(__name__)
-
-            @app.route("/airtable-webhook", methods=["POST"])
-            def airtable_webhook():
-                body = request.data
-                header = request.headers["X-Airtable-Content-MAC"]
-                secret = app.config["AIRTABLE_WEBHOOK_SECRET"]
-                event = WebhookNotification.from_request(body, header, secret)
-                airtable = Api(app.config["AIRTABLE_API_KEY"])
-                webhook = airtable.base(event.base.id).webhook(event.webhook.id)
-                cursor = int(your_db.get(f"cursor_{event.webhook}", 0)) + 1
-                for payload in webhook.payloads(cursor=cursor):
-                    # ...do stuff...
-                    your_db.set(f"cursor_{event.webhook}", payload.cursor)
-                return ("", 204)  # intentionally empty response
-
     See `Webhook notification delivery <https://airtable.com/developers/web/api/webhooks-overview#webhook-notification-delivery>`_
     for more information on how these payloads are structured.
     """
@@ -323,8 +297,12 @@ class WebhookPayload(AirtableModel):
     error: Optional[bool] = None
     error_code: Optional[str] = pydantic.Field(alias="code", default=None)
 
-    #: This is not a part of Airtable's webhook payload specification.
-    #: This indicates the cursor field in the response which provided this payload.
+    #: The payload transaction number, as described in
+    #: `List webhook payloads - Response format <https://airtable.com/developers/web/api/list-webhook-payloads#response>`__.
+    #: If passed to :meth:`Webhook.payloads` it will return the same payload again,
+    #: along with any more payloads recorded after it.
+    #:
+    #: This field is specific to pyAirtable, and is not part of Airtable's webhook payload specification.
     cursor: Optional[int] = None
 
     class ActionMetadata(AirtableModel):
