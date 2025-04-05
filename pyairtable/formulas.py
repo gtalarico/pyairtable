@@ -524,7 +524,7 @@ class FunctionCall(Formula):
     for all formula functions known at time of publishing.
     """
 
-    def __init__(self, name: str, *args: List[Any]):
+    def __init__(self, name: str, *args: Any):
         self.name = name
         self.args = args
 
