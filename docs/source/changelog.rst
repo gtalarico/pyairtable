@@ -2,6 +2,12 @@
 Changelog
 =========
 
+3.1.1 (2025-04-07)
+------------------------
+
+* Fix a bug affecting :meth:`~pyairtable.orm.Model.from_id` when ``use_field_ids=True``.
+  - `PR #431 <https://github.com/gtalarico/pyairtable/pull/431>`_
+
 3.1.0 (2025-04-07)
 ------------------------
 

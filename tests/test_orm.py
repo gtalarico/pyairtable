@@ -175,6 +175,7 @@ def test_unmodified_field_not_saved(contact_record):
             contact.id,
             {"Email": "john.doe@example.com"},
             typecast=True,
+            use_field_ids=False,
         )
 
     # Once saved, the field is no longer marked as changed
@@ -195,6 +196,7 @@ def test_unmodified_field_not_saved(contact_record):
                 "Birthday": "1970-01-01",
             },
             typecast=True,
+            use_field_ids=False,
         )
 
 
@@ -339,6 +341,7 @@ def test_batch_save(mock_update, mock_create):
             {"Number": 456, "Street": "Fake St"},
         ],
         typecast=True,
+        use_field_ids=False,
     )
     mock_update.assert_called_once_with(
         [
@@ -348,7 +351,26 @@ def test_batch_save(mock_update, mock_create):
             },
         ],
         typecast=True,
+        use_field_ids=False,
     )
+
+
+@mock.patch("pyairtable.Table.batch_create")
+@mock.patch("pyairtable.Table.batch_update")
+def test_batch_save__only_create(mock_update, mock_create):
+    Address.batch_save([Address(), Address()])
+    assert mock_create.call_count == 1
+    assert mock_update.call_count == 0
+
+
+@mock.patch("pyairtable.Table.batch_create")
+@mock.patch("pyairtable.Table.batch_update")
+def test_batch_save__only_update(mock_update, mock_create):
+    a1 = Address.from_record(fake_record())
+    a2 = Address.from_record(fake_record())
+    Address.batch_save([a1, a2])
+    assert mock_create.call_count == 0
+    assert mock_update.call_count == 1
 
 
 @mock.patch("pyairtable.Table.batch_create")

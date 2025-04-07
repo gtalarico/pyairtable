@@ -245,7 +245,11 @@ class Model:
         field_values = self.to_record(only_writable=True)["fields"]
 
         if not self.id:
-            record = self.meta.table.create(field_values, typecast=self.meta.typecast)
+            record = self.meta.table.create(
+                field_values,
+                typecast=self.meta.typecast,
+                use_field_ids=self.meta.use_field_ids,
+            )
             self.id = record["id"]
             self.created_time = datetime_from_iso_str(record["createdTime"])
             self._changed.clear()
@@ -260,7 +264,12 @@ class Model:
                 if self._changed.get(field_name)
             }
 
-        self.meta.table.update(self.id, field_values, typecast=self.meta.typecast)
+        self.meta.table.update(
+            self.id,
+            field_values,
+            typecast=self.meta.typecast,
+            use_field_ids=self.meta.use_field_ids,
+        )
         self._changed.clear()
         return SaveResult(
             self.id, forced=force, updated=True, field_names=set(field_values)
@@ -407,7 +416,7 @@ class Model:
         if not self.id:
             raise ValueError("cannot be fetched because instance does not have an id")
 
-        record = self.meta.table.get(self.id)
+        record = self.meta.table.get(self.id, **self.meta.request_kwargs)
         unused = self.from_record(record, memoize=False)
         self._fields = unused._fields
         self._changed.clear()
@@ -478,12 +487,21 @@ class Model:
             if (record := model.to_record(only_writable=True))
         ]
 
-        table = cls.meta.table
-        table.batch_update(update_records, typecast=cls.meta.typecast)
-        created_records = table.batch_create(create_records, typecast=cls.meta.typecast)
-        for model, record in zip(create_models, created_records):
-            model.id = record["id"]
-            model.created_time = datetime_from_iso_str(record["createdTime"])
+        if update_records:
+            cls.meta.table.batch_update(
+                update_records,
+                typecast=cls.meta.typecast,
+                use_field_ids=cls.meta.use_field_ids,
+            )
+        if create_records:
+            created_records = cls.meta.table.batch_create(
+                create_records,
+                typecast=cls.meta.typecast,
+                use_field_ids=cls.meta.use_field_ids,
+            )
+            for model, record in zip(create_models, created_records):
+                model.id = record["id"]
+                model.created_time = datetime_from_iso_str(record["createdTime"])
 
     @classmethod
     def batch_delete(cls, models: List[SelfType]) -> None:
