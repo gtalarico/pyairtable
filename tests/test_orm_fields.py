@@ -845,7 +845,7 @@ def test_single_link_field():
 
     with mock.patch("pyairtable.Table.get", return_value=alice.to_record()) as m:
         book.author.fetch()
-        m.assert_called_once_with(alice.id)
+        m.assert_called_once_with(alice.id, **Author.meta.request_kwargs)
 
     assert book.author.id == alice.id
     assert book.author.name == "Alice"
@@ -856,16 +856,29 @@ def test_single_link_field():
 
     with mock.patch("pyairtable.Table.create", return_value=fake_record()) as m:
         book.author.save()
-        m.assert_called_once_with({"Name": "Bob"}, typecast=True)
+        m.assert_called_once_with(
+            {"Name": "Bob"},
+            typecast=True,
+            use_field_ids=False,
+        )
 
     with mock.patch("pyairtable.Table.create", return_value=fake_record()) as m:
         book.save()
-        m.assert_called_once_with({"Author": [bob.id]}, typecast=True)
+        m.assert_called_once_with(
+            {"Author": [bob.id]},
+            typecast=True,
+            use_field_ids=False,
+        )
 
     with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
         book.author = None
         book.save()
-        m.assert_called_once_with(book.id, {"Author": None}, typecast=True)
+        m.assert_called_once_with(
+            book.id,
+            {"Author": None},
+            typecast=True,
+            use_field_ids=False,
+        )
 
 
 def test_single_link_field__multiple_values():
@@ -901,13 +914,23 @@ def test_single_link_field__multiple_values():
     # if book.author.__set__ not called, the entire list will be sent back to the API
     with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
         book.save(force=True)
-        m.assert_called_once_with(book.id, {"Author": [a1, a2, a3]}, typecast=True)
+        m.assert_called_once_with(
+            book.id,
+            {"Author": [a1, a2, a3]},
+            typecast=True,
+            use_field_ids=False,
+        )
 
     # if we modify the field value, it will drop items 2-N
     book.author = Author.from_record(fake_record())
     with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
         book.save()
-        m.assert_called_once_with(book.id, {"Author": [book.author.id]}, typecast=True)
+        m.assert_called_once_with(
+            book.id,
+            {"Author": [book.author.id]},
+            typecast=True,
+            use_field_ids=False,
+        )
 
 
 def test_single_link_field__raise_if_many():
@@ -1114,7 +1137,12 @@ def test_select_field(fields, expected):
 
     with mock.patch("pyairtable.Table.update", return_value=obj.to_record()) as m:
         obj.save(force=True)
-        m.assert_called_once_with(obj.id, fields, typecast=True)
+        m.assert_called_once_with(
+            obj.id,
+            fields,
+            typecast=True,
+            use_field_ids=False,
+        )
 
 
 @pytest.mark.parametrize(

@@ -56,10 +56,15 @@ def test_use_field_ids(table: Table, cols):
     Test that we can get, create, and update records by field ID vs. name.
 
     See https://github.com/gtalarico/pyairtable/issues/194
+    and https://github.com/gtalarico/pyairtable/issues/430
     """
     # Create one record with use_field_ids=True
     record = table.create({cols.TEXT_ID: "Hello"}, use_field_ids=True)
     assert record["fields"][cols.TEXT_ID] == "Hello"
+
+    # Fetch one record with use_field_ids=True
+    fetched = table.get(record["id"], use_field_ids=True)
+    assert fetched["fields"][cols.TEXT_ID] == "Hello"
 
     # Update one record with use_field_ids=True
     updated = table.update(
@@ -81,6 +86,13 @@ def test_use_field_ids(table: Table, cols):
     assert records[0]["fields"][cols.TEXT_ID] == "Alpha"
     assert records[1]["fields"][cols.TEXT_ID] == "Bravo"
     assert records[2]["fields"][cols.TEXT_ID] == "Charlie"
+
+    # Fetch multiple records with use_field_ids=True
+    formula = OR(RECORD_ID().eq(record["id"]) for record in records)
+    fetched_many = {r["id"]: r for r in table.all(formula=formula, use_field_ids=True)}
+    assert fetched_many[records[0]["id"]]["fields"][cols.TEXT_ID] == "Alpha"
+    assert fetched_many[records[1]["id"]]["fields"][cols.TEXT_ID] == "Bravo"
+    assert fetched_many[records[2]["id"]]["fields"][cols.TEXT_ID] == "Charlie"
 
     # Update multiple records with use_field_ids=True
     updates = [

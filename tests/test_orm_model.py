@@ -22,8 +22,8 @@ class FakeModel(Model):
 
 class FakeModelByIds(Model):
     Meta = fake_meta(use_field_ids=True, table_name="Apartments")
-    Name = f.TextField("fld1VnoyuotSTyxW1")
-    Age = f.NumberField("fld2VnoyuotSTy4g6")
+    name = f.TextField("fld1VnoyuotSTyxW1")
+    age = f.NumberField("fld2VnoyuotSTy4g6")
 
 
 @pytest.fixture(autouse=True)
@@ -215,6 +215,17 @@ def test_from_id(mock_get):
     assert contact.name == "Alice"
 
 
+@mock.patch("pyairtable.Table.get")
+def test_from_id__use_field_ids(mock_get, fake_records_by_id):
+    # Use the FakeModelByIds class to test the use_field_ids option.
+    fake_contact = fake_records_by_id[0]
+    mock_get.return_value = fake_contact
+    model = FakeModelByIds.from_id(fake_contact["id"])
+    assert model.name == "Alice"
+    assert mock_get.call_count == 1
+    assert mock_get.mock_calls[-1].kwargs["use_field_ids"] is True
+
+
 @mock.patch("pyairtable.Api.iterate_requests")
 def test_from_ids(mock_api):
     fake_records = [fake_record() for _ in range(10)]
@@ -257,10 +268,21 @@ def test_from_ids__no_fetch(mock_all):
 @mock.patch("pyairtable.Table.all")
 def test_from_ids__use_field_ids(mock_all):
     fake_ids = [fake_id() for _ in range(10)]
-    mock_all.return_value = [fake_record(id=id) for id in fake_ids]
-    FakeModelByIds.from_ids(fake_ids)
+    mock_all.return_value = [
+        fake_record(
+            id=record_id,
+            fld1VnoyuotSTyxW1=f"Name {idx}",
+            fld2VnoyuotSTy4g6=(idx + 40),
+        )
+        for idx, record_id in enumerate(fake_ids)
+    ]
+    models = FakeModelByIds.from_ids(fake_ids)
     assert mock_all.call_count == 1
     assert mock_all.mock_calls[-1].kwargs["use_field_ids"] is True
+    assert models[0].name == "Name 0"
+    assert models[0].age == 40
+    assert models[1].name == "Name 1"
+    assert models[1].age == 41
 
 
 @pytest.mark.parametrize(
@@ -292,12 +314,10 @@ def test_passthrough(methodname, returns):
 
 @pytest.fixture
 def fake_records_by_id():
-    return {
-        "records": [
-            fake_record(fld1VnoyuotSTyxW1="Alice", fld2VnoyuotSTy4g6=25),
-            fake_record(Name="Jack", Age=30),
-        ]
-    }
+    return [
+        fake_record(fld1VnoyuotSTyxW1="Alice"),
+        fake_record(Name="Jack"),  # values for negative test
+    ]
 
 
 def test_get_fields_by_id(fake_records_by_id):
@@ -310,20 +330,14 @@ def test_get_fields_by_id(fake_records_by_id):
                 returnFieldsByFieldId=1,
                 cellFormat="json",
             ),
-            json=fake_records_by_id,
+            json={"records": fake_records_by_id},
             complete_qs=True,
             status_code=200,
         )
         fake_models = FakeModelByIds.all()
 
-    assert fake_models[0].Name == "Alice"
-    assert fake_models[0].Age == 25
-
-    assert fake_models[1].Name != "Jack"
-    assert fake_models[1].Age != 30
-
-    with pytest.raises(KeyError):
-        _ = getattr(fake_models[1], fake_records_by_id[0]["Age"])
+    assert fake_models[0].name == "Alice"
+    assert fake_models[1].name == ""
 
 
 def test_meta_wrapper():
@@ -412,7 +426,11 @@ def test_save__create(mock_create):
     assert result.field_names == {"one", "two"}
     assert not result.updated
     assert not result.forced
-    mock_create.assert_called_once_with({"one": "ONE", "two": "TWO"}, typecast=True)
+    mock_create.assert_called_once_with(
+        {"one": "ONE", "two": "TWO"},
+        typecast=True,
+        use_field_ids=False,
+    )
 
 
 @mock.patch("pyairtable.Table.update")
@@ -428,7 +446,12 @@ def test_save__update(mock_update):
     assert result.updated
     assert result.field_names == {"one"}
     assert not result.forced
-    mock_update.assert_called_once_with(obj.id, {"one": "new value"}, typecast=True)
+    mock_update.assert_called_once_with(
+        obj.id,
+        {"one": "new value"},
+        typecast=True,
+        use_field_ids=False,
+    )
 
 
 @mock.patch("pyairtable.Table.update")
@@ -446,7 +469,7 @@ def test_save__update_force(mock_update):
     assert result.forced
     assert result.field_names == {"one", "two"}
     mock_update.assert_called_once_with(
-        obj.id, {"one": "new value", "two": "TWO"}, typecast=True
+        obj.id, {"one": "new value", "two": "TWO"}, typecast=True, use_field_ids=False
     )
 
 
@@ -463,6 +486,39 @@ def test_save__noop(mock_update):
     assert not result.field_names
     assert not result.forced
     mock_update.assert_not_called()
+
+
+@mock.patch("pyairtable.Table.create")
+def test_save__use_field_ids__create(mock_create):
+    """
+    Test that we can correctly save a model which uses field IDs.
+    """
+    mock_create.return_value = fake_record(**{FakeModelByIds.name.field_name: "Alice"})
+    obj = FakeModelByIds(name="Alice")
+    obj.save()
+    mock_create.assert_called_once_with(
+        {FakeModelByIds.name.field_name: "Alice"},
+        typecast=True,
+        use_field_ids=True,
+    )
+
+
+@mock.patch("pyairtable.Table.update")
+def test_save__use_field_ids__update(mock_update):
+    """
+    Test that we can correctly save a model which uses field IDs.
+    """
+    record = fake_record(**{FakeModelByIds.name.field_name: "Alice"})
+    mock_update.return_value = record
+    obj = FakeModelByIds.from_record(record)
+    obj.name = "Bob"
+    obj.save()
+    mock_update.assert_called_once_with(
+        obj.id,
+        {FakeModelByIds.name.field_name: "Bob"},
+        typecast=True,
+        use_field_ids=True,
+    )
 
 
 def test_save_bool_deprecated():
