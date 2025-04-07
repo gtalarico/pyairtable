@@ -2,7 +2,7 @@
 Changelog
 =========
 
-3.1.0 (2025-03-27)
+3.1.0 (2025-04-07)
 ------------------------
 
 * Added ``Field.field_schema()`` to type-annotated ORM fields.
