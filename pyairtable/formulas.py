@@ -13,6 +13,7 @@ from fractions import Fraction
 from typing import Any, ClassVar, Iterable, List, Optional, Set, Union
 
 from typing_extensions import Self as SelfType
+from typing_extensions import TypeAlias
 
 from pyairtable.api.types import Fields
 from pyairtable.exceptions import CircularFormulaError
@@ -510,6 +511,19 @@ def field_name(name: str) -> str:
     return "{%s}" % name.replace("}", r"\}")
 
 
+FunctionArg: TypeAlias = Union[
+    str,
+    int,
+    float,
+    bool,
+    Decimal,
+    Fraction,
+    Formula,
+    datetime.date,
+    datetime.datetime,
+]
+
+
 class FunctionCall(Formula):
     """
     Represents a function call in an Airtable formula, and converts
@@ -524,7 +538,7 @@ class FunctionCall(Formula):
     for all formula functions known at time of publishing.
     """
 
-    def __init__(self, name: str, *args: List[Any]):
+    def __init__(self, name: str, *args: FunctionArg):
         self.name = name
         self.args = args
 
@@ -577,19 +591,19 @@ for definition in definitions:
 
     required = [arg for arg in args if arg and not arg.startswith("[")]
     optional = [arg.strip("[]") for arg in args if arg.startswith("[") and arg.endswith("]")]
-    signature = [f"{arg}: Any" for arg in required]
+    signature = [f"{arg}: FunctionArg" for arg in required]
     params = [*required]
     splat = optional.pop().rstrip(".") if optional and optional[-1].endswith("...") else None
 
     if optional:
-        signature += [f"{arg}: Optional[Any] = None" for arg in optional]
+        signature += [f"{arg}: Optional[FunctionArg] = None" for arg in optional]
         params += ["*(v for v in [" + ", ".join(optional) + "] if v is not None)"]
 
     if required or optional:
         signature += ["/"]
 
     if splat:
-        signature += [f"*{splat}: Any"]
+        signature += [f"*{splat}: FunctionArg"]
         params += [f"*{splat}"]
 
     joined_signature = ", ".join(signature)
@@ -608,14 +622,14 @@ for definition in definitions:
 [[[out]]]"""
 
 
-def ABS(value: Any, /) -> FunctionCall:
+def ABS(value: FunctionArg, /) -> FunctionCall:
     """
     Returns the absolute value.
     """
     return FunctionCall('ABS', value)
 
 
-def AVERAGE(number: Any, /, *numbers: Any) -> FunctionCall:
+def AVERAGE(number: FunctionArg, /, *numbers: FunctionArg) -> FunctionCall:
     """
     Returns the average of the numbers.
     """
@@ -629,35 +643,35 @@ def BLANK() -> FunctionCall:
     return FunctionCall('BLANK')
 
 
-def CEILING(value: Any, significance: Optional[Any] = None, /) -> FunctionCall:
+def CEILING(value: FunctionArg, significance: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Returns the nearest integer multiple of significance that is greater than or equal to the value. If no significance is provided, a significance of 1 is assumed.
     """
     return FunctionCall('CEILING', value, *(v for v in [significance] if v is not None))
 
 
-def CONCATENATE(text: Any, /, *texts: Any) -> FunctionCall:
+def CONCATENATE(text: FunctionArg, /, *texts: FunctionArg) -> FunctionCall:
     """
     Joins together the text arguments into a single text value.
     """
     return FunctionCall('CONCATENATE', text, *texts)
 
 
-def COUNT(number: Any, /, *numbers: Any) -> FunctionCall:
+def COUNT(number: FunctionArg, /, *numbers: FunctionArg) -> FunctionCall:
     """
     Count the number of numeric items.
     """
     return FunctionCall('COUNT', number, *numbers)
 
 
-def COUNTA(value: Any, /, *values: Any) -> FunctionCall:
+def COUNTA(value: FunctionArg, /, *values: FunctionArg) -> FunctionCall:
     """
     Count the number of non-empty values. This function counts both numeric and text values.
     """
     return FunctionCall('COUNTA', value, *values)
 
 
-def COUNTALL(value: Any, /, *values: Any) -> FunctionCall:
+def COUNTALL(value: FunctionArg, /, *values: FunctionArg) -> FunctionCall:
     """
     Count the number of all elements including text and blanks.
     """
@@ -671,49 +685,49 @@ def CREATED_TIME() -> FunctionCall:
     return FunctionCall('CREATED_TIME')
 
 
-def DATEADD(date: Any, number: Any, units: Any, /) -> FunctionCall:
+def DATEADD(date: FunctionArg, number: FunctionArg, units: FunctionArg, /) -> FunctionCall:
     """
     Adds specified "count" units to a datetime. (See `list of shared unit specifiers <https://support.airtable.com/hc/en-us/articles/226061308>`__. For this function we recommend using the full unit specifier for your desired unit.)
     """
     return FunctionCall('DATEADD', date, number, units)
 
 
-def DATESTR(date: Any, /) -> FunctionCall:
+def DATESTR(date: FunctionArg, /) -> FunctionCall:
     """
     Formats a datetime into a string (YYYY-MM-DD).
     """
     return FunctionCall('DATESTR', date)
 
 
-def DATETIME_DIFF(date1: Any, date2: Any, units: Any, /) -> FunctionCall:
+def DATETIME_DIFF(date1: FunctionArg, date2: FunctionArg, units: FunctionArg, /) -> FunctionCall:
     """
     Returns the difference between datetimes in specified units. The difference between datetimes is determined by subtracting [date2] from [date1]. This means that if [date2] is later than [date1], the resulting value will be negative.
     """
     return FunctionCall('DATETIME_DIFF', date1, date2, units)
 
 
-def DATETIME_FORMAT(date: Any, output_format: Optional[Any] = None, /) -> FunctionCall:
+def DATETIME_FORMAT(date: FunctionArg, output_format: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Formats a datetime into a specified string. See an `explanation of how to use this function with date fields <https://support.airtable.com/hc/en-us/articles/215646218>`__ or a list of `supported format specifiers <https://support.airtable.com/hc/en-us/articles/216141218>`__.
     """
     return FunctionCall('DATETIME_FORMAT', date, *(v for v in [output_format] if v is not None))
 
 
-def DATETIME_PARSE(date: Any, input_format: Optional[Any] = None, locale: Optional[Any] = None, /) -> FunctionCall:
+def DATETIME_PARSE(date: FunctionArg, input_format: Optional[FunctionArg] = None, locale: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Interprets a text string as a structured date, with optional input format and locale parameters. The output format will always be formatted 'M/D/YYYY h:mm a'.
     """
     return FunctionCall('DATETIME_PARSE', date, *(v for v in [input_format, locale] if v is not None))
 
 
-def DAY(date: Any, /) -> FunctionCall:
+def DAY(date: FunctionArg, /) -> FunctionCall:
     """
     Returns the day of the month of a datetime in the form of a number between 1-31.
     """
     return FunctionCall('DAY', date)
 
 
-def ENCODE_URL_COMPONENT(component_string: Any, /) -> FunctionCall:
+def ENCODE_URL_COMPONENT(component_string: FunctionArg, /) -> FunctionCall:
     """
     Replaces certain characters with encoded equivalents for use in constructing URLs or URIs. Does not encode the following characters: ``-_.~``
     """
@@ -727,14 +741,14 @@ def ERROR() -> FunctionCall:
     return FunctionCall('ERROR')
 
 
-def EVEN(value: Any, /) -> FunctionCall:
+def EVEN(value: FunctionArg, /) -> FunctionCall:
     """
     Returns the smallest even integer that is greater than or equal to the specified value.
     """
     return FunctionCall('EVEN', value)
 
 
-def EXP(power: Any, /) -> FunctionCall:
+def EXP(power: FunctionArg, /) -> FunctionCall:
     """
     Computes **Euler's number** (e) to the specified power.
     """
@@ -748,147 +762,147 @@ def FALSE() -> FunctionCall:
     return FunctionCall('FALSE')
 
 
-def FIND(string_to_find: Any, where_to_search: Any, start_from_position: Optional[Any] = None, /) -> FunctionCall:
+def FIND(string_to_find: FunctionArg, where_to_search: FunctionArg, start_from_position: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Finds an occurrence of stringToFind in whereToSearch string starting from an optional startFromPosition.(startFromPosition is 0 by default.) If no occurrence of stringToFind is found, the result will be 0.
     """
     return FunctionCall('FIND', string_to_find, where_to_search, *(v for v in [start_from_position] if v is not None))
 
 
-def FLOOR(value: Any, significance: Optional[Any] = None, /) -> FunctionCall:
+def FLOOR(value: FunctionArg, significance: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Returns the nearest integer multiple of significance that is less than or equal to the value. If no significance is provided, a significance of 1 is assumed.
     """
     return FunctionCall('FLOOR', value, *(v for v in [significance] if v is not None))
 
 
-def FROMNOW(date: Any, /) -> FunctionCall:
+def FROMNOW(date: FunctionArg, /) -> FunctionCall:
     """
     Calculates the number of days between the current date and another date.
     """
     return FunctionCall('FROMNOW', date)
 
 
-def HOUR(datetime: Any, /) -> FunctionCall:
+def HOUR(datetime: FunctionArg, /) -> FunctionCall:
     """
     Returns the hour of a datetime as a number between 0 (12:00am) and 23 (11:00pm).
     """
     return FunctionCall('HOUR', datetime)
 
 
-def IF(expression: Any, if_true: Any, if_false: Any, /) -> FunctionCall:
+def IF(expression: FunctionArg, if_true: FunctionArg, if_false: FunctionArg, /) -> FunctionCall:
     """
     Returns value1 if the logical argument is true, otherwise it returns value2. Can also be used to make `nested IF statements <https://support.airtable.com/hc/en-us/articles/221564887-Nested-IF-formulas>`__.
     """
     return FunctionCall('IF', expression, if_true, if_false)
 
 
-def INT(value: Any, /) -> FunctionCall:
+def INT(value: FunctionArg, /) -> FunctionCall:
     """
     Returns the greatest integer that is less than or equal to the specified value.
     """
     return FunctionCall('INT', value)
 
 
-def ISERROR(expr: Any, /) -> FunctionCall:
+def ISERROR(expr: FunctionArg, /) -> FunctionCall:
     """
     Returns true if the expression causes an error.
     """
     return FunctionCall('ISERROR', expr)
 
 
-def IS_AFTER(date1: Any, date2: Any, /) -> FunctionCall:
+def IS_AFTER(date1: FunctionArg, date2: FunctionArg, /) -> FunctionCall:
     """
     Determines if [date1] is later than [date2]. Returns 1 if yes, 0 if no.
     """
     return FunctionCall('IS_AFTER', date1, date2)
 
 
-def IS_BEFORE(date1: Any, date2: Any, /) -> FunctionCall:
+def IS_BEFORE(date1: FunctionArg, date2: FunctionArg, /) -> FunctionCall:
     """
     Determines if [date1] is earlier than [date2]. Returns 1 if yes, 0 if no.
     """
     return FunctionCall('IS_BEFORE', date1, date2)
 
 
-def IS_SAME(date1: Any, date2: Any, unit: Any, /) -> FunctionCall:
+def IS_SAME(date1: FunctionArg, date2: FunctionArg, unit: FunctionArg, /) -> FunctionCall:
     """
     Compares two dates up to a unit and determines whether they are identical. Returns 1 if yes, 0 if no.
     """
     return FunctionCall('IS_SAME', date1, date2, unit)
 
 
-def LAST_MODIFIED_TIME(*fields: Any) -> FunctionCall:
+def LAST_MODIFIED_TIME(*fields: FunctionArg) -> FunctionCall:
     """
     Returns the date and time of the most recent modification made by a user in a non-computed field in the table.
     """
     return FunctionCall('LAST_MODIFIED_TIME', *fields)
 
 
-def LEFT(string: Any, how_many: Any, /) -> FunctionCall:
+def LEFT(string: FunctionArg, how_many: FunctionArg, /) -> FunctionCall:
     """
     Extract how many characters from the beginning of the string.
     """
     return FunctionCall('LEFT', string, how_many)
 
 
-def LEN(string: Any, /) -> FunctionCall:
+def LEN(string: FunctionArg, /) -> FunctionCall:
     """
     Returns the length of a string.
     """
     return FunctionCall('LEN', string)
 
 
-def LOG(number: Any, base: Optional[Any] = None, /) -> FunctionCall:
+def LOG(number: FunctionArg, base: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Computes the logarithm of the value in provided base. The base defaults to 10 if not specified.
     """
     return FunctionCall('LOG', number, *(v for v in [base] if v is not None))
 
 
-def LOWER(string: Any, /) -> FunctionCall:
+def LOWER(string: FunctionArg, /) -> FunctionCall:
     """
     Makes a string lowercase.
     """
     return FunctionCall('LOWER', string)
 
 
-def MAX(number: Any, /, *numbers: Any) -> FunctionCall:
+def MAX(number: FunctionArg, /, *numbers: FunctionArg) -> FunctionCall:
     """
     Returns the largest of the given numbers.
     """
     return FunctionCall('MAX', number, *numbers)
 
 
-def MID(string: Any, where_to_start: Any, count: Any, /) -> FunctionCall:
+def MID(string: FunctionArg, where_to_start: FunctionArg, count: FunctionArg, /) -> FunctionCall:
     """
     Extract a substring of count characters starting at whereToStart.
     """
     return FunctionCall('MID', string, where_to_start, count)
 
 
-def MIN(number: Any, /, *numbers: Any) -> FunctionCall:
+def MIN(number: FunctionArg, /, *numbers: FunctionArg) -> FunctionCall:
     """
     Returns the smallest of the given numbers.
     """
     return FunctionCall('MIN', number, *numbers)
 
 
-def MINUTE(datetime: Any, /) -> FunctionCall:
+def MINUTE(datetime: FunctionArg, /) -> FunctionCall:
     """
     Returns the minute of a datetime as an integer between 0 and 59.
     """
     return FunctionCall('MINUTE', datetime)
 
 
-def MOD(value: Any, divisor: Any, /) -> FunctionCall:
+def MOD(value: FunctionArg, divisor: FunctionArg, /) -> FunctionCall:
     """
     Returns the remainder after dividing the first argument by the second.
     """
     return FunctionCall('MOD', value, divisor)
 
 
-def MONTH(date: Any, /) -> FunctionCall:
+def MONTH(date: FunctionArg, /) -> FunctionCall:
     """
     Returns the month of a datetime as a number between 1 (January) and 12 (December).
     """
@@ -902,14 +916,14 @@ def NOW() -> FunctionCall:
     return FunctionCall('NOW')
 
 
-def ODD(value: Any, /) -> FunctionCall:
+def ODD(value: FunctionArg, /) -> FunctionCall:
     """
     Rounds positive value up the the nearest odd number and negative value down to the nearest odd number.
     """
     return FunctionCall('ODD', value)
 
 
-def POWER(base: Any, power: Any, /) -> FunctionCall:
+def POWER(base: FunctionArg, power: FunctionArg, /) -> FunctionCall:
     """
     Computes the specified base to the specified power.
     """
@@ -923,133 +937,133 @@ def RECORD_ID() -> FunctionCall:
     return FunctionCall('RECORD_ID')
 
 
-def REGEX_EXTRACT(string: Any, regex: Any, /) -> FunctionCall:
+def REGEX_EXTRACT(string: FunctionArg, regex: FunctionArg, /) -> FunctionCall:
     """
     Returns the first substring that matches a regular expression.
     """
     return FunctionCall('REGEX_EXTRACT', string, regex)
 
 
-def REGEX_MATCH(string: Any, regex: Any, /) -> FunctionCall:
+def REGEX_MATCH(string: FunctionArg, regex: FunctionArg, /) -> FunctionCall:
     """
     Returns whether the input text matches a regular expression.
     """
     return FunctionCall('REGEX_MATCH', string, regex)
 
 
-def REGEX_REPLACE(string: Any, regex: Any, replacement: Any, /) -> FunctionCall:
+def REGEX_REPLACE(string: FunctionArg, regex: FunctionArg, replacement: FunctionArg, /) -> FunctionCall:
     """
     Substitutes all matching substrings with a replacement string value.
     """
     return FunctionCall('REGEX_REPLACE', string, regex, replacement)
 
 
-def REPLACE(string: Any, start_character: Any, number_of_characters: Any, replacement: Any, /) -> FunctionCall:
+def REPLACE(string: FunctionArg, start_character: FunctionArg, number_of_characters: FunctionArg, replacement: FunctionArg, /) -> FunctionCall:
     """
     Replaces the number of characters beginning with the start character with the replacement text.
     """
     return FunctionCall('REPLACE', string, start_character, number_of_characters, replacement)
 
 
-def REPT(string: Any, number: Any, /) -> FunctionCall:
+def REPT(string: FunctionArg, number: FunctionArg, /) -> FunctionCall:
     """
     Repeats string by the specified number of times.
     """
     return FunctionCall('REPT', string, number)
 
 
-def RIGHT(string: Any, how_many: Any, /) -> FunctionCall:
+def RIGHT(string: FunctionArg, how_many: FunctionArg, /) -> FunctionCall:
     """
     Extract howMany characters from the end of the string.
     """
     return FunctionCall('RIGHT', string, how_many)
 
 
-def ROUND(value: Any, precision: Any, /) -> FunctionCall:
+def ROUND(value: FunctionArg, precision: FunctionArg, /) -> FunctionCall:
     """
     Rounds the value to the number of decimal places given by "precision." (Specifically, ROUND will round to the nearest integer at the specified precision, with ties broken by `rounding half up toward positive infinity <https://en.wikipedia.org/wiki/Rounding#Round_half_up>`__.)
     """
     return FunctionCall('ROUND', value, precision)
 
 
-def ROUNDDOWN(value: Any, precision: Any, /) -> FunctionCall:
+def ROUNDDOWN(value: FunctionArg, precision: FunctionArg, /) -> FunctionCall:
     """
     Rounds the value to the number of decimal places given by "precision," always `rounding down <https://en.wikipedia.org/wiki/Rounding#Rounding_to_integer>`__.
     """
     return FunctionCall('ROUNDDOWN', value, precision)
 
 
-def ROUNDUP(value: Any, precision: Any, /) -> FunctionCall:
+def ROUNDUP(value: FunctionArg, precision: FunctionArg, /) -> FunctionCall:
     """
     Rounds the value to the number of decimal places given by "precision," always `rounding up <https://en.wikipedia.org/wiki/Rounding#Rounding_to_integer>`__.
     """
     return FunctionCall('ROUNDUP', value, precision)
 
 
-def SEARCH(string_to_find: Any, where_to_search: Any, start_from_position: Optional[Any] = None, /) -> FunctionCall:
+def SEARCH(string_to_find: FunctionArg, where_to_search: FunctionArg, start_from_position: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Searches for an occurrence of stringToFind in whereToSearch string starting from an optional startFromPosition. (startFromPosition is 0 by default.) If no occurrence of stringToFind is found, the result will be empty.
     """
     return FunctionCall('SEARCH', string_to_find, where_to_search, *(v for v in [start_from_position] if v is not None))
 
 
-def SECOND(datetime: Any, /) -> FunctionCall:
+def SECOND(datetime: FunctionArg, /) -> FunctionCall:
     """
     Returns the second of a datetime as an integer between 0 and 59.
     """
     return FunctionCall('SECOND', datetime)
 
 
-def SET_LOCALE(date: Any, locale_modifier: Any, /) -> FunctionCall:
+def SET_LOCALE(date: FunctionArg, locale_modifier: FunctionArg, /) -> FunctionCall:
     """
     Sets a specific locale for a datetime. **Must be used in conjunction with DATETIME_FORMAT.** A list of supported locale modifiers can be found `here <https://support.airtable.com/hc/en-us/articles/220340268>`__.
     """
     return FunctionCall('SET_LOCALE', date, locale_modifier)
 
 
-def SET_TIMEZONE(date: Any, tz_identifier: Any, /) -> FunctionCall:
+def SET_TIMEZONE(date: FunctionArg, tz_identifier: FunctionArg, /) -> FunctionCall:
     """
     Sets a specific timezone for a datetime. **Must be used in conjunction with DATETIME_FORMAT.** A list of supported timezone identifiers can be found `here <https://support.airtable.com/hc/en-us/articles/216141558-Supported-timezones-for-SET-TIMEZONE>`__.
     """
     return FunctionCall('SET_TIMEZONE', date, tz_identifier)
 
 
-def SQRT(value: Any, /) -> FunctionCall:
+def SQRT(value: FunctionArg, /) -> FunctionCall:
     """
     Returns the square root of a nonnegative number.
     """
     return FunctionCall('SQRT', value)
 
 
-def SUBSTITUTE(string: Any, old_text: Any, new_text: Any, index: Optional[Any] = None, /) -> FunctionCall:
+def SUBSTITUTE(string: FunctionArg, old_text: FunctionArg, new_text: FunctionArg, index: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Replaces occurrences of old_text in string with new_text.
     """
     return FunctionCall('SUBSTITUTE', string, old_text, new_text, *(v for v in [index] if v is not None))
 
 
-def SUM(number: Any, /, *numbers: Any) -> FunctionCall:
+def SUM(number: FunctionArg, /, *numbers: FunctionArg) -> FunctionCall:
     """
     Sum together the numbers. Equivalent to number1 + number2 + ...
     """
     return FunctionCall('SUM', number, *numbers)
 
 
-def SWITCH(expression: Any, pattern: Any, result: Any, /, *pattern_results: Any) -> FunctionCall:
+def SWITCH(expression: FunctionArg, pattern: FunctionArg, result: FunctionArg, /, *pattern_results: FunctionArg) -> FunctionCall:
     """
     Takes an expression, a list of possible values for that expression, and for each one, a value that the expression should take in that case. It can also take a default value if the expression input doesn't match any of the defined patterns. In many cases, SWITCH() can be used instead `of a nested IF() formula <https://support.airtable.com/hc/en-us/articles/360041812413>`__.
     """
     return FunctionCall('SWITCH', expression, pattern, result, *pattern_results)
 
 
-def T(value: Any, /) -> FunctionCall:
+def T(value: FunctionArg, /) -> FunctionCall:
     """
     Returns the argument if it is text and blank otherwise.
     """
     return FunctionCall('T', value)
 
 
-def TIMESTR(timestamp: Any, /) -> FunctionCall:
+def TIMESTR(timestamp: FunctionArg, /) -> FunctionCall:
     """
     Formats a datetime into a time-only string (HH:mm:ss).
     """
@@ -1063,14 +1077,14 @@ def TODAY() -> FunctionCall:
     return FunctionCall('TODAY')
 
 
-def TONOW(date: Any, /) -> FunctionCall:
+def TONOW(date: FunctionArg, /) -> FunctionCall:
     """
     Calculates the number of days between the current date and another date.
     """
     return FunctionCall('TONOW', date)
 
 
-def TRIM(string: Any, /) -> FunctionCall:
+def TRIM(string: FunctionArg, /) -> FunctionCall:
     """
     Removes whitespace at the beginning and end of string.
     """
@@ -1084,61 +1098,61 @@ def TRUE() -> FunctionCall:
     return FunctionCall('TRUE')
 
 
-def UPPER(string: Any, /) -> FunctionCall:
+def UPPER(string: FunctionArg, /) -> FunctionCall:
     """
     Makes string uppercase.
     """
     return FunctionCall('UPPER', string)
 
 
-def VALUE(text: Any, /) -> FunctionCall:
+def VALUE(text: FunctionArg, /) -> FunctionCall:
     """
     Converts the text string to a number. Some exceptions apply—if the string contains certain mathematical operators(-,%) the result may not return as expected. In these scenarios we recommend using a combination of VALUE and REGEX_REPLACE to remove non-digit values from the string:
     """
     return FunctionCall('VALUE', text)
 
 
-def WEEKDAY(date: Any, start_day_of_week: Optional[Any] = None, /) -> FunctionCall:
+def WEEKDAY(date: FunctionArg, start_day_of_week: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Returns the day of the week as an integer between 0 (Sunday) and 6 (Saturday). You may optionally provide a second argument (either ``"Sunday"`` or ``"Monday"``) to start weeks on that day. If omitted, weeks start on Sunday by default.
     """
     return FunctionCall('WEEKDAY', date, *(v for v in [start_day_of_week] if v is not None))
 
 
-def WEEKNUM(date: Any, start_day_of_week: Optional[Any] = None, /) -> FunctionCall:
+def WEEKNUM(date: FunctionArg, start_day_of_week: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Returns the week number in a year. You may optionally provide a second argument (either ``"Sunday"`` or ``"Monday"``) to start weeks on that day. If omitted, weeks start on Sunday by default.
     """
     return FunctionCall('WEEKNUM', date, *(v for v in [start_day_of_week] if v is not None))
 
 
-def WORKDAY(start_date: Any, num_days: Any, holidays: Optional[Any] = None, /) -> FunctionCall:
+def WORKDAY(start_date: FunctionArg, num_days: FunctionArg, holidays: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Returns a date that is numDays working days after startDate. Working days exclude weekends and an optional list of holidays, formatted as a comma-separated string of ISO-formatted dates.
     """
     return FunctionCall('WORKDAY', start_date, num_days, *(v for v in [holidays] if v is not None))
 
 
-def WORKDAY_DIFF(start_date: Any, end_date: Any, holidays: Optional[Any] = None, /) -> FunctionCall:
+def WORKDAY_DIFF(start_date: FunctionArg, end_date: FunctionArg, holidays: Optional[FunctionArg] = None, /) -> FunctionCall:
     """
     Counts the number of working days between startDate and endDate. Working days exclude weekends and an optional list of holidays, formatted as a comma-separated string of ISO-formatted dates.
     """
     return FunctionCall('WORKDAY_DIFF', start_date, end_date, *(v for v in [holidays] if v is not None))
 
 
-def XOR(expression: Any, /, *expressions: Any) -> FunctionCall:
+def XOR(expression: FunctionArg, /, *expressions: FunctionArg) -> FunctionCall:
     """
     Returns true if an **odd** number of arguments are true.
     """
     return FunctionCall('XOR', expression, *expressions)
 
 
-def YEAR(date: Any, /) -> FunctionCall:
+def YEAR(date: FunctionArg, /) -> FunctionCall:
     """
     Returns the four-digit year of a datetime.
     """
     return FunctionCall('YEAR', date)
 
 
-# [[[end]]] (checksum: 6d21fb2dafa8810cefa1caad266e1453)
+# [[[end]]] (checksum: e89fb729872c20bdff0bf57c061dae96)
 # fmt: on

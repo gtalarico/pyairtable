@@ -2,10 +2,13 @@
 Changelog
 =========
 
-3.1.0 (TBD)
+3.1.0 (2025-04-07)
 ------------------------
 
 * Added ``Field.field_schema()`` to type-annotated ORM fields.
+  - `PR #426 <https://github.com/gtalarico/pyairtable/pull/426>`_
+* Fix for incorrect type annotations on :class:`~pyairtable.formulas.FunctionCall`.
+  - `PR #429 <https://github.com/gtalarico/pyairtable/pull/429>`_
 
 3.0.2 (2025-02-25)
 ------------------------
@@ -23,6 +26,11 @@ Changelog
 * Fix for `#415 <https://github.com/gtalarico/pyairtable/issues/415>`_
   which caused an endless loop when making a request via `POST /listRecords`.
   - `PR #416 <https://github.com/gtalarico/pyairtable/pull/416>`_, `PR #417 <https://github.com/gtalarico/pyairtable/pull/417>`_
+
+2.3.7 (2024-12-06)
+------------------------
+
+* Fix for `#415 <https://github.com/gtalarico/pyairtable/issues/415>`_ (see above).
 
 3.0 (2024-11-15)
 ------------------------
@@ -79,13 +87,6 @@ Changelog
   - `PR #347 <https://github.com/gtalarico/pyairtable/pull/347>`_
 * Rewrite of :mod:`pyairtable.formulas` module. See :ref:`Building Formulas`.
   - `PR #329 <https://github.com/gtalarico/pyairtable/pull/329>`_
-
-2.3.7 (2024-12-06)
-------------------------
-
-* Fix for `#415 <https://github.com/gtalarico/pyairtable/issues/415>`_
-  which caused an endless loop when making a request via `POST /listRecords`.
-  - `PR #416 <https://github.com/gtalarico/pyairtable/pull/416>`_, `PR #417 <https://github.com/gtalarico/pyairtable/pull/417>`_
 
 2.3.6 (2024-11-11)
 ------------------------

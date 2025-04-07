@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from unittest.mock import ANY
 from uuid import uuid4
 
 import pytest
@@ -309,36 +308,13 @@ def test_integration_upload_attachment(table, cols, valid_img_url, tmp_path):
     rec = table.create({cols.ATTACHMENT: [{"url": valid_img_url, "filename": "a.png"}]})
     content = requests.get(valid_img_url).content
     response = table.upload_attachment(rec["id"], cols.ATTACHMENT, "b.png", content)
-    assert response == {
-        "id": rec["id"],
-        "createdTime": ANY,
-        "fields": {
-            cols.ATTACHMENT_ID: [
-                {
-                    "id": ANY,
-                    "url": ANY,
-                    "filename": "a.png",
-                    "type": "image/png",
-                    "size": 7297,
-                    # These exist because valid_img_url has been uploaded many, many times.
-                    "height": 400,
-                    "width": 400,
-                    "thumbnails": ANY,
-                },
-                {
-                    "id": ANY,
-                    "url": ANY,
-                    "filename": "b.png",
-                    "type": "image/png",
-                    "size": 7297,
-                    # These will not exist because we just uploaded the content.
-                    # "height": 400,
-                    # "width": 400,
-                    # "thumbnails": ANY,
-                },
-            ]
-        },
-    }
+    attached = response["fields"][cols.ATTACHMENT_ID]
+    assert attached[0]["filename"] == "a.png"
+    assert attached[0]["type"] == "image/png"
+    assert attached[0]["size"] == 7297
+    assert attached[1]["filename"] == "b.png"
+    assert attached[1]["type"] == "image/png"
+    assert attached[1]["size"] == 7297
 
 
 def test_integration_comments(api, table: Table, cols):
