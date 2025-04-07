@@ -7,6 +7,8 @@ Changelog
 
 * Added ``Field.field_schema()`` to type-annotated ORM fields.
   - `PR #426 <https://github.com/gtalarico/pyairtable/pull/426>`_
+* Fix for incorrect type annotations on :class:`~pyairtable.formulas.FunctionCall`.
+  - `PR #429 <https://github.com/gtalarico/pyairtable/pull/429>`_
 
 3.0.2 (2025-02-25)
 ------------------------

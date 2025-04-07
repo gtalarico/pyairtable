@@ -9,6 +9,7 @@ from typing_extensions import assert_type
 
 import pyairtable
 import pyairtable.api.types as T
+import pyairtable.formulas as F
 import pyairtable.orm.lists as L
 import pyairtable.utils
 from pyairtable import orm
@@ -269,3 +270,19 @@ if TYPE_CHECKING:
     record.required_collaborator = {"email": "alice@example.com"}
     record.multi_user.append({"id": "usr123"})
     record.multi_user.append({"email": "alice@example.com"})
+
+    # Test type annotations for the formulas module
+    formula = F.Formula("{Name} = 'Bob'")
+    assert_type(formula & formula, F.Formula)
+    assert_type(formula | formula, F.Formula)
+    assert_type(~formula, F.Formula)
+    assert_type(formula ^ formula, F.Formula)
+    assert_type(formula & True, F.Formula)
+    assert_type(formula | False, F.Formula)
+    assert_type(formula ^ "literal", F.Formula)
+    assert_type(F.match({"Name": "Bob"}), F.Formula)
+    assert_type(F.to_formula(formula), F.Formula)
+    assert_type(F.to_formula(1), F.Formula)
+    assert_type(F.to_formula(True), F.Formula)
+    assert_type(F.to_formula("Bob"), F.Formula)
+    assert_type(F.CONCATENATE(1, 2, 3), F.FunctionCall)
