@@ -1,7 +1,18 @@
 import importlib
 from datetime import datetime
 from functools import partial
-from typing import Any, Dict, Iterable, List, Literal, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pydantic
 from typing_extensions import TypeAlias
@@ -14,6 +25,12 @@ from pyairtable.models._base import (
     RestfulModel,
     rebuild_models,
 )
+
+if TYPE_CHECKING:
+    from pyairtable import orm
+
+
+FieldSpecifier: TypeAlias = Union[str, "orm.fields.AnyField"]
 
 _T = TypeVar("_T", bound=Any)
 _FL = partial(pydantic.Field, default_factory=list)
@@ -277,7 +294,7 @@ class BaseSchema(AirtableModel):
 class TableSchema(
     CanUpdateModel,
     save_null_values=False,
-    writable=["name", "description"],
+    writable=["name", "description", "date_dependency"],
     url="meta/bases/{base.id}/tables/{self.id}",
 ):
     """
@@ -317,11 +334,18 @@ class TableSchema(
     description: Optional[str] = None
     fields: List["FieldSchema"]
     views: List["ViewSchema"]
+    date_dependency: Optional["DateDependency"] = pydantic.Field(
+        alias="dateDependencySettings", default=None
+    )
 
-    def field(self, id_or_name: str) -> "FieldSchema":
+    def field(self, id_or_name: FieldSpecifier) -> "FieldSchema":
         """
         Get the schema for the field with the given ID or name.
         """
+        from pyairtable import orm
+
+        if isinstance(id_or_name, orm.fields.Field):
+            id_or_name = id_or_name.field_name
         return _find(self.fields, id_or_name)
 
     def view(self, id_or_name: str) -> "ViewSchema":
@@ -329,6 +353,86 @@ class TableSchema(
         Get the schema for the view with the given ID or name.
         """
         return _find(self.views, id_or_name)
+
+    def set_date_dependency(
+        self,
+        start_date_field: FieldSpecifier,
+        end_date_field: FieldSpecifier,
+        duration_field: FieldSpecifier,
+        rescheduling_mode: str,
+        predecessor_field: Optional[FieldSpecifier] = None,
+        skip_weekends_and_holidays: bool = False,
+        holidays: Optional[List[str]] = None,
+    ) -> None:
+        """
+        Create or replace the `date dependency settings <https://airtable.com/developers/web/api/model/date-dependency-settings>`__
+        for the table. You still need to call :meth:`~TableSchema.save` to persist the changes.
+
+        Usage:
+            >>> table_schema = base.table("Table Name").schema()
+            >>> table_schema.set_date_dependency(
+            ...     start_date_field="Start Date",
+            ...     end_date_field="End Date",
+            ...     duration_field="Duration",
+            ...     rescheduling_mode="flexible",
+            ...     skip_weekends_and_holidays=True,
+            ...     holidays=["2026-01-01", "2026-12-25"],
+            ...     predecessor_field="Depends On",
+            ... )
+            >>> table_schema.save()
+
+            This method also accepts ORM model fields as shorthand for those fields' IDs:
+
+            >>> table_schema = SomeModel.meta.table.schema()
+            >>> table_schema.set_date_dependency(
+            ...     start_date_field=SomeModel.start_date,
+            ...     end_date_field=SomeModel.end_date,
+            ...     duration_field=SomeModel.duration,
+            ...     rescheduling_mode="flexible",
+            ... )
+            >>> table_schema.save()
+
+        Args:
+            start_date_field: The field ID or name for the start date.
+            end_date_field: The field ID or name for the end date.
+            duration_field: The field ID or name for the duration.
+            rescheduling_mode: Either "flexible", "fixed", or "none".
+            skip_weekends_and_holidays: Whether to skip weekends and holidays.
+            holidays: A list of holiday dates in ISO format (YYYY-MM-DD).
+            predecessor_field: Optional; the field ID or name for predecessor tasks.
+        """
+        duration_field = self.field(duration_field).id
+        start_date_field = self.field(start_date_field).id
+        end_date_field = self.field(end_date_field).id
+        if predecessor_field is not None:
+            predecessor_field = self.field(predecessor_field).id
+
+        self.date_dependency = TableSchema.DateDependency(
+            is_enabled=True,
+            duration_field_id=duration_field,
+            start_date_field_id=start_date_field,
+            end_date_field_id=end_date_field,
+            predecessor_field_id=predecessor_field,
+            rescheduling_mode=rescheduling_mode,
+            should_skip_weekends_and_holidays=skip_weekends_and_holidays,
+            holidays=holidays or [],
+        )
+
+    class DateDependency(AirtableModel):
+        """
+        Settings for date dependencies in the table.
+
+        See https://airtable.com/developers/web/api/model/date-dependency-settings
+        """
+
+        is_enabled: bool
+        duration_field_id: str
+        start_date_field_id: str
+        end_date_field_id: str
+        predecessor_field_id: Optional[str] = None
+        rescheduling_mode: str
+        should_skip_weekends_and_holidays: bool
+        holidays: List[str] = _FL()
 
 
 class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):

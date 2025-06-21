@@ -36,9 +36,11 @@ You'll find more detail in the API reference for :mod:`pyairtable.models.schema`
 Modifying existing schema
 -----------------------------
 
-To modify a table or field, you can modify its schema object directly and
-call ``save()``, as shown below. You can only change names and descriptions;
-the Airtable API does not permit changing any other options.
+To modify a table or field, you can modify portions of its schema object directly
+and call ``save()``, as shown below. The Airtable API only allows changing certain
+properties; these are enumerated in the API reference for each schema class.
+For example, :class:`~pyairtable.models.schema.TableSchema` allows changing the name,
+description, and date dependency configuration.
 
 .. code-block:: python
 
@@ -49,6 +51,9 @@ the Airtable API does not permit changing any other options.
     >>> field.name = "Label"
     >>> field.description = "The primary field on the table"
     >>> field.save()
+
+To add or replace the date dependency configuration on a table, you can use the shortcut method
+:meth:`TableSchema.set_date_dependency <pyairtable.models.schema.TableSchema.set_date_dependency>`.
 
 
 Creating schema elements

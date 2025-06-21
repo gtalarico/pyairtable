@@ -197,13 +197,18 @@ def _prepend_docstring_text(obj: Any, text: str, *, skip_empty: bool = True) -> 
     obj.__doc__ = f"{text}\n\n{doc}"
 
 
-def _append_docstring_text(obj: Any, text: str, *, skip_empty: bool = True) -> None:
+def _append_docstring_text(
+    obj: Any, text: str, *, skip_empty: bool = True, before_re: str = ""
+) -> None:
     doc = obj.__doc__ or ""
     if skip_empty and not doc:
         return
     doc = doc.rstrip("\n")
     if has_leading_spaces := re.match(r"^\s+", doc):
         text = textwrap.indent(text, has_leading_spaces[0])
+    if before_re and (match := re.search(before_re, doc, re.MULTILINE)):
+        text = text + "\n\n" + doc[match.start() :]
+        doc = doc[: match.start()].rstrip()
     obj.__doc__ = f"{doc}\n\n{text}"
 
 

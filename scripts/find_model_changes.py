@@ -107,6 +107,7 @@ SCAN_MODELS = {
     "pyairtable.models.webhook:WebhookSpecification.SourceOptions": "schemas:webhooks-specification:@filters:@sourceOptions",
     "pyairtable.models.webhook:WebhookSpecification.SourceOptions.FormSubmission": "schemas:webhooks-specification:@filters:@sourceOptions:@formSubmission",
     "pyairtable.models.webhook:WebhookSpecification.SourceOptions.FormPageSubmission": "schemas:webhooks-specification:@filters:@sourceOptions:@formPageSubmission",
+    "pyairtable.models.schema:TableSchema.DateDependency": "schemas:date-dependency-settings",
 }
 
 IGNORED = [
@@ -125,6 +126,11 @@ IGNORED = [
 
 def main() -> None:
     initdata = get_api_data()
+    identify_missing_fields(initdata)
+    identify_unscanned_classes(initdata)
+
+
+def identify_missing_fields(initdata: "ApiData") -> None:
     issues: List[str] = []
 
     # Find missing/extra fields
@@ -142,8 +148,11 @@ def main() -> None:
         for issue in issues:
             print(issue)
 
+
+def identify_unscanned_classes(initdata: "ApiData") -> None:
+    issues: List[str] = []
+
     # Find unscanned model classes
-    issues.clear()
     modules = sorted({model_path.split(":")[0] for model_path in SCAN_MODELS})
     for modname in modules:
         if not ignore_name(modname):
