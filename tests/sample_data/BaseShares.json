@@ -7,6 +7,7 @@
         "foobar.com"
       ],
       "isPasswordProtected": true,
+      "restrictedToEnterpriseMembers": false,
       "restrictedToEmailDomains": [
         "foobar.com"
       ],
@@ -19,6 +20,7 @@
       "createdByUserId": "usrL2PNC5o3H4lBEi",
       "createdTime": "2019-01-01T00:00:00.000Z",
       "isPasswordProtected": false,
+      "restrictedToEnterpriseMembers": false,
       "restrictedToEmailDomains": [],
       "shareId": "shrMg5vs9SpczJvQp",
       "shareTokenPrefix": "shrMg5vs",
@@ -31,6 +33,7 @@
       "createdByUserId": "usrL2PNC5o3H4lBEi",
       "createdTime": "2019-01-01T00:00:00.000Z",
       "isPasswordProtected": false,
+      "restrictedToEnterpriseMembers": false,
       "restrictedToEmailDomains": [],
       "shareId": "shrjjKdhMg5vs9Spc",
       "shareTokenPrefix": "shrjjKdh",

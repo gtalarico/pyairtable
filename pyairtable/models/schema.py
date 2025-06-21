@@ -225,6 +225,7 @@ class BaseShares(AirtableModel):
         is_password_protected: bool
         block_installation_id: Optional[str] = None
         restricted_to_email_domains: List[str] = _FL()
+        restricted_to_enterprise_members: bool
         view_id: Optional[str] = None
         effective_email_domain_allow_list: List[str] = _FL()
 
@@ -617,6 +618,7 @@ class UserGroup(AirtableModel):
     updated_time: datetime
     members: List["UserGroup.Member"]
     collaborations: "Collaborations" = _F("Collaborations")
+    mapped_user_license_type: Optional[str] = None
 
     class Member(AirtableModel):
         user_id: str
