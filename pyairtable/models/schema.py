@@ -191,6 +191,7 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
     group_collaborators: "BaseCollaborators.GroupCollaborators" = _F("BaseCollaborators.GroupCollaborators")  # fmt: skip
     individual_collaborators: "BaseCollaborators.IndividualCollaborators" = _F("BaseCollaborators.IndividualCollaborators")  # fmt: skip
     invite_links: "BaseCollaborators.InviteLinks" = _F("BaseCollaborators.InviteLinks")  # fmt: skip
+    sensitivity_label: Optional["BaseCollaborators.SensitivityLabel"] = None
 
     class InterfaceCollaborators(
         _Collaborators,
@@ -215,6 +216,11 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
     class InviteLinks(RestfulModel, url="{base_collaborators._url}/invites"):
         via_base: List["InviteLink"] = _FL(alias="baseInviteLinks")
         via_workspace: List["WorkspaceInviteLink"] = _FL(alias="workspaceInviteLinks")  # fmt: skip
+
+    class SensitivityLabel(AirtableModel):
+        id: str
+        description: str
+        name: str
 
 
 class BaseShares(AirtableModel):
@@ -681,6 +687,7 @@ class UserInfo(
     is_two_factor_auth_enabled: bool
     last_activity_time: Optional[datetime] = None
     created_time: Optional[datetime] = None
+    license_type: Optional[str] = None
     enterprise_user_type: Optional[str] = None
     invited_to_airtable_by_user_id: Optional[str] = None
     is_managed: bool = False
@@ -695,6 +702,7 @@ class UserInfo(
         self._api.post(self._url + "/logout")
 
     class DescendantIds(AirtableModel):
+        license_type: Optional[str] = None
         last_activity_time: Optional[datetime] = None
         collaborations: Optional["Collaborations"] = None
         is_admin: bool = False
@@ -702,6 +710,7 @@ class UserInfo(
         groups: List[NestedId] = _FL()
 
     class AggregatedIds(AirtableModel):
+        license_type: Optional[str] = None
         last_activity_time: Optional[datetime] = None
         collaborations: Optional["Collaborations"] = None
         is_admin: bool = False
