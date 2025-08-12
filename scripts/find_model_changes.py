@@ -8,7 +8,7 @@ import json
 import re
 from functools import cached_property
 from operator import attrgetter
-from typing import Any, Dict, Iterator, List, Type
+from typing import Any, Dict, Iterator, List, Optional, Type
 
 import click
 import requests
@@ -133,7 +133,7 @@ IGNORED = [
     help="Save API schema information to a file.",
     type=click.Path(writable=True),
 )
-def main(save_apidata: str | None) -> None:
+def main(save_apidata: Optional[str]) -> None:
     api_data = get_api_data()
     if save_apidata:
         with open(save_apidata, "w") as f:

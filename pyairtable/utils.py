@@ -170,7 +170,7 @@ def enterprise_only(wrapped: F, /, modify_docstring: bool = True) -> F:
         for name, obj in vars(wrapped).items():
             if inspect.isfunction(obj):
                 setattr(wrapped, name, enterprise_only(obj))
-        return cast(F, wrapped)
+        return cast(F, wrapped)  # type: ignore[redundant-cast]
 
     @wraps(wrapped)
     def _decorated(*args: Any, **kwargs: Any) -> Any:
