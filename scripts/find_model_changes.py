@@ -10,6 +10,7 @@ from functools import cached_property
 from operator import attrgetter
 from typing import Any, Dict, Iterator, List, Type
 
+import click
 import requests
 
 from pyairtable.models._base import AirtableModel
@@ -19,95 +20,96 @@ API_INTRO = f"{API_PREFIX}/introduction"
 INITDATA_RE = r"<script[^>]*>\s*window\.initData = (\{.*\})\s*</script>"
 
 SCAN_MODELS = {
-    "pyairtable.api.enterprise:UserRemoved": "operations:remove-user-from-enterprise:response:schema",
-    "pyairtable.api.enterprise:UserRemoved.Shared": "operations:remove-user-from-enterprise:response:schema:@shared",
-    "pyairtable.api.enterprise:UserRemoved.Shared.Workspace": "operations:remove-user-from-enterprise:response:schema:@shared:@workspaces:items",
-    "pyairtable.api.enterprise:UserRemoved.Unshared": "operations:remove-user-from-enterprise:response:schema:@unshared",
-    "pyairtable.api.enterprise:UserRemoved.Unshared.Base": "operations:remove-user-from-enterprise:response:schema:@unshared:@bases:items",
-    "pyairtable.api.enterprise:UserRemoved.Unshared.Interface": "operations:remove-user-from-enterprise:response:schema:@unshared:@interfaces:items",
-    "pyairtable.api.enterprise:UserRemoved.Unshared.Workspace": "operations:remove-user-from-enterprise:response:schema:@unshared:@workspaces:items",
-    "pyairtable.api.enterprise:DeleteUsersResponse": "operations:delete-users-by-email:response:schema",
-    "pyairtable.api.enterprise:DeleteUsersResponse.UserInfo": "operations:delete-users-by-email:response:schema:@deletedUsers:items",
-    "pyairtable.api.enterprise:DeleteUsersResponse.Error": "operations:delete-users-by-email:response:schema:@errors:items",
-    "pyairtable.api.enterprise:ManageUsersResponse": "operations:manage-user-membership:response:schema",
-    "pyairtable.api.enterprise:ManageUsersResponse.Error": "operations:manage-user-membership:response:schema:@errors:items",
-    "pyairtable.api.enterprise:MoveError": "operations:move-workspaces:response:schema:@errors:items",
-    "pyairtable.api.enterprise:MoveGroupsResponse": "operations:move-user-groups:response:schema",
-    "pyairtable.api.enterprise:MoveWorkspacesResponse": "operations:move-workspaces:response:schema",
-    "pyairtable.models.audit:AuditLogResponse": "operations:audit-log-events:response:schema",
-    "pyairtable.models.audit:AuditLogEvent": "operations:audit-log-events:response:schema:@events:items",
-    "pyairtable.models.audit:AuditLogEvent.Context": "operations:audit-log-events:response:schema:@events:items:@context",
-    "pyairtable.models.audit:AuditLogEvent.Origin": "operations:audit-log-events:response:schema:@events:items:@origin",
-    "pyairtable.models.audit:AuditLogActor": "schemas:audit-log-actor",
-    "pyairtable.models.audit:AuditLogActor.UserInfo": "schemas:audit-log-actor:@user",
-    "pyairtable.models.collaborator:Collaborator": "operations:list-comments:response:schema:@comments:items:@author",
-    "pyairtable.models.comment:Comment": "operations:list-comments:response:schema:@comments:items",
-    "pyairtable.models.comment:Reaction": "operations:list-comments:response:schema:@comments:items:@reactions:items",
-    "pyairtable.models.comment:Reaction.EmojiInfo": "operations:list-comments:response:schema:@comments:items:@reactions:items:@emoji",
-    "pyairtable.models.comment:Reaction.ReactingUser": "operations:list-comments:response:schema:@comments:items:@reactions:items:@reactingUser",
-    "pyairtable.models.comment:Mentioned": "schemas:user-mentioned",
-    "pyairtable.models.schema:BaseSchema": "operations:get-base-schema:response:schema",
-    "pyairtable.models.schema:TableSchema": "schemas:table-model",
-    "pyairtable.models.schema:Bases": "operations:list-bases:response:schema",
-    "pyairtable.models.schema:Bases.Info": "operations:list-bases:response:schema:@bases:items",
-    "pyairtable.models.schema:BaseCollaborators": "operations:get-base-collaborators:response:schema",
-    "pyairtable.models.schema:BaseCollaborators.IndividualCollaborators": "operations:get-base-collaborators:response:schema:@individualCollaborators",
-    "pyairtable.models.schema:BaseCollaborators.GroupCollaborators": "operations:get-base-collaborators:response:schema:@groupCollaborators",
-    "pyairtable.models.schema:BaseCollaborators.InterfaceCollaborators": "operations:get-base-collaborators:response:schema:@interfaces:*",
-    "pyairtable.models.schema:BaseCollaborators.InviteLinks": "operations:get-base-collaborators:response:schema:@inviteLinks",
-    "pyairtable.models.schema:BaseShares": "operations:list-shares:response:schema",
-    "pyairtable.models.schema:BaseShares.Info": "operations:list-shares:response:schema:@shares:items",
-    "pyairtable.models.schema:ViewSchema": "operations:get-view-metadata:response:schema",
-    "pyairtable.models.schema:InviteLink": "schemas:invite-link",
-    "pyairtable.models.schema:WorkspaceInviteLink": "schemas:invite-link",
-    "pyairtable.models.schema:InterfaceInviteLink": "schemas:invite-link",
-    "pyairtable.models.schema:EnterpriseInfo": "operations:get-enterprise:response:schema",
-    "pyairtable.models.schema:EnterpriseInfo.EmailDomain": "operations:get-enterprise:response:schema:@emailDomains:items",
-    "pyairtable.models.schema:EnterpriseInfo.AggregatedIds": "operations:get-enterprise:response:schema:@aggregated",
-    "pyairtable.models.schema:WorkspaceCollaborators": "operations:get-workspace-collaborators:response:schema",
-    "pyairtable.models.schema:WorkspaceCollaborators.Restrictions": "operations:get-workspace-collaborators:response:schema:@workspaceRestrictions",
-    "pyairtable.models.schema:WorkspaceCollaborators.GroupCollaborators": "operations:get-workspace-collaborators:response:schema:@groupCollaborators",
-    "pyairtable.models.schema:WorkspaceCollaborators.IndividualCollaborators": "operations:get-workspace-collaborators:response:schema:@individualCollaborators",
-    "pyairtable.models.schema:WorkspaceCollaborators.InviteLinks": "operations:get-workspace-collaborators:response:schema:@inviteLinks",
-    "pyairtable.models.schema:GroupCollaborator": "schemas:group-collaborator",
-    "pyairtable.models.schema:IndividualCollaborator": "schemas:individual-collaborator",
-    "pyairtable.models.schema:BaseGroupCollaborator": "schemas:base-group-collaborator",
-    "pyairtable.models.schema:BaseIndividualCollaborator": "schemas:base-individual-collaborator",
-    "pyairtable.models.schema:BaseInviteLink": "schemas:base-invite-link",
-    "pyairtable.models.schema:Collaborations": "schemas:collaborations",
-    "pyairtable.models.schema:Collaborations.BaseCollaboration": "schemas:collaborations:@baseCollaborations:items",
-    "pyairtable.models.schema:Collaborations.InterfaceCollaboration": "schemas:collaborations:@interfaceCollaborations:items",
-    "pyairtable.models.schema:Collaborations.WorkspaceCollaboration": "schemas:collaborations:@workspaceCollaborations:items",
-    "pyairtable.models.schema:UserInfo": "operations:get-user-by-id:response:schema",
-    "pyairtable.models.schema:UserInfo.AggregatedIds": "operations:get-user-by-id:response:schema:@aggregated",
-    "pyairtable.models.schema:UserInfo.DescendantIds": "operations:get-user-by-id:response:schema:@descendants:*",
-    "pyairtable.models.schema:UserGroup": "operations:get-user-group:response:schema",
-    "pyairtable.models.schema:UserGroup.Member": "operations:get-user-group:response:schema:@members:items",
-    "pyairtable.models.webhook:Webhook": "operations:list-webhooks:response:schema:@webhooks:items",
-    "pyairtable.models.webhook:WebhookNotificationResult": "schemas:webhooks-notification",
-    "pyairtable.models.webhook:WebhookError": "schemas:webhooks-notification:@error",
-    "pyairtable.models.webhook:WebhookPayloads": "operations:list-webhook-payloads:response:schema",
-    "pyairtable.models.webhook:WebhookPayload": "schemas:webhooks-payload",
-    "pyairtable.models.webhook:WebhookPayload.ActionMetadata": "schemas:webhooks-action",
-    "pyairtable.models.webhook:WebhookPayload.FieldChanged": "schemas:webhooks-table-changed:@changedFieldsById:*",
-    "pyairtable.models.webhook:WebhookPayload.FieldInfo": "schemas:webhooks-table-changed:@changedFieldsById:*:@current",
-    "pyairtable.models.webhook:WebhookPayload.RecordChanged": "schemas:webhooks-changed-record:*",
-    "pyairtable.models.webhook:WebhookPayload.RecordCreated": "schemas:webhooks-created-record:*",
-    "pyairtable.models.webhook:WebhookPayload.TableChanged": "schemas:webhooks-table-changed",
-    "pyairtable.models.webhook:WebhookPayload.TableChanged.ChangedMetadata": "schemas:webhooks-table-changed:@changedMetadata",
-    "pyairtable.models.webhook:WebhookPayload.TableInfo": "schemas:webhooks-table-changed:@changedMetadata:@current",
-    "pyairtable.models.webhook:WebhookPayload.TableCreated": "schemas:webhooks-table-created",
-    "pyairtable.models.webhook:WebhookPayload.ViewChanged": "schemas:webhooks-table-changed:@changedViewsById:*",
-    "pyairtable.models.webhook:CreateWebhook": "operations:create-a-webhook:request:schema",
-    "pyairtable.models.webhook:CreateWebhookResponse": "operations:create-a-webhook:response:schema",
-    "pyairtable.models.webhook:WebhookSpecification": "operations:create-a-webhook:request:schema:@specification",
-    "pyairtable.models.webhook:WebhookSpecification.Options": "schemas:webhooks-specification",
-    "pyairtable.models.webhook:WebhookSpecification.Includes": "schemas:webhooks-specification:@includes",
-    "pyairtable.models.webhook:WebhookSpecification.Filters": "schemas:webhooks-specification:@filters",
-    "pyairtable.models.webhook:WebhookSpecification.SourceOptions": "schemas:webhooks-specification:@filters:@sourceOptions",
-    "pyairtable.models.webhook:WebhookSpecification.SourceOptions.FormSubmission": "schemas:webhooks-specification:@filters:@sourceOptions:@formSubmission",
-    "pyairtable.models.webhook:WebhookSpecification.SourceOptions.FormPageSubmission": "schemas:webhooks-specification:@filters:@sourceOptions:@formPageSubmission",
-    "pyairtable.models.schema:TableSchema.DateDependency": "schemas:date-dependency-settings",
+    "pyairtable.api.enterprise:UserRemoved": "remove-user-from-enterprise.response",
+    "pyairtable.api.enterprise:UserRemoved.Shared": "remove-user-from-enterprise.response/@shared",
+    "pyairtable.api.enterprise:UserRemoved.Shared.Workspace": "remove-user-from-enterprise.response/@shared/@workspaces/items",
+    "pyairtable.api.enterprise:UserRemoved.Unshared": "remove-user-from-enterprise.response/@unshared",
+    "pyairtable.api.enterprise:UserRemoved.Unshared.Base": "remove-user-from-enterprise.response/@unshared/@bases/items",
+    "pyairtable.api.enterprise:UserRemoved.Unshared.Interface": "remove-user-from-enterprise.response/@unshared/@interfaces/items",
+    "pyairtable.api.enterprise:UserRemoved.Unshared.Workspace": "remove-user-from-enterprise.response/@unshared/@workspaces/items",
+    "pyairtable.api.enterprise:DeleteUsersResponse": "delete-users-by-email.response",
+    "pyairtable.api.enterprise:DeleteUsersResponse.UserInfo": "delete-users-by-email.response/@deletedUsers/items",
+    "pyairtable.api.enterprise:DeleteUsersResponse.Error": "delete-users-by-email.response/@errors/items",
+    "pyairtable.api.enterprise:ManageUsersResponse": "manage-user-membership.response",
+    "pyairtable.api.enterprise:ManageUsersResponse.Error": "manage-user-membership.response/@errors/items",
+    "pyairtable.api.enterprise:MoveError": "move-workspaces.response/@errors/items",
+    "pyairtable.api.enterprise:MoveGroupsResponse": "move-user-groups.response",
+    "pyairtable.api.enterprise:MoveWorkspacesResponse": "move-workspaces.response",
+    "pyairtable.models.audit:AuditLogResponse": "audit-log-events.response",
+    "pyairtable.models.audit:AuditLogEvent": "audit-log-events.response/@events/items",
+    "pyairtable.models.audit:AuditLogEvent.Context": "audit-log-events.response/@events/items/@context",
+    "pyairtable.models.audit:AuditLogEvent.Origin": "audit-log-events.response/@events/items/@origin",
+    "pyairtable.models.audit:AuditLogActor": "schemas/audit-log-actor",
+    "pyairtable.models.audit:AuditLogActor.UserInfo": "schemas/audit-log-actor/@user",
+    "pyairtable.models.collaborator:Collaborator": "list-comments.response/@comments/items/@author",
+    "pyairtable.models.comment:Comment": "list-comments.response/@comments/items",
+    "pyairtable.models.comment:Reaction": "list-comments.response/@comments/items/@reactions/items",
+    "pyairtable.models.comment:Reaction.EmojiInfo": "list-comments.response/@comments/items/@reactions/items/@emoji",
+    "pyairtable.models.comment:Reaction.ReactingUser": "list-comments.response/@comments/items/@reactions/items/@reactingUser",
+    "pyairtable.models.comment:Mentioned": "schemas/user-mentioned",
+    "pyairtable.models.schema:BaseSchema": "get-base-schema.response",
+    "pyairtable.models.schema:TableSchema": "schemas/table-model",
+    "pyairtable.models.schema:Bases": "list-bases.response",
+    "pyairtable.models.schema:Bases.Info": "list-bases.response/@bases/items",
+    "pyairtable.models.schema:BaseCollaborators": "get-base-collaborators.response",
+    "pyairtable.models.schema:BaseCollaborators.IndividualCollaborators": "get-base-collaborators.response/@individualCollaborators",
+    "pyairtable.models.schema:BaseCollaborators.GroupCollaborators": "get-base-collaborators.response/@groupCollaborators",
+    "pyairtable.models.schema:BaseCollaborators.InterfaceCollaborators": "get-base-collaborators.response/@interfaces/*",
+    "pyairtable.models.schema:BaseCollaborators.InviteLinks": "get-base-collaborators.response/@inviteLinks",
+    "pyairtable.models.schema:BaseCollaborators.SensitivityLabel": "get-base-collaborators.response/@sensitivityLabel",
+    "pyairtable.models.schema:BaseShares": "list-shares.response",
+    "pyairtable.models.schema:BaseShares.Info": "list-shares.response/@shares/items",
+    "pyairtable.models.schema:ViewSchema": "get-view-metadata.response",
+    "pyairtable.models.schema:InviteLink": "schemas/invite-link",
+    "pyairtable.models.schema:WorkspaceInviteLink": "schemas/invite-link",
+    "pyairtable.models.schema:InterfaceInviteLink": "schemas/invite-link",
+    "pyairtable.models.schema:EnterpriseInfo": "get-enterprise.response",
+    "pyairtable.models.schema:EnterpriseInfo.EmailDomain": "get-enterprise.response/@emailDomains/items",
+    "pyairtable.models.schema:EnterpriseInfo.AggregatedIds": "get-enterprise.response/@aggregated",
+    "pyairtable.models.schema:WorkspaceCollaborators": "get-workspace-collaborators.response",
+    "pyairtable.models.schema:WorkspaceCollaborators.Restrictions": "get-workspace-collaborators.response/@workspaceRestrictions",
+    "pyairtable.models.schema:WorkspaceCollaborators.GroupCollaborators": "get-workspace-collaborators.response/@groupCollaborators",
+    "pyairtable.models.schema:WorkspaceCollaborators.IndividualCollaborators": "get-workspace-collaborators.response/@individualCollaborators",
+    "pyairtable.models.schema:WorkspaceCollaborators.InviteLinks": "get-workspace-collaborators.response/@inviteLinks",
+    "pyairtable.models.schema:GroupCollaborator": "schemas/group-collaborator",
+    "pyairtable.models.schema:IndividualCollaborator": "schemas/individual-collaborator",
+    "pyairtable.models.schema:BaseGroupCollaborator": "schemas/base-group-collaborator",
+    "pyairtable.models.schema:BaseIndividualCollaborator": "schemas/base-individual-collaborator",
+    "pyairtable.models.schema:BaseInviteLink": "schemas/base-invite-link",
+    "pyairtable.models.schema:Collaborations": "schemas/collaborations",
+    "pyairtable.models.schema:Collaborations.BaseCollaboration": "schemas/collaborations/@baseCollaborations/items",
+    "pyairtable.models.schema:Collaborations.InterfaceCollaboration": "schemas/collaborations/@interfaceCollaborations/items",
+    "pyairtable.models.schema:Collaborations.WorkspaceCollaboration": "schemas/collaborations/@workspaceCollaborations/items",
+    "pyairtable.models.schema:UserInfo": "get-user-by-id.response",
+    "pyairtable.models.schema:UserInfo.AggregatedIds": "get-user-by-id.response/@aggregated",
+    "pyairtable.models.schema:UserInfo.DescendantIds": "get-user-by-id.response/@descendants/*",
+    "pyairtable.models.schema:UserGroup": "get-user-group.response",
+    "pyairtable.models.schema:UserGroup.Member": "get-user-group.response/@members/items",
+    "pyairtable.models.webhook:Webhook": "list-webhooks.response/@webhooks/items",
+    "pyairtable.models.webhook:WebhookNotificationResult": "schemas/webhooks-notification",
+    "pyairtable.models.webhook:WebhookError": "schemas/webhooks-notification/@error",
+    "pyairtable.models.webhook:WebhookPayloads": "list-webhook-payloads.response",
+    "pyairtable.models.webhook:WebhookPayload": "schemas/webhooks-payload",
+    "pyairtable.models.webhook:WebhookPayload.ActionMetadata": "schemas/webhooks-action",
+    "pyairtable.models.webhook:WebhookPayload.FieldChanged": "schemas/webhooks-table-changed/@changedFieldsById/*",
+    "pyairtable.models.webhook:WebhookPayload.FieldInfo": "schemas/webhooks-table-changed/@changedFieldsById/*/@current",
+    "pyairtable.models.webhook:WebhookPayload.RecordChanged": "schemas/webhooks-changed-record/*",
+    "pyairtable.models.webhook:WebhookPayload.RecordCreated": "schemas/webhooks-created-record/*",
+    "pyairtable.models.webhook:WebhookPayload.TableChanged": "schemas/webhooks-table-changed",
+    "pyairtable.models.webhook:WebhookPayload.TableChanged.ChangedMetadata": "schemas/webhooks-table-changed/@changedMetadata",
+    "pyairtable.models.webhook:WebhookPayload.TableInfo": "schemas/webhooks-table-changed/@changedMetadata/@current",
+    "pyairtable.models.webhook:WebhookPayload.TableCreated": "schemas/webhooks-table-created",
+    "pyairtable.models.webhook:WebhookPayload.ViewChanged": "schemas/webhooks-table-changed/@changedViewsById/*",
+    "pyairtable.models.webhook:CreateWebhook": "create-a-webhook.request",
+    "pyairtable.models.webhook:CreateWebhookResponse": "create-a-webhook.response",
+    "pyairtable.models.webhook:WebhookSpecification": "create-a-webhook.request/@specification",
+    "pyairtable.models.webhook:WebhookSpecification.Options": "schemas/webhooks-specification",
+    "pyairtable.models.webhook:WebhookSpecification.Includes": "schemas/webhooks-specification/@includes",
+    "pyairtable.models.webhook:WebhookSpecification.Filters": "schemas/webhooks-specification/@filters",
+    "pyairtable.models.webhook:WebhookSpecification.SourceOptions": "schemas/webhooks-specification/@filters/@sourceOptions",
+    "pyairtable.models.webhook:WebhookSpecification.SourceOptions.FormSubmission": "schemas/webhooks-specification/@filters/@sourceOptions/@formSubmission",
+    "pyairtable.models.webhook:WebhookSpecification.SourceOptions.FormPageSubmission": "schemas/webhooks-specification/@filters/@sourceOptions/@formPageSubmission",
+    "pyairtable.models.schema:TableSchema.DateDependency": "schemas/date-dependency-settings",
 }
 
 IGNORED = [
@@ -124,23 +126,43 @@ IGNORED = [
 ]
 
 
-def main() -> None:
-    initdata = get_api_data()
-    identify_missing_fields(initdata)
-    identify_unscanned_classes(initdata)
+@click.command()
+@click.option(
+    "--save",
+    "save_apidata",
+    help="Save API schema information to a file.",
+    type=click.Path(writable=True),
+)
+def main(save_apidata: str | None) -> None:
+    api_data = get_api_data()
+    if save_apidata:
+        with open(save_apidata, "w") as f:
+            json.dump(api_data, f, indent=2, sort_keys=True)
+
+    identify_missing_fields(api_data)
+    identify_unscanned_classes(api_data)
 
 
-def identify_missing_fields(initdata: "ApiData") -> None:
+def identify_missing_fields(api_data: "ApiData") -> None:
     issues: List[str] = []
 
     # Find missing/extra fields
-    for model_path, initdata_path in SCAN_MODELS.items():
+    for model_path, data_path in SCAN_MODELS.items():
         modname, clsname = model_path.split(":", 1)
         model_module = importlib.import_module(modname)
         model_cls = attrgetter(clsname)(model_module)
-        initdata_path = initdata_path.replace(":@", ":properties:")
-        initdata_path = re.sub(r":\*(:|$)", r":additionalProperties\1", initdata_path)
-        issues.extend(scan_schema(model_cls, initdata.get_nested(initdata_path)))
+        # Use obj/@thing as shorthand for obj/properties/thing
+        data_path = data_path.replace("/@", "/properties/")
+        # Use obj/* as shorthand for obj/additionalProperties
+        data_path = re.sub(r"/\*(/|$)", r"/additionalProperties\1", data_path)
+        # Use list-bases.request as shorthand for operations/list-bases/request/schema
+        # and list-bases.response as shorthand for operations/list-bases/response/schema
+        data_path = re.sub(
+            r"(^|/)([a-zA-Z_-]+)\.(request|response)(/|$)",
+            r"\1operations/\2/\3/schema\4",
+            data_path,
+        )
+        issues.extend(scan_schema(model_cls, api_data.get_nested(data_path)))
 
     if not issues:
         print("No missing/extra fields found in scanned classes")
@@ -149,7 +171,7 @@ def identify_missing_fields(initdata: "ApiData") -> None:
             print(issue)
 
 
-def identify_unscanned_classes(initdata: "ApiData") -> None:
+def identify_unscanned_classes(api_data: "ApiData") -> None:
     issues: List[str] = []
 
     # Find unscanned model classes
@@ -191,7 +213,7 @@ class ApiData(Dict[str, Any]):
             return self.by_model_name
         return super().__getitem__(key)
 
-    def get_nested(self, path: str, separator: str = ":") -> Any:
+    def get_nested(self, path: str, separator: str = "/") -> Any:
         """
         Retrieves nested objects with a path-like syntax.
         """
@@ -253,7 +275,7 @@ class ApiData(Dict[str, Any]):
         Retrieve a model schema by name.
         """
         return self.collapse_schema(
-            self.get_nested(f"openApi:components:schemas:{name}")
+            self.get_nested(f"openApi/components/schemas/{name}")
         )
 
     def collapse_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
