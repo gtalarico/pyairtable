@@ -445,3 +445,100 @@ def test_workspace_restrictions(workspace, mock_workspace_metadata, requests_moc
         "inviteCreationRestriction": "unrestricted",
         "shareCreationRestriction": "onlyOwners",
     }
+
+
+def test_save_date_dependency_settings(api, base, requests_mock):
+    table_id = fake_id("tbl")
+
+    from pyairtable import orm
+
+    class TaskModel(orm.Model):
+        # Used to test that add_date_dependency accepts an ORM field.
+        class Meta:
+            api_key = api.api_key
+            base_id = base.id
+            table_name = "Tasks"
+
+        duration = orm.fields.IntegerField("Duration")
+
+    obj = {
+        "id": table_id,
+        "name": "Tasks",
+        "description": "",
+        "primaryFieldId": "fldName",
+        "views": [],
+        "fields": [
+            {
+                "id": "fldName",
+                "name": "Name",
+                "type": "singleLineText",
+                "options": {},
+            },
+            {
+                "id": "fldDepends",
+                "name": "Depends",
+                "type": "multipleRecordLinks",
+                "options": {
+                    "isReversed": False,
+                    "linkedTableId": table_id,
+                    "prefersSingleRecordLink": False,
+                    "inverseLinkFieldId": None,
+                    "viewIdForRecordSelection": None,
+                },
+            },
+            {
+                "id": "fldStartDate",
+                "name": "Start Date",
+                "type": "date",
+                "options": {},
+            },
+            {
+                "id": "fldEndDate",
+                "name": "End Date",
+                "type": "date",
+                "options": {},
+            },
+            {
+                "id": "fldDuration",
+                "name": "Duration",
+                "type": "number",
+                "options": {},
+            },
+        ],
+    }
+    table_schema = schema.TableSchema.from_api(obj, api, context={"base": base})
+    m = requests_mock.patch(table_schema._url, json=obj)
+    table_schema.set_date_dependency(
+        start_date_field="fldStartDate",
+        end_date_field="End Date",
+        duration_field=TaskModel.duration,
+        rescheduling_mode="none",
+    )
+    assert m.call_count == 0
+
+    table_schema.save()
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "name": "Tasks",
+        "description": "",
+        "dateDependencySettings": {
+            "startDateFieldId": "fldStartDate",
+            "endDateFieldId": "fldEndDate",
+            "durationFieldId": "fldDuration",
+            "reschedulingMode": "none",
+            "isEnabled": True,
+            "shouldSkipWeekendsAndHolidays": False,
+            "holidays": [],
+        },
+    }
+
+
+def test_save_date_dependency_settings__invalid_field(table_schema):
+    with pytest.raises(KeyError, match=r"^'invalid_field'$"):
+        table_schema.set_date_dependency(
+            start_date_field="Name",
+            end_date_field="Name",
+            duration_field="Name",
+            predecessor_field="invalid_field",
+            rescheduling_mode="none",
+        )

@@ -235,16 +235,16 @@ class CanUpdateModel(RestfulModel):
             kwargs.pop("reload_after_save", cls.__reload_after_save)
         )
         if cls.__writable:
-            _append_docstring_text(
+            _append_docstring_refs(
                 cls,
-                "The following fields can be modified and saved: "
-                + ", ".join(f"``{field}``" for field in cls.__writable),
+                "The following fields can be modified and saved",
+                cls.__writable,
             )
         if cls.__readonly:
-            _append_docstring_text(
+            _append_docstring_refs(
                 cls,
-                "The following fields are read-only and cannot be modified:\n"
-                + ", ".join(f"``{field}``" for field in cls.__readonly),
+                "The following fields are read-only and cannot be modified",
+                cls.__readonly,
             )
         super().__init_subclass__(**kwargs)
 
@@ -284,6 +284,24 @@ class CanUpdateModel(RestfulModel):
                 raise AttributeError(name)
 
         super().__setattr__(name, value)
+
+
+def _append_docstring_refs(
+    cls: Type[CanUpdateModel],
+    explanation: str,
+    field_names: Iterable[str],
+) -> None:
+    """
+    Used by CanUpdateModel to append a list of field names to the class docstring.
+    """
+    field_refs = [
+        f":attr:`~{cls.__module__}.{cls.__qualname__}.{field}`" for field in field_names
+    ]
+    _append_docstring_text(
+        cls,
+        f"{explanation}: " + ", ".join(field_refs),
+        before_re=r"^\s+Usage:",
+    )
 
 
 def rebuild_models(
