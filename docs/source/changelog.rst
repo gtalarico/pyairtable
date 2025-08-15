@@ -2,6 +2,12 @@
 Changelog
 =========
 
+3.2.0 (2025-08-17)
+------------------------
+
+* Added several new fields returned in metadata models.
+  - `PR #434 <https://github.com/gtalarico/pyairtable/pull/434>`_
+
 3.1.1 (2025-04-07)
 ------------------------
 
