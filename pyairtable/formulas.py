@@ -10,7 +10,7 @@ import re
 import warnings
 from decimal import Decimal
 from fractions import Fraction
-from typing import Any, ClassVar, Iterable, List, Optional, Set, Union
+from typing import Any, ClassVar, Iterable, List, Literal, Optional, Set, Union
 
 from typing_extensions import Self as SelfType
 from typing_extensions import TypeAlias
@@ -685,9 +685,15 @@ def CREATED_TIME() -> FunctionCall:
     return FunctionCall('CREATED_TIME')
 
 
-def DATEADD(date: FunctionArg, number: FunctionArg, units: FunctionArg, /) -> FunctionCall:
+DateTimeUnit: TypeAlias = Literal[
+    'milliseconds', 'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', 'quarters', 'years',
+    'ms', 's', 'm', 'h', 'd', 'w', 'M', 'Q', 'y',
+]
+
+
+def DATEADD(date: FunctionArg, number: FunctionArg, units: DateTimeUnit, /) -> FunctionCall:
     """
-    Adds specified "count" units to a datetime. (See `list of shared unit specifiers <https://support.airtable.com/hc/en-us/articles/226061308>`__. For this function we recommend using the full unit specifier for your desired unit.)
+    Adds specified "count" units to a datetime. For this function we recommend using the full unit specifier for your desired unit.)
     """
     return FunctionCall('DATEADD', date, number, units)
 
@@ -699,7 +705,7 @@ def DATESTR(date: FunctionArg, /) -> FunctionCall:
     return FunctionCall('DATESTR', date)
 
 
-def DATETIME_DIFF(date1: FunctionArg, date2: FunctionArg, units: FunctionArg, /) -> FunctionCall:
+def DATETIME_DIFF(date1: FunctionArg, date2: FunctionArg, units: DateTimeUnit, /) -> FunctionCall:
     """
     Returns the difference between datetimes in specified units. The difference between datetimes is determined by subtracting [date2] from [date1]. This means that if [date2] is later than [date1], the resulting value will be negative.
     """
@@ -825,7 +831,7 @@ def IS_BEFORE(date1: FunctionArg, date2: FunctionArg, /) -> FunctionCall:
     return FunctionCall('IS_BEFORE', date1, date2)
 
 
-def IS_SAME(date1: FunctionArg, date2: FunctionArg, unit: FunctionArg, /) -> FunctionCall:
+def IS_SAME(date1: FunctionArg, date2: FunctionArg, unit: DateTimeUnit, /) -> FunctionCall:
     """
     Compares two dates up to a unit and determines whether they are identical. Returns 1 if yes, 0 if no.
     """
