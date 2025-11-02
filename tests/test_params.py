@@ -208,3 +208,34 @@ def test_field_names_to_sorting_dict():
             "direction": "desc",
         },
     ]
+
+
+def test_record_metadata_options(monkeypatch):
+    """Test that OPTIONS_TO_RECORD_METADATA can be extended for future metadata options."""
+    import pyairtable.api.params
+
+    monkeypatch.setattr(
+        pyairtable.api.params,
+        "OPTIONS_TO_RECORD_METADATA",
+        {"count_comments": "commentCount", "future_option": "futureValue"},
+    )
+
+    # Test GET params with multiple recordMetadata options
+    result = options_to_params({"count_comments": True, "future_option": True})
+    assert set(result.get("recordMetadata[]", [])) == {
+        "commentCount",
+        "futureValue",
+    }
+
+    # Test POST JSON with multiple recordMetadata options
+    json_result, _ = options_to_json_and_params(
+        {"count_comments": True, "future_option": True}
+    )
+    assert set(json_result.get("recordMetadata", [])) == {
+        "commentCount",
+        "futureValue",
+    }
+
+    # Test with only one option enabled
+    result = options_to_params({"count_comments": False, "future_option": True})
+    assert result.get("recordMetadata[]") == ["futureValue"]
