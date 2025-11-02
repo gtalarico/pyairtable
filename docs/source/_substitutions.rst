@@ -64,6 +64,10 @@
     key is the field id. This defaults to ``False``, which returns field objects where the key is the field name.
     This behavior can be overridden by passing ``use_field_ids=True`` to :class:`~pyairtable.Api`.
 
+.. |kwarg_count_comments| replace:: If ``True``, the API will include a ``commentCount``
+    field for each record. This allows you to see which records have comments without fetching
+    each record individually. Defaults to ``False``.
+
 .. |kwarg_force_metadata| replace::
     By default, this method will only fetch information from the API if it has not been cached.
     If called with ``force=True`` it will always call the API, and will overwrite any cached values.

@@ -278,6 +278,7 @@ class Table:
             user_locale: |kwarg_user_locale|
             time_zone: |kwarg_time_zone|
             use_field_ids: |kwarg_use_field_ids|
+            count_comments: |kwarg_count_comments|
         """
         if isinstance(formula := options.get("formula"), Formula):
             options["formula"] = to_formula_str(formula)
@@ -312,6 +313,7 @@ class Table:
             user_locale: |kwarg_user_locale|
             time_zone: |kwarg_time_zone|
             use_field_ids: |kwarg_use_field_ids|
+            count_comments: |kwarg_count_comments|
         """
         return [record for page in self.iterate(**options) for record in page]
 
@@ -332,6 +334,7 @@ class Table:
             user_locale: |kwarg_user_locale|
             time_zone: |kwarg_time_zone|
             use_field_ids: |kwarg_use_field_ids|
+            count_comments: |kwarg_count_comments|
         """
         options.update(dict(page_size=1, max_records=1))
         for page in self.iterate(**options):

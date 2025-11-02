@@ -102,6 +102,10 @@ def options_to_params(options: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         A dict of query parameters that can be passed to the ``requests`` library.
     """
+    # Handle count_comments separately since it needs special conversion
+    options = options.copy()
+    count_comments = options.pop("count_comments", False)
+
     params = {_option_to_param(name): value for (name, value) in options.items()}
 
     if "fields" in params:
@@ -111,6 +115,8 @@ def options_to_params(options: Dict[str, Any]) -> Dict[str, Any]:
     if "sort" in params:
         sorting_dict_list = field_names_to_sorting_dict(params.pop("sort"))
         params.update(dict_list_to_request_params("sort", sorting_dict_list))
+    if count_comments:
+        params["recordMetadata[]"] = ["commentCount"]
 
     return params
 
@@ -127,6 +133,10 @@ def options_to_json_and_params(
     Returns:
         A 2-tuple that contains the POST data and the non-POSTable query parameters.
     """
+    # Handle count_comments separately since it needs special conversion
+    options = options.copy()
+    count_comments = options.pop("count_comments", False)
+
     json = {
         _option_to_param(name): value
         for (name, value) in options.items()
@@ -142,5 +152,7 @@ def options_to_json_and_params(
         json["returnFieldsByFieldId"] = bool(json["returnFieldsByFieldId"])
     if "sort" in json:
         json["sort"] = field_names_to_sorting_dict(json.pop("sort"))
+    if count_comments:
+        json["recordMetadata"] = ["commentCount"]
 
     return (json, params)

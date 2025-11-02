@@ -103,6 +103,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         ["use_field_ids", True, "?returnFieldsByFieldId=1"],
         ["use_field_ids", 1, "?returnFieldsByFieldId=1"],
         ["use_field_ids", False, "?returnFieldsByFieldId=0"],
+        ["count_comments", True, "?recordMetadata%5B%5D=commentCount"],
         # TODO
         # [
         #     {"sort": [("Name", "desc"), ("Phone", "asc")]},
@@ -166,6 +167,8 @@ def test_convert_options_to_params(option, value, url_params):
         ["use_field_ids", True, {"returnFieldsByFieldId": True}],
         ["use_field_ids", 1, {"returnFieldsByFieldId": True}],
         ["use_field_ids", False, {"returnFieldsByFieldId": False}],
+        ["count_comments", True, {"recordMetadata": ["commentCount"]}],
+        ["count_comments", False, {}],
         # userLocale and timeZone are not supported via POST, so they return "spare params"
         ["user_locale", "en-US", ({}, {"userLocale": "en-US"})],
         ["time_zone", "America/Chicago", ({}, {"timeZone": "America/Chicago"})],

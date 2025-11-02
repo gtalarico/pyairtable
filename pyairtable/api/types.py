@@ -254,7 +254,7 @@ WritableFieldValue: TypeAlias = Union[
 WritableFields: TypeAlias = Dict[FieldName, WritableFieldValue]
 
 
-class RecordDict(TypedDict):
+class RecordDict(TypedDict, total=False):
     """
     A ``dict`` representing a record returned from the Airtable API.
     See `List records <https://airtable.com/developers/web/api/list-records>`__.
@@ -266,11 +266,20 @@ class RecordDict(TypedDict):
             'createdTime': '2023-05-22T21:24:15.333134Z',
             'fields': {'Name': 'Alice', 'Department': 'Engineering'}
         }
+
+        >>> table.first(count_comments=True)
+        {
+            'id': 'recAdw9EjV90xbW',
+            'createdTime': '2023-05-22T21:24:15.333134Z',
+            'fields': {'Name': 'Alice'},
+            'commentCount': 5
+        }
     """
 
-    id: RecordId
-    createdTime: Timestamp
-    fields: Fields
+    id: Required[RecordId]
+    createdTime: Required[Timestamp]
+    fields: Required[Fields]
+    commentCount: int
 
 
 class CreateRecordDict(TypedDict):
