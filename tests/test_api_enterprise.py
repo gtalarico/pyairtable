@@ -444,6 +444,21 @@ def test_create_descendant(enterprise, enterprise_mocks):
     assert isinstance(descendant, Enterprise)
 
 
+def test_create_workspace(enterprise, requests_mock):
+    workspace_id = fake_id("wsp")
+    m = requests_mock.post(
+        "https://api.airtable.com/v0/meta/workspaces",
+        json={"id": workspace_id},
+    )
+    result = enterprise.create_workspace("My New Workspace")
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "enterpriseAccountId": enterprise.id,
+        "name": "My New Workspace",
+    }
+    assert result == workspace_id
+
+
 def test_move_groups(api, enterprise, enterprise_mocks):
     other_id = fake_id("ent")
     group_ids = [fake_id("ugp") for _ in range(3)]

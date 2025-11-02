@@ -170,3 +170,26 @@ via the following methods.
     >>> enterprise.revoke_admin("usrUserId")
     >>> enterprise.revoke_admin("user@example.com")
     >>> enterprise.revoke_admin(enterprise.user("usrUserId"))
+
+
+Managing workspaces and organizations
+--------------------------------------
+
+You can use pyAirtable to manage workspaces, user groups, and descendant enterprises
+via the following methods.
+
+`Create workspace <https://airtable.com/developers/web/api/create-workspace>`__
+
+    >>> workspace_id = enterprise.create_workspace("My New Workspace")
+
+`Move workspaces <https://airtable.com/developers/web/api/move-workspaces>`__
+
+    >>> enterprise.move_workspaces(["wspId1", "wspId2"], "entTargetEnterpriseId")
+
+`Move user groups <https://airtable.com/developers/web/api/move-user-groups>`__
+
+    >>> enterprise.move_groups(["ugpId1", "ugpId2"], "entTargetEnterpriseId")
+
+`Create descendant enterprise <https://airtable.com/developers/web/api/create-descendant-enterprise>`__
+
+    >>> descendant = enterprise.create_descendant("Descendant Organization Name")
