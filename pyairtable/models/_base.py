@@ -45,7 +45,7 @@ class AirtableModel(pydantic.BaseModel):
 
         # Convert JSON-serializable input data to the types expected by our model.
         # For now this only converts ISO 8601 strings to datetime objects.
-        for field_name, field_model in self.model_fields.items():
+        for field_name, field_model in self.__class__.model_fields.items():
             for name in {field_name, field_model.alias}:
                 if not name or not (value := data.get(name)):
                     continue
