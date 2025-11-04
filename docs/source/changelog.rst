@@ -2,6 +2,11 @@
 Changelog
 =========
 
+3.3.0 (TBA)
+------------------------
+
+* Added support for Python 3.14 and dropped support for Python 3.9.
+
 3.2.0 (2025-08-17)
 ------------------------
 
