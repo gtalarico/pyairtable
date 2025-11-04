@@ -267,7 +267,7 @@ See :ref:`Required Values` for more details.
      - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.RequiredUrlField`
      - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
-.. [[[end]]] (checksum: 3ed2090cb24140caa19860a20b0f5a33)
+.. [[[end]]] (sum: PtIJDLJBQM)
 
 
 Type Annotations
