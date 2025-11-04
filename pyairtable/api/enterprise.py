@@ -29,6 +29,7 @@ from pyairtable.utils import (
 
 if TYPE_CHECKING:
     from pyairtable.api.api import Api
+    from pyairtable.api.workspace import Workspace
 
 
 @enterprise_only
@@ -514,7 +515,7 @@ class Enterprise:
         )
         return MoveWorkspacesResponse.from_api(response, self.api, context=self)
 
-    def create_workspace(self, name: str) -> str:
+    def create_workspace(self, name: str) -> "Workspace":
         """
         Creates a new workspace with the provided name within the enterprise account
         and returns the workspace ID. The requesting user must be an active effective
@@ -536,7 +537,7 @@ class Enterprise:
                 "name": name,
             },
         )
-        return str(response["id"])
+        return self.api.workspace(str(response["id"]))
 
 
 class UserRemoved(AirtableModel):
