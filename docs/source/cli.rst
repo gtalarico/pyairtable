@@ -275,4 +275,4 @@ enterprise groups
       -c, --collaborations  Include collaborations.
       --help                Show this message and exit.
 
-.. [[[end]]] (checksum: 9181d3a8abea1b24cb46cb6e997b08f0)
+.. [[[end]]] (sum: kYHTqKvqGy)
