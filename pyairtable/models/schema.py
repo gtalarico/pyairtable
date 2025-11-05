@@ -1,5 +1,6 @@
 import importlib
 from datetime import datetime
+from enum import Enum
 from functools import partial
 from typing import (
     TYPE_CHECKING,
@@ -28,6 +29,55 @@ from pyairtable.models._base import (
 
 if TYPE_CHECKING:
     from pyairtable import orm
+
+
+class FieldType(str, Enum):
+    """
+    Enumeration of all field types supported by Airtable.
+
+    Usage:
+        >>> from pyairtable.models.schema import FieldType
+        >>> FieldType.SINGLE_LINE_TEXT
+        FieldType('singleLineText')
+    """
+
+    AI_TEXT = "aiText"
+    AUTO_NUMBER = "autoNumber"
+    BARCODE = "barcode"
+    BUTTON = "button"
+    CHECKBOX = "checkbox"
+    COUNT = "count"
+    CREATED_BY = "createdBy"
+    CREATED_TIME = "createdTime"
+    CURRENCY = "currency"
+    DATE = "date"
+    DATE_TIME = "dateTime"
+    DURATION = "duration"
+    EMAIL = "email"
+    EXTERNAL_SYNC_SOURCE = "externalSyncSource"
+    FORMULA = "formula"
+    LAST_MODIFIED_BY = "lastModifiedBy"
+    LAST_MODIFIED_TIME = "lastModifiedTime"
+    MANUAL_SORT = "manualSort"
+    MULTILINE_TEXT = "multilineText"
+    MULTIPLE_ATTACHMENTS = "multipleAttachments"
+    MULTIPLE_COLLABORATORS = "multipleCollaborators"
+    MULTIPLE_LOOKUP_VALUES = "multipleLookupValues"
+    MULTIPLE_RECORD_LINKS = "multipleRecordLinks"
+    MULTIPLE_SELECTS = "multipleSelects"
+    NUMBER = "number"
+    PERCENT = "percent"
+    PHONE_NUMBER = "phoneNumber"
+    RATING = "rating"
+    RICH_TEXT = "richText"
+    ROLLUP = "rollup"
+    SINGLE_COLLABORATOR = "singleCollaborator"
+    SINGLE_LINE_TEXT = "singleLineText"
+    SINGLE_SELECT = "singleSelect"
+    URL = "url"
+
+    def __repr__(self) -> str:
+        return f"FieldType({self.value!r})"
 
 
 FieldSpecifier: TypeAlias = Union[str, "orm.fields.AnyField"]
@@ -755,7 +805,7 @@ class AITextFieldConfig(AirtableModel):
     Field configuration for `AI text <https://airtable.com/developers/web/api/field-model#aitext>`__.
     """
 
-    type: Literal["aiText"]
+    type: Literal[FieldType.AI_TEXT]
     options: "AITextFieldOptions"
 
 
@@ -772,7 +822,7 @@ class AutoNumberFieldConfig(AirtableModel):
     Field configuration for `Auto number <https://airtable.com/developers/web/api/field-model#autonumber>`__.
     """
 
-    type: Literal["autoNumber"]
+    type: Literal[FieldType.AUTO_NUMBER]
 
 
 class BarcodeFieldConfig(AirtableModel):
@@ -780,7 +830,7 @@ class BarcodeFieldConfig(AirtableModel):
     Field configuration for `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`__.
     """
 
-    type: Literal["barcode"]
+    type: Literal[FieldType.BARCODE]
 
 
 class ButtonFieldConfig(AirtableModel):
@@ -788,7 +838,7 @@ class ButtonFieldConfig(AirtableModel):
     Field configuration for `Button <https://airtable.com/developers/web/api/field-model#button>`__.
     """
 
-    type: Literal["button"]
+    type: Literal[FieldType.BUTTON]
 
 
 class CheckboxFieldConfig(AirtableModel):
@@ -796,7 +846,7 @@ class CheckboxFieldConfig(AirtableModel):
     Field configuration for `Checkbox <https://airtable.com/developers/web/api/field-model#checkbox>`__.
     """
 
-    type: Literal["checkbox"]
+    type: Literal[FieldType.CHECKBOX]
     options: "CheckboxFieldOptions"
 
 
@@ -810,7 +860,7 @@ class CountFieldConfig(AirtableModel):
     Field configuration for `Count <https://airtable.com/developers/web/api/field-model#count>`__.
     """
 
-    type: Literal["count"]
+    type: Literal[FieldType.COUNT]
     options: "CountFieldOptions"
 
 
@@ -824,7 +874,7 @@ class CreatedByFieldConfig(AirtableModel):
     Field configuration for `Created by <https://airtable.com/developers/web/api/field-model#createdby>`__.
     """
 
-    type: Literal["createdBy"]
+    type: Literal[FieldType.CREATED_BY]
 
 
 class CreatedTimeFieldConfig(AirtableModel):
@@ -832,7 +882,7 @@ class CreatedTimeFieldConfig(AirtableModel):
     Field configuration for `Created time <https://airtable.com/developers/web/api/field-model#createdtime>`__.
     """
 
-    type: Literal["createdTime"]
+    type: Literal[FieldType.CREATED_TIME]
 
 
 class CurrencyFieldConfig(AirtableModel):
@@ -840,7 +890,7 @@ class CurrencyFieldConfig(AirtableModel):
     Field configuration for `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__.
     """
 
-    type: Literal["currency"]
+    type: Literal[FieldType.CURRENCY]
     options: "CurrencyFieldOptions"
 
 
@@ -854,7 +904,7 @@ class DateFieldConfig(AirtableModel):
     Field configuration for `Date <https://airtable.com/developers/web/api/field-model#dateonly>`__.
     """
 
-    type: Literal["date"]
+    type: Literal[FieldType.DATE]
     options: "DateFieldOptions"
 
 
@@ -867,7 +917,7 @@ class DateTimeFieldConfig(AirtableModel):
     Field configuration for `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__.
     """
 
-    type: Literal["dateTime"]
+    type: Literal[FieldType.DATE_TIME]
     options: "DateTimeFieldOptions"
 
 
@@ -890,7 +940,7 @@ class DurationFieldConfig(AirtableModel):
     Field configuration for `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__.
     """
 
-    type: Literal["duration"]
+    type: Literal[FieldType.DURATION]
     options: "DurationFieldOptions"
 
 
@@ -903,7 +953,7 @@ class EmailFieldConfig(AirtableModel):
     Field configuration for `Email <https://airtable.com/developers/web/api/field-model#email>`__.
     """
 
-    type: Literal["email"]
+    type: Literal[FieldType.EMAIL]
 
 
 class ExternalSyncSourceFieldConfig(AirtableModel):
@@ -911,7 +961,7 @@ class ExternalSyncSourceFieldConfig(AirtableModel):
     Field configuration for `Sync source <https://airtable.com/developers/web/api/field-model#syncsource>`__.
     """
 
-    type: Literal["externalSyncSource"]
+    type: Literal[FieldType.EXTERNAL_SYNC_SOURCE]
     options: "SingleSelectFieldOptions"
 
 
@@ -920,7 +970,7 @@ class FormulaFieldConfig(AirtableModel):
     Field configuration for `Formula <https://airtable.com/developers/web/api/field-model#formula>`__.
     """
 
-    type: Literal["formula"]
+    type: Literal[FieldType.FORMULA]
     options: "FormulaFieldOptions"
 
 
@@ -936,7 +986,7 @@ class LastModifiedByFieldConfig(AirtableModel):
     Field configuration for `Last modified by <https://airtable.com/developers/web/api/field-model#lastmodifiedby>`__.
     """
 
-    type: Literal["lastModifiedBy"]
+    type: Literal[FieldType.LAST_MODIFIED_BY]
 
 
 class LastModifiedTimeFieldConfig(AirtableModel):
@@ -944,7 +994,7 @@ class LastModifiedTimeFieldConfig(AirtableModel):
     Field configuration for `Last modified time <https://airtable.com/developers/web/api/field-model#lastmodifiedtime>`__.
     """
 
-    type: Literal["lastModifiedTime"]
+    type: Literal[FieldType.LAST_MODIFIED_TIME]
     options: "LastModifiedTimeFieldOptions"
 
 
@@ -959,7 +1009,7 @@ class ManualSortFieldConfig(AirtableModel):
     Field configuration for ``manualSort`` field type (not documented).
     """
 
-    type: Literal["manualSort"]
+    type: Literal[FieldType.MANUAL_SORT]
 
 
 class MultilineTextFieldConfig(AirtableModel):
@@ -967,7 +1017,7 @@ class MultilineTextFieldConfig(AirtableModel):
     Field configuration for `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__.
     """
 
-    type: Literal["multilineText"]
+    type: Literal[FieldType.MULTILINE_TEXT]
 
 
 class MultipleAttachmentsFieldConfig(AirtableModel):
@@ -975,7 +1025,7 @@ class MultipleAttachmentsFieldConfig(AirtableModel):
     Field configuration for `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__.
     """
 
-    type: Literal["multipleAttachments"]
+    type: Literal[FieldType.MULTIPLE_ATTACHMENTS]
     options: "MultipleAttachmentsFieldOptions"
 
 
@@ -992,7 +1042,7 @@ class MultipleCollaboratorsFieldConfig(AirtableModel):
     Field configuration for `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__.
     """
 
-    type: Literal["multipleCollaborators"]
+    type: Literal[FieldType.MULTIPLE_COLLABORATORS]
 
 
 class MultipleLookupValuesFieldConfig(AirtableModel):
@@ -1000,7 +1050,7 @@ class MultipleLookupValuesFieldConfig(AirtableModel):
     Field configuration for `Lookup <https://airtable.com/developers/web/api/field-model#lookup>__`.
     """
 
-    type: Literal["multipleLookupValues"]
+    type: Literal[FieldType.MULTIPLE_LOOKUP_VALUES]
     options: "MultipleLookupValuesFieldOptions"
 
 
@@ -1016,7 +1066,7 @@ class MultipleRecordLinksFieldConfig(AirtableModel):
     Field configuration for `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>__`.
     """
 
-    type: Literal["multipleRecordLinks"]
+    type: Literal[FieldType.MULTIPLE_RECORD_LINKS]
     options: "MultipleRecordLinksFieldOptions"
 
 
@@ -1033,7 +1083,7 @@ class MultipleSelectsFieldConfig(AirtableModel):
     Field configuration for `Multiple select <https://airtable.com/developers/web/api/field-model#multiselect>`__.
     """
 
-    type: Literal["multipleSelects"]
+    type: Literal[FieldType.MULTIPLE_SELECTS]
     options: "SingleSelectFieldOptions"
 
 
@@ -1042,7 +1092,7 @@ class NumberFieldConfig(AirtableModel):
     Field configuration for `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__.
     """
 
-    type: Literal["number"]
+    type: Literal[FieldType.NUMBER]
     options: "NumberFieldOptions"
 
 
@@ -1055,7 +1105,7 @@ class PercentFieldConfig(AirtableModel):
     Field configuration for `Percent <https://airtable.com/developers/web/api/field-model#percentnumber>`__.
     """
 
-    type: Literal["percent"]
+    type: Literal[FieldType.PERCENT]
     options: "NumberFieldOptions"
 
 
@@ -1064,7 +1114,7 @@ class PhoneNumberFieldConfig(AirtableModel):
     Field configuration for `Phone <https://airtable.com/developers/web/api/field-model#phone>`__.
     """
 
-    type: Literal["phoneNumber"]
+    type: Literal[FieldType.PHONE_NUMBER]
 
 
 class RatingFieldConfig(AirtableModel):
@@ -1072,7 +1122,7 @@ class RatingFieldConfig(AirtableModel):
     Field configuration for `Rating <https://airtable.com/developers/web/api/field-model#rating>`__.
     """
 
-    type: Literal["rating"]
+    type: Literal[FieldType.RATING]
     options: "RatingFieldOptions"
 
 
@@ -1087,7 +1137,7 @@ class RichTextFieldConfig(AirtableModel):
     Field configuration for `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__.
     """
 
-    type: Literal["richText"]
+    type: Literal[FieldType.RICH_TEXT]
 
 
 class RollupFieldConfig(AirtableModel):
@@ -1095,7 +1145,7 @@ class RollupFieldConfig(AirtableModel):
     Field configuration for `Rollup <https://airtable.com/developers/web/api/field-model#rollup>__`.
     """
 
-    type: Literal["rollup"]
+    type: Literal[FieldType.ROLLUP]
     options: "RollupFieldOptions"
 
 
@@ -1112,7 +1162,7 @@ class SingleCollaboratorFieldConfig(AirtableModel):
     Field configuration for `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`__.
     """
 
-    type: Literal["singleCollaborator"]
+    type: Literal[FieldType.SINGLE_COLLABORATOR]
 
 
 class SingleLineTextFieldConfig(AirtableModel):
@@ -1120,7 +1170,7 @@ class SingleLineTextFieldConfig(AirtableModel):
     Field configuration for `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__.
     """
 
-    type: Literal["singleLineText"]
+    type: Literal[FieldType.SINGLE_LINE_TEXT]
 
 
 class SingleSelectFieldConfig(AirtableModel):
@@ -1128,7 +1178,7 @@ class SingleSelectFieldConfig(AirtableModel):
     Field configuration for `Single select <https://airtable.com/developers/web/api/field-model#select>`__.
     """
 
-    type: Literal["singleSelect"]
+    type: Literal[FieldType.SINGLE_SELECT]
     options: "SingleSelectFieldOptions"
 
 
@@ -1146,7 +1196,7 @@ class UrlFieldConfig(AirtableModel):
     Field configuration for `Url <https://airtable.com/developers/web/api/field-model#urltext>`__.
     """
 
-    type: Literal["url"]
+    type: Literal[FieldType.URL]
 
 
 class UnknownFieldConfig(AirtableModel):

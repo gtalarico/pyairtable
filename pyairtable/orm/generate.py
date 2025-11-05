@@ -19,6 +19,7 @@ import inflection
 from pyairtable.api.base import Base
 from pyairtable.api.table import Table
 from pyairtable.models import schema as S
+from pyairtable.models.schema import FieldType
 from pyairtable.orm import fields
 
 _ANNOTATION_IMPORTS = {
@@ -165,7 +166,7 @@ class FieldBuilder:
         if cls is fields._ListField:
             generic = "str"
 
-        if self.schema.type in ("formula", "rollup"):
+        if self.schema.type in (FieldType.FORMULA, FieldType.ROLLUP):
             assert isinstance(self.schema, (S.FormulaFieldSchema, S.RollupFieldSchema))
             cls = fields.Field
             if self.schema.options.result:
@@ -209,7 +210,7 @@ def lookup_field_type_annotation(schema: S.MultipleLookupValuesFieldSchema) -> s
     if not schema.options.result:
         return "Any"
     lookup_type = schema.options.result.type
-    if lookup_type == "multipleRecordLinks":
+    if lookup_type == FieldType.MULTIPLE_RECORD_LINKS:
         return "str"  # otherwise this will be 'list'
     cls = fields.FIELD_TYPES_TO_CLASSES[lookup_type]
     if isinstance(contained_type := getattr(cls, "contains_type", None), type):
