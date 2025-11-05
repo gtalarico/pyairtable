@@ -29,6 +29,7 @@ from pyairtable.utils import (
 
 if TYPE_CHECKING:
     from pyairtable.api.api import Api
+    from pyairtable.api.workspace import Workspace
 
 
 @enterprise_only
@@ -65,6 +66,9 @@ class Enterprise:
 
         #: URL for moving workspaces between enterprise accounts.
         move_workspaces = meta / "moveWorkspaces"
+
+        #: URL for creating a new workspace.
+        create_workspace = Url("meta/workspaces")
 
         def user(self, user_id: str) -> Url:
             """
@@ -510,6 +514,30 @@ class Enterprise:
             },
         )
         return MoveWorkspacesResponse.from_api(response, self.api, context=self)
+
+    def create_workspace(self, name: str) -> "Workspace":
+        """
+        Creates a new workspace with the provided name within the enterprise account
+        and returns the workspace ID. The requesting user must be an active effective
+        admin of the enterprise account; the created workspace's owner will be the user
+        who makes the request.
+
+        See `Create workspace <https://airtable.com/developers/web/api/create-workspace>`__.
+
+        Args:
+            name: The name of the workspace to be created.
+
+        Returns:
+            The ID of the newly created workspace.
+        """
+        response = self.api.post(
+            self.urls.create_workspace,
+            json={
+                "enterpriseAccountId": self.id,
+                "name": name,
+            },
+        )
+        return self.api.workspace(str(response["id"]))
 
 
 class UserRemoved(AirtableModel):
