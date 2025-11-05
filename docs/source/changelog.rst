@@ -2,10 +2,18 @@
 Changelog
 =========
 
-3.3.0 (TBA)
+3.3.0 (2025-11-05)
 ------------------------
 
+* Added ``count_comments=`` parameter to ``Table.all`` and ``Table.first``.
+  - `PR #441 <https://github.com/gtalarico/pyairtable/pull/441>`_
+* Added support for `Create Workspace <https://airtable.com/developers/web/api/create-workspace>`_
+  via :meth:`Enterprise.create_workspace <pyairtable.Enterprise.create_workspace>`.
+  - `PR #442 <https://github.com/gtalarico/pyairtable/pull/442>`_
 * Added support for Python 3.14 and dropped support for Python 3.9.
+  - `PR #443 <https://github.com/gtalarico/pyairtable/pull/443>`_
+* Added pyairtable.models.schema.FieldType enum.
+  - `PR #444 <https://github.com/gtalarico/pyairtable/pull/444>`_
 
 3.2.0 (2025-08-17)
 ------------------------
