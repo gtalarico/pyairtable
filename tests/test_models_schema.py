@@ -542,3 +542,53 @@ def test_save_date_dependency_settings__invalid_field(table_schema):
             predecessor_field="invalid_field",
             rescheduling_mode="none",
         )
+
+
+def test_field_type_enum():
+    """
+    Test that FieldType enum contains all expected field types.
+    """
+    # Test that enum inherits from str
+    assert isinstance(schema.FieldType.SINGLE_LINE_TEXT, str)
+
+    # Test that enum can be used in string comparisons
+    assert schema.FieldType.SINGLE_LINE_TEXT == "singleLineText"
+
+    # Test that all field config types have corresponding enum values
+    expected_types = {
+        "aiText",
+        "autoNumber",
+        "barcode",
+        "button",
+        "checkbox",
+        "count",
+        "createdBy",
+        "createdTime",
+        "currency",
+        "date",
+        "dateTime",
+        "duration",
+        "email",
+        "externalSyncSource",
+        "formula",
+        "lastModifiedBy",
+        "lastModifiedTime",
+        "manualSort",
+        "multilineText",
+        "multipleAttachments",
+        "multipleCollaborators",
+        "multipleLookupValues",
+        "multipleRecordLinks",
+        "multipleSelects",
+        "number",
+        "percent",
+        "phoneNumber",
+        "rating",
+        "richText",
+        "rollup",
+        "singleCollaborator",
+        "singleLineText",
+        "singleSelect",
+        "url",
+    }
+    assert expected_types == {member.value for member in schema.FieldType}

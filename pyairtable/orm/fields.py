@@ -69,6 +69,7 @@ from pyairtable.exceptions import (
     UnsavedRecordError,
 )
 from pyairtable.models import schema as S
+from pyairtable.models.schema import FieldType
 from pyairtable.orm.lists import AttachmentsList, ChangeTrackingList
 
 if TYPE_CHECKING:
@@ -1410,43 +1411,46 @@ READONLY_FIELDS: Set[Type[AnyField]] = {cls for cls in ALL_FIELDS if cls.readonl
 #: for the ORM to know or detect those fields' types. These two
 #: field type names are mapped to the constant ``NotImplemented``.
 #:
+#: Keys are :class:`~pyairtable.models.schema.FieldType` enum values,
+#: which inherit from ``str`` and can be used in string comparisons.
+#:
 #: :meta hide-value:
 FIELD_TYPES_TO_CLASSES: Dict[str, Type[AnyField]] = {
-    "aiText": AITextField,
-    "autoNumber": AutoNumberField,
-    "barcode": BarcodeField,
-    "button": ButtonField,
-    "checkbox": CheckboxField,
-    "count": CountField,
-    "createdBy": CreatedByField,
-    "createdTime": CreatedTimeField,
-    "currency": CurrencyField,
-    "date": DateField,
-    "dateTime": DatetimeField,
-    "duration": DurationField,
-    "email": EmailField,
-    "externalSyncSource": ExternalSyncSourceField,
-    "formula": NotImplemented,
-    "lastModifiedBy": LastModifiedByField,
-    "lastModifiedTime": LastModifiedTimeField,
-    "lookup": LookupField,
-    "manualSort": ManualSortField,
-    "multilineText": TextField,
-    "multipleAttachments": AttachmentsField,
-    "multipleCollaborators": MultipleCollaboratorsField,
-    "multipleLookupValues": LookupField,
-    "multipleRecordLinks": LinkField,
-    "multipleSelects": MultipleSelectField,
-    "number": NumberField,
-    "percent": PercentField,
-    "phoneNumber": PhoneNumberField,
-    "rating": RatingField,
-    "richText": RichTextField,
-    "rollup": NotImplemented,
-    "singleCollaborator": CollaboratorField,
-    "singleLineText": TextField,
-    "singleSelect": SelectField,
-    "url": UrlField,
+    FieldType.AI_TEXT: AITextField,
+    FieldType.AUTO_NUMBER: AutoNumberField,
+    FieldType.BARCODE: BarcodeField,
+    FieldType.BUTTON: ButtonField,
+    FieldType.CHECKBOX: CheckboxField,
+    FieldType.COUNT: CountField,
+    FieldType.CREATED_BY: CreatedByField,
+    FieldType.CREATED_TIME: CreatedTimeField,
+    FieldType.CURRENCY: CurrencyField,
+    FieldType.DATE: DateField,
+    FieldType.DATE_TIME: DatetimeField,
+    FieldType.DURATION: DurationField,
+    FieldType.EMAIL: EmailField,
+    FieldType.EXTERNAL_SYNC_SOURCE: ExternalSyncSourceField,
+    FieldType.FORMULA: NotImplemented,
+    FieldType.LAST_MODIFIED_BY: LastModifiedByField,
+    FieldType.LAST_MODIFIED_TIME: LastModifiedTimeField,
+    "lookup": LookupField,  # Deprecated alias for multipleLookupValues
+    FieldType.MANUAL_SORT: ManualSortField,
+    FieldType.MULTILINE_TEXT: TextField,
+    FieldType.MULTIPLE_ATTACHMENTS: AttachmentsField,
+    FieldType.MULTIPLE_COLLABORATORS: MultipleCollaboratorsField,
+    FieldType.MULTIPLE_LOOKUP_VALUES: LookupField,
+    FieldType.MULTIPLE_RECORD_LINKS: LinkField,
+    FieldType.MULTIPLE_SELECTS: MultipleSelectField,
+    FieldType.NUMBER: NumberField,
+    FieldType.PERCENT: PercentField,
+    FieldType.PHONE_NUMBER: PhoneNumberField,
+    FieldType.RATING: RatingField,
+    FieldType.RICH_TEXT: RichTextField,
+    FieldType.ROLLUP: NotImplemented,
+    FieldType.SINGLE_COLLABORATOR: CollaboratorField,
+    FieldType.SINGLE_LINE_TEXT: TextField,
+    FieldType.SINGLE_SELECT: SelectField,
+    FieldType.URL: UrlField,
 }
 
 
