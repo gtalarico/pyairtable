@@ -126,6 +126,52 @@ def test_first_none():
     assert contact is None
 
 
+def test_all_with_comment_count():
+    with mock.patch.object(Table, "all") as m_all:
+        m_all.return_value = [
+            {
+                "id": "rec1",
+                "createdTime": NOW,
+                "fields": {"First Name": "Alice"},
+                "commentCount": 5,
+            },
+            {
+                "id": "rec2",
+                "createdTime": NOW,
+                "fields": {"First Name": "Bob"},
+                "commentCount": 0,
+            },
+        ]
+        contacts = Contact.all(count_comments=True)
+
+    # Verify count_comments was passed to Table.all()
+    m_all.assert_called_once()
+    assert m_all.call_args.kwargs.get("count_comments") is True
+
+    # Verify comment_count is populated on instances
+    assert len(contacts) == 2
+    assert contacts[0].comment_count == 5
+    assert contacts[1].comment_count == 0
+
+
+def test_first_with_comment_count():
+    with mock.patch.object(Table, "first") as m_first:
+        m_first.return_value = {
+            "id": "rec1",
+            "createdTime": NOW,
+            "fields": {"First Name": "Alice"},
+            "commentCount": 3,
+        }
+        contact = Contact.first(count_comments=True)
+
+    # Verify count_comments was passed to Table.first()
+    m_first.assert_called_once()
+    assert m_first.call_args.kwargs.get("count_comments") is True
+
+    # Verify comment_count is populated
+    assert contact.comment_count == 3
+
+
 def test_from_record():
     # Fetch = True
     with mock.patch.object(Table, "get") as m_get:

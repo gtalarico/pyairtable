@@ -103,6 +103,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         ["use_field_ids", True, "?returnFieldsByFieldId=1"],
         ["use_field_ids", 1, "?returnFieldsByFieldId=1"],
         ["use_field_ids", False, "?returnFieldsByFieldId=0"],
+        ["count_comments", True, "?recordMetadata%5B%5D=commentCount"],
         # TODO
         # [
         #     {"sort": [("Name", "desc"), ("Phone", "asc")]},
@@ -166,6 +167,8 @@ def test_convert_options_to_params(option, value, url_params):
         ["use_field_ids", True, {"returnFieldsByFieldId": True}],
         ["use_field_ids", 1, {"returnFieldsByFieldId": True}],
         ["use_field_ids", False, {"returnFieldsByFieldId": False}],
+        ["count_comments", True, {"recordMetadata": ["commentCount"]}],
+        ["count_comments", False, {}],
         # userLocale and timeZone are not supported via POST, so they return "spare params"
         ["user_locale", "en-US", ({}, {"userLocale": "en-US"})],
         ["time_zone", "America/Chicago", ({}, {"timeZone": "America/Chicago"})],
@@ -205,3 +208,34 @@ def test_field_names_to_sorting_dict():
             "direction": "desc",
         },
     ]
+
+
+def test_record_metadata_options(monkeypatch):
+    """Test that OPTIONS_TO_RECORD_METADATA can be extended for future metadata options."""
+    import pyairtable.api.params
+
+    monkeypatch.setattr(
+        pyairtable.api.params,
+        "OPTIONS_TO_RECORD_METADATA",
+        {"count_comments": "commentCount", "future_option": "futureValue"},
+    )
+
+    # Test GET params with multiple recordMetadata options
+    result = options_to_params({"count_comments": True, "future_option": True})
+    assert set(result.get("recordMetadata[]", [])) == {
+        "commentCount",
+        "futureValue",
+    }
+
+    # Test POST JSON with multiple recordMetadata options
+    json_result, _ = options_to_json_and_params(
+        {"count_comments": True, "future_option": True}
+    )
+    assert set(json_result.get("recordMetadata", [])) == {
+        "commentCount",
+        "futureValue",
+    }
+
+    # Test with only one option enabled
+    result = options_to_params({"count_comments": False, "future_option": True})
+    assert result.get("recordMetadata[]") == ["futureValue"]

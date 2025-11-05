@@ -1495,7 +1495,7 @@ FieldSchema: TypeAlias = Union[
     UrlFieldSchema,
     UnknownFieldSchema,
 ]
-# [[[end]]] (checksum: ca159bc8c76b1d15a2a57f0e76fb8911)
+# [[[end]]] (sum: yhWbyMdrHR)
 # fmt: on
 
 

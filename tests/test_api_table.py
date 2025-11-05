@@ -250,6 +250,7 @@ def test_all(table, requests_mock, mock_response_list, mock_records):
                 "sort[1][field]": ["Email"],
             },
         ),
+        ({"count_comments": True}, {"recordMetadata[]": ["commentCount"]}),
     ],
 )
 def test_all__params(table, requests_mock, kwargs, expected):
@@ -305,6 +306,38 @@ def test_iterate__formula_conversion(table):
             "formula": "AND({Name}='Alice')",
         },
     )
+
+
+def test_all__count_comments(table, requests_mock):
+    """
+    Test that count_comments parameter properly includes commentCount.
+    """
+    mock_response = {
+        "records": [
+            {
+                "id": "recA",
+                "createdTime": "2023-01-01T00:00:00.000Z",
+                "fields": {"Name": "Alice"},
+                "commentCount": 5,
+            },
+            {
+                "id": "recB",
+                "createdTime": "2023-01-02T00:00:00.000Z",
+                "fields": {"Name": "Bob"},
+                "commentCount": 0,
+            },
+        ]
+    }
+    m = requests_mock.get(table.urls.records, status_code=200, json=mock_response)
+    records = table.all(count_comments=True)
+
+    # Verify the request was made with the correct parameter
+    assert m.last_request.qs == {"recordMetadata[]": ["commentCount"]}
+
+    # Verify the response includes commentCount
+    assert len(records) == 2
+    assert records[0]["commentCount"] == 5
+    assert records[1]["commentCount"] == 0
 
 
 def test_create(table: Table, mock_response_single):

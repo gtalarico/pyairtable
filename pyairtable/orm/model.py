@@ -122,6 +122,10 @@ class Model:
     #: has never been saved to (or fetched from) the API.
     created_time: Optional[datetime.datetime] = None
 
+    #: The number of comments on this record. Only populated if the record was
+    #: fetched with ``count_comments=True``.
+    comment_count: Optional[int] = None
+
     #: A wrapper allowing type-annotated access to ORM configuration.
     meta: ClassVar["_Meta"]
 
@@ -381,6 +385,7 @@ class Model:
         instance._fields = field_values
         instance._fetched = True
         instance.created_time = datetime_from_iso_str(record["createdTime"])
+        instance.comment_count = record.get("commentCount")
         cls._maybe_memoize(instance, memoize)
         return instance
 
