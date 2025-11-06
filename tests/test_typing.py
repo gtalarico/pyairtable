@@ -287,3 +287,12 @@ if TYPE_CHECKING:
     assert_type(F.to_formula(True), F.Formula)
     assert_type(F.to_formula("Bob"), F.Formula)
     assert_type(F.CONCATENATE(1, 2, 3), F.FunctionCall)
+
+    # Test type annotations for pyairtable.utils.Url
+    v = pyairtable.utils.Url("https://example.com")
+    assert v == "https://example.com"
+    assert v / "foo/bar" / "baz" == "https://example.com/foo/bar/baz"
+    assert v // [1, 2, "a", "b"] == "https://example.com/1/2/a/b"
+    assert v & {"a": 1, "b": [2, 3, 4]} == "https://example.com?a=1&b=2&b=3&b=4"
+    assert v.add_path(1, 2, "a", "b") == "https://example.com/1/2/a/b"
+    assert v.add_qs({"a": 1}, b=[2, 3, 4]) == "https://example.com?a=1&b=2&b=3&b=4"
