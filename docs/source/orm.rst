@@ -5,6 +5,10 @@
 ORM
 ==============
 
+.. note::
+
+    Have existing models to import? Run the :ref:`base orm` command in the CLI.
+
 
 Defining Models
 ---------------
