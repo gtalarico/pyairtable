@@ -12,11 +12,7 @@ from pyairtable.models.webhook import Webhook, WebhookNotification, WebhookPaylo
 @pytest.fixture
 def webhook(sample_json, base, api):
     webhook_json = sample_json("Webhook")
-    return Webhook.from_api(
-        api=api,
-        url=f"{base.webhooks_url}/{webhook_json['id']}",
-        obj=webhook_json,
-    )
+    return Webhook.from_api(webhook_json, api, context=base)
 
 
 @pytest.fixture
@@ -35,7 +31,7 @@ def payload_json(sample_json):
 )
 def test_parse(sample_json, clsname):
     cls = attrgetter(clsname)(pyairtable.models.webhook)
-    cls.parse_obj(sample_json(clsname))
+    cls.model_validate(sample_json(clsname))
 
 
 @pytest.mark.parametrize(
@@ -71,7 +67,7 @@ def test_delete(webhook: Webhook, requests_mock):
 
 def test_error_payload(payload_json):
     payload_json.update({"error": True, "code": "INVALID_HOOK"})
-    payload = WebhookPayload.parse_obj(payload_json)
+    payload = WebhookPayload.model_validate(payload_json)
     assert payload.error is True
     assert payload.error_code == "INVALID_HOOK"
 
@@ -186,14 +182,16 @@ def test_notification_from_request(secret):
         "timestamp": "2022-02-01T21:25:05.663Z",
     }
     header = (
-        "hmac-sha256-e26da696a90933647bddc83995c3e1e3bb1c3d8ce1ff61cb7469767d50b2b2d4"
+        "hmac-sha256=e26da696a90933647bddc83995c3e1e3bb1c3d8ce1ff61cb7469767d50b2b2d4"
     )
 
     body = json.dumps(notification_json)
     notification = WebhookNotification.from_request(body, header, secret)
     assert notification.base.id == "app00000000000000"
     assert notification.webhook.id == "ach00000000000000"
-    assert notification.timestamp == "2022-02-01T21:25:05.663Z"
+    assert notification.timestamp == datetime.datetime(
+        2022, 2, 1, 21, 25, 5, 663000, tzinfo=datetime.timezone.utc
+    )
 
     with pytest.raises(ValueError):
         WebhookNotification.from_request("[1,2,3]", header, secret)

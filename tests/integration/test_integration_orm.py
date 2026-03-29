@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -67,7 +67,7 @@ class _Everything(Model):
     formula_nan = f.TextField("Formula NaN", readonly=True)
     addresses = f.LinkField("Address", _Address)
     link_count = f.CountField("Link to Self (Count)")
-    link_self = f.LinkField["_Everything"](
+    link_self = f.SingleLinkField["_Everything"](
         "Link to Self",
         model="test_integration_orm._Everything",
         lazy=False,
@@ -80,14 +80,31 @@ class _Everything(Model):
     created_by = f.CreatedByField("Created By")
     last_modified = f.LastModifiedTimeField("Last Modified")
     last_modified_by = f.LastModifiedByField("Last Modified By")
+    required_barcode = f.RequiredBarcodeField("Barcode")
+    required_collaborator = f.RequiredCollaboratorField("Assignee")
+    required_count = f.RequiredCountField("Count")
+    required_currency = f.RequiredCurrencyField("Dollars")
+    required_date = f.RequiredDateField("Date")
+    required_datetime = f.RequiredDatetimeField("DateTime")
+    required_duration = f.RequiredDurationField("Duration (h:mm)")
+    required_email = f.RequiredEmailField("Email")
+    required_float = f.RequiredFloatField("Decimal 1")
+    required_integer = f.RequiredIntegerField("Integer")
+    required_number = f.RequiredNumberField("Number")
+    required_percent = f.RequiredPercentField("Percent")
+    required_phone = f.RequiredPhoneNumberField("Phone")
+    required_rating = f.RequiredRatingField("Stars")
+    required_rich_text = f.RequiredRichTextField("Notes")
+    required_select = f.RequiredSelectField("Status")
+    required_text = f.RequiredTextField("Name")
+    required_url = f.RequiredUrlField("URL")
 
 
 def _model_fixture(cls, monkeypatch, make_meta):
     monkeypatch.setattr(cls, "Meta", make_meta(cls.__name__.replace("_", "")))
     yield cls
-    table = cls.get_table()
-    for page in table.iterate():
-        table.batch_delete([record["id"] for record in page])
+    for page in cls.meta.table.iterate():
+        cls.meta.table.batch_delete([record["id"] for record in page])
 
 
 @pytest.fixture
@@ -116,16 +133,16 @@ def test_integration_orm(Contact, Address):
         email="email@email.com",
         is_registered=True,
         address=[address],
-        birthday=datetime.utcnow().date(),
-        last_access=datetime.utcnow(),
+        birthday=datetime.now(timezone.utc).date(),
+        last_access=datetime.now(timezone.utc),
     )
 
     assert contact.first_name == "John"
-    assert contact.save()
+    assert contact.save().created
     assert contact.id
 
     contact.first_name = "Not Gui"
-    assert not contact.save()
+    assert not contact.save().created
 
     rv_address = contact.address[0]
     assert rv_address.exists()
@@ -153,7 +170,7 @@ def test_undeclared_fields(make_meta):
         first_name = f.TextField("First Name")
         last_name = f.TextField("Last Name")
 
-    table = Contact.get_table()
+    table = Contact.meta.table
     record = table.create(
         {
             "First Name": "Alice",
@@ -180,7 +197,17 @@ def test_every_field(Everything):
         type(field) for field in vars(Everything).values() if isinstance(field, f.Field)
     }
     for field_class in f.ALL_FIELDS:
-        if field_class in {f.ExternalSyncSourceField}:
+        if field_class in {
+            f.ExternalSyncSourceField,
+            f.AITextField,
+            f.RequiredAITextField,
+            f.ManualSortField,
+            # These are so similar to TextField we don't need to integration test them
+            f.SingleLineTextField,
+            f.MultilineTextField,
+            f.RequiredSingleLineTextField,
+            f.RequiredMultilineTextField,
+        }:
             continue
         assert field_class in classes_used
 
@@ -213,13 +240,13 @@ def test_every_field(Everything):
     record.save()
     assert record.id
     assert record.addresses == []
-    assert record.link_self == []
-    record.link_self = [record]
+    assert record.link_self is None
+    record.link_self = record
     record.save()
 
     # The ORM won't refresh the model's field values after save()
     assert record.formula_integer is None
-    assert record.formula_nan is None
+    assert record.formula_nan == ""
     assert record.link_count is None
     assert record.lookup_error == []
     assert record.lookup_integer == []
@@ -229,3 +256,33 @@ def test_every_field(Everything):
     assert record.link_count == 1
     assert record.lookup_error == [{"error": "#ERROR!"}]
     assert record.lookup_integer == [record.formula_integer]
+
+
+def test_attachments_upload(Everything, valid_img_url, tmp_path):
+    record: _Everything = Everything()
+    record.save()
+
+    # add an attachment via URL
+    record.attachments.append({"url": valid_img_url, "filename": "logo.png"})
+    record.save()
+    assert record.attachments[0]["url"] == valid_img_url
+    record.fetch()
+    assert record.attachments[0]["id"] is not None
+    assert record.attachments[0]["filename"] == "logo.png"
+
+    # add an attachment by uploading content
+    tmp_file = tmp_path / "sample.txt"
+    tmp_file.write_text("Hello, World!")
+    record.attachments.upload(tmp_file)
+    # ensure we got all attachments, not just the latest one
+    assert record.attachments[0]["filename"] == "logo.png"
+    assert record.attachments[0]["type"] == "image/png"
+    assert record.attachments[1]["filename"] == "sample.txt"
+    assert record.attachments[1]["type"] == "text/plain"
+
+    # ensure everything persists/loads correctly after fetch()
+    record.fetch()
+    assert record.attachments[0]["filename"] == "logo.png"
+    assert record.attachments[0]["type"] == "image/png"
+    assert record.attachments[1]["filename"] == "sample.txt"
+    assert record.attachments[1]["type"] == "text/plain"

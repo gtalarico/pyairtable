@@ -10,30 +10,14 @@ NOW = datetime.datetime.now().isoformat()
 
 
 @pytest.fixture
-def comment_json():
-    author = fake_user("author")
-    mentioned = fake_user("mentioned")
-    return {
-        "author": author,
-        "createdTime": NOW,
-        "id": fake_id("com"),
-        "lastUpdatedTime": None,
-        "text": f"Hello, @[{mentioned['id']}]!",
-        "mentioned": {
-            mentioned["id"]: {
-                "displayName": mentioned["name"],
-                "id": mentioned["id"],
-                "email": mentioned["email"],
-                "type": "user",
-            }
-        },
-    }
+def comment_json(sample_json):
+    return sample_json("Comment")
 
 
 @pytest.fixture
 def comment(comment_json, table):
-    url = table.record_url(RECORD_ID, "comments", comment_json["id"])
-    return Comment.from_api(table.api, url, comment_json)
+    record_url = table.urls.record(RECORD_ID)
+    return Comment.from_api(comment_json, table.api, context={"record_url": record_url})
 
 
 @pytest.fixture
@@ -41,18 +25,23 @@ def comments_url(base, table):
     return f"https://api.airtable.com/v0/{base.id}/{table.name}/{RECORD_ID}/comments"
 
 
-def test_parse(comment_json):
-    Comment.parse_obj(comment_json)
+def test_parse(comment):
+    assert isinstance(comment.created_time, datetime.datetime)
+    assert isinstance(comment.last_updated_time, datetime.datetime)
+    assert comment.author.id == "usrLkNDICXNqxSDhG"
+    assert comment.mentioned["usr00000mentioned"].display_name == "Alice Doe"
+    assert comment.reactions[0].emoji == "👍"
 
 
-@pytest.mark.parametrize("attr", ["mentioned", "last_updated_time"])
-def test_missing_attributes(comment_json, attr):
+def test_missing_attributes(comment_json):
     """
     Test that we can parse the payload when missing optional values.
     """
-    del comment_json[Comment.__fields__[attr].alias]
-    comment = Comment.parse_obj(comment_json)
-    assert getattr(comment, attr) is None
+    del comment_json["lastUpdatedTime"]
+    del comment_json["mentioned"]
+    comment = Comment.model_validate(comment_json)
+    assert comment.mentioned == {}
+    assert comment.last_updated_time is None
 
 
 @pytest.mark.parametrize(
@@ -80,7 +69,7 @@ def test_save(comment, requests_mock):
     """
     new_text = "This was changed!"
     mentions = {}
-    modified = dict(comment.dict(by_alias=True), mentioned=mentions, text=new_text)
+    modified = dict(comment._raw, mentioned=mentions, text=new_text)
     m = requests_mock.patch(comment._url, json=modified)
 
     comment.text = "Whatever"

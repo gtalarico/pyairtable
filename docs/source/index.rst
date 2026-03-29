@@ -26,10 +26,12 @@ pyAirtable
 
    getting-started
    tables
+   formulas
    orm
-   webhooks
    metadata
-   migrations
+   webhooks
+   enterprise
+   cli
    api
 
 
@@ -38,6 +40,7 @@ pyAirtable
    :hidden:
 
    about
+   migrations
    changelog
    contributing
    GitHub <https://github.com/gtalarico/pyairtable>

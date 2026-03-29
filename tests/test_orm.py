@@ -1,5 +1,6 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
+from functools import partial
 from operator import itemgetter
 from unittest import mock
 
@@ -10,12 +11,15 @@ from pyairtable import Table
 from pyairtable.orm import Model
 from pyairtable.orm import fields as f
 from pyairtable.testing import fake_meta, fake_record
+from pyairtable.utils import datetime_to_iso_str
+
+NOW = datetime.now().isoformat() + "Z"
 
 
 class Address(Model):
     Meta = fake_meta(table_name="Address")
     street = f.TextField("Street")
-    number = f.TextField("Number")
+    number = f.IntegerField("Number")
 
 
 class Contact(Model):
@@ -23,10 +27,23 @@ class Contact(Model):
     first_name = f.TextField("First Name")
     last_name = f.TextField("Last Name")
     email = f.EmailField("Email")
-    is_registered = f.CheckboxField("Registered")
+    is_registered = f.CheckboxField("Registered?")
     address = f.LinkField("Link", Address, lazy=False)
     birthday = f.DateField("Birthday")
     created_at = f.CreatedTimeField("Created At")
+
+
+@pytest.fixture
+def contact_record():
+    return fake_record(
+        {
+            "First Name": "John",
+            "Last Name": "Doe",
+            "Email": "john@example.com",
+            "Registered?": True,
+            "Birthday": "1970-01-01",
+        }
+    )
 
 
 def test_model_basics():
@@ -44,11 +61,12 @@ def test_model_basics():
 
     # save
     with mock.patch.object(Table, "create") as m_save:
-        m_save.return_value = {"id": "id", "createdTime": "time"}
-        contact.save()
+        m_save.return_value = {"id": "id", "createdTime": NOW}
+        assert contact.save().created
 
     assert m_save.called
     assert contact.id == "id"
+    assert contact.created_time.tzinfo is timezone.utc
 
     # delete
     with mock.patch.object(Table, "delete") as m_delete:
@@ -63,7 +81,7 @@ def test_model_basics():
 
     record = contact.to_record()
     assert record["id"] == contact.id
-    assert record["createdTime"] == contact.created_time
+    assert record["createdTime"] == datetime_to_iso_str(contact.created_time)
     assert record["fields"]["First Name"] == contact.first_name
 
 
@@ -73,7 +91,7 @@ def test_unsupplied_fields():
     """
     a = Address()
     assert a.number is None
-    assert a.street is None
+    assert a.street == ""
 
 
 def test_null_fields():
@@ -82,14 +100,14 @@ def test_null_fields():
     """
     a = Address(number=None, street=None)
     assert a.number is None
-    assert a.street is None
+    assert a.street == ""
 
 
 def test_first():
     with mock.patch.object(Table, "first") as m_first:
         m_first.return_value = {
             "id": "recwnBLPIeQJoYVt4",
-            "createdTime": "",
+            "createdTime": NOW,
             "fields": {
                 "First Name": "X",
                 "Created At": "2014-09-05T12:34:56.000Z",
@@ -108,13 +126,63 @@ def test_first_none():
     assert contact is None
 
 
+def test_all_with_comment_count():
+    with mock.patch.object(Table, "all") as m_all:
+        m_all.return_value = [
+            {
+                "id": "rec1",
+                "createdTime": NOW,
+                "fields": {"First Name": "Alice"},
+                "commentCount": 5,
+            },
+            {
+                "id": "rec2",
+                "createdTime": NOW,
+                "fields": {"First Name": "Bob"},
+                "commentCount": 0,
+            },
+        ]
+        contacts = Contact.all(count_comments=True)
+
+    # Verify count_comments was passed to Table.all()
+    m_all.assert_called_once()
+    assert m_all.call_args.kwargs.get("count_comments") is True
+
+    # Verify comment_count is populated on instances
+    assert len(contacts) == 2
+    assert contacts[0].comment_count == 5
+    assert contacts[1].comment_count == 0
+
+
+def test_first_with_comment_count():
+    with mock.patch.object(Table, "first") as m_first:
+        m_first.return_value = {
+            "id": "rec1",
+            "createdTime": NOW,
+            "fields": {"First Name": "Alice"},
+            "commentCount": 3,
+        }
+        contact = Contact.first(count_comments=True)
+
+    # Verify count_comments was passed to Table.first()
+    m_first.assert_called_once()
+    assert m_first.call_args.kwargs.get("count_comments") is True
+
+    # Verify comment_count is populated
+    assert contact.comment_count == 3
+
+
 def test_from_record():
     # Fetch = True
     with mock.patch.object(Table, "get") as m_get:
         m_get.return_value = {
             "id": "recwnBLPIeQJoYVt4",
-            "createdTime": "",
-            "fields": {"First Name": "X", "Created At": "2014-09-05T12:34:56.000Z"},
+            "createdTime": NOW,
+            "fields": {
+                "First Name": "X",
+                "Birthday": None,
+                "Created At": "2014-09-05T12:34:56.000Z",
+            },
         }
         contact = Contact.from_id("recwnBLPIeQJoYVt4")
 
@@ -130,35 +198,56 @@ def test_from_record():
         assert not contact.first_name == "X"
 
 
-def test_readonly_field_not_saved():
+def test_unmodified_field_not_saved(contact_record):
     """
-    Test that we do not attempt to save readonly fields to the API,
-    but we can retrieve readonly fields and set them on instantiation.
+    Test that we do not attempt to save fields to the API if they are unchanged.
     """
-
-    record = {
-        "id": "recwnBLPIeQJoYVt4",
-        "createdTime": datetime.utcnow().isoformat(),
-        "fields": {
-            "Birthday": "1970-01-01",
-            "Age": 57,
-        },
-    }
-
-    contact = Contact.from_record(record)
-    with mock.patch.object(Table, "update") as m_update:
-        m_update.return_value = record
-        contact.birthday = datetime(2000, 1, 1)
-        contact.save()
-
-    # We should not pass 'Age' to the API
-    m_update.assert_called_once_with(
-        contact.id, {"Birthday": "2000-01-01"}, typecast=True
+    contact = Contact.from_record(contact_record)
+    mock_update_contact = partial(
+        mock.patch.object, Table, "update", return_value=contact_record
     )
+
+    # Do not call update() if the record is unchanged
+    with mock_update_contact() as m_update:
+        result = contact.save()
+        assert not (result.created or result.updated)
+        m_update.assert_not_called()
+
+    # By default, only pass fields which were changed to the API
+    with mock_update_contact() as m_update:
+        contact.email = "john.doe@example.com"
+        contact.save()
+        m_update.assert_called_once_with(
+            contact.id,
+            {"Email": "john.doe@example.com"},
+            typecast=True,
+            use_field_ids=False,
+        )
+
+    # Once saved, the field is no longer marked as changed
+    with mock_update_contact() as m_update:
+        contact.save()
+        m_update.assert_not_called()
+
+    # We can explicitly pass all fields to the API
+    with mock_update_contact() as m_update:
+        contact.save(force=True)
+        m_update.assert_called_once_with(
+            contact.id,
+            {
+                "First Name": "John",
+                "Last Name": "Doe",
+                "Email": "john.doe@example.com",
+                "Registered?": True,
+                "Birthday": "1970-01-01",
+            },
+            typecast=True,
+            use_field_ids=False,
+        )
 
 
 def test_linked_record():
-    record = {"id": "recFake", "createdTime": "", "fields": {"Street": "A"}}
+    record = {"id": "recFake", "createdTime": NOW, "fields": {"Street": "A"}}
     address = Address.from_id("recFake", fetch=False)
 
     # Id Reference
@@ -167,7 +256,7 @@ def test_linked_record():
     assert not contact.address[0].street
 
     with Mocker() as mock:
-        url = Address.get_table().record_url(address.id)
+        url = Address.meta.table.urls.record(address.id)
         mock.get(url, status_code=200, json=record)
         contact.address[0].fetch()
 
@@ -184,13 +273,13 @@ def test_linked_record_can_be_saved(requests_mock, access_linked_records):
     record IDs into instances of the model. This could interfere with save(),
     so this test ensures we don't regress the capability.
     """
-    address_json = fake_record(Number="123", Street="Fake St")
+    address_json = fake_record(Number=123, Street="Fake St")
     address_id = address_json["id"]
-    address_url_re = re.escape(Address.get_table().url + "?filterByFormula=")
+    address_url_re = re.escape(Address.meta.table.urls.records + "?filterByFormula=")
     contact_json = fake_record(Email="alice@example.com", Link=[address_id])
     contact_id = contact_json["id"]
-    contact_url = Contact.get_table().record_url(contact_id)
-    contact_url_re = re.escape(Contact.get_table().url + "?filterByFormula=")
+    contact_url = Contact.meta.table.urls.record(contact_id)
+    contact_url_re = re.escape(Contact.meta.table.urls.records + "?filterByFormula=")
     requests_mock.get(re.compile(address_url_re), json={"records": [address_json]})
     requests_mock.get(re.compile(contact_url_re), json={"records": [contact_json]})
     requests_mock.get(contact_url, json=contact_json)
@@ -201,13 +290,14 @@ def test_linked_record_can_be_saved(requests_mock, access_linked_records):
     if access_linked_records:
         assert contact.address[0].id == address_id
 
-    contact.save()
+    contact.save(force=True)
     assert mock_save.last_request.json() == {
         "fields": {
             "Email": "alice@example.com",
             "Link": [address_id],
         },
         "typecast": True,
+        "returnFieldsByFieldId": False,
     }
 
 
@@ -241,26 +331,26 @@ def test_undeclared_field(requests_mock, test_case):
     """
 
     record = fake_record(
-        Number="123",
+        Number=123,
         Street="Fake St",
         City="Springfield",
         State="IL",
     )
 
     requests_mock.get(
-        Address.get_table().url,
+        Address.meta.table.urls.records,
         status_code=200,
         json={"records": [record]},
     )
     requests_mock.get(
-        Address.get_table().record_url(record["id"]),
+        Address.meta.table.urls.record(record["id"]),
         status_code=200,
         json=record,
     )
 
     _, get_model_instance = test_case
     instance = get_model_instance(Address, record["id"])
-    assert instance.to_record()["fields"] == {"Number": "123", "Street": "Fake St"}
+    assert instance.to_record()["fields"] == {"Number": 123, "Street": "Fake St"}
 
 
 @mock.patch("pyairtable.Table.batch_create")
@@ -270,19 +360,19 @@ def test_batch_save(mock_update, mock_create):
     Test that we can pass multiple unsaved Model instances (or dicts) to batch_save
     and it will create or update them all in as few requests as possible.
     """
-    addr1 = Address(number="123", street="Fake St")
-    addr2 = Address(number="456", street="Fake St")
+    addr1 = Address(number=123, street="Fake St")
+    addr2 = Address(number=456, street="Fake St")
     addr3 = Address.from_record(
         {
             "id": "recExistingRecord",
-            "createdTime": datetime.utcnow().isoformat(),
-            "fields": {"Number": "789", "Street": "Fake St"},
+            "createdTime": datetime.now(timezone.utc).isoformat(),
+            "fields": {"Number": 789, "Street": "Fake St"},
         }
     )
 
     mock_create.return_value = [
-        fake_record(id="abc", Number="123", Street="Fake St"),
-        fake_record(id="def", Number="456", Street="Fake St"),
+        fake_record(id="abc", Number=123, Street="Fake St"),
+        fake_record(id="def", Number=456, Street="Fake St"),
     ]
 
     # Just like model.save(), Model.batch_save() will set IDs on new records.
@@ -293,20 +383,40 @@ def test_batch_save(mock_update, mock_create):
 
     mock_create.assert_called_once_with(
         [
-            {"Number": "123", "Street": "Fake St"},
-            {"Number": "456", "Street": "Fake St"},
+            {"Number": 123, "Street": "Fake St"},
+            {"Number": 456, "Street": "Fake St"},
         ],
         typecast=True,
+        use_field_ids=False,
     )
     mock_update.assert_called_once_with(
         [
             {
                 "id": "recExistingRecord",
-                "fields": {"Number": "789", "Street": "Fake St"},
+                "fields": {"Number": 789, "Street": "Fake St"},
             },
         ],
         typecast=True,
+        use_field_ids=False,
     )
+
+
+@mock.patch("pyairtable.Table.batch_create")
+@mock.patch("pyairtable.Table.batch_update")
+def test_batch_save__only_create(mock_update, mock_create):
+    Address.batch_save([Address(), Address()])
+    assert mock_create.call_count == 1
+    assert mock_update.call_count == 0
+
+
+@mock.patch("pyairtable.Table.batch_create")
+@mock.patch("pyairtable.Table.batch_update")
+def test_batch_save__only_update(mock_update, mock_create):
+    a1 = Address.from_record(fake_record())
+    a2 = Address.from_record(fake_record())
+    Address.batch_save([a1, a2])
+    assert mock_create.call_count == 0
+    assert mock_update.call_count == 1
 
 
 @mock.patch("pyairtable.Table.batch_create")
@@ -361,8 +471,8 @@ def test_batch_delete__unsaved_record(mock_delete):
     receives any models which have not been created yet.
     """
     addresses = [
-        Address.from_record(fake_record(Number="1", Street="Fake St")),
-        Address(number="2", street="Fake St"),
+        Address.from_record(fake_record(Number=1, Street="Fake St")),
+        Address(number=2, street="Fake St"),
     ]
     with pytest.raises(ValueError):
         Address.batch_delete(addresses)

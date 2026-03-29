@@ -20,7 +20,7 @@ The :class:`~pyairtable.orm.Model` class allows you create ORM-style classes for
         last_name = F.TextField("Last Name")
         email = F.EmailField("Email")
         is_registered = F.CheckboxField("Registered")
-        company = F.LinkField("Company", Company, lazy=False)
+        company = F.SingleLinkField("Company", Company, lazy=False)
 
         class Meta:
             base_id = "appaPqizdsNHDvlEm"
@@ -28,9 +28,13 @@ The :class:`~pyairtable.orm.Model` class allows you create ORM-style classes for
             api_key = "keyapikey"
 
 
-Once you have a model, you can create new objects to represent your
-Airtable records. Call :meth:`~pyairtable.orm.Model.save` to save the
-newly created object to the Airtable API.
+Once you have a model, you can query for existing records using the
+``first()`` and ``all()`` methods, which take the same arguments as
+:meth:`Table.first <pyairtable.Table.first>` and :meth:`Table.all <pyairtable.Table.all>`.
+
+You can also create new objects to represent Airtable records you wish
+to create and save. Call :meth:`~pyairtable.orm.Model.save` to save the
+newly created object back to Airtable.
 
     >>> contact = Contact(
     ...     first_name="Mike",
@@ -47,7 +51,6 @@ newly created object to the Airtable API.
     >>> contact.id
     'recS6qSLw0OCA6Xul'
 
-
 You can read and modify attributes, then call :meth:`~pyairtable.orm.Model.save`
 when you're ready to save your changes to the API.
 
@@ -63,7 +66,7 @@ To refresh a record from the API, use :meth:`~pyairtable.orm.Model.fetch`:
     >>> contact.is_registered
     True
 
-Finally, you can use :meth:`~pyairtable.orm.Model.delete` to delete the record:
+Use :meth:`~pyairtable.orm.Model.delete` to delete the record:
 
     >>> contact.delete()
     True
@@ -76,6 +79,21 @@ create, modify, or delete several records at once:
     >>> contacts.append(Contact(first_name="Alice", email="alice@example.com"))
     >>> Contact.batch_save(contacts)
     >>> Contact.batch_delete(contacts)
+
+You can use your model's fields in :doc:`formula expressions <formulas>`.
+ORM models' fields also provide shortcut methods
+:meth:`~pyairtable.orm.fields.Field.eq`,
+:meth:`~pyairtable.orm.fields.Field.ne`,
+:meth:`~pyairtable.orm.fields.Field.gt`,
+:meth:`~pyairtable.orm.fields.Field.gte`,
+:meth:`~pyairtable.orm.fields.Field.lt`, and
+:meth:`~pyairtable.orm.fields.Field.lte`:
+
+    >>> formula = Contact.last_name.eq("Smith") & Contact.is_registered
+    >>> str(formula)
+    "AND({Last Name}='Smith', {Registered})"
+    >>> results = Contact.all(formula=formula)
+    [...]
 
 
 Supported Field Types
@@ -91,17 +109,31 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
     from operator import attrgetter
     from pyairtable.orm import fields
 
-    cog.outl("..")
-    cog.outl(".. list-table::")
-    cog.outl("   :header-rows: 1\n")
-    cog.outl("   * - ORM field class")
-    cog.outl("     - Airtable field type(s)")
+    def cog_class_table(classes):
+        cog.outl(".. list-table::")
+        cog.outl("   :header-rows: 1\n")
+        cog.outl("   * - ORM field class")
+        cog.outl("     - Airtable field type(s)")
+        for cls in classes:
+            links = re.findall(r"`.+? <.*?field-model.*?>`", cls.__doc__ or "")
+            ro = ' 🔒' if cls.readonly else ''
+            cog.outl(f"   * - :class:`~pyairtable.orm.fields.{cls.__name__}`{ro}")
+            cog.outl(f"     - {', '.join(f'{link}__' for link in links) if links else '(undocumented)'}")
 
-    for cls in sorted(fields.ALL_FIELDS, key=attrgetter("__name__")):
-        links = re.findall(r"`.+? <.*?field-model.*?>`", cls.__doc__ or "")
-        ro = ' 🔒' if cls.readonly else ''
-        cog.outl(f"   * - :class:`~pyairtable.orm.fields.{cls.__name__}`{ro}")
-        cog.outl(f"     - {', '.join(f'{link}__' for link in links) if links else '(see docs)'}")
+    classes = sorted(fields.ALL_FIELDS, key=attrgetter("__name__"))
+    optional = [cls for cls in classes if not cls.__name__.startswith("Required")]
+    required = [cls for cls in classes if cls.__name__.startswith("Required")]
+
+    cog.outl("..")  # terminate the comment block
+    cog_class_table(optional)
+    cog.outl("")
+    cog.outl("Airtable does not have a concept of fields that require values,")
+    cog.outl("but pyAirtable allows you to enforce that concept within code")
+    cog.outl("using one of the following field classes.")
+    cog.outl("")
+    cog.outl("See :ref:`Required Values` for more details.")
+    cog.outl("")
+    cog_class_table(required)
     ]]]
 ..
 .. list-table::
@@ -109,6 +141,8 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
 
    * - ORM field class
      - Airtable field type(s)
+   * - :class:`~pyairtable.orm.fields.AITextField` 🔒
+     - `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`__
    * - :class:`~pyairtable.orm.fields.AttachmentsField`
      - `Attachments <https://airtable.com/developers/web/api/field-model#multipleattachment>`__
    * - :class:`~pyairtable.orm.fields.AutoNumberField` 🔒
@@ -136,7 +170,7 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
    * - :class:`~pyairtable.orm.fields.DurationField`
      - `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__
    * - :class:`~pyairtable.orm.fields.EmailField`
-     - `Email <https://airtable.com/developers/web/api/field-model#email>`__
+     - `Email <https://airtable.com/developers/web/api/field-model#emailtext>`__
    * - :class:`~pyairtable.orm.fields.ExternalSyncSourceField` 🔒
      - `Sync source <https://airtable.com/developers/web/api/field-model#syncsource>`__
    * - :class:`~pyairtable.orm.fields.FloatField`
@@ -151,8 +185,12 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
      - `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__
    * - :class:`~pyairtable.orm.fields.LookupField` 🔒
      - `Lookup <https://airtable.com/developers/web/api/field-model#lookup>`__
+   * - :class:`~pyairtable.orm.fields.ManualSortField` 🔒
+     - (undocumented)
+   * - :class:`~pyairtable.orm.fields.MultilineTextField`
+     - `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.MultipleCollaboratorsField`
-     - `Multiple Collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__
+     - `Multiple collaborators <https://airtable.com/developers/web/api/field-model#multicollaborator>`__
    * - :class:`~pyairtable.orm.fields.MultipleSelectField`
      - `Multiple select <https://airtable.com/developers/web/api/field-model#multiselect>`__
    * - :class:`~pyairtable.orm.fields.NumberField`
@@ -164,17 +202,103 @@ read `Field types and cell values <https://airtable.com/developers/web/api/field
    * - :class:`~pyairtable.orm.fields.RatingField`
      - `Rating <https://airtable.com/developers/web/api/field-model#rating>`__
    * - :class:`~pyairtable.orm.fields.RichTextField`
-     - `Rich text <https://airtable.com/developers/web/api/field-model#rich-text>`__
+     - `Rich text <https://airtable.com/developers/web/api/field-model#richtext>`__
    * - :class:`~pyairtable.orm.fields.SelectField`
      - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
+   * - :class:`~pyairtable.orm.fields.SingleLineTextField`
+     - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
+   * - :class:`~pyairtable.orm.fields.SingleLinkField`
+     - `Link to another record <https://airtable.com/developers/web/api/field-model#foreignkey>`__
    * - :class:`~pyairtable.orm.fields.TextField`
      - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
    * - :class:`~pyairtable.orm.fields.UrlField`
      - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
-.. [[[end]]]
+
+Airtable does not have a concept of fields that require values,
+but pyAirtable allows you to enforce that concept within code
+using one of the following field classes.
+
+See :ref:`Required Values` for more details.
+
+.. list-table::
+   :header-rows: 1
+
+   * - ORM field class
+     - Airtable field type(s)
+   * - :class:`~pyairtable.orm.fields.RequiredAITextField` 🔒
+     - `AI Text <https://airtable.com/developers/web/api/field-model#aitext>`__
+   * - :class:`~pyairtable.orm.fields.RequiredBarcodeField`
+     - `Barcode <https://airtable.com/developers/web/api/field-model#barcode>`__
+   * - :class:`~pyairtable.orm.fields.RequiredCollaboratorField`
+     - `Collaborator <https://airtable.com/developers/web/api/field-model#collaborator>`__
+   * - :class:`~pyairtable.orm.fields.RequiredCountField` 🔒
+     - `Count <https://airtable.com/developers/web/api/field-model#count>`__
+   * - :class:`~pyairtable.orm.fields.RequiredCurrencyField`
+     - `Currency <https://airtable.com/developers/web/api/field-model#currencynumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredDateField`
+     - `Date <https://airtable.com/developers/web/api/field-model#dateonly>`__
+   * - :class:`~pyairtable.orm.fields.RequiredDatetimeField`
+     - `Date and time <https://airtable.com/developers/web/api/field-model#dateandtime>`__
+   * - :class:`~pyairtable.orm.fields.RequiredDurationField`
+     - `Duration <https://airtable.com/developers/web/api/field-model#durationnumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredEmailField`
+     - `Email <https://airtable.com/developers/web/api/field-model#emailtext>`__
+   * - :class:`~pyairtable.orm.fields.RequiredFloatField`
+     - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredIntegerField`
+     - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredMultilineTextField`
+     - `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
+   * - :class:`~pyairtable.orm.fields.RequiredNumberField`
+     - `Number <https://airtable.com/developers/web/api/field-model#decimalorintegernumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredPercentField`
+     - `Percent <https://airtable.com/developers/web/api/field-model#percentnumber>`__
+   * - :class:`~pyairtable.orm.fields.RequiredPhoneNumberField`
+     - `Phone <https://airtable.com/developers/web/api/field-model#phone>`__
+   * - :class:`~pyairtable.orm.fields.RequiredRatingField`
+     - `Rating <https://airtable.com/developers/web/api/field-model#rating>`__
+   * - :class:`~pyairtable.orm.fields.RequiredRichTextField`
+     - `Rich text <https://airtable.com/developers/web/api/field-model#richtext>`__
+   * - :class:`~pyairtable.orm.fields.RequiredSelectField`
+     - `Single select <https://airtable.com/developers/web/api/field-model#select>`__
+   * - :class:`~pyairtable.orm.fields.RequiredSingleLineTextField`
+     - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__
+   * - :class:`~pyairtable.orm.fields.RequiredTextField`
+     - `Single line text <https://airtable.com/developers/web/api/field-model#simpletext>`__, `Long text <https://airtable.com/developers/web/api/field-model#multilinetext>`__
+   * - :class:`~pyairtable.orm.fields.RequiredUrlField`
+     - `Url <https://airtable.com/developers/web/api/field-model#urltext>`__
+.. [[[end]]] (sum: PtIJDLJBQM)
 
 
-Formulas, Rollups, and Lookups
+Type Annotations
+------------------
+
+pyAirtable uses type annotations to provide hints to type checkers like mypy.
+Type annotations improve code readability and help catch errors during development.
+
+Basic field types like :class:`~pyairtable.orm.fields.TextField` and :class:`~pyairtable.orm.fields.IntegerField`
+will have their types inferred from the field's configuration. For example:
+
+.. code-block:: python
+
+    from pyairtable.orm import Model, fields as F
+
+    class Person(Model):
+        class Meta: ...
+
+        name = F.TextField("Name")
+        account_id = F.IntegerField("Account ID")
+        edited_by = F.LastModifiedByField("Last Modified By")
+
+    record = Person()
+    reveal_type(record.name)  # Revealed type is 'builtins.str*'
+    reveal_type(record.account_id)  # Revealed type is 'builtins.int*'
+    reveal_type(record.edited_by)  # Revealed type is 'pyairtable.api.types.CollaboratorDict'
+
+You may need to provide type hints to complex fields that involve lists. See below for examples.
+
+
+Formula, Rollup, and Lookup Fields
 ----------------------------------
 
 The data type of "formula", "rollup", and "lookup" fields will depend on the underlying fields
@@ -225,48 +349,104 @@ You can check for errors using the :func:`~pyairtable.api.types.is_airtable_erro
   True
 
 
-Linked Records
-----------------
+Required Values
+---------------
 
-In addition to standard data type fields, the :class:`~pyairtable.orm.fields.LinkField`
-class offers a special behaviour that can fetch linked records, so that you can
-traverse between related records.
+Airtable does not generally have a concept of fields that require values, but
+pyAirtable allows you to enforce that a field must have a value before saving it.
+To do this, use one of the "Required" field types, which will raise an exception
+if either of the following occur:
+
+  1. If you try to set its value to ``None`` (or, sometimes, to the empty string).
+  2. If the API returns a ``None`` (or empty string) as the field's value.
+
+For example, given this code:
 
 .. code-block:: python
 
     from pyairtable.orm import Model, fields as F
 
-    class Company(Model):
-        class Meta: ...
+    class MyTable(Model):
+        class Meta:
+            ...
 
-        name = F.TextField("Name")
+        name = F.RequiredTextField("Name")
+
+The following will all raise an exception:
+
+.. code-block:: python
+
+    >>> MyTable(name=None)
+    Traceback (most recent call last):
+      ...
+    MissingValue: MyTable.name does not accept empty values
+
+    >>> r = MyTable.from_record(fake_record(Name="Alice"))
+    >>> r.name
+    'Alice'
+    >>> r.name = None
+    Traceback (most recent call last):
+      ...
+    MissingValue: MyTable.name does not accept empty values
+
+    >>> r = MyTable.from_record(fake_record(Name=None))
+    >>> r.name
+    Traceback (most recent call last):
+      ...
+    MissingValue: MyTable.name received an empty value
+
+One reason to use these fields (sparingly!) might be to avoid adding defensive
+null-handling checks all over your code, if you are confident that the workflows
+around your Airtable base will not produce an empty value (or that an empty value
+is enough of a problem that your code should raise an exception).
+
+
+Linked Records
+----------------
+
+In addition to standard data type fields, the :class:`~pyairtable.orm.fields.LinkField`
+and :class:`~pyairtable.orm.fields.SingleLinkField` classes will fetch linked records
+upon access, so that you can traverse between related records.
+
+.. code-block:: python
+
+    from pyairtable.orm import Model, fields as F
 
     class Person(Model):
         class Meta: ...
 
         name = F.TextField("Name")
-        company = F.LinkField("Company", Company)
+        company = F.SingleLinkField("Company", "Company")
+
+    class Company(Model):
+        class Meta: ...
+
+        name = F.TextField("Name")
+        people = F.LinkField("People", Person)
+
 
 .. code-block:: python
 
     >>> person = Person.from_id("recZ6qSLw0OCA61ul")
     >>> person.company
-    [<Company id='recqSk20OCrB13lZ7'>]
-    >>> person.company[0].name
+    <Company id='recqSk20OCrB13lZ7'>
+    >>> person.company.name
     'Acme Corp'
+    >>> person.company.people
+    [<Person id='recZ6qSLw0OCA61ul'>, ...]
 
 pyAirtable will not retrieve field values for a model's linked records until the
-first time you access that field. So in the example above, the fields for Company
-were loaded when ``person.company`` was called for the first time. After that,
-the Company models are persisted, and won't be refreshed until you call
+first time you access a field. So in the example above, the fields for Company
+were loaded when ``person.company`` was called for the first time. Linked models
+are persisted after being created, and won't be refreshed until you call
 :meth:`~pyairtable.orm.Model.fetch`.
 
 .. note::
     :class:`~pyairtable.orm.fields.LinkField` will always return a list of values,
     even if there is only a single value shown in the Airtable UI. It will not
     respect the `prefersSingleRecordLink <https://airtable.com/developers/web/api/field-model#foreignkey-fieldtype-options-preferssinglerecordlink>`_
-    field configuration option, because the API will *always* return linked fields
-    as a list of record IDs.
+    field configuration option. If you expect a field to only ever return a single
+    linked record, use :class:`~pyairtable.orm.fields.SingleLinkField`.
 
 
 Cyclical links
@@ -297,18 +477,18 @@ address this:
         class Meta: ...
 
         name = F.TextField("Name")
-        company = F.LinkField[Company]("Company", Company)
-        manager = F.LinkField["Person"]("Manager", "Person")  # option 2
+        company = F.SingleLinkField[Company]("Company", Company)
+        manager = F.SingleLinkField["Person"]("Manager", "Person")  # option 2
         reports = F.LinkField["Person"]("Reports", F.LinkSelf)  # option 3
 
 .. code-block:: python
 
     >>> person = Person.from_id("recZ6qSLw0OCA61ul")
     >>> person.manager
-    [<Person id='recSLw0OCA61ulZ6q'>]
-    >>> person.manager[0].reports
+    <Person id='recSLw0OCA61ulZ6q'>
+    >>> person.manager.reports
     [<Person id='recZ6qSLw0OCA61ul'>, ...]
-    >>> person.company[0].employees
+    >>> person.company.employees
     [<Person id='recZ6qSLw0OCA61ul'>, <Person id='recSLw0OCA61ulZ6q'>, ...]
 
 Breaking down the :class:`~pyairtable.orm.fields.LinkField` invocation above,
@@ -326,6 +506,97 @@ there are four components:
 4. The model class, the path to the model class, or :data:`~pyairtable.orm.fields.LinkSelf`
 
 
+Memoizing linked records
+"""""""""""""""""""""""""""""
+
+There are cases where your application may need to retrieve hundreds of nested
+models through the ORM, and you don't want to make hundreds of Airtable API calls.
+pyAirtable provides a way to pre-fetch and memoize instances for each record,
+which will then be reused later by record link fields.
+
+The usual way to do this is passing ``memoize=True`` to a retrieval method
+at the beginning of your code to pre-fetch any records you might need.
+For example, you might have the following:
+
+.. code-block:: python
+
+    from pyairtable.orm import Model, fields as F
+    from operator import attrgetter
+
+    class Book(Model):
+        class Meta: ...
+        title = F.TextField("Title")
+        published = F.DateField("Publication Date")
+
+    class Author(Model):
+        class Meta: ...
+        name = F.TextField("Name")
+        books = F.LinkField("Books", Book)
+
+    def main():
+        books = Book.all(memoize=True)
+        authors = Author.all(memoize=True)
+        for author in authors:
+            print(f"* {author.name}")
+            for book in sorted(author.books, key=attrgetter("published")):
+                print(f"  - {book.title} ({book.published.isoformat()})")
+
+This code will perform a series of API calls at the beginning to fetch
+all records from the Books and Authors tables, so that ``author.books``
+does not need to request linked records one at a time during the loop.
+
+If you always want to memoize models retrieved from the API, you can set
+``memoize = True`` in the ``Meta`` configuration for your model:
+
+.. code-block:: python
+
+    class Book(Model):
+        Meta = {..., "memoize": True}
+        title = F.TextField("Title")
+
+    class Author(Model):
+        Meta = {...}
+        name = F.TextField("Name")
+        books = F.LinkField("Books", Book)
+
+    Book.first()  # this will memoize the book it creates
+    Author.first().books  # this will memoize all books created
+    Book.all(memoize=False)  # this will skip memoization
+
+
+The following methods support the ``memoize=`` keyword argument to control
+whether the ORM saves the models it creates for later reuse. If a model is
+configured to memoize by default, pass ``memoize=False`` to override it.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Retrieval function
+     - Will it reuse saved models?
+     - Will it call the API?
+   * - :meth:`Model.all <pyairtable.orm.Model.all>`
+     - Never
+     - Always
+   * - :meth:`Model.first <pyairtable.orm.Model.first>`
+     - Never
+     - Always
+   * - :meth:`Model.from_record <pyairtable.orm.Model.from_record>`
+     - Never
+     - Never
+   * - :meth:`Model.from_id <pyairtable.orm.Model.from_id>`
+     - Yes
+     - Yes, unless ``fetch=True``
+   * - :meth:`Model.from_ids <pyairtable.orm.Model.from_ids>`
+     - Yes
+     - Yes, unless ``fetch=True``
+   * - :meth:`LinkField.populate <pyairtable.orm.fields.LinkField.populate>`
+     - Yes
+     - Yes, unless ``lazy=True``
+   * - :meth:`SingleLinkField.populate <pyairtable.orm.fields.SingleLinkField.populate>`
+     - Yes
+     - Yes, unless ``lazy=True``
+
+
 Comments
 ----------
 
@@ -340,7 +611,7 @@ comments on a particular record, just like their :class:`~pyairtable.Table` equi
         Comment(
             id='comdVMNxslc6jG0Xe',
             text='Hello, @[usrVMNxslc6jG0Xed]!',
-            created_time='2023-06-07T17:46:24.435891',
+            created_time=datetime.datetime(...),
             last_updated_time=None,
             mentioned={
                 'usrVMNxslc6jG0Xed': Mentioned(
@@ -362,6 +633,61 @@ comments on a particular record, just like their :class:`~pyairtable.Table` equi
     >>> record.comments()[0].text
     'Never mind!'
     >>> comment.delete()
+
+
+Attachments in the ORM
+----------------------
+
+When retrieving attachments from the API, pyAirtable will return a list of
+:class:`~pyairtable.api.types.AttachmentDict`.
+
+    >>> model = YourModel.from_id("recMNxslc6jG0XedV")
+    >>> model.attachments
+    [
+        {
+          'id': 'attMNxslc6jG0XedV',
+          'url': 'https://dl.airtable.com/...',
+          'filename': 'example.jpg',
+          'size': 12345,
+          'type': 'image/jpeg'
+        },
+        ...
+    ]
+
+You can append your own values to this list, and as long as they have
+either a ``"id"`` or ``"url"`` key, they will be saved back to the API.
+
+    >>> model.attachments.append({"url": "https://example.com/example.jpg"})
+    >>> model.save()
+
+You can also use :meth:`~pyairtable.orm.lists.AttachmentsList.upload` to
+directly upload content to Airtable:
+
+.. automethod:: pyairtable.orm.lists.AttachmentsList.upload
+
+
+ORM Metadata
+------------------
+
+Access to the configuration of a model and the schema of its underlying base/table
+are available through the :attr:`~pyairtable.orm.Model.meta` attribute:
+
+.. code-block:: python
+
+    >>> model = YourModel()
+    >>> model.meta.base_id
+    'appaPqizdsNHDvlEm'
+    >>> model.meta.table_name
+    'YourModel'
+    >>> model.meta.table.schema()
+    TableSchema(id='appaPqizdsNHDvlEm', name='YourModel', ...)
+
+For convenience, the schema of ORM-defined fields can be accessed via those field definitions:
+
+.. code-block:: python
+
+    >>> YourModel.name.field_schema()
+    FieldSchema(id='fldMNxslc6jG0XedV', name='Name', type='singleLineText', ...)
 
 
 ORM Limitations
@@ -393,20 +719,23 @@ For example:
 
 .. code-block:: python
 
+    from pyairtable.orm import fields as F
+
     class Person(Model):
         class Meta: ...
 
         name = F.TextField("Name")
-        manager = F.LinkField["Person"]("Manager", "Person")
+        manager = F.SingleLinkField["Person"]("Manager", F.LinkSelf)
         # This field is a formula: {Manager} != BLANK()
         has_manager = F.IntegerField("Has Manager?", readonly=True)
 
 
     bob = Person.from_id("rec2AqNuHwWcnG871")
-    assert bob.manager == []
+    assert bob.manager is None
     assert bob.has_manager == 0
 
-    bob.manager = [alice]
+    alice = Person.from_id("recAB2AqNuHwWcnG8")
+    bob.manager = alice
     bob.save()
     assert bob.has_manager == 0
 

@@ -14,13 +14,30 @@
         "success": false,
         "willBeRetried": true
     },
-    "lastSuccessfulNotificationTime": null,
+    "lastSuccessfulNotificationTime": "2022-02-01T21:25:05.663Z",
     "notificationUrl": "https://example.com/receive-ping",
     "specification": {
         "options": {
             "filters": {
                 "dataTypes": ["tableData"],
-                "recordChangeScope": "tbltp8DGLhqbUmjK1"
+                "changeTypes": ["add", "remove", "update"],
+                "fromSources": ["client"],
+                "recordChangeScope": "tbltp8DGLhqbUmjK1",
+                "sourceOptions": {
+                    "formPageSubmission": {
+                        "pageId": "pbdLkNDICXNqxSDhG"
+                    },
+                    "formSubmission": {
+                        "viewId": "viwLkNDICXNqxSDhG"
+                    }
+                },
+                "watchDataInFieldIds": ["fldLkNDICXNqxSDhG"],
+                "watchSchemasOfFieldIds": ["fldLkNDICXNqxSDhG"]
+            },
+            "includes": {
+                "includeCellValuesInFieldIds": "all",
+                "includePreviousCellValues": false,
+                "includePreviousFieldDefinitions": false
             }
         }
     }

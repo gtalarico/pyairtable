@@ -16,9 +16,9 @@ pip install pyairtable
 
 ## Documentation
 
-Read the full documentation on [pyairtable.readthedocs.io](https://pyairtable.readthedocs.io/en/latest/getting-started.html).
+Read the full documentation on [pyairtable.readthedocs.io](https://pyairtable.readthedocs.io/en/stable/getting-started.html).
 
-If you're still using airtable-python-wrapper and want to upgrade, read the [migration guide](https://pyairtable.readthedocs.io/en/latest/migrations.html).
+If you're still using airtable-python-wrapper and want to upgrade, read the [migration guide](https://pyairtable.readthedocs.io/en/stable/migrations.html).
 
 ## Contributing
 
@@ -29,8 +29,14 @@ Everyone who has an idea or suggestion is welcome to contribute! As maintainers,
 If it's your first time working on this library, clone the repo, set up pre-commit hooks, and make sure you can run tests (and they pass). If that doesn't work out of the box, please check your local development environment before filing an issue.
 
 ```sh
-% make setup
-% make test
+make setup
+make test
+```
+
+For a quick test run (~15s after the environments are created) use:
+
+```sh
+tox -e mypy && tox -e coverage
 ```
 
 ### Reporting a bug
@@ -50,8 +56,10 @@ Anyone who uses this library is welcome to [submit a pull request](https://githu
 
 1. Public functions/methods have docstrings and type annotations.
 2. New functionality is accompanied by clear, descriptive unit tests.
-3. You can run `make test && make docs` successfully.
-4. You have [signed your commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification).
+3. The library maintains 100% test coverage.
+4. You can run `make test && make docs` successfully.
+5. No backwards-incompatible changes (unless discussed in an existing issue).
+6. You have [signed your commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification).
 
 If you want to discuss an idea you're working on but haven't yet finished all of the above, please [open a draft pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests#draft-pull-requests). That will be a clear signal that you're not asking to merge your code (yet) and are just looking for discussion or feedback.
 

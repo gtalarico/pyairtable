@@ -3,6 +3,7 @@ For these tests Mocker cannot be used because Retry is operating on a lower leve
 Instead we use a real HTTP server running in a separate thread, which we can program
 to respond with various HTTP status codes.
 """
+
 import json
 import threading
 import time
@@ -160,6 +161,30 @@ def table_with_retry_strategy(constants, mock_endpoint_server):
         return api.table(constants["BASE_ID"], constants["TABLE_NAME"])
 
     return _table_with_retry
+
+
+def test_without_retry_strategy__succeed(
+    table_with_retry_strategy,
+    mock_endpoint,
+    mock_response_single,
+):
+    mock_endpoint.canned_responses = [(200, mock_response_single)]
+    table = table_with_retry_strategy(None)
+    assert table.get("record") == mock_response_single
+
+
+def test_without_retry_strategy__fail(
+    table_with_retry_strategy,
+    mock_endpoint,
+    mock_response_single,
+):
+    mock_endpoint.canned_responses = [
+        (429, None),
+        (200, mock_response_single),
+    ]
+    table = table_with_retry_strategy(None)
+    with pytest.raises(requests.exceptions.HTTPError):
+        table.get("record")
 
 
 def test_retry_exceed(table_with_retry_strategy, mock_endpoint):

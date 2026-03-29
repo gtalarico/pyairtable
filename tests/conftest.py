@@ -1,15 +1,21 @@
+import importlib
 import json
+import re
 from collections import OrderedDict
 from pathlib import Path
 from posixpath import join as urljoin
-from typing import Callable
+from typing import Any, Callable
 from urllib.parse import quote, urlencode
 
 import pytest
 from mock import Mock
 from requests import HTTPError
+from requests_mock import Mocker
 
-from pyairtable.api import Api, Base, Table
+from pyairtable import Api, Base, Table, Workspace
+from pyairtable.api.enterprise import Enterprise
+from pyairtable.models.schema import TableSchema
+from pyairtable.testing import fake_id
 
 
 @pytest.fixture
@@ -30,7 +36,9 @@ def url_builder():
 @pytest.fixture
 def constants():
     return dict(
-        API_KEY="FakeApiKey", BASE_ID="appJMY16gZDQrMWpA", TABLE_NAME="Table Name"
+        API_KEY="FakeApiKey",
+        BASE_ID="appLkNDICXNqxSDhG",
+        TABLE_NAME="Table Name",
     )
 
 
@@ -39,14 +47,44 @@ def api(constants) -> Api:
     return Api(constants["API_KEY"])
 
 
+@pytest.fixture
+def base_id(constants) -> str:
+    return constants["BASE_ID"]
+
+
 @pytest.fixture()
-def base(api: Api, constants) -> Base:
-    return api.base(constants["BASE_ID"])
+def base(api: Api, base_id) -> Base:
+    return api.base(base_id)
 
 
 @pytest.fixture()
 def table(base: Base, constants) -> Table:
     return base.table(constants["TABLE_NAME"])
+
+
+@pytest.fixture()
+def table_schema(sample_json, api, base) -> TableSchema:
+    return TableSchema.model_validate(sample_json("TableSchema"))
+
+
+@pytest.fixture
+def mock_table_schema(table, requests_mock, sample_json) -> Mocker:
+    table_schema = sample_json("TableSchema")
+    table_schema["id"] = table.name = fake_id("tbl")
+    return requests_mock.get(
+        table.base.urls.tables + "?include=visibleFieldIds",
+        json={"tables": [table_schema]},
+    )
+
+
+@pytest.fixture
+def workspace_id() -> str:
+    return "wspmhESAta6clCCwF"  # see WorkspaceCollaborators.json
+
+
+@pytest.fixture
+def workspace(api: Api, workspace_id) -> Workspace:
+    return api.workspace(workspace_id)
 
 
 @pytest.fixture
@@ -134,3 +172,57 @@ def sample_json(sample_data: Path) -> Callable:
             return json.load(fp)
 
     return _get_sample_json
+
+
+@pytest.fixture
+def schema_obj(api, sample_json):
+    """
+    Test fixture that provides a callable function which retrieves
+    an object generated from tests/sample_data, and optionally
+    retrieves an attribute of that object.
+    """
+
+    def _get_schema_obj(name: str, *, context: Any = None) -> Any:
+        if name.startswith("pyairtable."):
+            # pyairtable.models.Webhook.created_time -> ('pyairtable.models', 'Webhook.created_time')
+            match = re.match(r"(pyairtable\.[a-z_.]+)\.([A-Z].+)$", name)
+            modpath, name = match.groups()
+        else:
+            modpath = "pyairtable.models.schema"
+
+        obj_name, _, obj_path = name.partition(".")
+        obj_data = sample_json(obj_name)
+        obj_cls = getattr(importlib.import_module(modpath), obj_name)
+
+        if context:
+            obj = obj_cls.from_api(obj_data, api, context=context)
+        else:
+            obj = obj_cls.model_validate(obj_data)
+
+        if obj_path:
+            obj = eval(f"obj.{obj_path}", None, {"obj": obj})
+        return obj
+
+    return _get_schema_obj
+
+
+@pytest.fixture
+def mock_base_metadata(base, sample_json, requests_mock):
+    base_json = sample_json("BaseCollaborators")
+    requests_mock.get(base.api.urls.bases, json=sample_json("Bases"))
+    requests_mock.get(base.urls.meta, json=base_json)
+    requests_mock.get(base.urls.tables, json=sample_json("BaseSchema"))
+    requests_mock.get(base.urls.shares, json=sample_json("BaseShares"))
+    for pbd_id, pbd_json in base_json["interfaces"].items():
+        requests_mock.get(base.urls.interface(pbd_id), json=pbd_json)
+
+
+@pytest.fixture
+def mock_workspace_metadata(workspace, sample_json, requests_mock):
+    workspace_json = sample_json("WorkspaceCollaborators")
+    requests_mock.get(workspace.urls.meta, json=workspace_json)
+
+
+@pytest.fixture
+def enterprise(api):
+    return Enterprise(api, "entUBq2RGdihxl3vU")

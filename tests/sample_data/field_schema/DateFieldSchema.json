@@ -1,0 +1,11 @@
+{
+  "type": "date",
+  "options": {
+    "dateFormat": {
+      "name": "local",
+      "format": "l"
+    }
+  },
+  "id": "fldgstMCbpPNgbXBN",
+  "name": "Date"
+}

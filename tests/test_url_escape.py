@@ -17,4 +17,4 @@ def test_url_escape(base, table_name, escaped):
     table names (which Airtable *will* allow).
     """
     table = base.table(table_name)
-    assert table.url.endswith(escaped)
+    assert table.urls.records.endswith(escaped)

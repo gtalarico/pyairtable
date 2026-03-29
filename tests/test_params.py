@@ -3,12 +3,12 @@ import requests
 from requests_mock import Mocker
 
 from pyairtable.api.params import (
-    InvalidParamException,
     dict_list_to_request_params,
     field_names_to_sorting_dict,
     options_to_json_and_params,
     options_to_params,
 )
+from pyairtable.exceptions import InvalidParameterError
 
 
 def test_params_integration(table, mock_records, mock_response_iterator):
@@ -17,7 +17,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         "view": "View",
         "sort": ["Name"],
         "fields": ["Name", "Age"],
-        "return_fields_by_field_id": True,
+        "use_field_ids": True,
     }
     with Mocker() as m:
         url_params = (
@@ -30,7 +30,7 @@ def test_params_integration(table, mock_records, mock_response_iterator):
             "&returnFieldsByFieldId=1"
             ""
         )
-        mock_url = "{0}?{1}".format(table.url, url_params)
+        mock_url = "{0}?{1}".format(table.urls.records, url_params)
         m.get(mock_url, status_code=200, json=mock_response_iterator)
         response = table.all(**params)
     for n, resp in enumerate(response):
@@ -97,12 +97,13 @@ def test_params_integration(table, mock_records, mock_response_iterator):
         [
             "time_zone",
             "America/Chicago",
-            "?timeZone=America%2FChicago"
+            "?timeZone=America%2FChicago",
             # '?timeZone=America/Chicago'
         ],
-        ["return_fields_by_field_id", True, "?returnFieldsByFieldId=1"],
-        ["return_fields_by_field_id", 1, "?returnFieldsByFieldId=1"],
-        ["return_fields_by_field_id", False, "?returnFieldsByFieldId=0"],
+        ["use_field_ids", True, "?returnFieldsByFieldId=1"],
+        ["use_field_ids", 1, "?returnFieldsByFieldId=1"],
+        ["use_field_ids", False, "?returnFieldsByFieldId=0"],
+        ["count_comments", True, "?recordMetadata%5B%5D=commentCount"],
         # TODO
         # [
         #     {"sort": [("Name", "desc"), ("Phone", "asc")]},
@@ -163,9 +164,11 @@ def test_convert_options_to_params(option, value, url_params):
             },
         ],
         ["cell_format", "string", {"cellFormat": "string"}],
-        ["return_fields_by_field_id", True, {"returnFieldsByFieldId": True}],
-        ["return_fields_by_field_id", 1, {"returnFieldsByFieldId": True}],
-        ["return_fields_by_field_id", False, {"returnFieldsByFieldId": False}],
+        ["use_field_ids", True, {"returnFieldsByFieldId": True}],
+        ["use_field_ids", 1, {"returnFieldsByFieldId": True}],
+        ["use_field_ids", False, {"returnFieldsByFieldId": False}],
+        ["count_comments", True, {"recordMetadata": ["commentCount"]}],
+        ["count_comments", False, {}],
         # userLocale and timeZone are not supported via POST, so they return "spare params"
         ["user_locale", "en-US", ({}, {"userLocale": "en-US"})],
         ["time_zone", "America/Chicago", ({}, {"timeZone": "America/Chicago"})],
@@ -178,7 +181,7 @@ def test_convert_options_to_json(option, value, expected):
 
 
 def test_process_params_invalid():
-    with pytest.raises(InvalidParamException):
+    with pytest.raises(InvalidParameterError):
         options_to_params({"ffields": "x"})
 
 
@@ -205,3 +208,34 @@ def test_field_names_to_sorting_dict():
             "direction": "desc",
         },
     ]
+
+
+def test_record_metadata_options(monkeypatch):
+    """Test that OPTIONS_TO_RECORD_METADATA can be extended for future metadata options."""
+    import pyairtable.api.params
+
+    monkeypatch.setattr(
+        pyairtable.api.params,
+        "OPTIONS_TO_RECORD_METADATA",
+        {"count_comments": "commentCount", "future_option": "futureValue"},
+    )
+
+    # Test GET params with multiple recordMetadata options
+    result = options_to_params({"count_comments": True, "future_option": True})
+    assert set(result.get("recordMetadata[]", [])) == {
+        "commentCount",
+        "futureValue",
+    }
+
+    # Test POST JSON with multiple recordMetadata options
+    json_result, _ = options_to_json_and_params(
+        {"count_comments": True, "future_option": True}
+    )
+    assert set(json_result.get("recordMetadata", [])) == {
+        "commentCount",
+        "futureValue",
+    }
+
+    # Test with only one option enabled
+    result = options_to_params({"count_comments": False, "future_option": True})
+    assert result.get("recordMetadata[]") == ["futureValue"]

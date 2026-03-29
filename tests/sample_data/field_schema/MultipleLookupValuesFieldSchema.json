@@ -1,0 +1,32 @@
+{
+  "type": "multipleLookupValues",
+  "options": {
+    "isValid": true,
+    "recordLinkFieldId": "fldNvFMYxBnf35WkO",
+    "fieldIdInLinkedTable": "fldI5gjLnq0RXUleV",
+    "result": {
+      "type": "multipleSelects",
+      "options": {
+        "choices": [
+          {
+            "id": "selX4cKixuDso5PEX",
+            "name": "One",
+            "color": "blueLight2"
+          },
+          {
+            "id": "seloqP1Gzj8Glrspo",
+            "name": "Two",
+            "color": "cyanLight2"
+          },
+          {
+            "id": "selqPFVai30QE6Kp8",
+            "name": "Three",
+            "color": "tealLight2"
+          }
+        ]
+      }
+    }
+  },
+  "id": "fldwYZ0pPzf0uvyg7",
+  "name": "Lookup Multi Select"
+}

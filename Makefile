@@ -10,25 +10,12 @@ hooks:
 	.tox/pre-commit/bin/pre-commit install
 	.tox/pre-commit/bin/pre-commit install-hooks
 
-.PHONY: release release-test bump
+.PHONY: release
 release:
-	make clean
-	python -m build --sdist --wheel --outdir ./dist
-	twine upload ./dist/*
+	@zsh -c "./scripts/release.sh"
 
-release-test:
-	make clean
-	python -m build --sdist --wheel --outdir ./dist
-	twine upload --repository testpypi ./dist/*
-
-bump:
-	@bash -c "./scripts/bump.sh"
-
-.PHONY: test test-e2e coverage lint format docs clean
+.PHONY: test coverage lint format docs clean
 test:
-	tox -- -m 'not integration'
-
-test-e2e:
 	tox
 
 coverage:

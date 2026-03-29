@@ -1,0 +1,17 @@
+{
+  "type": "rollup",
+  "options": {
+    "isValid": true,
+    "recordLinkFieldId": "fldNvFMYxBnf35WkO",
+    "fieldIdInLinkedTable": "fld4QpwrhRppNhjFM",
+    "referencedFieldIds": [],
+    "result": {
+      "type": "number",
+      "options": {
+        "precision": 0
+      }
+    }
+  },
+  "id": "fldSTbXQ3nFW18CG5",
+  "name": "Rollup Error"
+}

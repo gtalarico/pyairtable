@@ -1,10 +1,16 @@
 import datetime
 import operator
 import re
+from unittest import mock
 
 import pytest
+from requests_mock import NoMockAddress
 
+import pyairtable.exceptions
+from pyairtable.formulas import OR, RECORD_ID
+from pyairtable.models import schema
 from pyairtable.orm import fields as f
+from pyairtable.orm.lists import AttachmentsList
 from pyairtable.orm.model import Model
 from pyairtable.testing import (
     fake_attachment,
@@ -13,11 +19,23 @@ from pyairtable.testing import (
     fake_record,
     fake_user,
 )
+from pyairtable.utils import datetime_to_iso_str
+
+try:
+    from pytest import Mark as _PytestMark
+except ImportError:
+    # older versions of pytest don't expose pytest.Mark directly
+    from _pytest.mark import Mark as _PytestMark
+
 
 DATE_S = "2023-01-01"
 DATE_V = datetime.date(2023, 1, 1)
 DATETIME_S = "2023-04-12T09:30:00.000Z"
-DATETIME_V = datetime.datetime(2023, 4, 12, 9, 30, 0)
+DATETIME_V = datetime.datetime(2023, 4, 12, 9, 30, 0, tzinfo=datetime.timezone.utc)
+
+
+class Dummy(Model):
+    Meta = fake_meta()
 
 
 def test_field():
@@ -31,6 +49,16 @@ def test_field():
 
     with pytest.raises(AttributeError):
         del t.name
+
+
+def test_description():
+    class T:
+        name = f.Field("Name")
+
+    T.other = f.Field("Other")
+
+    assert T.name._description == "T.name"
+    assert T.other._description == "'Other' field"
 
 
 @pytest.mark.parametrize(
@@ -60,6 +88,12 @@ def test_field():
             f.LinkField("Records", type("TestModel", (Model,), {"Meta": fake_meta()})),
             "LinkField('Records', model=<class 'test_orm_fields.TestModel'>, validate_type=True, readonly=False, lazy=False)",
         ),
+        (
+            f.SingleLinkField(
+                "Records", type("TestModel", (Model,), {"Meta": fake_meta()})
+            ),
+            "SingleLinkField('Records', model=<class 'test_orm_fields.TestModel'>, validate_type=True, readonly=False, lazy=False, raise_if_many=False)",
+        ),
     ],
 )
 def test_repr(instance, expected):
@@ -71,6 +105,7 @@ def test_repr(instance, expected):
     argvalues=[
         (f.Field, None),
         (f.CheckboxField, False),
+        (f.TextField, ""),
         (f.LookupField, []),
         (f.AttachmentsField, []),
         (f.MultipleCollaboratorsField, []),
@@ -90,10 +125,16 @@ def test_orm_missing_values(field_type, default_value):
     t = T()
     assert t.the_field == default_value
 
+    t = T.from_record(fake_record({"Field Name": None}))
+    assert t.the_field == default_value
+
 
 # Mapping from types to a test value for that type.
 TYPE_VALIDATION_TEST_VALUES = {
-    **{t: t() for t in (str, bool, list, dict)},
+    str: "some value",
+    bool: False,
+    list: [],
+    dict: {},
     int: 1,  # cannot use int() because RatingField requires value >= 1
     float: 1.0,  # cannot use float() because RatingField requires value >= 1
     datetime.date: datetime.date.today(),
@@ -106,28 +147,48 @@ TYPE_VALIDATION_TEST_VALUES = {
     "test_case",
     [
         (f.Field, tuple(TYPE_VALIDATION_TEST_VALUES)),
-        (f.TextField, str),
-        (f.IntegerField, int),
-        (f.RichTextField, str),
-        (f.DatetimeField, datetime.datetime),
-        (f.TextField, str),
-        (f.CheckboxField, bool),
-        (f.BarcodeField, dict),
-        (f.NumberField, (int, float)),
-        (f.PhoneNumberField, str),
-        (f.DurationField, datetime.timedelta),
-        (f.RatingField, int),
-        (f.UrlField, str),
-        (f.MultipleSelectField, list),
-        (f.PercentField, (int, float)),
-        (f.DateField, (datetime.date, datetime.datetime)),
-        (f.FloatField, float),
-        (f.CollaboratorField, dict),
-        (f.SelectField, str),
-        (f.EmailField, str),
         (f.AttachmentsField, list),
-        (f.MultipleCollaboratorsField, list),
+        (f.BarcodeField, dict),
+        (f.CheckboxField, bool),
+        (f.CollaboratorField, dict),
         (f.CurrencyField, (int, float)),
+        (f.DateField, (datetime.date, datetime.datetime)),
+        (f.DatetimeField, datetime.datetime),
+        (f.DurationField, datetime.timedelta),
+        (f.EmailField, str),
+        (f.FloatField, float),
+        (f.IntegerField, int),
+        (f.MultilineTextField, str),
+        (f.MultipleCollaboratorsField, list),
+        (f.MultipleSelectField, list),
+        (f.NumberField, (int, float)),
+        (f.PercentField, (int, float)),
+        (f.PhoneNumberField, str),
+        (f.RatingField, int),
+        (f.RichTextField, str),
+        (f.SelectField, str),
+        (f.SingleLineTextField, str),
+        (f.TextField, str),
+        (f.UrlField, str),
+        (f.RequiredBarcodeField, dict),
+        (f.RequiredCollaboratorField, dict),
+        (f.RequiredCurrencyField, (int, float)),
+        (f.RequiredDateField, (datetime.date, datetime.datetime)),
+        (f.RequiredDatetimeField, datetime.datetime),
+        (f.RequiredDurationField, datetime.timedelta),
+        (f.RequiredEmailField, str),
+        (f.RequiredFloatField, float),
+        (f.RequiredIntegerField, int),
+        (f.RequiredMultilineTextField, str),
+        (f.RequiredNumberField, (int, float)),
+        (f.RequiredPercentField, (int, float)),
+        (f.RequiredPhoneNumberField, str),
+        (f.RequiredRatingField, int),
+        (f.RequiredRichTextField, str),
+        (f.RequiredSelectField, str),
+        (f.RequiredSingleLineTextField, str),
+        (f.RequiredTextField, str),
+        (f.RequiredUrlField, str),
     ],
     ids=operator.itemgetter(0),
 )
@@ -207,16 +268,21 @@ def test_type_validation_LinkField():
     argnames="test_case",
     argvalues=[
         # If a 2-tuple, the API and ORM values should be identical.
+        (f.AITextField, {"state": "empty", "isStale": True, "value": None}),
         (f.AutoNumberField, 1),
         (f.CountField, 1),
         (f.ExternalSyncSourceField, "Source"),
         (f.ButtonField, {"label": "Click me!"}),
         (f.LookupField, ["any", "values"]),
-        # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.CreatedByField, fake_user()),
-        (f.CreatedTimeField, DATETIME_S, DATETIME_V),
         (f.LastModifiedByField, fake_user()),
+        (f.ManualSortField, "fcca"),
+        # If a 3-tuple, we should be able to convert API -> ORM values.
+        (f.CreatedTimeField, DATETIME_S, DATETIME_V),
         (f.LastModifiedTimeField, DATETIME_S, DATETIME_V),
+        # We also want to test the not-null versions of these fields
+        (f.RequiredAITextField, {"state": "empty", "isStale": True, "value": None}),
+        (f.RequiredCountField, 1),
     ],
     ids=operator.itemgetter(0),
 )
@@ -249,6 +315,8 @@ def test_readonly_fields(test_case):
         # If a 2-tuple, the API and ORM values should be identical.
         (f.Field, object()),  # accepts any value, but Airtable API *will* complain
         (f.TextField, "name"),
+        (f.SingleLineTextField, "name"),
+        (f.MultilineTextField, "some\nthing\nbig"),
         (f.EmailField, "x@y.com"),
         (f.NumberField, 1),
         (f.NumberField, 1.5),
@@ -265,12 +333,33 @@ def test_readonly_fields(test_case):
         (f.PercentField, 0.5),
         (f.PhoneNumberField, "+49 40-349180"),
         (f.RichTextField, "Check out [Airtable](www.airtable.com)"),
+        (f.SelectField, ""),
         (f.SelectField, "any value"),
         (f.UrlField, "www.airtable.com"),
+        (f.RequiredNumberField, 1),
+        (f.RequiredNumberField, 1.5),
+        (f.RequiredIntegerField, 1),
+        (f.RequiredFloatField, 1.5),
+        (f.RequiredRatingField, 1),
+        (f.RequiredCurrencyField, 1.05),
+        (f.RequiredCollaboratorField, {"id": "usrFakeUserId", "email": "x@y.com"}),
+        (f.RequiredBarcodeField, {"type": "upce", "text": "084114125538"}),
+        (f.RequiredPercentField, 0.5),
+        (f.RequiredSelectField, "any value"),
+        (f.RequiredEmailField, "any value"),
+        (f.RequiredPhoneNumberField, "any value"),
+        (f.RequiredRichTextField, "any value"),
+        (f.RequiredTextField, "any value"),
+        (f.RequiredSingleLineTextField, "any value"),
+        (f.RequiredMultilineTextField, "any value"),
+        (f.RequiredUrlField, "any value"),
         # If a 3-tuple, we should be able to convert API -> ORM values.
         (f.DateField, DATE_S, DATE_V),
-        (f.DurationField, 100.5, datetime.timedelta(seconds=100, microseconds=500000)),
         (f.DatetimeField, DATETIME_S, DATETIME_V),
+        (f.DurationField, 100.5, datetime.timedelta(seconds=100, microseconds=500000)),
+        (f.RequiredDateField, DATE_S, DATE_V),
+        (f.RequiredDatetimeField, DATETIME_S, DATETIME_V),
+        (f.RequiredDurationField, 100, datetime.timedelta(seconds=100)),
     ],
     ids=operator.itemgetter(0),
 )
@@ -302,18 +391,125 @@ def test_writable_fields(test_case):
     assert existing_obj.the_field == orm_value
 
 
+@pytest.mark.parametrize(
+    "field_type",
+    [
+        f.Field,
+        f.AITextField,
+        f.AttachmentsField,
+        f.BarcodeField,
+        f.CheckboxField,
+        f.CollaboratorField,
+        f.CountField,
+        f.CurrencyField,
+        f.DateField,
+        f.DatetimeField,
+        f.DurationField,
+        f.EmailField,
+        f.ExternalSyncSourceField,
+        f.FloatField,
+        f.IntegerField,
+        f.LastModifiedByField,
+        f.LastModifiedTimeField,
+        f.LookupField,
+        f.ManualSortField,
+        f.MultilineTextField,
+        f.MultipleCollaboratorsField,
+        f.MultipleSelectField,
+        f.NumberField,
+        f.NumberField,
+        f.PercentField,
+        f.PhoneNumberField,
+        f.RatingField,
+        f.RichTextField,
+        f.SelectField,
+        f.SingleLineTextField,
+        f.TextField,
+        f.UrlField,
+    ],
+)
+def test_accepts_null(field_type):
+    """
+    Test field types that allow null values from Airtable.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = field_type("Field Name")
+
+    obj = T()
+    assert not obj.the_field
+
+
+@pytest.mark.parametrize(
+    "field_type",
+    [
+        f.AutoNumberField,
+        f.ButtonField,
+        f.CreatedByField,
+        f.CreatedTimeField,
+        f.RequiredAITextField,
+        f.RequiredBarcodeField,
+        f.RequiredCollaboratorField,
+        f.RequiredCountField,
+        f.RequiredCurrencyField,
+        f.RequiredDateField,
+        f.RequiredDatetimeField,
+        f.RequiredDurationField,
+        f.RequiredEmailField,
+        f.RequiredFloatField,
+        f.RequiredIntegerField,
+        f.RequiredMultilineTextField,
+        f.RequiredNumberField,
+        f.RequiredPercentField,
+        f.RequiredPhoneNumberField,
+        f.RequiredRatingField,
+        f.RequiredRichTextField,
+        f.RequiredSelectField,
+        f.RequiredSingleLineTextField,
+        f.RequiredTextField,
+        f.RequiredUrlField,
+    ],
+)
+def test_rejects_null(field_type):
+    """
+    Test field types that do not allow null values from Airtable.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = field_type("Field Name")
+
+    obj = T()
+    with pytest.raises(pyairtable.exceptions.MissingValueError):
+        obj.the_field
+    with pytest.raises(pyairtable.exceptions.MissingValueError):
+        obj.the_field = None
+    with pytest.raises(pyairtable.exceptions.MissingValueError):
+        T(the_field=None)
+
+
 def test_completeness():
     """
     Ensure that we test conversion of all readonly and writable fields.
     """
-    assert_all_fields_tested_by(test_writable_fields, test_readonly_fields)
+    assert_all_fields_tested_by(
+        test_writable_fields,
+        test_readonly_fields,
+        exclude=(f.LinkField, f.SingleLinkField),
+    )
     assert_all_fields_tested_by(
         test_type_validation,
-        exclude=f.READONLY_FIELDS | {f.LinkField},
+        exclude=f.READONLY_FIELDS | {f.LinkField, f.SingleLinkField},
+    )
+    assert_all_fields_tested_by(
+        test_accepts_null,
+        test_rejects_null,
+        exclude={f.LinkField, f.SingleLinkField},
     )
 
 
-def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
+def assert_all_fields_tested_by(*test_fns, exclude=()):
     """
     Allows meta-tests that fail if any new Field classes appear in pyairtable.orm.fields
     which are not covered by one of a few basic tests. This is intended to help remind
@@ -321,7 +517,7 @@ def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
     """
 
     def extract_fields(obj):
-        if isinstance(obj, pytest.Mark):
+        if isinstance(obj, _PytestMark):
             yield from [*extract_fields(obj.args), *extract_fields(obj.kwargs)]
         elif isinstance(obj, str):
             pass
@@ -338,7 +534,7 @@ def assert_all_fields_tested_by(*test_fns, exclude=(f.Field, f.LinkField)):
         field_class
         for test_function in test_fns
         for pytestmark in getattr(test_function, "pytestmark", [])
-        if isinstance(pytestmark, pytest.Mark) and pytestmark.name == "parametrize"
+        if isinstance(pytestmark, _PytestMark) and pytestmark.name == "parametrize"
         for field_class in extract_fields(pytestmark)
         if field_class not in exclude
     }
@@ -386,18 +582,28 @@ def test_list_field_with_none():
     assert T.from_record(fake_record(Fld=None)).the_field == []
 
 
-def test_list_field_with_invalid_type():
+@pytest.mark.parametrize(
+    "field_class,invalid_value",
+    [
+        (f._ListField, object()),
+        (f.AttachmentsField, [1, 2, 3]),
+        (f.MultipleCollaboratorsField, [1, 2, 3]),
+        (f.MultipleSelectField, [{"complex": "type"}]),
+    ],
+)
+def test_list_field_with_invalid_type(field_class, invalid_value):
     """
-    Ensure that a ListField represents a null value as an empty list.
+    Ensure that a ListField raises TypeError when given a non-list,
+    or a list of objects that don't match `contains_type`.
     """
 
     class T(Model):
         Meta = fake_meta()
-        the_field = f._ListField("Field Name", str)
+        the_field = field_class("Field Name", str)
 
     obj = T.from_record(fake_record())
     with pytest.raises(TypeError):
-        obj.the_field = object()
+        obj.the_field = invalid_value
 
 
 def test_list_field_with_string():
@@ -414,12 +620,13 @@ def test_list_field_with_string():
         t.items = "hello!"
 
 
-def test_link_field_must_link_to_model():
+@pytest.mark.parametrize("cls", (f.LinkField, f.SingleLinkField))
+def test_link_field_must_link_to_model(cls):
     """
     Tests that a LinkField cannot link to an arbitrary type.
     """
     with pytest.raises(TypeError):
-        f.LinkField("Field Name", model=dict)
+        cls("Field Name", model=dict)
 
 
 def test_link_field():
@@ -437,6 +644,8 @@ def test_link_field():
     collection = [Book(), Book(), Book()]
     author = Author()
     author.books = collection
+    assert isinstance(author._fields["Books"], f.ChangeTrackingList)
+
     assert author.books == collection
 
     with pytest.raises(TypeError):
@@ -447,10 +656,6 @@ def test_link_field():
 
     with pytest.raises(TypeError):
         author.books = -1
-
-
-class Dummy(Model):
-    Meta = fake_meta()
 
 
 def test_link_field__linked_model():
@@ -506,15 +711,12 @@ def test_link_field__cycle(requests_mock):
     rec_b = {"id": id_b, "createdTime": DATETIME_S, "fields": {"Friends": [id_c]}}
     rec_c = {"id": id_c, "createdTime": DATETIME_S, "fields": {"Friends": [id_a]}}
 
-    requests_mock.get(Person.get_table().record_url(id_a), json=rec_a)
+    requests_mock.get(Person.meta.table.urls.record(id_a), json=rec_a)
     a = Person.from_id(id_a)
 
+    url = Person.meta.table.urls.records
     for record in (rec_a, rec_b, rec_c):
-        url_re = re.compile(
-            re.escape(Person.get_table().url + "?filterByFormula=")
-            + ".*"
-            + record["id"]
-        )
+        url_re = re.compile(re.escape(f"{url}?filterByFormula=") + ".*" + record["id"])
         requests_mock.get(url_re, json={"records": [record]})
 
     assert a.friends[0].id == id_b
@@ -529,7 +731,7 @@ def test_link_field__load_many(requests_mock):
     """
 
     person_id = fake_id("rec", "A")
-    person_url = Person.get_table().record_url(person_id)
+    person_url = Person.meta.table.urls.record(person_id)
     friend_ids = [fake_id("rec", c) for c in "123456789ABCDEF"]
 
     person_json = {
@@ -551,7 +753,7 @@ def test_link_field__load_many(requests_mock):
     # The mocked URL specifically includes every record ID in our test set,
     # to ensure the library isn't somehow dropping records from its query.
     url_regex = ".*".join(
-        [re.escape(Person.get_table().url + "?filterByFormula="), *friend_ids]
+        [re.escape(Person.meta.table.urls.records + "?filterByFormula="), *friend_ids]
     )
     mock_list = requests_mock.get(
         re.compile(url_regex),
@@ -566,6 +768,258 @@ def test_link_field__load_many(requests_mock):
     assert [friend.id for friend in person.friends] == friend_ids
     # Make sure we didn't keep calling the API on every `person.friends`
     assert mock_list.call_count == 2
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "author.books = [book]",
+        "author.books.append(book)",
+        "author.books[0] = book",
+        "author.books.insert(0, book)",
+        "author.books[0:1] = []",
+        "author.books.pop(0)",
+        "del author.books[0]",
+        "author.books.remove(author.books[0])",
+        "author.books.clear()",
+        "author.books.extend([book])",
+    ),
+)
+def test_link_field__save(requests_mock, mutation):
+    """
+    Test that we correctly detect changes to linked fields and save them.
+    """
+
+    class Book(Model):
+        Meta = fake_meta()
+
+    class Author(Model):
+        Meta = fake_meta()
+        books = f.LinkField("Books", model=Book)
+
+    b1 = Book.from_record(fake_record())
+    b2 = Book.from_record(fake_record())
+    author = Author.from_record(fake_record({"Books": [b1.id]}))
+
+    def _cb(request, context):
+        return {
+            "id": author.id,
+            "createdTime": datetime_to_iso_str(author.created_time),
+            "fields": request.json()["fields"],
+        }
+
+    requests_mock.get(
+        Book.meta.table.urls.records,
+        json={"records": [b1.to_record(), b2.to_record()]},
+    )
+    m = requests_mock.patch(Author.meta.table.urls.record(author.id), json=_cb)
+    exec(mutation, {}, {"author": author, "book": b2})
+    assert author._changed["Books"]
+    author.save()
+    assert m.call_count == 1
+    assert "Books" in m.last_request.json()["fields"]
+
+
+def test_single_link_field():
+    class Author(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class Book(Model):
+        Meta = fake_meta()
+        author = f.SingleLinkField("Author", Author, lazy=True)
+
+    assert Book.author.linked_model is Author
+
+    book = Book()
+    assert book.author is None
+
+    with pytest.raises(TypeError):
+        book.author = [Author()]
+
+    with pytest.raises(TypeError):
+        book.author = []
+
+    alice = Author.from_record(fake_record(Name="Alice"))
+    book.author = alice
+
+    with mock.patch("pyairtable.Table.get", return_value=alice.to_record()) as m:
+        book.author.fetch()
+        m.assert_called_once_with(alice.id, **Author.meta.request_kwargs)
+
+    assert book.author.id == alice.id
+    assert book.author.name == "Alice"
+
+    book.author = (bob := Author(name="Bob"))
+    assert not book.author.exists()
+    assert book.author.name == "Bob"
+
+    with mock.patch("pyairtable.Table.create", return_value=fake_record()) as m:
+        book.author.save()
+        m.assert_called_once_with(
+            {"Name": "Bob"},
+            typecast=True,
+            use_field_ids=False,
+        )
+
+    with mock.patch("pyairtable.Table.create", return_value=fake_record()) as m:
+        book.save()
+        m.assert_called_once_with(
+            {"Author": [bob.id]},
+            typecast=True,
+            use_field_ids=False,
+        )
+
+    with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
+        book.author = None
+        book.save()
+        m.assert_called_once_with(
+            book.id,
+            {"Author": None},
+            typecast=True,
+            use_field_ids=False,
+        )
+
+
+def test_single_link_field__multiple_values():
+    """
+    Test the behavior of SingleLinkField when the Airtable API
+    returns multiple values.
+    """
+
+    class Author(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class Book(Model):
+        Meta = fake_meta()
+        author = f.SingleLinkField("Author", Author)
+
+    records = [fake_record(Name=f"Author {n+1}") for n in range(3)]
+    a1, a2, a3 = [r["id"] for r in records]
+
+    # if Airtable sends back multiple IDs, we'll only retrieve the first one.
+    book = Book.from_record(fake_record(Author=[a1, a2, a3]))
+    with mock.patch("pyairtable.Table.all", return_value=records) as m:
+        book.author
+        m.assert_called_once_with(
+            **Book.meta.request_kwargs,
+            formula=OR(RECORD_ID().eq(records[0]["id"])),
+        )
+
+    assert book.author.id == a1
+    assert book.author.name == "Author 1"
+    assert book._fields["Author"][1:] == [a2, a3]  # not converted to models
+
+    # if book.author.__set__ not called, the entire list will be sent back to the API
+    with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
+        book.save(force=True)
+        m.assert_called_once_with(
+            book.id,
+            {"Author": [a1, a2, a3]},
+            typecast=True,
+            use_field_ids=False,
+        )
+
+    # if we modify the field value, it will drop items 2-N
+    book.author = Author.from_record(fake_record())
+    with mock.patch("pyairtable.Table.update", return_value=book.to_record()) as m:
+        book.save()
+        m.assert_called_once_with(
+            book.id,
+            {"Author": [book.author.id]},
+            typecast=True,
+            use_field_ids=False,
+        )
+
+
+def test_single_link_field__raise_if_many():
+    """
+    Test that passing raise_if_many=True to SingleLinkField will cause an exception
+    to be raised if (1) the field receives multiple values and (2) is accessed.
+    """
+
+    class Author(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class Book(Model):
+        Meta = fake_meta()
+        author = f.SingleLinkField("Author", Author, raise_if_many=True)
+
+    book = Book.from_record(fake_record(Author=[fake_id(), fake_id()]))
+    with pytest.raises(pyairtable.exceptions.MultipleValuesError):
+        book.author
+
+
+@pytest.mark.parametrize("field_type", (f.LinkField, f.SingleLinkField))
+def test_link_field__populate(field_type, requests_mock):
+    """
+    Test that implementers can use Model.link_field.populate(instance) to control
+    whether loading happens lazy or non-lazy at runtime.
+    """
+
+    class Linked(Model):
+        Meta = fake_meta()
+        name = f.TextField("Name")
+
+    class T(Model):
+        Meta = fake_meta()
+        link = field_type("Link", Linked)
+
+    links = [fake_record(id=n, Name=f"link{n}") for n in range(1, 4)]
+    link_ids = [link["id"] for link in links]
+    obj = T.from_record(fake_record(Link=link_ids[:]))
+    assert obj._fields.get("Link") == link_ids
+    assert obj._fields.get("Link") is not link_ids
+
+    # calling the record directly will attempt network traffic
+    with pytest.raises(NoMockAddress):
+        obj.link
+
+    # on a non-lazy field, we can still call .populate() to load it lazily
+    T.link.populate(obj, lazy=True)
+
+    if field_type is f.SingleLinkField:
+        assert isinstance(obj.link, Linked)
+        assert obj.link.id == links[0]["id"]
+        assert obj.link.name == ""
+    else:
+        assert isinstance(obj.link[0], Linked)
+        assert link_ids == [link.id for link in obj.link]
+        assert all(link.name == "" for link in obj.link)
+
+    # calling .populate() on the wrong model raises an exception
+    with pytest.raises(RuntimeError):
+        T.link.populate(Linked())
+
+
+@pytest.mark.parametrize("field_type", (f.LinkField, f.SingleLinkField))
+def test_link_field__populate_with_field_ids(field_type, requests_mock):
+    """
+    Test that implementers can use Model.link_field.populate(instance)
+    when the linked model uses field IDs rather than field names.
+    """
+    field_id = fake_id("fld")
+    record_ids = [fake_id("rec", n) for n in range(3)]
+    records = [
+        fake_record(id=record_id, Name=f"link{n}")
+        for n, record_id in enumerate(record_ids)
+    ]
+
+    class Linked(Model):
+        Meta = fake_meta(use_field_ids=True)
+        name = f.TextField(field_id)
+
+    class T(Model):
+        Meta = fake_meta()
+        link = field_type("Link", Linked)
+
+    m = requests_mock.get(Linked.meta.table.urls.records, json={"records": records})
+    obj = T.from_record(fake_record(Link=record_ids))
+    obj.link
+    assert m.call_count == 1
+    assert m.last_request.qs.get("returnFieldsByFieldId") == ["1"]
 
 
 def test_lookup_field():
@@ -613,3 +1067,174 @@ def test_rating_field():
 
     with pytest.raises(ValueError):
         T().rating = 0
+
+
+def test_datetime_timezones(requests_mock):
+    """
+    Test that DatetimeField handles time zones properly.
+    """
+
+    class M(Model):
+        Meta = fake_meta()
+        dt = f.DatetimeField("dt")
+
+    obj = M.from_record(fake_record(dt="2024-02-29T12:34:56Z"))
+
+    def patch_callback(request, context):
+        return {
+            "id": obj.id,
+            "createdTime": datetime_to_iso_str(obj.created_time),
+            "fields": request.json()["fields"],
+        }
+
+    m = requests_mock.patch(M.meta.table.urls.record(obj.id), json=patch_callback)
+
+    # Test that we parse the "Z" into UTC correctly
+    assert obj.dt.date() == datetime.date(2024, 2, 29)
+    assert obj.dt.tzinfo is datetime.timezone.utc
+    obj.save(force=True)
+    assert m.last_request.json()["fields"]["dt"] == "2024-02-29T12:34:56.000Z"
+
+    # Test that we can set a UTC timezone and it will be saved as-is.
+    obj.dt = datetime.datetime(2024, 3, 1, 11, 22, 33, tzinfo=datetime.timezone.utc)
+    obj.save()
+    assert m.last_request.json()["fields"]["dt"] == "2024-03-01T11:22:33.000Z"
+
+    # Test that we can set a local timezone and it will be sent to Airtable.
+    pacific = datetime.timezone(datetime.timedelta(hours=-8))
+    obj.dt = datetime.datetime(2024, 3, 1, 11, 22, 33, tzinfo=pacific)
+    obj.save()
+    assert m.last_request.json()["fields"]["dt"] == "2024-03-01T11:22:33.000-08:00"
+
+    # Test that a timezone-unaware datetime is passed as-is to Airtable.
+    # This behavior will vary depending on how the field is configured.
+    # See https://airtable.com/developers/web/api/field-model#dateandtime
+    obj.dt = datetime.datetime(2024, 3, 1, 11, 22, 33)
+    obj.save()
+    assert m.last_request.json()["fields"]["dt"] == "2024-03-01T11:22:33.000"
+
+
+@pytest.mark.parametrize(
+    "fields,expected",
+    [
+        ({}, None),
+        ({"Field": None}, None),
+        ({"Field": ""}, ""),
+        ({"Field": "xyz"}, "xyz"),
+    ],
+)
+def test_select_field(fields, expected):
+    """
+    Test that select field distinguishes between empty string and None.
+    """
+
+    class T(Model):
+        Meta = fake_meta()
+        the_field = f.SelectField("Field")
+
+    obj = T.from_record(fake_record(**fields))
+    assert obj.the_field == expected
+
+    with mock.patch("pyairtable.Table.update", return_value=obj.to_record()) as m:
+        obj.save(force=True)
+        m.assert_called_once_with(
+            obj.id,
+            fields,
+            typecast=True,
+            use_field_ids=False,
+        )
+
+
+@pytest.mark.parametrize(
+    "class_kwargs",
+    [
+        {"contains_type": 1},
+        {"list_class": 1},
+        {"list_class": dict},
+    ],
+)
+def test_invalid_list_class_params(class_kwargs):
+    """
+    Test that certain parameters to ListField are invalid.
+    """
+
+    with pytest.raises(TypeError):
+
+        class ListFieldSubclass(f._ListField, **class_kwargs):
+            pass
+
+
+@mock.patch("pyairtable.Table.create")
+def test_attachments__set(mock_create):
+    """
+    Test that AttachmentsField can be set with a list of AttachmentDict,
+    and the value will be coerced to an AttachmentsList.
+    """
+    mock_create.return_value = {
+        "id": fake_id(),
+        "createdTime": DATETIME_S,
+        "fields": {
+            "Attachments": [
+                {
+                    "id": fake_id("att"),
+                    "url": "https://example.com",
+                    "filename": "a.jpg",
+                }
+            ]
+        },
+    }
+
+    class T(Model):
+        Meta = fake_meta()
+        attachments = f.AttachmentsField("Attachments")
+
+    obj = T()
+    assert obj.attachments == []
+    assert isinstance(obj.attachments, AttachmentsList)
+
+    obj.attachments = [{"url": "https://example.com"}]
+    assert isinstance(obj.attachments, AttachmentsList)
+
+    obj.save()
+    assert isinstance(obj.attachments, AttachmentsList)
+    assert obj.attachments[0]["url"] == "https://example.com"
+
+
+def test_attachments__set_invalid_type():
+    class T(Model):
+        Meta = fake_meta()
+        attachments = f.AttachmentsField("Attachments")
+
+    with pytest.raises(TypeError):
+        T().attachments = [1, 2, 3]
+
+
+def test_field_schema(table, mock_table_schema):
+    """
+    Test that an ORM field can retrieve its own field schema.
+    """
+
+    class Apartment(Model):
+        class Meta:
+            api_key = fake_id("pat")
+            base_id = table.base.id
+            table_name = "Apartments"
+
+        name = f.TextField("Name")
+        pictures = f.AttachmentsField("Pictures")
+
+    name = Apartment.name.field_schema()
+    assert isinstance(name, schema.SingleLineTextFieldSchema)
+    assert name.id == "fld1VnoyuotSTyxW1"
+
+    pictures = Apartment.pictures.field_schema()
+    assert isinstance(pictures, schema.MultipleAttachmentsFieldSchema)
+    assert pictures.id == "fldoaIqdn5szURHpw"
+    assert pictures.options.is_reversed is False
+
+
+def test_field_schema__detached(table, requests_mock):
+    with pytest.raises(RuntimeError):
+        f.TextField("Detached Field").field_schema()
+    with pytest.raises(RuntimeError):
+        f._FieldSchema().field_schema()

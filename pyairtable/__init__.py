@@ -1,11 +1,15 @@
-__version__ = "2.1.0.post20230821"
+__version__ = "3.3.0.post20260329"
 
-from .api import Api, Base, Table
-from .api.retrying import retry_strategy
+from pyairtable.api import Api, Base, Table
+from pyairtable.api.enterprise import Enterprise
+from pyairtable.api.retrying import retry_strategy
+from pyairtable.api.workspace import Workspace
 
 __all__ = [
     "Api",
     "Base",
+    "Enterprise",
     "Table",
+    "Workspace",
     "retry_strategy",
 ]

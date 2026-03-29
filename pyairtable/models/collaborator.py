@@ -2,7 +2,7 @@ from typing import Optional
 
 from typing_extensions import TypeAlias
 
-from ._base import AirtableModel
+from pyairtable.models._base import AirtableModel
 
 UserId: TypeAlias = str
 
@@ -20,7 +20,7 @@ class Collaborator(AirtableModel):
     id: UserId
 
     #: The email address of the user.
-    email: Optional[str]
+    email: Optional[str] = None
 
     #: The display name of the user.
-    name: Optional[str]
+    name: Optional[str] = None

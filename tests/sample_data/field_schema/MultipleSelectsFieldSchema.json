@@ -1,0 +1,24 @@
+{
+  "type": "multipleSelects",
+  "options": {
+    "choices": [
+      {
+        "id": "selX4cKixuDso5PEX",
+        "name": "One",
+        "color": "blueLight2"
+      },
+      {
+        "id": "seloqP1Gzj8Glrspo",
+        "name": "Two",
+        "color": "cyanLight2"
+      },
+      {
+        "id": "selqPFVai30QE6Kp8",
+        "name": "Three",
+        "color": "tealLight2"
+      }
+    ]
+  },
+  "id": "fldI5gjLnq0RXUleV",
+  "name": "Tags"
+}

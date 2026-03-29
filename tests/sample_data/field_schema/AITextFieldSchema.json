@@ -1,0 +1,13 @@
+{
+  "type": "aiText",
+  "id": "fld8cfZQtRNaiText",
+  "name": "AI Text",
+  "options": {
+    "prompt": [
+      {
+        "field": {"fieldId": "fldEHLmq3SvZCvgOT"}
+      }
+    ],
+    "referencedFieldIds": ["fldEHLmq3SvZCvgOT"]
+  }
+}

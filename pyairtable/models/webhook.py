@@ -1,21 +1,21 @@
 import base64
+from datetime import datetime
 from functools import partial
 from hmac import HMAC
-from typing import Any, Callable, Dict, Iterator, List, Optional, Union
+from typing import Any, Callable, Dict, Iterator, List, Literal, Optional, Union
 
+import pydantic
 from typing_extensions import Self as SelfType
 
-from pyairtable._compat import pydantic
 from pyairtable.api.types import RecordId
-
-from ._base import AirtableModel, SerializableModel, update_forward_refs
+from pyairtable.models._base import AirtableModel, CanDeleteModel, rebuild_models
 
 # Shortcuts to avoid lots of line wrapping
 FD: Callable[[], Any] = partial(pydantic.Field, default_factory=dict)
 FL: Callable[[], Any] = partial(pydantic.Field, default_factory=list)
 
 
-class Webhook(SerializableModel, allow_update=False):
+class Webhook(CanDeleteModel, url="bases/{base.id}/webhooks/{self.id}"):
     """
     A webhook that has been retrieved from the Airtable API.
 
@@ -30,7 +30,7 @@ class Webhook(SerializableModel, allow_update=False):
     CreateWebhookResponse(
         id='ach00000000000001',
         mac_secret_base64='c3VwZXIgZHVwZXIgc2VjcmV0',
-        expiration_time='2023-07-01T00:00:00.000Z'
+        expiration_time=datetime.datetime(...)
     )
     >>> webhooks = base.webhooks()
     >>> webhooks[0]
@@ -42,7 +42,7 @@ class Webhook(SerializableModel, allow_update=False):
         last_successful_notification_time=None,
         notification_url="https://example.com",
         last_notification_result=None,
-        expiration_time="2023-07-01T00:00:00.000Z",
+        expiration_time=datetime.datetime(...),
         specification: WebhookSpecification(...)
     )
     >>> webhooks[0].disable_notifications()
@@ -55,10 +55,10 @@ class Webhook(SerializableModel, allow_update=False):
     are_notifications_enabled: bool
     cursor_for_next_payload: int
     is_hook_enabled: bool
-    last_successful_notification_time: Optional[str]
-    notification_url: Optional[str]
-    last_notification_result: Optional["WebhookNotificationResult"]
-    expiration_time: Optional[str]
+    last_successful_notification_time: Optional[datetime] = None
+    notification_url: Optional[str] = None
+    last_notification_result: Optional["WebhookNotificationResult"] = None
+    expiration_time: Optional[datetime] = None
     specification: "WebhookSpecification"
 
     def enable_notifications(self) -> None:
@@ -110,7 +110,7 @@ class Webhook(SerializableModel, allow_update=False):
             >>> iter_payloads = webhook.payloads()
             >>> next(iter_payloads)
             WebhookPayload(
-                timestamp="2022-02-01T21:25:05.663Z",
+                timestamp=datetime.datetime(...),
                 base_transaction_number=4,
                 payload_format="v0",
                 action_metadata=ActionMetadata(
@@ -147,7 +147,7 @@ class Webhook(SerializableModel, allow_update=False):
         ):
             payloads = page["payloads"]
             for index, payload in enumerate(payloads):
-                payload = WebhookPayload.parse_obj(payload)
+                payload = WebhookPayload.from_api(payload, self._api, context=self)
                 payload.cursor = cursor + index
                 yield payload
                 count += 1
@@ -172,39 +172,13 @@ class WebhookNotification(AirtableModel):
     use :meth:`Webhook.payloads <pyairtable.models.Webhook.payloads>` to retrieve
     the actual payloads describing the change(s) which triggered the webhook.
 
-    You will also need some way to persist the ``cursor`` of the webhook payload,
-    so that on subsequent calls you do not retrieve the same payloads again.
-
-    Usage:
-        .. code-block:: python
-
-            from flask import Flask, request
-            from pyairtable import Api
-            from pyairtable.models import WebhookNotification
-
-            app = Flask(__name__)
-
-            @app.route("/airtable-webhook", methods=["POST"])
-            def airtable_webhook():
-                body = request.data
-                header = request.headers["X-Airtable-Content-MAC"]
-                secret = app.config["AIRTABLE_WEBHOOK_SECRET"]
-                event = WebhookNotification.from_request(body, header, secret)
-                airtable = Api(app.config["AIRTABLE_API_KEY"])
-                webhook = airtable.base(event.base.id).webhook(event.webhook.id)
-                cursor = int(your_db.get(f"cursor_{event.webhook}", 0)) + 1
-                for payload in webhook.payloads(cursor=cursor):
-                    # ...do stuff...
-                    your_db.set(f"cursor_{event.webhook}", payload.cursor)
-                return ("", 204)  # intentionally empty response
-
     See `Webhook notification delivery <https://airtable.com/developers/web/api/webhooks-overview#webhook-notification-delivery>`_
     for more information on how these payloads are structured.
     """
 
     base: _NestedId
     webhook: _NestedId
-    timestamp: str
+    timestamp: datetime
 
     @classmethod
     def from_request(
@@ -214,7 +188,7 @@ class WebhookNotification(AirtableModel):
         secret: Union[bytes, str],
     ) -> SelfType:
         """
-        Validates a request body and X-Airtable-Content-MAC header
+        Validate a request body and X-Airtable-Content-MAC header
         using the secret returned when the webhook was created.
 
         Args:
@@ -233,15 +207,15 @@ class WebhookNotification(AirtableModel):
         if isinstance(secret, str):
             secret = base64.decodebytes(secret.encode("ascii"))
         hmac = HMAC(secret, body.encode("ascii"), "sha256")
-        expected = "hmac-sha256-" + hmac.hexdigest()
+        expected = "hmac-sha256=" + hmac.hexdigest()
         if header != expected:
             raise ValueError("X-Airtable-Content-MAC header failed validation")
-        return cls.parse_raw(body)
+        return cls.model_validate_json(body)
 
 
 class WebhookNotificationResult(AirtableModel):
     success: bool
-    completion_timestamp: str
+    completion_timestamp: datetime
     duration_ms: float
     retry_number: int
     will_be_retried: Optional[bool] = None
@@ -257,31 +231,35 @@ class WebhookSpecification(AirtableModel):
 
     class Options(AirtableModel):
         filters: "WebhookSpecification.Filters"
-        includes: Optional["WebhookSpecification.Includes"]
+        includes: Optional["WebhookSpecification.Includes"] = None
 
     class Filters(AirtableModel):
         data_types: List[str]
-        record_change_scope: Optional[str]
+        record_change_scope: Optional[str] = None
         change_types: List[str] = FL()
         from_sources: List[str] = FL()
-        source_options: Optional["WebhookSpecification.SourceOptions"]
+        source_options: Optional["WebhookSpecification.SourceOptions"] = None
         watch_data_in_field_ids: List[str] = FL()
         watch_schemas_of_field_ids: List[str] = FL()
 
     class SourceOptions(AirtableModel):
-        form_submission: Optional["WebhookSpecification.FormSubmission"]
+        form_submission: Optional["FormSubmission"] = None
+        form_page_submission: Optional["FormPageSubmission"] = None
 
-    class FormSubmission(AirtableModel):
-        view_id: str
+        class FormSubmission(AirtableModel):
+            view_id: str
+
+        class FormPageSubmission(AirtableModel):
+            page_id: str
 
     class Includes(AirtableModel):
-        include_cell_values_in_field_ids: List[str] = FL()
+        include_cell_values_in_field_ids: Union[None, List[str], Literal["all"]] = None
         include_previous_cell_values: bool = False
         include_previous_field_definitions: bool = False
 
 
 class CreateWebhook(AirtableModel):
-    notification_url: Optional[str]
+    notification_url: Optional[str] = None
     specification: WebhookSpecification
 
 
@@ -300,7 +278,7 @@ class CreateWebhookResponse(AirtableModel):
     mac_secret_base64: str
 
     #: The timestamp when the webhook will expire and be deleted.
-    expiration_time: Optional[str]
+    expiration_time: Optional[datetime] = None
 
 
 class WebhookPayload(AirtableModel):
@@ -309,19 +287,23 @@ class WebhookPayload(AirtableModel):
     `Webhooks payload <https://airtable.com/developers/web/api/model/webhooks-payload>`_.
     """
 
-    timestamp: str
+    timestamp: datetime
     base_transaction_number: int
     payload_format: str
-    action_metadata: Optional["WebhookPayload.ActionMetadata"]
+    action_metadata: Optional["WebhookPayload.ActionMetadata"] = None
     changed_tables_by_id: Dict[str, "WebhookPayload.TableChanged"] = FD()
     created_tables_by_id: Dict[str, "WebhookPayload.TableCreated"] = FD()
     destroyed_table_ids: List[str] = FL()
-    error: Optional[bool]
-    error_code: Optional[str] = pydantic.Field(alias="code")
+    error: Optional[bool] = None
+    error_code: Optional[str] = pydantic.Field(alias="code", default=None)
 
-    #: This is not a part of Airtable's webhook payload specification.
-    #: This indicates the cursor field in the response which provided this payload.
-    cursor: Optional[int]
+    #: The payload transaction number, as described in
+    #: `List webhook payloads - Response format <https://airtable.com/developers/web/api/list-webhook-payloads#response>`__.
+    #: If passed to :meth:`Webhook.payloads` it will return the same payload again,
+    #: along with any more payloads recorded after it.
+    #:
+    #: This field is specific to pyAirtable, and is not part of Airtable's webhook payload specification.
+    cursor: Optional[int] = None
 
     class ActionMetadata(AirtableModel):
         source: str
@@ -332,12 +314,12 @@ class WebhookPayload(AirtableModel):
         description: Optional[str] = None
 
     class FieldInfo(AirtableModel):
-        name: Optional[str]
-        type: Optional[str]
+        name: Optional[str] = None
+        type: Optional[str] = None
 
     class FieldChanged(AirtableModel):
         current: "WebhookPayload.FieldInfo"
-        previous: Optional["WebhookPayload.FieldInfo"]
+        previous: Optional["WebhookPayload.FieldInfo"] = None
 
     class TableChanged(AirtableModel):
         changed_views_by_id: Dict[str, "WebhookPayload.ViewChanged"] = FD()
@@ -345,7 +327,7 @@ class WebhookPayload(AirtableModel):
         changed_records_by_id: Dict[RecordId, "WebhookPayload.RecordChanged"] = FD()
         created_fields_by_id: Dict[str, "WebhookPayload.FieldInfo"] = FD()
         created_records_by_id: Dict[RecordId, "WebhookPayload.RecordCreated"] = FD()
-        changed_metadata: Optional["WebhookPayload.TableChanged.ChangedMetadata"]
+        changed_metadata: Optional["WebhookPayload.TableChanged.ChangedMetadata"] = None
         destroyed_field_ids: List[str] = FL()
         destroyed_record_ids: List[RecordId] = FL()
 
@@ -359,20 +341,20 @@ class WebhookPayload(AirtableModel):
         destroyed_record_ids: List[RecordId] = FL()
 
     class TableCreated(AirtableModel):
-        metadata: Optional["WebhookPayload.TableInfo"]
+        metadata: Optional["WebhookPayload.TableInfo"] = None
         fields_by_id: Dict[str, "WebhookPayload.FieldInfo"] = FD()
         records_by_id: Dict[RecordId, "WebhookPayload.RecordCreated"] = FD()
 
     class RecordChanged(AirtableModel):
         current: "WebhookPayload.CellValuesByFieldId"
-        previous: Optional["WebhookPayload.CellValuesByFieldId"]
-        unchanged: Optional["WebhookPayload.CellValuesByFieldId"]
+        previous: Optional["WebhookPayload.CellValuesByFieldId"] = None
+        unchanged: Optional["WebhookPayload.CellValuesByFieldId"] = None
 
     class CellValuesByFieldId(AirtableModel):
         cell_values_by_field_id: Dict[str, Any]
 
     class RecordCreated(AirtableModel):
-        created_time: str
+        created_time: datetime
         cell_values_by_field_id: Dict[str, Any]
 
 
@@ -382,4 +364,4 @@ class WebhookPayloads(AirtableModel):
     payloads: List[WebhookPayload]
 
 
-update_forward_refs(vars())
+rebuild_models(vars())

@@ -111,9 +111,8 @@ like :meth:`~pyairtable.Table.iterate` or :meth:`~pyairtable.Table.all`.
      - |kwarg_user_locale|
    * - ``time_zone``
      - |kwarg_time_zone|
-   * - ``return_fields_by_field_id``
-        .. versionadded:: 1.3.0
-     - |kwarg_return_fields_by_field_id|
+   * - ``use_field_ids``
+     - |kwarg_use_field_ids|
 
 
 Return Values
@@ -152,32 +151,21 @@ This library will return records as :class:`~pyairtable.api.types.RecordDict`.
 Formulas
 ********
 
-The :mod:`pyairtable.formulas` module provides functionality to help you compose
-`Airtable formulas <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_.
+Methods like :meth:`~pyairtable.Table.all` or :meth:`~pyairtable.Table.first`
+accept a ``formula=`` keyword argument so you can filter results using an
+`Airtable formula <https://support.airtable.com/hc/en-us/articles/203255215-Formula-field-reference>`_.
 
-* :func:`~pyairtable.formulas.match` checks field values from a Python ``dict``:
+The simplest option is to pass your formula as a string; however, if your use case
+is complex and you want to avoid lots of f-strings and escaping, use
+:func:`~pyairtable.formulas.match` to check field values from a ``dict``:
 
   .. code-block:: python
 
       >>> from pyairtable.formulas import match
-      >>> formula = match({"First Name": "John", "Age": 21})
-      >>> formula
-      "AND({First Name}='John',{Age}=21)"
-      >>> table.first(formula=formula)
+      >>> table.first(formula=match({"First Name": "John", "Age": 21}))
       {"id": "recUwKa6lbNSMsetH", "fields": {"First Name": "John", "Age": 21}}
 
-* :func:`~pyairtable.formulas.to_airtable_value` converts a Python value
-  to an expression that can be included in a formula:
-
-  .. code-block:: python
-
-      >>> from pyairtable.formulas import to_airtable_value
-      >>> to_airtable_value(1)
-      1
-      >>> to_airtable_value(datetime.date.today())
-      '2023-06-13'
-
-For more on generating formulas, look over the :mod:`pyairtable.formulas` API reference.
+For more on generating formulas, read the :doc:`formulas` documentation.
 
 
 Retries
@@ -289,7 +277,7 @@ and :meth:`~pyairtable.Table.add_comment` methods will return instances of
         Comment(
             id='comdVMNxslc6jG0Xe',
             text='Hello, @[usrVMNxslc6jG0Xed]!',
-            created_time='2023-06-07T17:46:24.435891',
+            created_time=datetime.datetime(...),
             last_updated_time=None,
             mentioned={
                 'usrVMNxslc6jG0Xed': Mentioned(
@@ -311,3 +299,14 @@ and :meth:`~pyairtable.Table.add_comment` methods will return instances of
     >>> table.comments("recMNxslc6jG0XedV")[0].text
     'Never mind!'
     >>> comment.delete()
+
+Testing Your Code
+-----------------
+
+pyAirtable provides a :class:`~pyairtable.testing.MockAirtable` class that can be used to
+test your code without making real requests to Airtable.
+
+.. autoclass:: pyairtable.testing.MockAirtable
+   :noindex:
+
+For more information, see :mod:`pyairtable.testing`.

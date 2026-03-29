@@ -10,7 +10,7 @@ fake_user_data = {
 
 
 def test_parse():
-    user = Collaborator.parse_obj(fake_user_data)
+    user = Collaborator.model_validate(fake_user_data)
     assert user.id == fake_user_data["id"]
     assert user.email == fake_user_data["email"]
     assert user.name == fake_user_data["name"]

@@ -1,0 +1,14 @@
+{
+  "bases": [
+    {
+      "id": "appLkNDICXNqxSDhG",
+      "name": "Apartment Hunting",
+      "permissionLevel": "create"
+    },
+    {
+      "id": "appSW9R5uCNmRmfl6",
+      "name": "Project Tracker",
+      "permissionLevel": "edit"
+    }
+  ]
+}
