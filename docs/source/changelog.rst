@@ -5,6 +5,9 @@ Changelog
 3.3.0 (2025-11-05)
 ------------------------
 
+* Added opt-in TTL caching for ``Table.all`` and ``Table.first`` via
+  :meth:`Api.enable_caching <pyairtable.Api.enable_caching>` and
+  :class:`~pyairtable.TableTTLConfig`.
 * Added ``count_comments=`` parameter to ``Table.all`` and ``Table.first``.
   - `PR #441 <https://github.com/gtalarico/pyairtable/pull/441>`_
 * Added support for `Create Workspace <https://airtable.com/developers/web/api/create-workspace>`_

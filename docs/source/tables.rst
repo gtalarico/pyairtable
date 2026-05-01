@@ -77,6 +77,53 @@ multiple requests.
   [{'id': 'rec123asa23', 'fields': {'Last Name': 'Alfred', 'Age': 84}, ...}, ...]
 
 
+Record Caching
+**************
+
+You can enable TTL-based caching for calls to :meth:`~pyairtable.Table.all`
+and :meth:`~pyairtable.Table.first` when your application repeatedly reads the
+same record lists. Caching is disabled by default and is configured on the
+:class:`~pyairtable.Api` instance, so all tables created from that API will share
+the same cache.
+
+.. code-block:: python
+
+  >>> from pyairtable import Api, TableTTLConfig
+  >>> api = Api("pat...")
+  >>> api.enable_caching(
+  ...     TableTTLConfig(
+  ...         default_ttl_seconds=300,
+  ...         overrides={"Projects": 60},
+  ...         max_entries=512,
+  ...     )
+  ... )
+  >>> table = api.table("app123...", "Projects")
+  >>> table.all(view="Open")  # Fetches records from Airtable
+  [{'id': 'rec123...', 'fields': {'Name': 'Launch'}, ...}]
+  >>> table.all(view="Open")  # Returns the cached records
+  [{'id': 'rec123...', 'fields': {'Name': 'Launch'}, ...}]
+
+Cache entries are keyed by the base, table, and query options that affect the
+returned records, such as ``view``, ``formula``, ``fields``, ``sort``,
+``max_records``, and ``count_comments``. The ``page_size`` option is ignored
+because it only controls pagination while fetching the same result set.
+:meth:`~pyairtable.Table.iterate` and :meth:`~pyairtable.Table.get` are not
+cached.
+
+Writes made through the same :class:`~pyairtable.Api` instance automatically
+invalidate cached record lists for that table. This includes
+:meth:`~pyairtable.Table.create`, :meth:`~pyairtable.Table.batch_create`,
+:meth:`~pyairtable.Table.update`, :meth:`~pyairtable.Table.batch_update`,
+:meth:`~pyairtable.Table.batch_upsert`, :meth:`~pyairtable.Table.delete`,
+:meth:`~pyairtable.Table.batch_delete`, and
+:meth:`~pyairtable.Table.upload_attachment`.
+
+Changes made outside that API instance, such as writes from another process or
+another Airtable client, are not visible until the matching cache entry expires.
+You can call :meth:`~pyairtable.Api.disable_caching` to discard the cache, or
+:meth:`~pyairtable.Api.cache_stats` to inspect cache entries while debugging.
+
+
 Parameters
 **********
 
