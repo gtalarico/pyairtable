@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias
 
 from pyairtable.api import retrying
 from pyairtable.api.base import Base
-from pyairtable.api.caching import RequestCache, TableTTLConfig
+from pyairtable.api.caching import RecordCache, TableTTLConfig
 from pyairtable.api.enterprise import Enterprise
 from pyairtable.api.params import options_to_json_and_params, options_to_params
 from pyairtable.api.table import Table
@@ -52,7 +52,7 @@ class Api:
     endpoint_url: Url
     session: Session
     use_field_ids: bool
-    _request_cache: Optional[RequestCache] = None
+    _record_cache: Optional[RecordCache] = None
 
     class _urls(UrlBuilder):
         whoami = Url("meta/whoami")
@@ -192,15 +192,18 @@ class Api:
         self, ttl_config: Optional[TableTTLConfig] = None
     ) -> None:
         """
-        Enable request-level caching for table record fetches.
+        Enable TTL-based caching for table record fetches.
 
-        When enabled, calls to ``table.all()``, ``table.iterate()``, and ``table.get()``
-        will cache results based on the query parameters. Cached results are automatically
-        invalidated when records are created, updated, or deleted.
+        When enabled, calls to :meth:`Table.all() <pyairtable.Table.all>`,
+        :meth:`Table.iterate() <pyairtable.Table.iterate>`, and
+        :meth:`Table.first() <pyairtable.Table.first>` will return
+        cached results if a fresh entry exists for the same query parameters.
+        Cached entries are automatically invalidated when records are created,
+        updated, or deleted through this :class:`Api` instance.
 
         Args:
-            ttl_config: Configuration for cache TTLs. If not provided, uses a default
-                configuration with a 300-second TTL for all tables.
+            ttl_config: Configuration for cache TTLs. If not provided, uses a
+                default configuration with a 300-second TTL for all tables.
 
         Usage:
             >>> api = Api(token)
@@ -210,34 +213,30 @@ class Api:
             >>> table.all()  # Returns cached result
         """
         if ttl_config is None:
-            ttl_config = TableTTLConfig(default_ttl_seconds=300)
-        self._request_cache = RequestCache(ttl_config)
+            ttl_config = TableTTLConfig()
+        self._record_cache = RecordCache(ttl_config)
 
     def disable_caching(self) -> None:
-        """Disable request-level caching."""
-        self._request_cache = None
+        """Disable caching and discard all cached data."""
+        self._record_cache = None
 
     def cache_stats(self) -> Optional[Dict[str, Any]]:
         """
-        Return cache statistics for debugging.
-
-        Returns None if caching is not enabled.
+        Return cache statistics for debugging, or ``None`` if caching is disabled.
 
         Usage:
             >>> api.enable_caching()
             >>> api.table(base_id, table_name).all()
-            >>> stats = api.cache_stats()
-            >>> stats['total_entries']
-            1
+            >>> api.cache_stats()
+            {'total_entries': 1, 'entries': [...]}
         """
-        if self._request_cache is None:
+        if self._record_cache is None:
             return None
-        return self._request_cache.stats()
+        return self._record_cache.stats()
 
     def _invalidate_cache_for_table(self, base_id: str, table_name: str) -> None:
-        """Invalidate cache entries for a specific table (called on mutations)."""
-        if self._request_cache is not None:
-            self._request_cache.invalidate_table(base_id, table_name)
+        if self._record_cache is not None:
+            self._record_cache.invalidate_table(base_id, table_name)
 
     def create_base(
         self,
@@ -307,14 +306,6 @@ class Api:
             params: Additional query params to append to the URL as-is.
             json: The JSON payload for a POST/PUT/PATCH/DELETE request.
         """
-        # Check cache for GET requests to list records
-        if method.upper() == "GET" and self._request_cache is not None:
-            cache_key = self._make_cache_key(url, options)
-            if cache_key is not None:
-                cached = self._request_cache.get_entry(cache_key)
-                if cached is not None:
-                    return {"records": cached}
-
         # Convert Airtable-specific options to query params, but give priority to query params
         # that are explicitly passed via `params=`. This is to preserve backwards-compatibility for
         # any library users who might be calling `self._request` directly.
@@ -353,17 +344,7 @@ class Api:
             params=request_params,
             json=json,
         )
-        result = self._process_response(response)
-
-        # Store in cache if this was a list records call
-        if method.upper() == "GET" and self._request_cache is not None:
-            cache_key = self._make_cache_key(url, options)
-            if cache_key is not None and isinstance(result, dict):
-                records = result.get("records", [])
-                if isinstance(records, list):
-                    self._request_cache.put_entry(cache_key, records)
-
-        return result
+        return self._process_response(response)
 
     def get(self, url: str, **kwargs: Any) -> Any:
         """
@@ -392,48 +373,6 @@ class Api:
         See :meth:`~Api.request` for keyword arguments.
         """
         return self.request("DELETE", url, **kwargs)
-
-    def _make_cache_key(
-        self, url: str, options: Optional[Dict[str, Any]] = None
-    ) -> Optional[Tuple[str, str, str, str, Tuple[str, ...], str, Tuple[str, ...], bool]]:
-        """
-        Generate a cache key from URL and options.
-
-        Returns None if this URL should not be cached (e.g., not a list records call).
-        Cache key includes: base_id, table_id_or_name, formula, cell_format, fields, view, sort, use_field_ids.
-        """
-        from pyairtable.api.caching import CacheKey
-
-        # URL format: /v0/{base_id}/{table_id_or_name} for list records
-        # Parse from URL path
-        parts = url.rstrip("/").split("/")
-        if len(parts) < 2:
-            return None
-
-        base_id = parts[-2]
-        table_id_or_name = parts[-1]
-
-        if not base_id or not table_id_or_name:
-            return None
-
-        options = options or {}
-
-        # Extract cache-relevant options
-        formula = str(options.get("formula", "")) if options.get("formula") else ""
-        cell_format = str(options.get("cell_format", "")) if options.get("cell_format") else ""
-        view = str(options.get("view", "")) if options.get("view") else ""
-        use_field_ids = bool(options.get("use_field_ids", False))
-
-        # Sort fields and sort params for deterministic keys
-        fields = options.get("fields", ())
-        if fields:
-            fields = tuple(sorted(fields))
-
-        sort = options.get("sort", ())
-        if sort:
-            sort = tuple(sorted(str(s) for s in sort))
-
-        return (base_id, table_id_or_name, formula, cell_format, fields, view, sort, use_field_ids)
 
     def _process_response(self, response: requests.Response) -> Any:
         try:

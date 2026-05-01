@@ -284,13 +284,34 @@ class Table:
             options["formula"] = to_formula_str(formula)
         if self.api.use_field_ids:
             options.setdefault("use_field_ids", self.api.use_field_ids)
+
+        cache = self.api._record_cache
+        cache_key = None
+        if cache is not None:
+            from pyairtable.api.caching import CacheKey
+
+            cache_key = CacheKey.from_query(
+                self.base.id, self.id_or_name, options
+            )
+            cached = cache.get(cache_key)
+            if cached is not None:
+                yield cached
+                return
+
+        all_records: List[RecordDict] = []
         for page in self.api.iterate_requests(
             method="get",
             url=self.urls.records,
             fallback=("post", self.urls.records_post),
             options=options,
         ):
-            yield assert_typed_dicts(RecordDict, page.get("records", []))
+            records = assert_typed_dicts(RecordDict, page.get("records", []))
+            if cache_key is not None:
+                all_records.extend(records)
+            yield records
+
+        if cache is not None and cache_key is not None:
+            cache.put(cache_key, all_records)
 
     def all(self, **options: Any) -> List[RecordDict]:
         """
