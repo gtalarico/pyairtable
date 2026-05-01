@@ -370,7 +370,9 @@ class Table:
                 "returnFieldsByFieldId": use_field_ids,
             },
         )
-        return assert_typed_dict(RecordDict, created)
+        result = assert_typed_dict(RecordDict, created)
+        self.api._invalidate_cache_for_table(self.base.id, self.name)
+        return result
 
     def batch_create(
         self,
@@ -419,6 +421,7 @@ class Table:
             )
             inserted_records += assert_typed_dicts(RecordDict, response["records"])
 
+        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return inserted_records
 
     def update(
@@ -456,7 +459,9 @@ class Table:
                 "returnFieldsByFieldId": use_field_ids,
             },
         )
-        return assert_typed_dict(RecordDict, updated)
+        result = assert_typed_dict(RecordDict, updated)
+        self.api._invalidate_cache_for_table(self.base.id, self.name)
+        return result
 
     def batch_update(
         self,
@@ -498,6 +503,7 @@ class Table:
             )
             updated_records += assert_typed_dicts(RecordDict, response["records"])
 
+        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return updated_records
 
     def batch_upsert(
@@ -571,6 +577,7 @@ class Table:
                 assert_typed_dicts(RecordDict, response["records"])
             )
 
+        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return result
 
     def delete(self, record_id: RecordId) -> RecordDeletedDict:
@@ -586,10 +593,12 @@ class Table:
         Returns:
             Confirmation that the record was deleted.
         """
-        return assert_typed_dict(
+        result = assert_typed_dict(
             RecordDeletedDict,
             self.api.delete(self.urls.record(record_id)),
         )
+        self.api._invalidate_cache_for_table(self.base.id, self.name)
+        return result
 
     def batch_delete(self, record_ids: Iterable[RecordId]) -> List[RecordDeletedDict]:
         """
@@ -616,6 +625,7 @@ class Table:
             result = self.api.delete(self.urls.records, params={"records[]": chunk})
             deleted_records += assert_typed_dicts(RecordDeletedDict, result["records"])
 
+        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return deleted_records
 
     def comments(self, record_id: RecordId) -> List["pyairtable.models.Comment"]:
