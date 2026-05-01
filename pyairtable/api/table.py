@@ -18,6 +18,7 @@ from typing import (
 )
 
 import pyairtable.models
+from pyairtable.api.caching import CacheKey
 from pyairtable.api.types import (
     FieldName,
     RecordDeletedDict,
@@ -230,6 +231,34 @@ class Table:
         """
         return self.base.api
 
+    def _list_records_options(self, options: Dict[str, Any]) -> Dict[str, Any]:
+        options = dict(options)
+        if isinstance(formula := options.get("formula"), Formula):
+            options["formula"] = to_formula_str(formula)
+        if self.api.use_field_ids:
+            options.setdefault("use_field_ids", self.api.use_field_ids)
+        return options
+
+    def _cache_table_id_or_name(self) -> str:
+        return self._schema.id if self._schema else self.name
+
+    def _cache_table_identifiers(self) -> List[str]:
+        identifiers = [self.name, self._cache_table_id_or_name()]
+        return list(dict.fromkeys(identifiers))
+
+    def _cache_key(self, options: Dict[str, Any]) -> CacheKey:
+        return CacheKey.from_query(
+            self.base.id,
+            self._cache_table_id_or_name(),
+            options,
+        )
+
+    def _invalidate_record_cache(self) -> None:
+        self.api._invalidate_cache_for_table(
+            self.base.id,
+            self._cache_table_identifiers(),
+        )
+
     def get(self, record_id: RecordId, **options: Any) -> RecordDict:
         """
         Retrieve a record by its ID.
@@ -280,38 +309,14 @@ class Table:
             use_field_ids: |kwarg_use_field_ids|
             count_comments: |kwarg_count_comments|
         """
-        if isinstance(formula := options.get("formula"), Formula):
-            options["formula"] = to_formula_str(formula)
-        if self.api.use_field_ids:
-            options.setdefault("use_field_ids", self.api.use_field_ids)
-
-        cache = self.api._record_cache
-        cache_key = None
-        if cache is not None:
-            from pyairtable.api.caching import CacheKey
-
-            cache_key = CacheKey.from_query(
-                self.base.id, self.id_or_name, options
-            )
-            cached = cache.get(cache_key)
-            if cached is not None:
-                yield cached
-                return
-
-        all_records: List[RecordDict] = []
+        options = self._list_records_options(options)
         for page in self.api.iterate_requests(
             method="get",
             url=self.urls.records,
             fallback=("post", self.urls.records_post),
             options=options,
         ):
-            records = assert_typed_dicts(RecordDict, page.get("records", []))
-            if cache_key is not None:
-                all_records.extend(records)
-            yield records
-
-        if cache is not None and cache_key is not None:
-            cache.put(cache_key, all_records)
+            yield assert_typed_dicts(RecordDict, page.get("records", []))
 
     def all(self, **options: Any) -> List[RecordDict]:
         """
@@ -336,7 +341,18 @@ class Table:
             use_field_ids: |kwarg_use_field_ids|
             count_comments: |kwarg_count_comments|
         """
-        return [record for page in self.iterate(**options) for record in page]
+        options = self._list_records_options(options)
+        cache = self.api._record_cache
+        cache_key = self._cache_key(options) if cache is not None else None
+        if cache is not None and cache_key is not None:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return cached
+
+        records = [record for page in self.iterate(**options) for record in page]
+        if cache is not None and cache_key is not None:
+            cache.put(cache_key, records)
+        return records
 
     def first(self, **options: Any) -> Optional[RecordDict]:
         """
@@ -358,10 +374,8 @@ class Table:
             count_comments: |kwarg_count_comments|
         """
         options.update(dict(page_size=1, max_records=1))
-        for page in self.iterate(**options):
-            for record in page:
-                return record
-        return None
+        records = self.all(**options)
+        return records[0] if records else None
 
     def create(
         self,
@@ -383,6 +397,7 @@ class Table:
         """
         if use_field_ids is None:
             use_field_ids = self.api.use_field_ids
+        self._invalidate_record_cache()
         created = self.api.post(
             url=self.urls.records,
             json={
@@ -392,7 +407,6 @@ class Table:
             },
         )
         result = assert_typed_dict(RecordDict, created)
-        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return result
 
     def batch_create(
@@ -429,6 +443,7 @@ class Table:
 
         # If we got an iterator, exhaust it and collect it into a list.
         records = list(records)
+        self._invalidate_record_cache()
 
         for chunk in self.api.chunked(records):
             new_records = [{"fields": fields} for fields in chunk]
@@ -442,7 +457,6 @@ class Table:
             )
             inserted_records += assert_typed_dicts(RecordDict, response["records"])
 
-        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return inserted_records
 
     def update(
@@ -471,6 +485,7 @@ class Table:
         if use_field_ids is None:
             use_field_ids = self.api.use_field_ids
         method = "put" if replace else "patch"
+        self._invalidate_record_cache()
         updated = self.api.request(
             method=method,
             url=self.urls.record(record_id),
@@ -481,7 +496,6 @@ class Table:
             },
         )
         result = assert_typed_dict(RecordDict, updated)
-        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return result
 
     def batch_update(
@@ -510,6 +524,7 @@ class Table:
 
         # If we got an iterator, exhaust it and collect it into a list.
         records = list(records)
+        self._invalidate_record_cache()
 
         for chunk in self.api.chunked(records):
             chunk_records = [{"id": x["id"], "fields": x["fields"]} for x in chunk]
@@ -524,7 +539,6 @@ class Table:
             )
             updated_records += assert_typed_dicts(RecordDict, response["records"])
 
-        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return updated_records
 
     def batch_upsert(
@@ -576,6 +590,7 @@ class Table:
             "createdRecords": [],
             "records": [],
         }
+        self._invalidate_record_cache()
 
         for chunk in self.api.chunked(records):
             formatted_records = [
@@ -598,7 +613,6 @@ class Table:
                 assert_typed_dicts(RecordDict, response["records"])
             )
 
-        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return result
 
     def delete(self, record_id: RecordId) -> RecordDeletedDict:
@@ -614,11 +628,11 @@ class Table:
         Returns:
             Confirmation that the record was deleted.
         """
+        self._invalidate_record_cache()
         result = assert_typed_dict(
             RecordDeletedDict,
             self.api.delete(self.urls.record(record_id)),
         )
-        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return result
 
     def batch_delete(self, record_ids: Iterable[RecordId]) -> List[RecordDeletedDict]:
@@ -641,12 +655,12 @@ class Table:
 
         # If we got an iterator, exhaust it and collect it into a list.
         record_ids = list(record_ids)
+        self._invalidate_record_cache()
 
         for chunk in self.api.chunked(record_ids):
             result = self.api.delete(self.urls.records, params={"records[]": chunk})
             deleted_records += assert_typed_dicts(RecordDeletedDict, result["records"])
 
-        self.api._invalidate_cache_for_table(self.base.id, self.name)
         return deleted_records
 
     def comments(self, record_id: RecordId) -> List["pyairtable.models.Comment"]:
@@ -847,5 +861,6 @@ class Table:
             "filename": filename,
             "file": base64.encodebytes(content).decode("utf8"),  # API needs Unicode
         }
+        self._invalidate_record_cache()
         response = self.api.post(url, json=payload)
         return assert_typed_dict(UploadAttachmentResultDict, response)

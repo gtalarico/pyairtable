@@ -1,5 +1,16 @@
 from functools import cached_property
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import requests
 from requests.sessions import Session
@@ -188,15 +199,12 @@ class Api:
             self._base_from_info(info) for info in self._base_info(force=force).bases
         ]
 
-    def enable_caching(
-        self, ttl_config: Optional[TableTTLConfig] = None
-    ) -> None:
+    def enable_caching(self, ttl_config: Optional[TableTTLConfig] = None) -> None:
         """
         Enable TTL-based caching for table record fetches.
 
-        When enabled, calls to :meth:`Table.all() <pyairtable.Table.all>`,
-        :meth:`Table.iterate() <pyairtable.Table.iterate>`, and
-        :meth:`Table.first() <pyairtable.Table.first>` will return
+        When enabled, calls to :meth:`Table.all() <pyairtable.Table.all>`
+        and :meth:`Table.first() <pyairtable.Table.first>` will return
         cached results if a fresh entry exists for the same query parameters.
         Cached entries are automatically invalidated when records are created,
         updated, or deleted through this :class:`Api` instance.
@@ -234,9 +242,13 @@ class Api:
             return None
         return self._record_cache.stats()
 
-    def _invalidate_cache_for_table(self, base_id: str, table_name: str) -> None:
+    def _invalidate_cache_for_table(
+        self,
+        base_id: str,
+        table_id_or_names: Iterable[str],
+    ) -> None:
         if self._record_cache is not None:
-            self._record_cache.invalidate_table(base_id, table_name)
+            self._record_cache.invalidate_table(base_id, table_id_or_names)
 
     def create_base(
         self,

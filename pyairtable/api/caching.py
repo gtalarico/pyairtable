@@ -2,9 +2,9 @@
 TTL-based caching for Airtable record fetches.
 
 Caching is opt-in via :meth:`Api.enable_caching() <pyairtable.Api.enable_caching>`
-and disabled by default. When enabled, calls to :meth:`~pyairtable.Table.all`,
-:meth:`~pyairtable.Table.iterate`, and :meth:`~pyairtable.Table.first` will
-return cached results if a fresh entry exists for the same query parameters.
+and disabled by default. When enabled, calls to :meth:`~pyairtable.Table.all`
+and :meth:`~pyairtable.Table.first` will return cached results if a fresh
+entry exists for the same query parameters.
 
 Cached entries are automatically invalidated when records are created, updated,
 or deleted through the same :class:`~pyairtable.Api` instance. Mutations made
@@ -17,7 +17,7 @@ import copy
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Hashable, Iterable, List, Optional, Tuple
 
 from pyairtable.api.types import RecordDict
 
@@ -30,22 +30,15 @@ class CacheKey:
     Immutable, hashable representation of a record-list query.
 
     Two queries that would return the same logical result set produce
-    equal ``CacheKey`` instances. Pagination internals (``offset``,
-    ``page_size``) are excluded; ``max_records`` is included because
-    it limits the total result set.
+    equal ``CacheKey`` instances. ``page_size`` is excluded because it
+    only controls request pagination; options like ``offset``,
+    ``max_records``, and ``count_comments`` are included because they
+    change the result set or response shape.
     """
 
     base_id: str
     table_id_or_name: str
-    formula: str = ""
-    cell_format: str = ""
-    fields: Tuple[str, ...] = ()
-    view: str = ""
-    sort: Tuple[str, ...] = ()
-    time_zone: str = ""
-    user_locale: str = ""
-    use_field_ids: bool = False
-    max_records: Optional[int] = None
+    options: Tuple[Tuple[str, Hashable], ...] = ()
 
     @classmethod
     def from_query(
@@ -54,31 +47,56 @@ class CacheKey:
         table_id_or_name: str,
         options: Dict[str, Any],
     ) -> "CacheKey":
-        fields = options.get("fields", ())
-        if isinstance(fields, (list, tuple)):
-            fields = tuple(sorted(fields))
-
-        sort = options.get("sort", ())
-        if isinstance(sort, (list, tuple)):
-            sort = tuple(sort)
-
-        max_records = options.get("max_records")
-        if max_records is not None:
-            max_records = int(max_records)
-
+        cache_options = []
+        for name, value in options.items():
+            if name == "page_size":
+                continue
+            if value is None or value is False:
+                continue
+            if name == "fields":
+                value = cls._freeze_unordered(value)
+            elif name in ("count_comments", "use_field_ids"):
+                value = bool(value)
+            elif name == "max_records":
+                value = int(value)
+            else:
+                value = cls._freeze(value)
+            cache_options.append((name, value))
         return cls(
             base_id=base_id,
             table_id_or_name=table_id_or_name,
-            formula=str(options.get("formula", "") or ""),
-            cell_format=str(options.get("cell_format", "") or ""),
-            fields=fields,
-            view=str(options.get("view", "") or ""),
-            sort=sort,
-            time_zone=str(options.get("time_zone", "") or ""),
-            user_locale=str(options.get("user_locale", "") or ""),
-            use_field_ids=bool(options.get("use_field_ids", False)),
-            max_records=max_records,
+            options=tuple(sorted(cache_options)),
         )
+
+    @staticmethod
+    def _freeze(value: Any) -> Hashable:
+        if isinstance(value, dict):
+            return tuple(
+                sorted(
+                    (str(key), CacheKey._freeze(item)) for key, item in value.items()
+                )
+            )
+        if isinstance(value, (list, tuple)):
+            return tuple(CacheKey._freeze(item) for item in value)
+        if isinstance(value, (set, frozenset)):
+            return tuple(sorted(CacheKey._freeze(item) for item in value))
+        try:
+            hash(value)
+        except TypeError:
+            return repr(value)
+        return value
+
+    @staticmethod
+    def _freeze_unordered(value: Any) -> Hashable:
+        if isinstance(value, str):
+            return value
+        if isinstance(value, (list, tuple, set, frozenset)):
+            return tuple(sorted(str(item) for item in value))
+        return CacheKey._freeze(value)
+
+    def option(self, name: str, default: Any = None) -> Any:
+        """Return the normalized value for a cached option."""
+        return dict(self.options).get(name, default)
 
 
 @dataclass
@@ -146,19 +164,21 @@ class RecordCache:
         with self._lock:
             self._store[key] = entry
             if len(self._store) > self._config.max_entries:
-                oldest_key = min(
-                    self._store, key=lambda k: self._store[k].stored_at
-                )
+                oldest_key = min(self._store, key=lambda k: self._store[k].stored_at)
                 del self._store[oldest_key]
 
-    def invalidate_table(self, base_id: str, table_id_or_name: str) -> None:
+    def invalidate_table(
+        self,
+        base_id: str,
+        table_id_or_names: Iterable[str],
+    ) -> None:
         """Remove every entry whose key matches the given base + table."""
+        table_id_or_names = set(table_id_or_names)
         with self._lock:
             to_remove = [
                 k
                 for k in self._store
-                if k.base_id == base_id
-                and k.table_id_or_name == table_id_or_name
+                if k.base_id == base_id and k.table_id_or_name in table_id_or_names
             ]
             for k in to_remove:
                 del self._store[k]
@@ -177,8 +197,9 @@ class RecordCache:
                     {
                         "base_id": key.base_id,
                         "table": key.table_id_or_name,
-                        "formula": key.formula or "(all)",
-                        "view": key.view or "(default)",
+                        "formula": key.option("formula", "(all)"),
+                        "view": key.option("view", "(default)"),
+                        "options": dict(key.options),
                         "age_seconds": round(now - entry.stored_at, 1),
                         "hit_count": entry.hit_count,
                         "record_count": len(entry.records),

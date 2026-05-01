@@ -18,6 +18,9 @@ API: pyairtable
 .. autoclass:: pyairtable.Table
     :members:
 
+.. autoclass:: pyairtable.TableTTLConfig
+    :members:
+
 .. autoclass:: pyairtable.Workspace
     :members:
 
