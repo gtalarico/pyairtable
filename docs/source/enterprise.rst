@@ -193,3 +193,32 @@ via the following methods.
 `Create descendant enterprise <https://airtable.com/developers/web/api/create-descendant-enterprise>`__
 
     >>> descendant = enterprise.create_descendant("Descendant Organization Name")
+
+
+Managing bases and packages
+---------------------------
+
+You can use pyAirtable to create bases inside an enterprise workspace, list enterprise packages
+available to use, and create new bases using those packages.
+
+`Create base <https://airtable.com/developers/web/api/create-base>`__
+
+    >>> base = enterprise.create_base("wspWorkspaceId", "My New Base", tables=[...])
+
+`List packages <https://airtable.com/developers/web/api/list-enterprise-packages>`__
+
+    >>> for package in enterprise.packages():
+    ...     print(package.id, package.name)
+    >>> # Across the entire enterprise grid (root accounts only):
+    >>> all_packages = enterprise.packages(all_enterprises=True)
+    >>> # Look up a single package by ID:
+    >>> package = enterprise.package("pkgPackageId")
+
+`Create base from package <https://airtable.com/developers/web/api/create-base-from-package-enterprise>`__
+
+    >>> # Install a package's latest release; accepts a Package, a package ID, or a package release ID:
+    >>> base = enterprise.create_base_from_package(
+    ...     workspace="wspWorkspaceId",
+    ...     name="My New Base",
+    ...     package_or_release="pkrPackageReleaseId",
+    ... )

@@ -2,6 +2,23 @@
 Changelog
 =========
 
+3.4.0 (2026-06-02)
+------------------------
+
+* Added pyairtable.models.schema.FieldType enum.
+  - `PR #444 <https://github.com/gtalarico/pyairtable/pull/444>`_
+* Fixed some long-standing typos in documentation.
+  - `PR #449 <https://github.com/gtalarico/pyairtable/pull/449>`_
+* Added :meth:`Enterprise.packages <pyairtable.Enterprise.packages>`,
+  :meth:`Enterprise.package <pyairtable.Enterprise.package>`,
+  :meth:`Enterprise.create_base <pyairtable.Enterprise.create_base>`,
+  and :meth:`Enterprise.create_base_from_package <pyairtable.Enterprise.create_base_from_package>`.
+  - `PR #454 <https://github.com/gtalarico/pyairtable/pull/454>`_
+* Added support for ``attachments`` on :class:`pyairtable.models.Comment` models,
+  plus new schema fields ``BaseCollaborators.package_installations``
+  and ``TableSchema.DateDependency.is_forward_only``.
+  - `PR #456 <https://github.com/gtalarico/pyairtable/pull/456>`_
+
 3.3.0 (2025-11-05)
 ------------------------
 
@@ -12,8 +29,6 @@ Changelog
   - `PR #442 <https://github.com/gtalarico/pyairtable/pull/442>`_
 * Added support for Python 3.14 and dropped support for Python 3.9.
   - `PR #443 <https://github.com/gtalarico/pyairtable/pull/443>`_
-* Added pyairtable.models.schema.FieldType enum.
-  - `PR #444 <https://github.com/gtalarico/pyairtable/pull/444>`_
 
 3.2.0 (2025-08-17)
 ------------------------

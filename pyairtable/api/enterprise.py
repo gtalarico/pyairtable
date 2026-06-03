@@ -631,10 +631,9 @@ class Enterprise:
         self,
         workspace: Union[str, "Workspace"],
         name: str,
-        package: Union[str, Package],
+        package_or_release: Union[str, Package],
         *,
         description: Optional[str] = None,
-        release_id: Optional[str] = None,
     ) -> "Base":
         """
         Create a base from an enterprise package template in the specified workspace.
@@ -644,30 +643,37 @@ class Enterprise:
         Args:
             workspace: The ID of the workspace or a :class:`~pyairtable.Workspace` object.
             name: The name for the new base.
-            package: Package ID (str) or Package object to install.
+            package_or_release: A :class:`~pyairtable.models.schema.Package` object,
+                a package ID (``pkg...``), or a package release ID. When a package
+                or package ID is given, the package's latest release is installed.
+                Any other string is forwarded to the API as the release ID.
             description: Optional description for the base.
-            release_id: The package release ID to install. If not provided,
-                attempts to use ``Package.latest_release_id`` if package is a Package object,
-                or calls the :meth:`Enterprise.packages` method to find it.
 
         Returns:
             The newly created Base object.
 
         Raises:
-            MissingRecordError: If the specified package ID does not exist.
-            InvalidParameterError: If release_id cannot be determined.
+            MissingRecordError: If the given package ID is not found.
+            InvalidParameterError: If the resolved package has no latest release.
         """
         workspace_id = workspace if isinstance(workspace, str) else workspace.id
-        package_id = package if isinstance(package, str) else package.id
 
-        # Only fetch the list of packages if we need to get the latest release ID
-        if release_id is None:
-            package = self.package(package_id) if isinstance(package, str) else package
+        if isinstance(package_or_release, Package):
+            package_id = package_or_release.id
+            release_id = package_or_release.latest_release_id
+        elif package_or_release.startswith("pkg"):
+            package = self.package(package_or_release)
+            package_id = package.id
             release_id = package.latest_release_id
-        if release_id is None:
-            raise InvalidParameterError("release_id is required")
+        else:
+            package_id = release_id = package_or_release
 
-        payload: Dict[str, Any] = {
+        if release_id is None:
+            raise InvalidParameterError(
+                f"Package {package_id!r} has no latest release to install"
+            )
+
+        payload = {
             "name": name,
             "packageReleaseId": release_id,
             "workspaceId": workspace_id,

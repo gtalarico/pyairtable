@@ -544,14 +544,12 @@ def test_package__not_found(enterprise, enterprise_mocks):
 
 
 def test_create_base_from_package__with_package_object(
-    api, base_id, workspace_id, requests_mock, sample_json
+    enterprise, enterprise_mocks, base_id, workspace_id, requests_mock, sample_json
 ):
-    enterprise_id = fake_id("ent")
-    enterprise = api.enterprise(enterprise_id)
-    package = Package.from_api(sample_json("Package"), api)
+    package = Package.from_api(sample_json("Package"), enterprise.api)
 
     url = enterprise.urls.package_install(package.id)
-    requests_mock.get(api.urls.bases, json=sample_json("Bases"))
+    requests_mock.get(enterprise.api.urls.bases, json=sample_json("Bases"))
     m = requests_mock.post(url, json={"id": base_id})
 
     base = enterprise.create_base_from_package(
@@ -570,20 +568,16 @@ def test_create_base_from_package__with_package_object(
 
 
 def test_create_base_from_package__with_package_id(
-    api, base_id, workspace_id, requests_mock, sample_json
+    enterprise, enterprise_mocks, base_id, workspace_id, requests_mock, sample_json
 ):
-    enterprise_id = fake_id("ent")
-    enterprise = api.enterprise(enterprise_id)
-    package_id = fake_id("pkg")
-    release_id = fake_id("pkr")
+    package_id = enterprise_mocks.json_package["id"]
+    release_id = enterprise_mocks.json_package["latestReleaseId"]
 
     url = enterprise.urls.package_install(package_id)
-    requests_mock.get(api.urls.bases, json=sample_json("Bases"))
+    requests_mock.get(enterprise.api.urls.bases, json=sample_json("Bases"))
     m = requests_mock.post(url, json={"id": base_id})
 
-    base = enterprise.create_base_from_package(
-        workspace_id, "My New Base", package_id, release_id=release_id
-    )
+    base = enterprise.create_base_from_package(workspace_id, "My New Base", package_id)
 
     assert isinstance(base, Base)
     assert base.id == base_id
@@ -595,21 +589,79 @@ def test_create_base_from_package__with_package_id(
     }
 
 
-def test_create_base_from_package__no_package_release_id(
-    api, workspace_id, requests_mock, sample_json
+def test_create_base_from_package__with_release_id(
+    enterprise, enterprise_mocks, base_id, workspace_id, requests_mock, sample_json
 ):
-    enterprise_id = fake_id("ent")
-    enterprise = api.enterprise(enterprise_id)
-    package_id = fake_id("pkg")
+    release_id = enterprise_mocks.json_package["latestReleaseId"]
 
-    # Mock a package response where latestReleaseId is null
+    url = enterprise.urls.package_install(release_id)
+    requests_mock.get(enterprise.api.urls.bases, json=sample_json("Bases"))
+    m = requests_mock.post(url, json={"id": base_id})
+
+    base = enterprise.create_base_from_package(workspace_id, "My New Base", release_id)
+
+    assert isinstance(base, Base)
+    assert base.id == base_id
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "name": "My New Base",
+        "packageReleaseId": release_id,
+        "workspaceId": workspace_id,
+    }
+    assert enterprise_mocks.get_packages.call_count == 0
+
+
+def test_create_base_from_package__non_package_string_passes_through(
+    enterprise, enterprise_mocks, base_id, workspace_id, requests_mock, sample_json
+):
+    arbitrary = fake_id("xyz")
+
+    url = enterprise.urls.package_install(arbitrary)
+    requests_mock.get(enterprise.api.urls.bases, json=sample_json("Bases"))
+    m = requests_mock.post(url, json={"id": base_id})
+
+    base = enterprise.create_base_from_package(workspace_id, "My New Base", arbitrary)
+
+    assert isinstance(base, Base)
+    assert base.id == base_id
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "name": "My New Base",
+        "packageReleaseId": arbitrary,
+        "workspaceId": workspace_id,
+    }
+    assert enterprise_mocks.get_packages.call_count == 0
+
+
+def test_create_base_from_package__package_id_not_found(
+    enterprise, enterprise_mocks, workspace_id
+):
+    with pytest.raises(MissingRecordError):
+        enterprise.create_base_from_package(workspace_id, "My New Base", fake_id("pkg"))
+
+
+def test_create_base_from_package__package_id_with_no_latest_release(
+    enterprise, enterprise_mocks, workspace_id, requests_mock, sample_json
+):
     package_json = sample_json("Package")
-    package_json["id"] = package_id
     package_json["latestReleaseId"] = None
     requests_mock.get(enterprise.urls.packages, json={"packages": [package_json]})
 
-    with pytest.raises(InvalidParameterError, match="release_id is required"):
-        enterprise.create_base_from_package(workspace_id, "My New Base", package_id)
+    with pytest.raises(InvalidParameterError):
+        enterprise.create_base_from_package(
+            workspace_id, "My New Base", package_json["id"]
+        )
+
+
+def test_create_base_from_package__package_object_with_no_latest_release(
+    enterprise, enterprise_mocks, workspace_id, sample_json
+):
+    package_json = sample_json("Package")
+    package_json["latestReleaseId"] = None
+    package = Package.from_api(package_json, enterprise.api)
+
+    with pytest.raises(InvalidParameterError):
+        enterprise.create_base_from_package(workspace_id, "My New Base", package)
 
 
 def test_create_base(api, base_id, workspace_id, requests_mock, sample_json):
