@@ -62,6 +62,7 @@ SCAN_MODELS = {
     "pyairtable.models.schema:BaseCollaborators.SensitivityLabel": "get-base-collaborators.response/@sensitivityLabel",
     "pyairtable.models.schema:BaseCollaborators.PackageInstallation": "get-base-collaborators.response/@packageInstallations/items",
     "pyairtable.models.schema:BaseShares": "list-shares.response",
+    "pyairtable.models.schema:Package": "list-enterprise-packages.response/@packages/items",
     "pyairtable.models.schema:BaseShares.Info": "list-shares.response/@shares/items",
     "pyairtable.models.schema:ViewSchema": "get-view-metadata.response",
     "pyairtable.models.schema:InviteLink": "schemas/invite-link",
