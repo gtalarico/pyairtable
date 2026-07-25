@@ -5,6 +5,9 @@ Changelog
 3.4.1 (2026-07-25)
 ------------------------
 
+* Updated docs to reflect that :meth:`Base.collaborators <pyairtable.Base.collaborators>`
+  and :meth:`Workspace.collaborators <pyairtable.Workspace.collaborators>` no longer
+  require an enterprise billing plan.
 * Fixed a crash when parsing multi-codepoint emoji reactions on comments.
   - `PR #461 <https://github.com/gtalarico/pyairtable/pull/461>`_
 
