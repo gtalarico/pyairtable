@@ -12,6 +12,19 @@ There may be parts of the Airtable API which are not supported below;
 you can always use :meth:`Api.request <pyairtable.Api.request>` to call them directly.
 
 
+Seeing who has access
+-----------------------------
+
+The Airtable API allows all billing plans to read the list of collaborators
+in either a base or a workspace.
+
+.. automethod:: pyairtable.Base.collaborators
+    :noindex:
+
+.. automethod:: pyairtable.Workspace.collaborators
+    :noindex:
+
+
 Reading schemas
 -----------------------------
 

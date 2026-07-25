@@ -303,7 +303,6 @@ class Base:
         response = self.api.post(self.urls.webhooks, json=request)
         return CreateWebhookResponse.from_api(response, self.api)
 
-    @enterprise_only
     @cache_unless_forced
     def collaborators(self) -> "BaseCollaborators":
         """
