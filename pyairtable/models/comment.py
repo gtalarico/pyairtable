@@ -123,7 +123,12 @@ class Reaction(AirtableModel):
         """
         The emoji character used for the reaction.
         """
-        return chr(int(self.emoji_info.unicode_character, 16))
+        return "".join(
+            [
+                chr(int(codepoint, 16))
+                for codepoint in self.emoji_info.unicode_character.split("-")
+            ]
+        )
 
 
 class Attachment(AirtableModel):
