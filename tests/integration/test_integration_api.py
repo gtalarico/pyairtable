@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -291,6 +292,7 @@ def test_integration_formula_composition(table: Table, cols):
 
 def test_integration_attachment(table, cols, valid_img_url):
     rec = table.create({cols.ATTACHMENT: [{"url": valid_img_url}]})
+    time.sleep(0.5)  # give Airtable time to parse the upload
     rv_get = table.get(rec["id"])
     att = rv_get["fields"]["attachment"][0]
     assert att["filename"] in (

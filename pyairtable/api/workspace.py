@@ -63,7 +63,6 @@ class Workspace:
 
     # Everything below here requires .info() and is therefore Enterprise-only
 
-    @enterprise_only
     @cache_unless_forced
     def collaborators(self) -> WorkspaceCollaborators:
         """

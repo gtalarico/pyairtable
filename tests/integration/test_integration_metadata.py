@@ -1,7 +1,7 @@
 import pytest
-import requests
 
 from pyairtable import Api, Base
+from pyairtable.models.schema import BaseCollaborators
 
 pytestmark = [pytest.mark.integration]
 
@@ -18,11 +18,9 @@ def test_api_base(api: Api, base_id: str, base_name: str):
 
 
 def test_base_info(base: Base):
-    with pytest.raises(
-        requests.HTTPError,
-        match=r"Base.collaborators\(\) requires an enterprise billing plan",
-    ):
-        base.collaborators()
+    info = base.collaborators()
+    assert isinstance(info, BaseCollaborators)
+    assert info.id == base.id
 
 
 def test_base_schema(base: Base, table_name: str):

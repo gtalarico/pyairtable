@@ -124,10 +124,8 @@ class Reaction(AirtableModel):
         The emoji character used for the reaction.
         """
         return "".join(
-            [
-                chr(int(codepoint, 16))
-                for codepoint in self.emoji_info.unicode_character.split("-")
-            ]
+            chr(int(codepoint, 16))
+            for codepoint in self.emoji_info.unicode_character.split("-")
         )
 
 
