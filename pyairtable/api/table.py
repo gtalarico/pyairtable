@@ -658,6 +658,7 @@ class Table:
         self,
         record_id: RecordId,
         text: str,
+        parent_comment_id: Optional[str] = None,
     ) -> "pyairtable.models.Comment":
         """
         Create a comment on a record.
@@ -673,9 +674,14 @@ class Table:
         Args:
             record_id: |arg_record_id|
             text: The text of the comment. Use ``@[usrIdentifier]`` to mention users.
+            parent_comment_id: The ID of the parent comment, if this comment is a
+                threaded reply to an existing comment.
         """
         url = self.urls.record_comments(record_id)
-        response = self.api.post(url, json={"text": text})
+        payload = {"text": text}
+        if parent_comment_id is not None:
+            payload["parentCommentId"] = parent_comment_id
+        response = self.api.post(url, json=payload)
         return pyairtable.models.Comment.from_api(
             response, self.api, context={"record_url": self.urls.record(record_id)}
         )

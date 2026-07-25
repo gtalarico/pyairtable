@@ -2,6 +2,13 @@
 Changelog
 =========
 
+3.5.0 (unreleased)
+------------------------
+
+* Added support for the ``parent_comment_id`` parameter to
+  :meth:`Table.add_comment <pyairtable.Table.add_comment>`, allowing
+  `threaded replies <https://airtable.com/developers/web/api/create-comment>`_.
+
 3.4.2 (2026-07-25)
 ------------------------
 
