@@ -2,6 +2,12 @@
 Changelog
 =========
 
+3.4.1 (2026-07-25)
+------------------------
+
+* Fixed a crash when parsing multi-codepoint emoji reactions on comments.
+  - `PR #461 <https://github.com/gtalarico/pyairtable/pull/461>`_
+
 3.4.0 (2026-06-02)
 ------------------------
 
