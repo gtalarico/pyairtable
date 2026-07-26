@@ -103,7 +103,7 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
         f"{enterprise_url}/personalAccessTokens/revoke",
         json=m.revoke_pats_json,
     )
-    m.update_ai_allowlist = requests_mock.post(
+    m.allow_ai = requests_mock.post(
         f"{enterprise_url}/workspaceAiAllowlist",
         json={"errors": []},
     )
@@ -715,8 +715,8 @@ def test_create_base(api, base_id, workspace_id, requests_mock, sample_json):
     }
 
 
-def test_personal_access_tokens(enterprise, enterprise_mocks):
-    tokens = enterprise.personal_access_tokens()
+def test_access_tokens(enterprise, enterprise_mocks):
+    tokens = enterprise.access_tokens()
     assert enterprise_mocks.list_pats.call_count == 1
     assert "includeresources" not in enterprise_mocks.list_pats.last_request.qs
     assert len(tokens) == 1
@@ -732,8 +732,8 @@ def test_personal_access_tokens(enterprise, enterprise_mocks):
     assert pat.created_by_user_id == "usrL2PNC5o3H4lBEi"
 
 
-def test_personal_access_tokens__include_resources(enterprise, enterprise_mocks):
-    enterprise.personal_access_tokens(include_resources=True)
+def test_access_tokens__include_resources(enterprise, enterprise_mocks):
+    enterprise.access_tokens(resources=True)
     assert enterprise_mocks.list_pats.call_count == 1
     assert enterprise_mocks.list_pats.last_request.qs["includeResources"] == ["True"]
 
@@ -746,11 +746,9 @@ def test_personal_access_tokens__include_resources(enterprise, enterprise_mocks)
         {"mode": "specificModelIds", "resourceModelIds": ["appLkNDICXNqxSDhG"]},
     ],
 )
-def test_personal_access_tokens__resource_access(
-    enterprise, enterprise_mocks, resource_access
-):
+def test_access_tokens__resource_access(enterprise, enterprise_mocks, resource_access):
     enterprise_mocks.json_pat["resourceAccess"] = resource_access
-    (pat,) = enterprise.personal_access_tokens()
+    (pat,) = enterprise.access_tokens()
     assert pat.resource_access.mode == resource_access["mode"]
     assert pat.resource_access.resource_model_ids == resource_access.get(
         "resourceModelIds"
@@ -769,10 +767,8 @@ def test_personal_access_tokens__resource_access(
         (iter(["pat8fN3RkQx9ZLm2T"]), ["pat8fN3RkQx9ZLm2T"]),
     ],
 )
-def test_revoke_personal_access_tokens(
-    enterprise, enterprise_mocks, token_ids, expected
-):
-    result = enterprise.revoke_personal_access_tokens(token_ids)
+def test_revoke_access_tokens(enterprise, enterprise_mocks, token_ids, expected):
+    result = enterprise.revoke_access_tokens(token_ids)
     assert enterprise_mocks.revoke_pats.call_count == 1
     assert enterprise_mocks.revoke_pats.last_request.json() == {"tokenIds": expected}
     assert isinstance(result, RevokeTokensResponse)
@@ -782,12 +778,12 @@ def test_revoke_personal_access_tokens(
     assert result.errors[0].token_id == "patZp6Lw9Dq3VxTn5"
 
 
-def test_update_ai_allowlist(enterprise, enterprise_mocks):
-    result = enterprise.update_ai_allowlist(
-        {"wspmhESAta6clCCwF": True, "wspHvvm4dAktsStZH": False}
+def test_allow_ai(api, enterprise, enterprise_mocks):
+    result = enterprise.allow_ai(
+        {api.workspace("wspmhESAta6clCCwF"): True, "wspHvvm4dAktsStZH": False}
     )
-    assert enterprise_mocks.update_ai_allowlist.call_count == 1
-    assert enterprise_mocks.update_ai_allowlist.last_request.json() == {
+    assert enterprise_mocks.allow_ai.call_count == 1
+    assert enterprise_mocks.allow_ai.last_request.json() == {
         "workspaces": [
             {"workspaceId": "wspmhESAta6clCCwF", "isAllowed": True},
             {"workspaceId": "wspHvvm4dAktsStZH", "isAllowed": False},
@@ -797,15 +793,15 @@ def test_update_ai_allowlist(enterprise, enterprise_mocks):
     assert result.errors == []
 
 
-def test_update_ai_allowlist__descendants(enterprise, enterprise_mocks):
-    enterprise.update_ai_allowlist({"wspmhESAta6clCCwF": True}, descendants=True)
-    assert enterprise_mocks.update_ai_allowlist.last_request.json() == {
+def test_allow_ai__descendants(enterprise, enterprise_mocks):
+    enterprise.allow_ai({"wspmhESAta6clCCwF": True}, descendants=True)
+    assert enterprise_mocks.allow_ai.last_request.json() == {
         "workspaces": [{"workspaceId": "wspmhESAta6clCCwF", "isAllowed": True}],
         "includeDescendantWorkspaces": True,
     }
 
 
-def test_update_ai_allowlist__errors(enterprise, enterprise_mocks, requests_mock):
+def test_allow_ai__errors(enterprise, enterprise_mocks, requests_mock):
     requests_mock.post(
         enterprise.urls.workspace_ai_allowlist,
         json={
@@ -818,6 +814,6 @@ def test_update_ai_allowlist__errors(enterprise, enterprise_mocks, requests_mock
             ]
         },
     )
-    result = enterprise.update_ai_allowlist({"wspFakeWorkspaceId": True})
+    result = enterprise.allow_ai({"wspFakeWorkspaceId": True})
     assert result.errors[0].type == "WORKSPACE_NOT_FOUND"
     assert result.errors[0].workspace_id == "wspFakeWorkspaceId"

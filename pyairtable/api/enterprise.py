@@ -73,10 +73,10 @@ class Enterprise:
         packages = meta / "packages"
 
         #: URL for listing personal access tokens.
-        personal_access_tokens = meta / "personalAccessTokens"
+        access_tokens = meta / "personalAccessTokens"
 
         #: URL for revoking personal access tokens.
-        revoke_personal_access_tokens = personal_access_tokens / "revoke"
+        revoke_access_tokens = access_tokens / "revoke"
 
         #: URL for updating the workspace AI allowlist.
         workspace_ai_allowlist = meta / "workspaceAiAllowlist"
@@ -683,7 +683,7 @@ class Enterprise:
         response = self.api.post(self.urls.package_install(package_id), json=payload)
         return self.api.base(response["id"], validate=True, force=True)
 
-    def personal_access_tokens(
+    def access_tokens(
         self,
         *,
         resources: bool = False,
@@ -702,13 +702,13 @@ class Enterprise:
         params: dict[str, Any] = {}
         if resources:
             params["includeResources"] = True
-        response = self.api.get(self.urls.personal_access_tokens, params=params)
+        response = self.api.get(self.urls.access_tokens, params=params)
         return [
             PersonalAccessToken.from_api(token, self.api, context=self)
             for token in response.get("personalAccessTokens", [])
         ]
 
-    def revoke_personal_access_tokens(
+    def revoke_access_tokens(
         self,
         token_ids: str | Iterable[str],
     ) -> "RevokeTokensResponse":
@@ -725,14 +725,14 @@ class Enterprise:
         """
         token_ids = coerce_list_str(token_ids)
         response = self.api.post(
-            self.urls.revoke_personal_access_tokens,
+            self.urls.revoke_access_tokens,
             json={"tokenIds": token_ids},
         )
         return RevokeTokensResponse.from_api(response, self.api, context=self)
 
-    def update_ai_allowlist(
+    def allow_ai(
         self,
-        workspaces: dict[str, bool],
+        workspaces: "dict[str | Workspace, bool]",
         *,
         descendants: bool = False,
     ) -> "UpdateAiAllowlistResponse":
@@ -745,20 +745,24 @@ class Enterprise:
         See `Update workspace AI allowlist <https://airtable.com/developers/web/api/update-workspace-ai-allowlist>`__.
 
         Usage:
-            >>> enterprise.update_ai_allowlist(
+            >>> enterprise.allow_ai(
             ...     {"wspmhESAta6clCCwF": True, "wspHvvm4dAktsStZH": False}
             ... )
 
         Args:
-            workspaces: A ``dict`` mapping workspace IDs to whether each
-                workspace should be allowed to use AI features.
+            workspaces: A ``dict`` mapping workspace IDs or instances of
+                :class:`~pyairtable.Workspace` to whether each workspace
+                should be allowed to use AI features.
             descendants: If ``True``, changes will also be applied to
                 workspaces belonging to descendant org units.
         """
         payload: dict[str, Any] = {
             "workspaces": [
-                {"workspaceId": workspace_id, "isAllowed": is_allowed}
-                for (workspace_id, is_allowed) in workspaces.items()
+                {
+                    "workspaceId": ws if isinstance(ws, str) else ws.id,
+                    "isAllowed": is_allowed,
+                }
+                for (ws, is_allowed) in workspaces.items()
             ]
         }
         if descendants:
