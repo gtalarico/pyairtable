@@ -288,6 +288,25 @@ if TYPE_CHECKING:
     assert_type(F.to_formula("Bob"), F.Formula)
     assert_type(F.CONCATENATE(1, 2, 3), F.FunctionCall)
 
+    # AND()/OR() accept either multiple Formula args, or a single iterable
+    # of Formula, plus optional keyword fields -- but not a mix of the two,
+    # since Compound.build() only flattens a lone iterable positional arg.
+    formula_list = [formula, formula]
+    assert_type(F.AND(formula, formula, formula), F.Compound)
+    assert_type(F.AND(formula_list), F.Compound)
+    assert_type(F.AND(x for x in formula_list), F.Compound)
+    assert_type(F.AND(foo=1, bar="baz"), F.Compound)
+    assert_type(F.AND(formula, formula, foo=1), F.Compound)
+    assert_type(F.AND(formula_list, foo=1), F.Compound)
+    assert_type(F.OR(formula, formula, formula), F.Compound)
+    assert_type(F.OR(formula_list), F.Compound)
+    assert_type(F.OR(x for x in formula_list), F.Compound)
+    assert_type(F.OR(foo=1, bar="baz"), F.Compound)
+    assert_type(F.OR(formula, formula, foo=1), F.Compound)
+    assert_type(F.OR(formula_list, foo=1), F.Compound)
+    F.AND(formula, formula_list)  # type: ignore[call-overload]
+    F.OR(formula, formula_list)  # type: ignore[call-overload]
+
     # Test type annotations for pyairtable.utils.Url
     v = pyairtable.utils.Url("https://example.com")
     assert v == "https://example.com"

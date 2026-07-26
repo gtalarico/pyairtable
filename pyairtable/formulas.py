@@ -11,7 +11,7 @@ import warnings
 from collections.abc import Iterable
 from decimal import Decimal
 from fractions import Fraction
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, ClassVar, TypeAlias, overload
 
 from typing_extensions import Self as SelfType
 
@@ -256,6 +256,12 @@ class Compound(Formula):
         return cls(operator, items)
 
 
+@overload
+def AND(*components: Formula, **fields: Any) -> Compound: ...
+@overload
+def AND(components: Iterable[Formula], /, **fields: Any) -> Compound: ...
+
+
 def AND(*components: Formula | Iterable[Formula], **fields: Any) -> Compound:
     """
     Join one or more logical conditions into an AND compound condition.
@@ -265,6 +271,12 @@ def AND(*components: Formula | Iterable[Formula], **fields: Any) -> Compound:
     AND(EQ('foo', 1), EQ(Field('bar'), 2), EQ(Field('baz'), 3))
     """
     return Compound.build("AND", *components, **fields)
+
+
+@overload
+def OR(*components: Formula, **fields: Any) -> Compound: ...
+@overload
+def OR(components: Iterable[Formula], /, **fields: Any) -> Compound: ...
 
 
 def OR(*components: Formula | Iterable[Formula], **fields: Any) -> Compound:
