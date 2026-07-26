@@ -1,0 +1,16 @@
+{
+  "id": "pat8fN3RkQx9ZLm2T",
+  "name": "Integration token",
+  "state": "active",
+  "scopes": [
+    "data.records:read",
+    "enterprise.account:read"
+  ],
+  "resourceAccess": {
+    "mode": "enterprise",
+    "enterpriseAccountId": "entUBq2RGdihxl3vU"
+  },
+  "createdTime": "2023-01-01T00:00:00.000Z",
+  "userId": "usrL2PNC5o3H4lBEi",
+  "createdByUserId": "usrL2PNC5o3H4lBEi"
+}
