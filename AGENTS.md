@@ -17,3 +17,8 @@ When changing code in `docs/`, follow these steps instead:
 
 1. `make docs`
 2. `make lint`
+
+## Documentation
+
+When adding notes to the changelog, follow the existing convention for notes,
+but do not add PR numbers because those likely don't exist yet.

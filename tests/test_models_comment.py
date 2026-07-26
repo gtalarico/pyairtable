@@ -142,4 +142,25 @@ def test_table_add_comment(table, comment_json, comments_url, requests_mock):
     text = "I'd like to weigh in here."
     comment = table.add_comment(RECORD_ID, text)
     assert m.call_count == 1
+    assert m.last_request.json() == {"text": text}
     assert comment.text == text
+
+
+def test_table_add_comment__parent_comment_id(
+    table, comment_json, comments_url, requests_mock
+):
+    def _callback(request, context):
+        return {**comment_json, **request.json()}
+
+    m = requests_mock.post(comments_url, json=_callback)
+
+    text = "I'd like to reply here."
+    parent_comment_id = "comkNDICXNqxSDhGL"
+    comment = table.add_comment(RECORD_ID, text, parent_comment_id=parent_comment_id)
+    assert m.call_count == 1
+    assert m.last_request.json() == {
+        "text": text,
+        "parentCommentId": parent_comment_id,
+    }
+    assert comment.text == text
+    assert comment.parent_comment_id == parent_comment_id
