@@ -643,7 +643,9 @@ class DateField(Field[str, date, None], _FieldSchema[S.DateFieldSchema]):
 
 
 @_field_api_docstring("Duration", "durationnumber")
-class DurationField(Field[int, timedelta, None], _FieldSchema[S.DurationFieldSchema]):
+class DurationField(
+    Field[int | float, timedelta, None], _FieldSchema[S.DurationFieldSchema]
+):
     """
     Duration field. Accepts only `timedelta <https://docs.python.org/3/library/datetime.html#timedelta-objects>`_ values.
     """
@@ -1314,7 +1316,7 @@ class RequiredDatetimeField(DatetimeField, _Requires_API_ORM[str, datetime]):
 
 
 @_required_value_docstring
-class RequiredDurationField(DurationField, _Requires_API_ORM[int, timedelta]):
+class RequiredDurationField(DurationField, _Requires_API_ORM[int | float, timedelta]):
     pass
 
 
