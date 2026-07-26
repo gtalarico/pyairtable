@@ -16,6 +16,11 @@ Changelog
 * Formula functions now accept ORM fields without type errors,
   e.g. ``SUM(MyModel.amount, 1)``.
 * Fixed the type annotation of :meth:`Url.add_path <pyairtable.utils.Url.add_path>`.
+* Added support for listing and revoking enterprise users' personal access tokens
+  via :meth:`Enterprise.personal_access_tokens <pyairtable.Enterprise.personal_access_tokens>`
+  and :meth:`Enterprise.revoke_personal_access_tokens <pyairtable.Enterprise.revoke_personal_access_tokens>`.
+* Added support for `updating the workspace AI allowlist <https://airtable.com/developers/web/api/update-workspace-ai-allowlist>`_
+  via :meth:`Enterprise.update_ai_allowlist <pyairtable.Enterprise.update_ai_allowlist>`.
 
 3.4.2 (2026-07-25)
 ------------------------

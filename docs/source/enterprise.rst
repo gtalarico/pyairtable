@@ -171,6 +171,14 @@ via the following methods.
     >>> enterprise.revoke_admin("user@example.com")
     >>> enterprise.revoke_admin(enterprise.user("usrUserId"))
 
+`List personal access tokens <https://airtable.com/developers/web/api/list-enterprise-personal-access-tokens>`__
+
+    >>> enterprise.personal_access_tokens()
+
+`Revoke personal access tokens <https://airtable.com/developers/web/api/revoke-enterprise-personal-access-tokens>`__
+
+    >>> enterprise.revoke_personal_access_tokens(["patTokenId1", "patTokenId2"])
+
 
 Managing workspaces and organizations
 --------------------------------------
@@ -193,6 +201,10 @@ via the following methods.
 `Create descendant enterprise <https://airtable.com/developers/web/api/create-descendant-enterprise>`__
 
     >>> descendant = enterprise.create_descendant("Descendant Organization Name")
+
+`Update workspace AI allowlist <https://airtable.com/developers/web/api/update-workspace-ai-allowlist>`__
+
+    >>> enterprise.update_ai_allowlist({"wspId1": True, "wspId2": False})
 
 
 Managing bases and packages
