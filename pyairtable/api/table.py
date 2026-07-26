@@ -202,13 +202,10 @@ class Table:
         return self.schema().id
 
     @property
-    def id_or_name(self, quoted: bool = True) -> str:
+    def id_or_name(self) -> str:
         """
         Return the table ID if it is known, otherwise the table name used for the constructor.
         This is the URL component used to identify the table in Airtable's API.
-
-        Args:
-            quoted: Whether to return a URL-encoded value.
 
         Usage:
 
@@ -220,8 +217,7 @@ class Table:
             'tblXXXXXXXXXXXXXX'
         """
         value = self._schema.id if self._schema else self.name
-        value = value if not quoted else urllib.parse.quote(value, safe="")
-        return value
+        return urllib.parse.quote(value, safe="")
 
     @property
     def api(self) -> "Api":
