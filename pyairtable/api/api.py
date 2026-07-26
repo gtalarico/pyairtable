@@ -291,6 +291,7 @@ class Api:
             url=url,
             params=request_params,
             json=json,
+            timeout=self.timeout,
         )
         return self._process_response(response)
 
