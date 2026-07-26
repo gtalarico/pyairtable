@@ -11,13 +11,16 @@ import warnings
 from collections.abc import Iterable
 from decimal import Decimal
 from fractions import Fraction
-from typing import Any, ClassVar, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, overload
 
 from typing_extensions import Self as SelfType
 
 from pyairtable.api.types import Fields
 from pyairtable.exceptions import CircularFormulaError
 from pyairtable.utils import date_to_iso_str, datetime_to_iso_str
+
+if TYPE_CHECKING:
+    from pyairtable import orm
 
 
 class Formula:
@@ -523,17 +526,35 @@ def field_name(name: str) -> str:
     return "{%s}" % name.replace("}", r"\}")
 
 
-FunctionArg: TypeAlias = (
-    str
-    | int
-    | float
-    | bool
-    | Decimal
-    | Fraction
-    | Formula
-    | datetime.date
-    | datetime.datetime
-)
+if TYPE_CHECKING:
+    FunctionArg: TypeAlias = (
+        str
+        | int
+        | float
+        | bool
+        | Decimal
+        | Fraction
+        | Formula
+        | datetime.date
+        | datetime.datetime
+        | orm.fields.AnyField
+    )
+else:
+    # The runtime value must remain a real union type, because generated
+    # signatures below evaluate ``FunctionArg | None`` at import time.
+    # orm.fields.AnyField is omitted here to avoid a circular import;
+    # it is only needed for static analysis.
+    FunctionArg = (
+        str
+        | int
+        | float
+        | bool
+        | Decimal
+        | Fraction
+        | Formula
+        | datetime.date
+        | datetime.datetime
+    )
 
 
 class FunctionCall(Formula):

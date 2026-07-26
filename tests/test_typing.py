@@ -288,6 +288,10 @@ if TYPE_CHECKING:
     assert_type(F.to_formula("Bob"), F.Formula)
     assert_type(F.CONCATENATE(1, 2, 3), F.FunctionCall)
 
+    # Formula functions must accept ORM field descriptors as arguments,
+    # since to_formula() converts them to field references at runtime.
+    assert_type(F.SUM(EveryField.integer, 1), F.FunctionCall)
+
     # AND()/OR() accept either multiple Formula args, or a single iterable
     # of Formula, plus optional keyword fields -- but not a mix of the two,
     # since Compound.build() only flattens a lone iterable positional arg.
