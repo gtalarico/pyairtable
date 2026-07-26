@@ -2,6 +2,20 @@
 Changelog
 =========
 
+3.4.2 (2026-07-25)
+------------------------
+
+* Fixed :meth:`Enterprise.move_groups <pyairtable.Enterprise.move_groups>` and
+  :meth:`Enterprise.move_workspaces <pyairtable.Enterprise.move_workspaces>`
+  raising ``TypeError`` when given a generator or other non-list iterable.
+* :class:`~pyairtable.orm.fields.DurationField` now declares that API values
+  may be fractional (``int | float``), matching Airtable's field model.
+* Removed the non-functional ``quoted`` parameter from
+  :data:`Table.id_or_name <pyairtable.Table.id_or_name>`; as a property,
+  it could never receive arguments, and its behavior is unchanged.
+* Fixed documentation errors in :meth:`Enterprise.audit_log <pyairtable.Enterprise.audit_log>`
+  and :class:`~pyairtable.orm.fields.BarcodeField`.
+
 3.4.1 (2026-07-25)
 ------------------------
 
