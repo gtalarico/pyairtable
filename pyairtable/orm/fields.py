@@ -1146,7 +1146,7 @@ class AttachmentsField(
 @_field_api_docstring("Barcode")
 class BarcodeField(_DictField[BarcodeDict], _FieldSchema[S.BarcodeFieldSchema]):
     """
-    Accepts a list of :class:`~pyairtable.api.types.BarcodeDict`.
+    Accepts a :class:`~pyairtable.api.types.BarcodeDict`.
     """
 
 
