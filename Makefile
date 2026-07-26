@@ -16,7 +16,7 @@ release:
 
 .PHONY: test coverage lint format docs clean
 test:
-	tox
+	tox run-parallel
 
 coverage:
 	tox -e coverage
