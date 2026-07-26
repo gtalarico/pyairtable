@@ -501,7 +501,7 @@ class Enterprise:
         response = self.api.post(
             self.urls.move_groups,
             json={
-                "groupIds": group_ids,
+                "groupIds": list(group_ids),
                 "targetEnterpriseAccountId": target,
             },
         )
@@ -527,7 +527,7 @@ class Enterprise:
         response = self.api.post(
             self.urls.move_workspaces,
             json={
-                "workspaceIds": workspace_ids,
+                "workspaceIds": list(workspace_ids),
                 "targetEnterpriseAccountId": target,
             },
         )

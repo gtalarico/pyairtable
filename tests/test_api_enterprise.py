@@ -470,7 +470,10 @@ def test_create_workspace(enterprise, requests_mock):
     assert result.id == workspace_id
 
 
-def test_move_groups(api, enterprise, enterprise_mocks):
+# group_ids is typed as Iterable[str]; an iterator must not raise
+# TypeError: Object of type generator is not JSON serializable
+@pytest.mark.parametrize("container", [list, iter])
+def test_move_groups(api, enterprise, enterprise_mocks, container):
     other_id = fake_id("ent")
     group_ids = [fake_id("ugp") for _ in range(3)]
     enterprise_mocks.move_groups_json["movedGroups"] = [
@@ -478,7 +481,7 @@ def test_move_groups(api, enterprise, enterprise_mocks):
     ]
     for target in [other_id, api.enterprise(other_id)]:
         enterprise_mocks.move_groups.reset()
-        result = enterprise.move_groups(group_ids, target)
+        result = enterprise.move_groups(container(group_ids), target)
         assert enterprise_mocks.move_groups.call_count == 1
         assert enterprise_mocks.move_groups.last_request.json() == {
             "targetEnterpriseAccountId": other_id,
@@ -487,7 +490,10 @@ def test_move_groups(api, enterprise, enterprise_mocks):
         assert set(m.id for m in result.moved_groups) == set(group_ids)
 
 
-def test_move_workspaces(api, enterprise, enterprise_mocks):
+# workspace_ids is typed as Iterable[str]; an iterator must not raise
+# TypeError: Object of type generator is not JSON serializable
+@pytest.mark.parametrize("container", [list, iter])
+def test_move_workspaces(api, enterprise, enterprise_mocks, container):
     other_id = fake_id("ent")
     workspace_ids = [fake_id("wsp") for _ in range(3)]
     enterprise_mocks.move_workspaces_json["movedWorkspaces"] = [
@@ -495,7 +501,7 @@ def test_move_workspaces(api, enterprise, enterprise_mocks):
     ]
     for target in [other_id, api.enterprise(other_id)]:
         enterprise_mocks.move_workspaces.reset()
-        result = enterprise.move_workspaces(workspace_ids, target)
+        result = enterprise.move_workspaces(container(workspace_ids), target)
         assert enterprise_mocks.move_workspaces.call_count == 1
         assert enterprise_mocks.move_workspaces.last_request.json() == {
             "targetEnterpriseAccountId": other_id,
