@@ -2,9 +2,10 @@ import importlib
 import json
 import re
 from collections import OrderedDict
+from collections.abc import Callable
 from pathlib import Path
 from posixpath import join as urljoin
-from typing import Any, Callable
+from typing import Any
 from urllib.parse import quote, urlencode
 
 import pytest

@@ -1,5 +1,4 @@
 from operator import attrgetter
-from typing import List, Optional
 
 import mock
 import pytest
@@ -95,12 +94,12 @@ def test_deserialized_values(obj_path, expected_value, schema_obj):
 
 
 class Outer(AirtableModel):
-    inners: List["Outer.Inner"]
+    inners: list["Outer.Inner"]
 
     class Inner(AirtableModel):
         id: str
         name: str
-        deleted: Optional[bool] = None
+        deleted: bool | None = None
 
     def find(self, id_or_name):
         return schema._find(self.inners, id_or_name)

@@ -1,6 +1,4 @@
-from typing import Optional
-
-from typing_extensions import TypeAlias
+from typing import TypeAlias
 
 from pyairtable.models._base import AirtableModel
 
@@ -20,7 +18,7 @@ class Collaborator(AirtableModel):
     id: UserId
 
     #: The email address of the user.
-    email: Optional[str] = None
+    email: str | None = None
 
     #: The display name of the user.
-    name: Optional[str] = None
+    name: str | None = None

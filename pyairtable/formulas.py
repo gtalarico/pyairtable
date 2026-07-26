@@ -8,12 +8,12 @@ See :doc:`formulas` for more information.
 import datetime
 import re
 import warnings
+from collections.abc import Iterable
 from decimal import Decimal
 from fractions import Fraction
-from typing import Any, ClassVar, Iterable, List, Optional, Set, Union
+from typing import Any, ClassVar, TypeAlias
 
 from typing_extensions import Self as SelfType
-from typing_extensions import TypeAlias
 
 from pyairtable.api.types import Fields
 from pyairtable.exceptions import CircularFormulaError
@@ -202,7 +202,7 @@ class Compound(Formula):
     """
 
     operator: str
-    components: List[Formula]
+    components: list[Formula]
 
     def __init__(
         self,
@@ -229,13 +229,13 @@ class Compound(Formula):
     def __repr__(self) -> str:
         return f"{self.operator}({repr(self.components)[1:-1]})"
 
-    def flatten(self, /, memo: Optional[Set[int]] = None) -> "Compound":
+    def flatten(self, /, memo: set[int] | None = None) -> "Compound":
         """
         Reduces the depth of nested AND, OR, and NOT statements.
         """
         memo = memo if memo else set()
         memo.add(id(self))
-        flattened: List[Formula] = []
+        flattened: list[Formula] = []
         for item in self.components:
             if id(item) in memo:
                 raise CircularFormulaError(item)
@@ -256,7 +256,7 @@ class Compound(Formula):
         return cls(operator, items)
 
 
-def AND(*components: Union[Formula, Iterable[Formula]], **fields: Any) -> Compound:
+def AND(*components: Formula | Iterable[Formula], **fields: Any) -> Compound:
     """
     Join one or more logical conditions into an AND compound condition.
     Keyword arguments will be treated as field names.
@@ -267,7 +267,7 @@ def AND(*components: Union[Formula, Iterable[Formula]], **fields: Any) -> Compou
     return Compound.build("AND", *components, **fields)
 
 
-def OR(*components: Union[Formula, Iterable[Formula]], **fields: Any) -> Compound:
+def OR(*components: Formula | Iterable[Formula], **fields: Any) -> Compound:
     """
     Join one or more logical conditions into an OR compound condition.
     Keyword arguments will be treated as field names.
@@ -278,7 +278,7 @@ def OR(*components: Union[Formula, Iterable[Formula]], **fields: Any) -> Compoun
     return Compound.build("OR", *components, **fields)
 
 
-def NOT(component: Optional[Formula] = None, /, **fields: Any) -> Compound:
+def NOT(component: Formula | None = None, /, **fields: Any) -> Compound:
     """
     Wrap one logical condition in a negation compound.
     Keyword arguments will be treated as field names.
@@ -310,7 +310,7 @@ def NOT(component: Optional[Formula] = None, /, **fields: Any) -> Compound:
     Traceback (most recent call last):
     ValueError: NOT() requires exactly one condition; got 0
     """
-    items: List[Formula] = [EQ(Field(k), v) for (k, v) in fields.items()]
+    items: list[Formula] = [EQ(Field(k), v) for (k, v) in fields.items()]
     if component:
         items.append(component)
     if (count := len(items)) != 1:
@@ -352,7 +352,7 @@ def match(field_values: Fields, *, match_any: bool = False) -> Formula:
             If ``True``, matches if *any* of the provided values match.
             Otherwise, all values must match.
     """
-    expressions: List[Formula] = []
+    expressions: list[Formula] = []
 
     for key, val in field_values.items():
         if isinstance(val, tuple) and len(val) == 2:
@@ -511,17 +511,17 @@ def field_name(name: str) -> str:
     return "{%s}" % name.replace("}", r"\}")
 
 
-FunctionArg: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    Decimal,
-    Fraction,
-    Formula,
-    datetime.date,
-    datetime.datetime,
-]
+FunctionArg: TypeAlias = (
+    str
+    | int
+    | float
+    | bool
+    | Decimal
+    | Fraction
+    | Formula
+    | datetime.date
+    | datetime.datetime
+)
 
 
 class FunctionCall(Formula):
@@ -596,7 +596,7 @@ for definition in definitions:
     splat = optional.pop().rstrip(".") if optional and optional[-1].endswith("...") else None
 
     if optional:
-        signature += [f"{arg}: Optional[FunctionArg] = None" for arg in optional]
+        signature += [f"{arg}: FunctionArg | None = None" for arg in optional]
         params += ["*(v for v in [" + ", ".join(optional) + "] if v is not None)"]
 
     if required or optional:
@@ -643,7 +643,7 @@ def BLANK() -> FunctionCall:
     return FunctionCall('BLANK')
 
 
-def CEILING(value: FunctionArg, significance: Optional[FunctionArg] = None, /) -> FunctionCall:
+def CEILING(value: FunctionArg, significance: FunctionArg | None = None, /) -> FunctionCall:
     """
     Returns the nearest integer multiple of significance that is greater than or equal to the value. If no significance is provided, a significance of 1 is assumed.
     """
@@ -706,14 +706,14 @@ def DATETIME_DIFF(date1: FunctionArg, date2: FunctionArg, units: FunctionArg, /)
     return FunctionCall('DATETIME_DIFF', date1, date2, units)
 
 
-def DATETIME_FORMAT(date: FunctionArg, output_format: Optional[FunctionArg] = None, /) -> FunctionCall:
+def DATETIME_FORMAT(date: FunctionArg, output_format: FunctionArg | None = None, /) -> FunctionCall:
     """
     Formats a datetime into a specified string. See an `explanation of how to use this function with date fields <https://support.airtable.com/hc/en-us/articles/215646218>`__ or a list of `supported format specifiers <https://support.airtable.com/hc/en-us/articles/216141218>`__.
     """
     return FunctionCall('DATETIME_FORMAT', date, *(v for v in [output_format] if v is not None))
 
 
-def DATETIME_PARSE(date: FunctionArg, input_format: Optional[FunctionArg] = None, locale: Optional[FunctionArg] = None, /) -> FunctionCall:
+def DATETIME_PARSE(date: FunctionArg, input_format: FunctionArg | None = None, locale: FunctionArg | None = None, /) -> FunctionCall:
     """
     Interprets a text string as a structured date, with optional input format and locale parameters. The output format will always be formatted 'M/D/YYYY h:mm a'.
     """
@@ -762,14 +762,14 @@ def FALSE() -> FunctionCall:
     return FunctionCall('FALSE')
 
 
-def FIND(string_to_find: FunctionArg, where_to_search: FunctionArg, start_from_position: Optional[FunctionArg] = None, /) -> FunctionCall:
+def FIND(string_to_find: FunctionArg, where_to_search: FunctionArg, start_from_position: FunctionArg | None = None, /) -> FunctionCall:
     """
     Finds an occurrence of stringToFind in whereToSearch string starting from an optional startFromPosition.(startFromPosition is 0 by default.) If no occurrence of stringToFind is found, the result will be 0.
     """
     return FunctionCall('FIND', string_to_find, where_to_search, *(v for v in [start_from_position] if v is not None))
 
 
-def FLOOR(value: FunctionArg, significance: Optional[FunctionArg] = None, /) -> FunctionCall:
+def FLOOR(value: FunctionArg, significance: FunctionArg | None = None, /) -> FunctionCall:
     """
     Returns the nearest integer multiple of significance that is less than or equal to the value. If no significance is provided, a significance of 1 is assumed.
     """
@@ -853,7 +853,7 @@ def LEN(string: FunctionArg, /) -> FunctionCall:
     return FunctionCall('LEN', string)
 
 
-def LOG(number: FunctionArg, base: Optional[FunctionArg] = None, /) -> FunctionCall:
+def LOG(number: FunctionArg, base: FunctionArg | None = None, /) -> FunctionCall:
     """
     Computes the logarithm of the value in provided base. The base defaults to 10 if not specified.
     """
@@ -1000,7 +1000,7 @@ def ROUNDUP(value: FunctionArg, precision: FunctionArg, /) -> FunctionCall:
     return FunctionCall('ROUNDUP', value, precision)
 
 
-def SEARCH(string_to_find: FunctionArg, where_to_search: FunctionArg, start_from_position: Optional[FunctionArg] = None, /) -> FunctionCall:
+def SEARCH(string_to_find: FunctionArg, where_to_search: FunctionArg, start_from_position: FunctionArg | None = None, /) -> FunctionCall:
     """
     Searches for an occurrence of stringToFind in whereToSearch string starting from an optional startFromPosition. (startFromPosition is 0 by default.) If no occurrence of stringToFind is found, the result will be empty.
     """
@@ -1035,7 +1035,7 @@ def SQRT(value: FunctionArg, /) -> FunctionCall:
     return FunctionCall('SQRT', value)
 
 
-def SUBSTITUTE(string: FunctionArg, old_text: FunctionArg, new_text: FunctionArg, index: Optional[FunctionArg] = None, /) -> FunctionCall:
+def SUBSTITUTE(string: FunctionArg, old_text: FunctionArg, new_text: FunctionArg, index: FunctionArg | None = None, /) -> FunctionCall:
     """
     Replaces occurrences of old_text in string with new_text.
     """
@@ -1112,28 +1112,28 @@ def VALUE(text: FunctionArg, /) -> FunctionCall:
     return FunctionCall('VALUE', text)
 
 
-def WEEKDAY(date: FunctionArg, start_day_of_week: Optional[FunctionArg] = None, /) -> FunctionCall:
+def WEEKDAY(date: FunctionArg, start_day_of_week: FunctionArg | None = None, /) -> FunctionCall:
     """
     Returns the day of the week as an integer between 0 (Sunday) and 6 (Saturday). You may optionally provide a second argument (either ``"Sunday"`` or ``"Monday"``) to start weeks on that day. If omitted, weeks start on Sunday by default.
     """
     return FunctionCall('WEEKDAY', date, *(v for v in [start_day_of_week] if v is not None))
 
 
-def WEEKNUM(date: FunctionArg, start_day_of_week: Optional[FunctionArg] = None, /) -> FunctionCall:
+def WEEKNUM(date: FunctionArg, start_day_of_week: FunctionArg | None = None, /) -> FunctionCall:
     """
     Returns the week number in a year. You may optionally provide a second argument (either ``"Sunday"`` or ``"Monday"``) to start weeks on that day. If omitted, weeks start on Sunday by default.
     """
     return FunctionCall('WEEKNUM', date, *(v for v in [start_day_of_week] if v is not None))
 
 
-def WORKDAY(start_date: FunctionArg, num_days: FunctionArg, holidays: Optional[FunctionArg] = None, /) -> FunctionCall:
+def WORKDAY(start_date: FunctionArg, num_days: FunctionArg, holidays: FunctionArg | None = None, /) -> FunctionCall:
     """
     Returns a date that is numDays working days after startDate. Working days exclude weekends and an optional list of holidays, formatted as a comma-separated string of ISO-formatted dates.
     """
     return FunctionCall('WORKDAY', start_date, num_days, *(v for v in [holidays] if v is not None))
 
 
-def WORKDAY_DIFF(start_date: FunctionArg, end_date: FunctionArg, holidays: Optional[FunctionArg] = None, /) -> FunctionCall:
+def WORKDAY_DIFF(start_date: FunctionArg, end_date: FunctionArg, holidays: FunctionArg | None = None, /) -> FunctionCall:
     """
     Counts the number of working days between startDate and endDate. Working days exclude weekends and an optional list of holidays, formatted as a comma-separated string of ISO-formatted dates.
     """
@@ -1154,5 +1154,5 @@ def YEAR(date: FunctionArg, /) -> FunctionCall:
     return FunctionCall('YEAR', date)
 
 
-# [[[end]]] (sum: 6J+3KYcsIL)
+# [[[end]]] (sum: nIiXbSJkZi)
 # fmt: on

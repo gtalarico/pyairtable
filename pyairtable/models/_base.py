@@ -1,17 +1,7 @@
+from collections.abc import Iterable, Mapping
 from datetime import datetime
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-    Set,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import inflection
 import pydantic
@@ -38,7 +28,7 @@ class AirtableModel(pydantic.BaseModel):
         populate_by_name=True,
     )
 
-    _raw: Dict[str, Any] = pydantic.PrivateAttr()
+    _raw: dict[str, Any] = pydantic.PrivateAttr()
 
     def __init__(self, **data: Any) -> None:
         raw = data.copy()
@@ -59,10 +49,10 @@ class AirtableModel(pydantic.BaseModel):
     @classmethod
     def from_api(
         cls,
-        obj: Dict[str, Any],
+        obj: dict[str, Any],
         api: "Api",
         *,
-        context: Optional[Any] = None,
+        context: Any | None = None,
     ) -> SelfType:
         """
         Construct an instance which is able to update itself using an
@@ -89,7 +79,7 @@ def cascade_api(
     obj: Any,
     api: "Api",
     *,
-    context: Optional[Any] = None,
+    context: Any | None = None,
 ) -> None:
     """
     Ensure all nested objects have access to the given Api instance,
@@ -106,7 +96,7 @@ def cascade_api(
         context = {_context_name(context): context}
 
     # Ensure we don't get stuck in infinite loops
-    visited: Set[int] = context.setdefault("__visited__", set())
+    visited: set[int] = context.setdefault("__visited__", set())
     if id(obj) in visited:
         return
     visited.add(id(obj))
@@ -154,7 +144,7 @@ class RestfulModel(AirtableModel):
         cls.__url_pattern = kwargs.pop("url", cls.__url_pattern)
         super().__init_subclass__()
 
-    def _set_api(self, api: "Api", context: Dict[str, Any]) -> None:
+    def _set_api(self, api: "Api", context: dict[str, Any]) -> None:
         """
         Set a link to the API and build the REST URL used for this resource.
         """
@@ -171,7 +161,7 @@ class RestfulModel(AirtableModel):
         if self._url and not self._url.startswith("http"):
             self._url = api.build_url(self._url)
 
-    def _reload(self, obj: Optional[Dict[str, Any]] = None) -> None:
+    def _reload(self, obj: dict[str, Any] | None = None) -> None:
         """
         Reload the model's contents from the given object, or by making a GET request to the API.
         """
@@ -218,8 +208,8 @@ class CanUpdateModel(RestfulModel):
         * ``save_null_values=``: boolean indicating whether ``save()`` should write nulls (default: true)
     """
 
-    __writable: ClassVar[Optional[Iterable[str]]] = None
-    __readonly: ClassVar[Optional[Iterable[str]]] = None
+    __writable: ClassVar[Iterable[str] | None] = None
+    __readonly: ClassVar[Iterable[str] | None] = None
     __save_none: ClassVar[bool] = True
     __save_http_method: ClassVar[str] = "PATCH"
     __reload_after_save: ClassVar[bool] = True
@@ -287,7 +277,7 @@ class CanUpdateModel(RestfulModel):
 
 
 def _append_docstring_refs(
-    cls: Type[CanUpdateModel],
+    cls: type[CanUpdateModel],
     explanation: str,
     field_names: Iterable[str],
 ) -> None:
@@ -305,8 +295,8 @@ def _append_docstring_refs(
 
 
 def rebuild_models(
-    obj: Union[Type[AirtableModel], Mapping[str, Any]],
-    memo: Optional[Set[int]] = None,
+    obj: type[AirtableModel] | Mapping[str, Any],
+    memo: set[int] | None = None,
 ) -> None:
     """
     Convenience method to ensure we update forward references for all nested models.

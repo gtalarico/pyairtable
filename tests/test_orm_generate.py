@@ -44,7 +44,7 @@ def test_field_variable_name(value, expected):
         (None, "Any"),
         ({"type": "multipleRecordLinks"}, "str"),
         ({"type": "singleLineText"}, "str"),
-        ({"type": "number"}, "Union[int, float]"),
+        ({"type": "number"}, "int | float"),
         ({"type": "date"}, "date"),
         ({"type": "dateTime"}, "datetime"),
         ({"type": "rating"}, "int"),

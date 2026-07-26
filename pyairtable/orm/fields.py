@@ -28,29 +28,22 @@ which allows us to define methods and type annotations for getting and setting a
 import abc
 import importlib
 import re
+from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Dict,
     Generic,
-    List,
     Literal,
-    Optional,
-    Set,
-    Tuple,
-    Type,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     overload,
 )
 
 from typing_extensions import Self as SelfType
-from typing_extensions import TypeAlias
 
 from pyairtable import formulas, utils
 from pyairtable.api.types import (
@@ -76,7 +69,7 @@ if TYPE_CHECKING:
     from pyairtable.orm import Model
 
 
-_ClassInfo: TypeAlias = Union[type, Tuple["_ClassInfo", ...]]
+_ClassInfo: TypeAlias = type | tuple["_ClassInfo", ...]
 T = TypeVar("T")
 T_Linked = TypeVar("T_Linked", bound="Model")  # used by LinkField
 T_API = TypeVar("T_API")  # type used to exchange values w/ Airtable API
@@ -111,16 +104,16 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
     readonly: bool = False
 
     # Contains a reference to the Model class (if possible)
-    _model: Optional[Type["Model"]] = None
+    _model: type["Model"] | None = None
 
     # The name of the attribute on the Model class (if possible)
-    _attribute_name: Optional[str] = None
+    _attribute_name: str | None = None
 
     def __init__(
         self,
         field_name: str,
         validate_type: bool = True,
-        readonly: Optional[bool] = None,
+        readonly: bool | None = None,
     ) -> None:
         """
         Args:
@@ -166,17 +159,15 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
 
     # Model.field will call __get__(instance=None, owner=Model)
     @overload
-    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
+    def __get__(self, instance: None, owner: type[Any]) -> SelfType: ...
 
     # obj.field will call __get__(instance=obj, owner=Model)
     @overload
-    def __get__(
-        self, instance: "Model", owner: Type[Any]
-    ) -> Union[T_ORM, T_Missing]: ...
+    def __get__(self, instance: "Model", owner: type[Any]) -> T_ORM | T_Missing: ...
 
     def __get__(
-        self, instance: Optional["Model"], owner: Type[Any]
-    ) -> Union[SelfType, T_ORM, T_Missing]:
+        self, instance: "Model | None", owner: type[Any]
+    ) -> SelfType | T_ORM | T_Missing:
         # allow calling Model.field to get the field object instead of a value
         if not instance:
             return self
@@ -188,7 +179,7 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
             return cast(T_Missing, self.missing_value)
         return cast(T_ORM, value)
 
-    def __set__(self, instance: "Model", value: Optional[T_ORM]) -> None:
+    def __set__(self, instance: "Model", value: T_ORM | None) -> None:
         self._raise_if_readonly()
         if self.validate_type and value is not None:
             self.valid_or_raise(value)
@@ -231,7 +222,7 @@ class Field(Generic[T_API, T_ORM, T_Missing], metaclass=abc.ABCMeta):
         args += [f"{key}={val!r}" for (key, val) in self._repr_fields()]
         return self.__class__.__name__ + "(" + ", ".join(args) + ")"
 
-    def _repr_fields(self) -> List[Tuple[str, Any]]:
+    def _repr_fields(self) -> list[tuple[str, Any]]:
         return [
             ("readonly", self.readonly),
             ("validate_type", self.validate_type),
@@ -285,20 +276,18 @@ class _Requires_API_ORM(Generic[T_API, T_ORM], Field[T_API, T_ORM, T_ORM]):
     """
 
     @overload
-    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
+    def __get__(self, instance: None, owner: type[Any]) -> SelfType: ...
 
     @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> T_ORM: ...
+    def __get__(self, instance: "Model", owner: type[Any]) -> T_ORM: ...
 
-    def __get__(
-        self, instance: Optional["Model"], owner: Type[Any]
-    ) -> Union[SelfType, T_ORM]:
+    def __get__(self, instance: "Model | None", owner: type[Any]) -> SelfType | T_ORM:
         value = super().__get__(instance, owner)
         if value is None or value == "":
             raise MissingValueError(f"{self._description} received an empty value")
         return value
 
-    def __set__(self, instance: "Model", value: Optional[T_ORM]) -> None:
+    def __set__(self, instance: "Model", value: T_ORM | None) -> None:
         if value in (None, ""):
             raise MissingValueError(f"{self._description} does not accept empty values")
         super().__set__(instance, value)
@@ -340,14 +329,14 @@ AnyField: TypeAlias = Field[Any, Any, Any]
 # ======================================================
 
 
-T_Field = TypeVar("T_Field", bound=Type[Field[Any, Any, Any]])
+T_Field = TypeVar("T_Field", bound=type[Field[Any, Any, Any]])
 
 
 def _use_inherited_docstring(cls: T_Field) -> T_Field:
     """
     Reuses the class's first parent class's docstring if it's undocumented.
     """
-    from_cls: Type[Any] = cls
+    from_cls: type[Any] = cls
     while len(from_cls.__mro__) > 1 and not from_cls.__doc__:
         from_cls = from_cls.__mro__[1]
         if from_cls is Field:
@@ -481,7 +470,7 @@ class SingleLineTextField(_StringField, _FieldSchema[S.SingleLineTextFieldSchema
 @_field_api_docstring("Single line text", "simpletext", "Long text", "multilinetext")
 class TextField(
     _StringField,
-    _FieldSchema[Union[S.SingleLineTextFieldSchema, S.MultilineTextFieldSchema]],
+    _FieldSchema[S.SingleLineTextFieldSchema | S.MultilineTextFieldSchema],
 ):
     pass
 
@@ -510,7 +499,7 @@ class _NumericFieldBase(_BasicField[T]):
         super().valid_or_raise(value)
 
 
-class _NumberField(_NumericFieldBase[Union[int, float]]):
+class _NumberField(_NumericFieldBase[int | float]):
     """
     Number field with unspecified precision. Accepts either ``int`` or ``float``.
     """
@@ -658,7 +647,7 @@ class DurationField(
         """
         return value.total_seconds()
 
-    def to_internal_value(self, value: Union[int, float]) -> timedelta:
+    def to_internal_value(self, value: int | float) -> timedelta:
         """
         Convert a number of seconds into a ``timedelta``.
         """
@@ -672,7 +661,7 @@ class DurationField(
 
 class _ListFieldBase(
     Generic[T_API, T_ORM, T_ORM_List],
-    Field[List[T_API], List[T_ORM], T_ORM_List],
+    Field[list[T_API], list[T_ORM], T_ORM_List],
 ):
     """
     Generic type for a field that stores a list of values.
@@ -685,8 +674,8 @@ class _ListFieldBase(
     """
 
     valid_types = list
-    list_class: Type[T_ORM_List]
-    contains_type: Optional[Type[T_ORM]]
+    list_class: type[T_ORM_List]
+    contains_type: type[T_ORM] | None
 
     # List fields will always return a list, never ``None``, so we
     # have to overload the type annotations for __get__
@@ -707,24 +696,24 @@ class _ListFieldBase(
         return super().__init_subclass__(**kwargs)
 
     @overload
-    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
+    def __get__(self, instance: None, owner: type[Any]) -> SelfType: ...
 
     @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> T_ORM_List: ...
+    def __get__(self, instance: "Model", owner: type[Any]) -> T_ORM_List: ...
 
     def __get__(
-        self, instance: Optional["Model"], owner: Type[Any]
-    ) -> Union[SelfType, T_ORM_List]:
+        self, instance: "Model | None", owner: type[Any]
+    ) -> SelfType | T_ORM_List:
         if not instance:
             return self
         return self._get_list_value(instance)
 
-    def __set__(self, instance: "Model", value: Optional[List[T_ORM]]) -> None:
+    def __set__(self, instance: "Model", value: list[T_ORM] | None) -> None:
         if isinstance(value, list) and not isinstance(value, self.list_class):
             assert isinstance(self.list_class, type)
             assert issubclass(self.list_class, ChangeTrackingList)
             value = self.list_class(value, field=self, model=instance)
-        super().__set__(instance, cast(Optional[List[T_ORM]], value))
+        super().__set__(instance, cast(list[T_ORM] | None, value))
 
     def _get_list_value(self, instance: "Model") -> T_ORM_List:
         value = instance._fields.get(self.field_name)
@@ -786,15 +775,15 @@ class LinkField(
     provided the field is created with ``readonly=True``.
     """
 
-    _linked_model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]]
-    _max_retrieve: Optional[int] = None
+    _linked_model: str | Literal[_LinkFieldOptions.LinkSelf] | type[T_Linked]
+    _max_retrieve: int | None = None
 
     def __init__(
         self,
         field_name: str,
-        model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]],
+        model: str | Literal[_LinkFieldOptions.LinkSelf] | type[T_Linked],
         validate_type: bool = True,
-        readonly: Optional[bool] = None,
+        readonly: bool | None = None,
         lazy: bool = False,
     ):
         """
@@ -833,7 +822,7 @@ class LinkField(
         self._lazy = lazy
 
     @property
-    def linked_model(self) -> Type[T_Linked]:
+    def linked_model(self) -> type[T_Linked]:
         """
         Resolve a :class:`~pyairtable.orm.Model` class based on
         the ``model=`` constructor parameter to this field instance.
@@ -846,16 +835,16 @@ class LinkField(
                 modpath = self._model.__module__
             mod = importlib.import_module(modpath)
             cls = getattr(mod, clsname)
-            self._linked_model = cast(Type[T_Linked], cls)
+            self._linked_model = cast(type[T_Linked], cls)
 
         elif self._linked_model is _LinkFieldOptions.LinkSelf:
             if self._model is None:
                 raise RuntimeError(f"{self._description} not created on a Model")
-            self._linked_model = cast(Type[T_Linked], self._model)
+            self._linked_model = cast(type[T_Linked], self._model)
 
         return self._linked_model
 
-    def _repr_fields(self) -> List[Tuple[str, Any]]:
+    def _repr_fields(self) -> list[tuple[str, Any]]:
         return [
             ("model", self._linked_model),
             ("validate_type", self.validate_type),
@@ -867,8 +856,8 @@ class LinkField(
         self,
         instance: "Model",
         *,
-        lazy: Optional[bool] = None,
-        memoize: Optional[bool] = None,
+        lazy: bool | None = None,
+        memoize: bool | None = None,
     ) -> None:
         """
         Populates the field's value for the given instance. This allows you to
@@ -913,7 +902,7 @@ class LinkField(
             new_records = {
                 record.id: record
                 for record in self.linked_model.from_ids(
-                    cast(List[RecordId], new_record_ids),
+                    cast(list[RecordId], new_record_ids),
                     memoize=memoize,
                     fetch=(not lazy),
                 )
@@ -943,7 +932,7 @@ class LinkField(
         self.populate(instance)
         return super()._get_list_value(instance)
 
-    def to_record_value(self, value: List[Union[str, T_Linked]]) -> List[str]:
+    def to_record_value(self, value: list[str | T_Linked]) -> list[str]:
         """
         Build the list of record IDs which should be persisted to the API.
         """
@@ -951,7 +940,7 @@ class LinkField(
         # but we never actually accessed the value (see _get_list_value).
         # When persisting this model back to the API, we can just write those IDs.
         if all(isinstance(v, str) for v in value):
-            return cast(List[str], value)
+            return cast(list[str], value)
 
         # Validate any items in our list which are not record IDs
         records = [v for v in value if not isinstance(v, str)]
@@ -973,7 +962,7 @@ class LinkField(
 
 class SingleLinkField(
     Generic[T_Linked],
-    Field[List[str], T_Linked, None],
+    Field[list[str], T_Linked, None],
     _FieldSchema[S.MultipleRecordLinksFieldSchema],
 ):
     """
@@ -1035,9 +1024,9 @@ class SingleLinkField(
     def __init__(
         self,
         field_name: str,
-        model: Union[str, Literal[_LinkFieldOptions.LinkSelf], Type[T_Linked]],
+        model: str | Literal[_LinkFieldOptions.LinkSelf] | type[T_Linked],
         validate_type: bool = True,
-        readonly: Optional[bool] = None,
+        readonly: bool | None = None,
         lazy: bool = False,
         raise_if_many: bool = False,
     ):
@@ -1053,7 +1042,7 @@ class SingleLinkField(
         )
         self._link_field._max_retrieve = 1
 
-    def _repr_fields(self) -> List[Tuple[str, Any]]:
+    def _repr_fields(self) -> list[tuple[str, Any]]:
         return [
             ("model", self._link_field._linked_model),
             ("validate_type", self.validate_type),
@@ -1063,14 +1052,14 @@ class SingleLinkField(
         ]
 
     @overload
-    def __get__(self, instance: None, owner: Type[Any]) -> SelfType: ...
+    def __get__(self, instance: None, owner: type[Any]) -> SelfType: ...
 
     @overload
-    def __get__(self, instance: "Model", owner: Type[Any]) -> Optional[T_Linked]: ...
+    def __get__(self, instance: "Model", owner: type[Any]) -> T_Linked | None: ...
 
     def __get__(
-        self, instance: Optional["Model"], owner: Type[Any]
-    ) -> Union[SelfType, Optional[T_Linked]]:
+        self, instance: "Model | None", owner: type[Any]
+    ) -> SelfType | T_Linked | None:
         if not instance:
             return self
         if self._raise_if_many and len(instance._fields.get(self.field_name) or []) > 1:
@@ -1083,7 +1072,7 @@ class SingleLinkField(
         except IndexError:
             return None
 
-    def __set__(self, instance: "Model", value: Optional[T_Linked]) -> None:
+    def __set__(self, instance: "Model", value: T_Linked | None) -> None:
         values = None if value is None else [value]
         self._link_field.__set__(instance, values)
 
@@ -1091,7 +1080,7 @@ class SingleLinkField(
         super().__set_name__(owner, name)
         self._link_field.__set_name__(owner, name)
 
-    def to_record_value(self, value: List[Union[str, T_Linked]]) -> List[str]:
+    def to_record_value(self, value: list[str | T_Linked]) -> list[str]:
         return self._link_field.to_record_value(value)
 
     @utils.docstring_from(LinkField.populate)
@@ -1099,14 +1088,14 @@ class SingleLinkField(
         self,
         instance: "Model",
         *,
-        lazy: Optional[bool] = None,
-        memoize: Optional[bool] = None,
+        lazy: bool | None = None,
+        memoize: bool | None = None,
     ) -> None:
         self._link_field.populate(instance, lazy=lazy, memoize=memoize)
 
     @property
     @utils.docstring_from(LinkField.linked_model)
-    def linked_model(self) -> Type[T_Linked]:
+    def linked_model(self) -> type[T_Linked]:
         return self._link_field.linked_model
 
 
@@ -1131,7 +1120,7 @@ class AITextField(_DictField[AITextDict], _FieldSchema[S.AITextFieldSchema]):
 @_field_api_docstring("Attachments", "multipleattachment")
 class AttachmentsField(
     _ListFieldBase[
-        AttachmentDict, Union[AttachmentDict, CreateAttachmentDict], AttachmentsList
+        AttachmentDict, AttachmentDict | CreateAttachmentDict, AttachmentsList
     ],
     _FieldSchema[S.MultipleAttachmentsFieldSchema],
     list_class=AttachmentsList,
@@ -1166,7 +1155,7 @@ class ButtonField(
 
 @_field_api_docstring("Collaborator")
 class CollaboratorField(
-    _DictField[Union[CollaboratorDict, CollaboratorEmailDict]],
+    _DictField[CollaboratorDict | CollaboratorEmailDict],
     _FieldSchema[S.SingleCollaboratorFieldSchema],
 ):
     """
@@ -1243,7 +1232,7 @@ class LookupField(_ListField[T], _FieldSchema[S.MultipleLookupValuesFieldSchema]
 
 @_field_api_docstring("Multiple collaborators", "multicollaborator")
 class MultipleCollaboratorsField(
-    _ListField[Union[CollaboratorDict, CollaboratorEmailDict]],
+    _ListField[CollaboratorDict | CollaboratorEmailDict],
     _FieldSchema[S.MultipleCollaboratorsFieldSchema],
     contains_type=dict,
 ):
@@ -1290,7 +1279,7 @@ class RequiredBarcodeField(BarcodeField, _Requires[BarcodeDict]):
 @_required_value_docstring
 class RequiredCollaboratorField(
     CollaboratorField,
-    _Requires[Union[CollaboratorDict, CollaboratorEmailDict]],
+    _Requires[CollaboratorDict | CollaboratorEmailDict],
 ):
     pass
 
@@ -1301,7 +1290,7 @@ class RequiredCountField(CountField, _Requires[int]):
 
 
 @_required_value_docstring
-class RequiredCurrencyField(CurrencyField, _Requires[Union[int, float]]):
+class RequiredCurrencyField(CurrencyField, _Requires[int | float]):
     pass
 
 
@@ -1336,12 +1325,12 @@ class RequiredIntegerField(IntegerField, _Requires[int]):
 
 
 @_required_value_docstring
-class RequiredNumberField(NumberField, _Requires[Union[int, float]]):
+class RequiredNumberField(NumberField, _Requires[int | float]):
     pass
 
 
 @_required_value_docstring
-class RequiredPercentField(PercentField, _Requires[Union[int, float]]):
+class RequiredPercentField(PercentField, _Requires[int | float]):
     pass
 
 
@@ -1388,7 +1377,7 @@ class RequiredUrlField(UrlField, _Requires[str]):
 #: Set of all Field subclasses exposed by the library.
 #:
 #: :meta hide-value:
-ALL_FIELDS: Set[Type[AnyField]] = {
+ALL_FIELDS: set[type[AnyField]] = {
     field_class
     for name, field_class in vars().items()
     if isinstance(field_class, type)
@@ -1401,7 +1390,7 @@ ALL_FIELDS: Set[Type[AnyField]] = {
 #: Set of all read-only Field subclasses exposed by the library.
 #:
 #: :meta hide-value:
-READONLY_FIELDS: Set[Type[AnyField]] = {cls for cls in ALL_FIELDS if cls.readonly}
+READONLY_FIELDS: set[type[AnyField]] = {cls for cls in ALL_FIELDS if cls.readonly}
 
 
 #: Mapping of Airtable field type names to their ORM classes.
@@ -1417,7 +1406,7 @@ READONLY_FIELDS: Set[Type[AnyField]] = {cls for cls in ALL_FIELDS if cls.readonl
 #: which inherit from ``str`` and can be used in string comparisons.
 #:
 #: :meta hide-value:
-FIELD_TYPES_TO_CLASSES: Dict[str, Type[AnyField]] = {
+FIELD_TYPES_TO_CLASSES: dict[str, type[AnyField]] = {
     FieldType.AI_TEXT: AITextField,
     FieldType.AUTO_NUMBER: AutoNumberField,
     FieldType.BARCODE: BarcodeField,
@@ -1459,7 +1448,7 @@ FIELD_TYPES_TO_CLASSES: Dict[str, Type[AnyField]] = {
 #: Mapping of field classes to the set of supported Airtable field types.
 #:
 #: :meta hide-value:
-FIELD_CLASSES_TO_TYPES: Dict[Type[AnyField], Set[str]] = {
+FIELD_CLASSES_TO_TYPES: dict[type[AnyField], set[str]] = {
     cls: {key for (key, val) in FIELD_TYPES_TO_CLASSES.items() if val == cls}
     for cls in ALL_FIELDS
 }

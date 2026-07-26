@@ -1,4 +1,5 @@
-from typing import Any, Collection, Optional, Tuple, Union
+from collections.abc import Collection
+from typing import Any
 
 from requests import Session
 from requests.adapters import HTTPAdapter
@@ -11,10 +12,10 @@ DEFAULT_MAX_RETRIES = 5
 
 def retry_strategy(
     *,
-    status_forcelist: Tuple[int, ...] = DEFAULT_RETRIABLE_STATUS_CODES,
-    backoff_factor: Union[int, float] = DEFAULT_BACKOFF_FACTOR,
+    status_forcelist: tuple[int, ...] = DEFAULT_RETRIABLE_STATUS_CODES,
+    backoff_factor: int | float = DEFAULT_BACKOFF_FACTOR,
     total: int = DEFAULT_MAX_RETRIES,
-    allowed_methods: Optional[Collection[str]] = None,
+    allowed_methods: Collection[str] | None = None,
     **kwargs: Any,
 ) -> Retry:
     """

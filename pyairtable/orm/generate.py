@@ -10,9 +10,10 @@ The simplest way to use this functionality is with the command line utility:
 """
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any
 
 import inflection
 
@@ -27,7 +28,6 @@ _ANNOTATION_IMPORTS = {
     "datetime": "from datetime import datetime",
     "timedelta": "from datetime import timedelta",
     "Any": "from typing import Any",
-    r"Union\[.+\]": "from typing import Union",
 }
 
 
@@ -40,8 +40,8 @@ class ModelFileBuilder:
     def __init__(
         self,
         base: Base,
-        table_ids: Optional[Sequence[str]] = None,
-        table_names: Optional[Sequence[str]] = None,
+        table_ids: Sequence[str] | None = None,
+        table_names: Sequence[str] | None = None,
     ):
         """
         Args:
@@ -57,7 +57,7 @@ class ModelFileBuilder:
         self.model_builders = [ModelBuilder(self, table) for table in tables]
 
     @cached_property
-    def model_lookup(self) -> Dict[str, "ModelBuilder"]:
+    def model_lookup(self) -> dict[str, "ModelBuilder"]:
         return {
             key: builder
             for builder in self.model_builders
@@ -102,7 +102,7 @@ class ModelBuilder:
     meta_envvar: str = "AIRTABLE_API_KEY"
 
     @property
-    def field_builders(self) -> List["FieldBuilder"]:
+    def field_builders(self) -> list["FieldBuilder"]:
         return [
             FieldBuilder(field_schema, lookup=self.file_generator.model_lookup)
             for field_schema in self.table.schema().fields
@@ -129,14 +129,14 @@ class ModelBuilder:
 @dataclass
 class FieldBuilder:
     schema: S.FieldSchema
-    lookup: Dict[str, ModelBuilder]
+    lookup: dict[str, ModelBuilder]
 
     @property
     def var_name(self) -> str:
         return field_variable_name(self.schema.name)
 
     @property
-    def field_class(self) -> Type[fields.AnyField]:
+    def field_class(self) -> type[fields.AnyField]:
         field_type = self.schema.type
         if isinstance(self.schema, (S.FormulaFieldSchema, S.RollupFieldSchema)):
             if self.schema.options.result:
@@ -149,8 +149,8 @@ class FieldBuilder:
         return fields.FIELD_TYPES_TO_CLASSES[field_type]
 
     def __str__(self) -> str:
-        args: List[Any] = [self.schema.name]
-        kwargs: Dict[str, Any] = {}
+        args: list[Any] = [self.schema.name]
+        kwargs: dict[str, Any] = {}
         generic = ""
         cls = self.field_class
 
@@ -218,10 +218,10 @@ def lookup_field_type_annotation(schema: S.MultipleLookupValuesFieldSchema) -> s
     valid_types = _flatten(cls.valid_types)
     if len(valid_types) == 1:
         return valid_types[0].__name__
-    return "Union[%s]" % ", ".join(t.__name__ for t in _flatten(cls.valid_types))
+    return " | ".join(t.__name__ for t in _flatten(cls.valid_types))
 
 
-def _flatten(class_info: fields._ClassInfo) -> List[Type[Any]]:
+def _flatten(class_info: fields._ClassInfo) -> list[type[Any]]:
     """
     Given a _ClassInfo tuple (which can contain multiple levels of nested tuples)
     return a single list of all the actual types contained.

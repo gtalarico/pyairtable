@@ -1,9 +1,9 @@
+from collections.abc import Iterator, Sequence
 from functools import cached_property
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, TypeAlias, TypeVar
 
 import requests
 from requests.sessions import Session
-from typing_extensions import TypeAlias
 
 from pyairtable.api import retrying
 from pyairtable.api.base import Base
@@ -22,7 +22,7 @@ from pyairtable.utils import (
 )
 
 T = TypeVar("T")
-TimeoutTuple: TypeAlias = Tuple[int, int]
+TimeoutTuple: TypeAlias = tuple[int, int]
 
 
 class Api:
@@ -46,7 +46,7 @@ class Api:
     MAX_URL_LENGTH = 16000
 
     # Cached metadata to reduce API calls
-    _bases: Optional[Dict[str, "Base"]] = None
+    _bases: dict[str, "Base"] | None = None
 
     endpoint_url: Url
     session: Session
@@ -62,8 +62,8 @@ class Api:
         self,
         api_key: str,
         *,
-        timeout: Optional[TimeoutTuple] = None,
-        retry_strategy: Optional[Union[bool, retrying.Retry]] = True,
+        timeout: TimeoutTuple | None = None,
+        retry_strategy: bool | retrying.Retry | None = True,
         endpoint_url: str = "https://api.airtable.com",
         use_field_ids: bool = False,
     ):
@@ -168,7 +168,7 @@ class Api:
             permission_level=base_info.permission_level,
         )
 
-    def bases(self, *, force: bool = False) -> List["Base"]:
+    def bases(self, *, force: bool = False) -> list["Base"]:
         """
         Retrieve the base's schema and return a list of :class:`Base` instances.
 
@@ -190,7 +190,7 @@ class Api:
         self,
         workspace_id: str,
         name: str,
-        tables: Sequence[Dict[str, Any]],
+        tables: Sequence[dict[str, Any]],
     ) -> "Base":
         """
         Create a base in the given workspace.
@@ -236,10 +236,10 @@ class Api:
         self,
         method: str,
         url: str,
-        fallback: Optional[Tuple[str, str]] = None,
-        options: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None,
+        fallback: tuple[str, str] | None = None,
+        options: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
     ) -> Any:
         """
         Make a request to the Airtable API, optionally converting a GET to a POST if the URL exceeds the
@@ -345,9 +345,9 @@ class Api:
         self,
         method: str,
         url: str,
-        fallback: Optional[Tuple[str, str]] = None,
-        options: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        fallback: tuple[str, str] | None = None,
+        options: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
         offset_field: str = "offset",
     ) -> Iterator[Any]:
         """
@@ -373,7 +373,7 @@ class Api:
         options = options or {}
         params = params or {}
 
-        def _get_offset_field(response: Dict[str, Any]) -> Optional[str]:
+        def _get_offset_field(response: dict[str, Any]) -> str | None:
             value = response.get("pagination") or response  # see Enterprise.audit_log
             field_names = offset_field.split(".")
             while field_names:

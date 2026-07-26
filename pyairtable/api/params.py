@@ -1,12 +1,12 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from pyairtable.exceptions import InvalidParameterError
 
 
 def dict_list_to_request_params(
     param_name: str,
-    values: List[Dict[str, str]],
-) -> Dict[str, str]:
+    values: list[dict[str, str]],
+) -> dict[str, str]:
     """
     Build the dict to be used by request params from dict list
 
@@ -35,7 +35,7 @@ def dict_list_to_request_params(
     }
 
 
-def field_names_to_sorting_dict(field_names: List[str]) -> List[Dict[str, str]]:
+def field_names_to_sorting_dict(field_names: list[str]) -> list[dict[str, str]]:
     """
     >>> field_names_to_sorting_dict(["Name", "-Age"])
     [
@@ -98,7 +98,7 @@ OPTIONS_TO_RECORD_METADATA = {
 }
 
 
-def _build_record_metadata(options: Dict[str, Any]) -> List[str]:
+def _build_record_metadata(options: dict[str, Any]) -> list[str]:
     return [
         metadata_value
         for option_name, metadata_value in OPTIONS_TO_RECORD_METADATA.items()
@@ -106,7 +106,7 @@ def _build_record_metadata(options: Dict[str, Any]) -> List[str]:
     ]
 
 
-def options_to_params(options: Dict[str, Any]) -> Dict[str, Any]:
+def options_to_params(options: dict[str, Any]) -> dict[str, Any]:
     """
     Convert Airtable options to a dict of query params.
 
@@ -136,8 +136,8 @@ def options_to_params(options: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def options_to_json_and_params(
-    options: Dict[str, Any],
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    options: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
     """
     Convert Airtable options to a JSON payload with (possibly) leftover query params.
 

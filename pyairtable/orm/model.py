@@ -1,22 +1,10 @@
 import dataclasses
 import datetime
 import warnings
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from typing_extensions import Self as SelfType
 
@@ -121,20 +109,20 @@ class Model:
 
     #: The time when the Airtable record was created. If empty, the instance
     #: has never been saved to (or fetched from) the API.
-    created_time: Optional[datetime.datetime] = None
+    created_time: datetime.datetime | None = None
 
     #: The number of comments on this record. Only populated if the record was
     #: fetched with ``count_comments=True``.
-    comment_count: Optional[int] = None
+    comment_count: int | None = None
 
     #: A wrapper allowing type-annotated access to ORM configuration.
     meta: ClassVar["_Meta"]
 
     _deleted: bool = False
     _fetched: bool = False
-    _fields: Dict[FieldName, Any]
-    _changed: Dict[FieldName, bool]
-    _memoized: ClassVar[Dict[RecordId, SelfType]]
+    _fields: dict[FieldName, Any]
+    _changed: dict[FieldName, bool]
+    _memoized: ClassVar[dict[RecordId, SelfType]]
 
     def __init_subclass__(cls, **kwargs: Any):
         cls.meta = _Meta(cls)
@@ -159,7 +147,7 @@ class Model:
             )
 
     @classmethod
-    def _attribute_descriptor_map(cls) -> Dict[str, AnyField]:
+    def _attribute_descriptor_map(cls) -> dict[str, AnyField]:
         """
         Build a mapping of the model's attribute names to field descriptor instances.
 
@@ -176,7 +164,7 @@ class Model:
         return {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
 
     @classmethod
-    def _field_name_descriptor_map(cls) -> Dict[FieldName, AnyField]:
+    def _field_name_descriptor_map(cls) -> dict[FieldName, AnyField]:
         """
         Build a mapping of the model's field names to field descriptor instances.
 
@@ -296,7 +284,7 @@ class Model:
         return bool(result["deleted"])
 
     @classmethod
-    def all(cls, *, memoize: Optional[bool] = None, **kwargs: Any) -> List[SelfType]:
+    def all(cls, *, memoize: bool | None = None, **kwargs: Any) -> list[SelfType]:
         """
         Retrieve all records for this model. For all supported
         keyword arguments, see :meth:`Table.all <pyairtable.Table.all>`.
@@ -311,9 +299,7 @@ class Model:
         ]
 
     @classmethod
-    def first(
-        cls, *, memoize: Optional[bool] = None, **kwargs: Any
-    ) -> Optional[SelfType]:
+    def first(cls, *, memoize: bool | None = None, **kwargs: Any) -> SelfType | None:
         """
         Retrieve the first record for this model. For all supported
         keyword arguments, see :meth:`Table.first <pyairtable.Table.first>`.
@@ -327,7 +313,7 @@ class Model:
         return None
 
     @classmethod
-    def _maybe_memoize(cls, instance: SelfType, memoize: Optional[bool]) -> None:
+    def _maybe_memoize(cls, instance: SelfType, memoize: bool | None) -> None:
         """
         If memoization is enabled, save the instance to the memoization cache.
         """
@@ -358,7 +344,7 @@ class Model:
 
     @classmethod
     def from_record(
-        cls, record: RecordDict, *, memoize: Optional[bool] = None
+        cls, record: RecordDict, *, memoize: bool | None = None
     ) -> SelfType:
         """
         Create an instance from a record dict.
@@ -396,7 +382,7 @@ class Model:
         record_id: RecordId,
         *,
         fetch: bool = True,
-        memoize: Optional[bool] = None,
+        memoize: bool | None = None,
     ) -> SelfType:
         """
         Create an instance from a record ID.
@@ -435,8 +421,8 @@ class Model:
         record_ids: Iterable[RecordId],
         *,
         fetch: bool = True,
-        memoize: Optional[bool] = None,
-    ) -> List[SelfType]:
+        memoize: bool | None = None,
+    ) -> list[SelfType]:
         """
         Create a list of instances from record IDs. If any record IDs returned
         are invalid this will raise a KeyError, but only *after* retrieving all
@@ -451,7 +437,7 @@ class Model:
             return [cls.from_id(record_id, fetch=False) for record_id in record_ids]
 
         record_ids = list(record_ids)
-        by_id: Dict[RecordId, SelfType] = {}
+        by_id: dict[RecordId, SelfType] = {}
 
         if cls._memoized:
             for record_id in record_ids:
@@ -474,7 +460,7 @@ class Model:
         return [by_id[record_id] for record_id in record_ids]
 
     @classmethod
-    def batch_save(cls, models: List[SelfType]) -> None:
+    def batch_save(cls, models: list[SelfType]) -> None:
         """
         Save a list of model instances to the Airtable API with as few
         network requests as possible. Can accept a mixture of new records
@@ -485,12 +471,12 @@ class Model:
 
         create_models = [model for model in models if not model.id]
         update_models = [model for model in models if model.id]
-        create_records: List[WritableFields] = [
+        create_records: list[WritableFields] = [
             record["fields"]
             for model in create_models
             if (record := model.to_record(only_writable=True))
         ]
-        update_records: List[UpdateRecordDict] = [
+        update_records: list[UpdateRecordDict] = [
             {"id": record["id"], "fields": record["fields"]}
             for model in update_models
             if (record := model.to_record(only_writable=True))
@@ -513,7 +499,7 @@ class Model:
                 model.created_time = datetime_from_iso_str(record["createdTime"])
 
     @classmethod
-    def batch_delete(cls, models: List[SelfType]) -> None:
+    def batch_delete(cls, models: list[SelfType]) -> None:
         """
         Delete a list of model instances from Airtable.
 
@@ -526,7 +512,7 @@ class Model:
             raise TypeError(set(type(model) for model in models))
         cls.meta.table.batch_delete([model.id for model in models])
 
-    def comments(self) -> List[Comment]:
+    def comments(self) -> list[Comment]:
         """
         Return a list of comments on this record.
         See :meth:`Table.comments <pyairtable.Table.comments>`.
@@ -548,7 +534,7 @@ class _Meta:
     configuration values (which may or may not be defined in the original class).
     """
 
-    model: Type[Model]
+    model: type[Model]
 
     @property
     def _config(self) -> Mapping[str, Any]:
@@ -569,7 +555,7 @@ class _Meta:
         default: Any = None,
         required: bool = False,
         call: bool = True,
-        check_types: Optional["_ClassInfo"] = None,
+        check_types: "_ClassInfo | None" = None,
     ) -> Any:
         """
         Given a name, retrieve the model configuration with that name.
@@ -598,7 +584,7 @@ class _Meta:
         return str(self.get("api_key", required=True))
 
     @property
-    def timeout(self) -> Optional[TimeoutTuple]:
+    def timeout(self) -> TimeoutTuple | None:
         return self.get(  # type: ignore[no-any-return]
             "timeout",
             default=None,
@@ -606,7 +592,7 @@ class _Meta:
         )
 
     @property
-    def retry_strategy(self) -> Optional[Union[bool, retrying.Retry]]:
+    def retry_strategy(self) -> bool | retrying.Retry | None:
         return self.get(  # type: ignore[no-any-return]
             "retry",
             default=True,
@@ -650,7 +636,7 @@ class _Meta:
         return bool(self.get("memoize", default=False))
 
     @property
-    def request_kwargs(self) -> Dict[str, Any]:
+    def request_kwargs(self) -> dict[str, Any]:
         return {
             "user_locale": None,
             "cell_format": "json",
@@ -696,7 +682,7 @@ class SaveResult:
     created: bool = False
     updated: bool = False
     forced: bool = False
-    field_names: Set[FieldName] = dataclasses.field(default_factory=set)
+    field_names: set[FieldName] = dataclasses.field(default_factory=set)
 
     def __bool__(self) -> bool:
         """

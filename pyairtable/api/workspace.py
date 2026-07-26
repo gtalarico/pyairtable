@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any
 
 from pyairtable.models.schema import WorkspaceCollaborators
 from pyairtable.utils import Url, UrlBuilder, cache_unless_forced, enterprise_only
@@ -23,7 +24,7 @@ class Workspace:
     Most workspace functionality is limited to users on Enterprise billing plans.
     """
 
-    _collaborators: Optional[WorkspaceCollaborators] = None
+    _collaborators: WorkspaceCollaborators | None = None
 
     class _urls(UrlBuilder):
         #: URL for retrieving the workspace's metadata and collaborators.
@@ -44,7 +45,7 @@ class Workspace:
     def create_base(
         self,
         name: str,
-        tables: Sequence[Dict[str, Any]],
+        tables: Sequence[dict[str, Any]],
     ) -> "Base":
         """
         Create a base in the given workspace.
@@ -76,7 +77,7 @@ class Workspace:
         return WorkspaceCollaborators.from_api(payload, self.api, context=self)
 
     @enterprise_only
-    def bases(self) -> List["Base"]:
+    def bases(self) -> list["Base"]:
         """
         Retrieve all bases within the workspace.
         """
@@ -106,9 +107,9 @@ class Workspace:
     @enterprise_only
     def move_base(
         self,
-        base: Union[str, "Base"],
-        target: Union[str, "Workspace"],
-        index: Optional[int] = None,
+        base: "str | Base",
+        target: "str | Workspace",
+        index: int | None = None,
     ) -> None:
         """
         Move the given base to a new workspace.
@@ -122,7 +123,7 @@ class Workspace:
         """
         base_id = base if isinstance(base, str) else base.id
         target_id = target if isinstance(target, str) else target.id
-        payload: Dict[str, Any] = {"baseId": base_id, "targetWorkspaceId": target_id}
+        payload: dict[str, Any] = {"baseId": base_id, "targetWorkspaceId": target_id}
         if index is not None:
             payload["targetIndex"] = index
         self.api.post(self.urls.move_base, json=payload)

@@ -7,12 +7,12 @@ import json
 import os
 import re
 import sys
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Callable, Iterator, Optional, Sequence, Tuple, Union
+from typing import Any, ParamSpec, TypeVar
 
 from click import Context, HelpFormatter
-from typing_extensions import ParamSpec, TypeVar
 
 from pyairtable.api.api import Api
 from pyairtable.api.base import Base
@@ -47,7 +47,7 @@ class CliContext:
     base_id: str = ""
     table_id_or_name: str = ""
     enterprise_id: str = ""
-    click_context: Optional["click.Context"] = None
+    click_context: "click.Context | None" = None
 
     @functools.cached_property
     def api(self) -> Api:
@@ -91,7 +91,7 @@ class ShortcutGroup(click.Group):
     A command group that will accept partial command names and complete them.
     """
 
-    def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         if exact := super().get_command(ctx, cmd_name):
             return exact
         # If exactly one subcommand starts with the given name, use that.
@@ -210,9 +210,9 @@ def base_table(ctx: CliContext, id_or_name: str) -> None:
 # fmt: on
 def base_table_records(
     ctx: CliContext,
-    formula: Optional[str],
-    view: Optional[str],
-    max_records: Optional[int],
+    formula: str | None,
+    view: str | None,
+    max_records: int | None,
     fields: Sequence[str],
     sort: Sequence[str],
 ) -> None:
@@ -392,9 +392,9 @@ def _dump(obj: Any) -> None:
 
 
 def _gather_commands(
-    command: Union[click.Command, click.Group] = cli,
+    command: click.Command | click.Group = cli,
     prefix: str = "",
-) -> Iterator[Tuple[str, Union[click.Command, click.Group]]]:
+) -> Iterator[tuple[str, click.Command | click.Group]]:
     """
     Enumerate through all commands and groups, yielding a 2-tuple of
     a human-readable command line and the associated function.

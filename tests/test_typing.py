@@ -3,7 +3,8 @@ Tests that pyairtable.api functions/methods return appropriately typed responses
 """
 
 import datetime
-from typing import TYPE_CHECKING, Iterator, List, Optional, Union
+from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 from typing_extensions import assert_type
 
@@ -39,16 +40,16 @@ if TYPE_CHECKING:
     table = pyairtable.Table(None, base, table_name)
     assert_type(table, pyairtable.Table)
     assert_type(table.get(record_id), T.RecordDict)
-    assert_type(table.iterate(), Iterator[List[T.RecordDict]])
-    assert_type(table.all(), List[T.RecordDict])
-    assert_type(table.first(), Optional[T.RecordDict])
+    assert_type(table.iterate(), Iterator[list[T.RecordDict]])
+    assert_type(table.all(), list[T.RecordDict])
+    assert_type(table.first(), T.RecordDict | None)
     assert_type(table.create({}), T.RecordDict)
     assert_type(table.update(record_id, {}), T.RecordDict)
     assert_type(table.delete(record_id), T.RecordDeletedDict)
-    assert_type(table.batch_create([]), List[T.RecordDict])
-    assert_type(table.batch_update([]), List[T.RecordDict])
+    assert_type(table.batch_create([]), list[T.RecordDict])
+    assert_type(table.batch_update([]), list[T.RecordDict])
     assert_type(table.batch_upsert([], []), T.UpsertResultDict)
-    assert_type(table.batch_delete([]), List[T.RecordDeletedDict])
+    assert_type(table.batch_delete([]), list[T.RecordDeletedDict])
 
     # Ensure we can set all kinds of field values
     table.update(record_id, {"Field Name": "name"})
@@ -79,7 +80,7 @@ if TYPE_CHECKING:
     assert_type(Actor().name, str)
     assert_type(
         Actor().logins,
-        L.ChangeTrackingList[Union[T.CollaboratorDict, T.CollaboratorEmailDict]],
+        L.ChangeTrackingList[T.CollaboratorDict | T.CollaboratorEmailDict],
     )
     Actor().logins.append({"id": "usr123"})
     Actor().logins.append({"email": "alice@example.com"})
@@ -95,10 +96,10 @@ if TYPE_CHECKING:
 
     movie = Movie()
     assert_type(movie.name, str)
-    assert_type(movie.rating, Optional[int])
+    assert_type(movie.rating, int | None)
     assert_type(movie.actors, L.ChangeTrackingList[Actor])
     assert_type(movie.prequels, L.ChangeTrackingList[Movie])
-    assert_type(movie.prequel, Optional[Movie])
+    assert_type(movie.prequel, Movie | None)
     assert_type(movie.actors[0], Actor)
     assert_type(movie.actors[0].name, str)
 
@@ -153,51 +154,51 @@ if TYPE_CHECKING:
     # Check the types of values returned from these fields
     # fmt: off
     record = EveryField()
-    assert_type(record.aitext, Optional[T.AITextDict])
+    assert_type(record.aitext, T.AITextDict | None)
     assert_type(record.attachments, L.AttachmentsList)
-    assert_type(record.attachments[0], Union[T.AttachmentDict, T.CreateAttachmentDict])
+    assert_type(record.attachments[0], T.AttachmentDict | T.CreateAttachmentDict)
     assert_type(record.attachments.upload("", b""), None)
     assert_type(record.autonumber, int)
-    assert_type(record.barcode, Optional[T.BarcodeDict])
+    assert_type(record.barcode, T.BarcodeDict | None)
     assert_type(record.button, T.ButtonDict)
     assert_type(record.checkbox, bool)
-    assert_type(record.collaborator, Optional[Union[T.CollaboratorDict, T.CollaboratorEmailDict]])
-    assert_type(record.count, Optional[int])
+    assert_type(record.collaborator, T.CollaboratorDict | T.CollaboratorEmailDict | None)
+    assert_type(record.count, int | None)
     assert_type(record.created_by, T.CollaboratorDict)
     assert_type(record.created, datetime.datetime)
-    assert_type(record.currency, Optional[Union[int, float]])
-    assert_type(record.date, Optional[datetime.date])
-    assert_type(record.datetime, Optional[datetime.datetime])
-    assert_type(record.duration, Optional[datetime.timedelta])
+    assert_type(record.currency, int | float | None)
+    assert_type(record.date, datetime.date | None)
+    assert_type(record.datetime, datetime.datetime | None)
+    assert_type(record.duration, datetime.timedelta | None)
     assert_type(record.email, str)
-    assert_type(record.float, Optional[float])
-    assert_type(record.integer, Optional[int])
-    assert_type(record.last_modified_by, Optional[T.CollaboratorDict])
-    assert_type(record.last_modified, Optional[datetime.datetime])
-    assert_type(record.multi_user, L.ChangeTrackingList[Union[T.CollaboratorDict, T.CollaboratorEmailDict]])
-    assert_type(record.multi_user[0], Union[T.CollaboratorDict, T.CollaboratorEmailDict])
+    assert_type(record.float, float | None)
+    assert_type(record.integer, int | None)
+    assert_type(record.last_modified_by, T.CollaboratorDict | None)
+    assert_type(record.last_modified, datetime.datetime | None)
+    assert_type(record.multi_user, L.ChangeTrackingList[T.CollaboratorDict | T.CollaboratorEmailDict])
+    assert_type(record.multi_user[0], T.CollaboratorDict | T.CollaboratorEmailDict)
     assert_type(record.multi_select, L.ChangeTrackingList[str])
     assert_type(record.multi_select[0], str)
-    assert_type(record.number, Optional[Union[int, float]])
-    assert_type(record.percent, Optional[Union[int, float]])
+    assert_type(record.number, int | float | None)
+    assert_type(record.percent, int | float | None)
     assert_type(record.phone, str)
-    assert_type(record.rating, Optional[int])
+    assert_type(record.rating, int | None)
     assert_type(record.rich_text, str)
-    assert_type(record.select, Optional[str])
+    assert_type(record.select, str | None)
     assert_type(record.url, str)
     assert_type(record.required_aitext, T.AITextDict)
     assert_type(record.required_barcode, T.BarcodeDict)
-    assert_type(record.required_collaborator, Union[T.CollaboratorDict, T.CollaboratorEmailDict])
+    assert_type(record.required_collaborator, T.CollaboratorDict | T.CollaboratorEmailDict)
     assert_type(record.required_count, int)
-    assert_type(record.required_currency, Union[int, float])
+    assert_type(record.required_currency, int | float)
     assert_type(record.required_date, datetime.date)
     assert_type(record.required_datetime, datetime.datetime)
     assert_type(record.required_duration, datetime.timedelta)
     assert_type(record.required_email, str)
     assert_type(record.required_float, float)
     assert_type(record.required_integer, int)
-    assert_type(record.required_number, Union[int, float])
-    assert_type(record.required_percent, Union[int, float])
+    assert_type(record.required_number, int | float)
+    assert_type(record.required_percent, int | float)
     assert_type(record.required_phone, str)
     assert_type(record.required_rating, int)
     assert_type(record.required_rich_text, str)
@@ -205,7 +206,7 @@ if TYPE_CHECKING:
     assert_type(record.required_url, str)
 
     # Check the types of each field schema
-    assert_type(Movie.name.field_schema(), Union[schema.SingleLineTextFieldSchema, schema.MultilineTextFieldSchema])
+    assert_type(Movie.name.field_schema(), schema.SingleLineTextFieldSchema | schema.MultilineTextFieldSchema)
     assert_type(Actor.name.field_schema(), schema.SingleLineTextFieldSchema)
     assert_type(Actor.bio.field_schema(), schema.MultilineTextFieldSchema)
     assert_type(EveryField.aitext.field_schema(), schema.AITextFieldSchema)
