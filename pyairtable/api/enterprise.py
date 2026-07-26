@@ -316,7 +316,7 @@ class Enterprise:
                 for more information on pagination parameters.
             start_time: Earliest timestamp to retrieve (inclusive).
             end_time: Latest timestamp to retrieve (inclusive).
-            originating_user_id: Retrieve audit log events originating
+            user_id: Retrieve audit log events originating
                 from the provided user ID or IDs (maximum 100).
             event_type: Retrieve audit log events falling under the provided
                 `audit log event type <https://airtable.com/developers/web/api/audit-log-event-types>`__
@@ -501,7 +501,7 @@ class Enterprise:
         response = self.api.post(
             self.urls.move_groups,
             json={
-                "groupIds": group_ids,
+                "groupIds": list(group_ids),
                 "targetEnterpriseAccountId": target,
             },
         )
@@ -527,7 +527,7 @@ class Enterprise:
         response = self.api.post(
             self.urls.move_workspaces,
             json={
-                "workspaceIds": workspace_ids,
+                "workspaceIds": list(workspace_ids),
                 "targetEnterpriseAccountId": target,
             },
         )
