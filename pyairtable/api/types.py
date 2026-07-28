@@ -3,11 +3,12 @@ pyAirtable provides a number of type aliases and TypedDicts which are used as in
 and return values to various pyAirtable methods.
 """
 
+import types
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, TypeAlias, TypeVar, Union, cast
 
 import pydantic
-from typing_extensions import Required, TypeAlias, TypedDict
+from typing_extensions import Required, TypedDict
 
 T = TypeVar("T")
 
@@ -44,7 +45,7 @@ class AITextDict(TypedDict, total=False):
 
     state: Required[str]
     isStale: Required[bool]
-    value: Required[Optional[str]]
+    value: Required[str | None]
     errorType: str
 
 
@@ -72,7 +73,7 @@ class AttachmentDict(TypedDict, total=False):
     size: int
     height: int
     width: int
-    thumbnails: Dict[str, Dict[str, Union[str, int]]]
+    thumbnails: dict[str, dict[str, str | int]]
 
 
 class CreateAttachmentById(TypedDict):
@@ -105,7 +106,7 @@ class CreateAttachmentByUrl(TypedDict, total=False):
     filename: str
 
 
-CreateAttachmentDict: TypeAlias = Union[CreateAttachmentById, CreateAttachmentByUrl]
+CreateAttachmentDict: TypeAlias = CreateAttachmentById | CreateAttachmentByUrl
 
 
 class BarcodeDict(TypedDict, total=False):
@@ -135,7 +136,7 @@ class ButtonDict(TypedDict):
     """
 
     label: str
-    url: Optional[str]
+    url: str | None
 
 
 class CollaboratorDict(TypedDict, total=False):
@@ -217,9 +218,7 @@ class AddGroupCollaboratorDict(TypedDict):
     permissionLevel: str
 
 
-AddCollaboratorDict: TypeAlias = Union[
-    AddUserCollaboratorDict, AddGroupCollaboratorDict
-]
+AddCollaboratorDict: TypeAlias = AddUserCollaboratorDict | AddGroupCollaboratorDict
 
 
 #: Represents the types of values that we might receive from the API.
@@ -229,29 +228,29 @@ FieldValue: TypeAlias = Any
 
 
 #: A mapping of field names to values that we might receive from the API.
-Fields: TypeAlias = Dict[FieldName, FieldValue]
+Fields: TypeAlias = dict[FieldName, FieldValue]
 
 
 #: Represents the types of values that can be written to the Airtable API.
-WritableFieldValue: TypeAlias = Union[
-    None,
-    str,
-    int,
-    float,
-    bool,
-    CollaboratorDict,
-    CollaboratorEmailDict,
-    BarcodeDict,
-    List[str],
-    List[AttachmentDict],
-    List[CreateAttachmentDict],
-    List[CollaboratorDict],
-    List[CollaboratorEmailDict],
-]
+WritableFieldValue: TypeAlias = (
+    None
+    | str
+    | int
+    | float
+    | bool
+    | CollaboratorDict
+    | CollaboratorEmailDict
+    | BarcodeDict
+    | list[str]
+    | list[AttachmentDict]
+    | list[CreateAttachmentDict]
+    | list[CollaboratorDict]
+    | list[CollaboratorEmailDict]
+)
 
 
 #: A mapping of field names to values which can be sent to the API.
-WritableFields: TypeAlias = Dict[FieldName, WritableFieldValue]
+WritableFields: TypeAlias = dict[FieldName, WritableFieldValue]
 
 
 class RecordDict(TypedDict, total=False):
@@ -327,7 +326,7 @@ class UpdateRecordDict(TypedDict):
     fields: WritableFields
 
 
-AnyRecordDict: TypeAlias = Union[RecordDict, CreateRecordDict, UpdateRecordDict]
+AnyRecordDict: TypeAlias = RecordDict | CreateRecordDict | UpdateRecordDict
 
 
 class RecordDeletedDict(TypedDict):
@@ -359,9 +358,9 @@ class UpsertResultDict(TypedDict):
         }
     """
 
-    createdRecords: List[RecordId]
-    updatedRecords: List[RecordId]
-    records: List[RecordDict]
+    createdRecords: list[RecordId]
+    updatedRecords: list[RecordId]
+    records: list[RecordDict]
 
 
 class UserAndScopesDict(TypedDict, total=False):
@@ -374,7 +373,7 @@ class UserAndScopesDict(TypedDict, total=False):
     """
 
     id: Required[str]
-    scopes: List[str]
+    scopes: list[str]
 
 
 class UploadAttachmentResultDict(TypedDict):
@@ -401,11 +400,11 @@ class UploadAttachmentResultDict(TypedDict):
 
     id: RecordId
     createdTime: str
-    fields: Dict[str, List[AttachmentDict]]
+    fields: dict[str, list[AttachmentDict]]
 
 
 @lru_cache
-def _create_model_from_typeddict(cls: Type[T]) -> pydantic.TypeAdapter[Any]:
+def _create_model_from_typeddict(cls: type[T]) -> pydantic.TypeAdapter[Any]:
     """
     Create a pydantic model from a TypedDict to use as a validator.
     Memoizes the result so we don't have to call this more than once per class.
@@ -413,7 +412,7 @@ def _create_model_from_typeddict(cls: Type[T]) -> pydantic.TypeAdapter[Any]:
     return pydantic.TypeAdapter(cls)
 
 
-def assert_typed_dict(cls: Type[T], obj: Any) -> T:
+def assert_typed_dict(cls: type[T], obj: Any) -> T:
     """
     Raises a TypeError if the given object is not a dict, or raises
     pydantic.ValidationError if the given object does not conform
@@ -451,8 +450,8 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
     if not isinstance(obj, dict):
         raise TypeError(f"expected dict, got {type(obj)}")
 
-    # special case for handling a Union
-    if getattr(cls, "__origin__", None) is Union:
+    # special case for handling a Union (either `typing.Union[...]` or `X | Y`)
+    if getattr(cls, "__origin__", None) is Union or isinstance(cls, types.UnionType):
         typeddict_classes = list(getattr(cls, "__args__", []))
         while typeddict_cls := typeddict_classes.pop():
             try:
@@ -468,7 +467,7 @@ def assert_typed_dict(cls: Type[T], obj: Any) -> T:
     return cast(T, obj)
 
 
-def assert_typed_dicts(cls: Type[T], objects: Any) -> List[T]:
+def assert_typed_dicts(cls: type[T], objects: Any) -> list[T]:
     """
     Like :func:`~pyairtable.api.types.assert_typed_dict` but for a list of dicts.
 

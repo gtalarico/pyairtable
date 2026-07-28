@@ -1,17 +1,9 @@
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    SupportsIndex,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, SupportsIndex, TypeVar, overload
 
-from typing_extensions import Self, TypeVar
+from typing_extensions import Self
 
 from pyairtable.api.types import AttachmentDict, CreateAttachmentDict
 from pyairtable.exceptions import ReadonlyFieldError, UnsavedRecordError
@@ -25,7 +17,7 @@ if TYPE_CHECKING:
     from pyairtable.orm.model import Model
 
 
-class ChangeTrackingList(List[T]):
+class ChangeTrackingList(list[T]):
     """
     A list that keeps track of when its contents are modified. This allows us to know
     if any mutations happened to the lists returned from linked record fields.
@@ -66,14 +58,14 @@ class ChangeTrackingList(List[T]):
 
     def __setitem__(
         self,
-        index: Union[SupportsIndex, slice],
-        value: Union[T, Iterable[T]],
+        index: SupportsIndex | slice,
+        value: T | Iterable[T],
         /,
     ) -> None:
         self._on_change()
         return super().__setitem__(index, value)  # type: ignore
 
-    def __delitem__(self, key: Union[SupportsIndex, slice]) -> None:
+    def __delitem__(self, key: SupportsIndex | slice) -> None:
         self._on_change()
         return super().__delitem__(key)
 
@@ -102,12 +94,12 @@ class ChangeTrackingList(List[T]):
         return super().pop(index)
 
 
-class AttachmentsList(ChangeTrackingList[Union[AttachmentDict, CreateAttachmentDict]]):
+class AttachmentsList(ChangeTrackingList[AttachmentDict | CreateAttachmentDict]):
     def upload(
         self,
-        filename: Union[str, Path],
-        content: Optional[Union[str, bytes]] = None,
-        content_type: Optional[str] = None,
+        filename: str | Path,
+        content: str | bytes | None = None,
+        content_type: str | None = None,
     ) -> None:
         """
         Upload an attachment to the Airtable API and refresh the field's values.

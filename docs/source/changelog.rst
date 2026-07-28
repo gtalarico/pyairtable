@@ -8,6 +8,14 @@ Changelog
 * Added support for the ``parent_comment_id`` parameter to
   :meth:`Table.add_comment <pyairtable.Table.add_comment>`, allowing
   `threaded replies <https://airtable.com/developers/web/api/create-comment>`_.
+* Fixed a regression, introduced in 3.0.0, that caused the ``timeout``
+  argument to :class:`~pyairtable.Api` to be ignored.
+* :func:`~pyairtable.formulas.AND` and :func:`~pyairtable.formulas.OR` no longer
+  accept (in type annotations) a mix of iterables and formulas, since
+  that would produce an invalid formula at runtime.
+* Formula functions now accept ORM fields without type errors,
+  e.g. ``SUM(MyModel.amount, 1)``.
+* Fixed the type annotation of :meth:`Url.add_path <pyairtable.utils.Url.add_path>`.
 
 3.4.2 (2026-07-25)
 ------------------------

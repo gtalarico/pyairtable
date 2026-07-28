@@ -53,6 +53,27 @@ def test_update_api_key(api):
     assert "123" in api.session.headers["Authorization"]
 
 
+def test_request_timeout_default(api, requests_mock):
+    """
+    Test that requests are made without a timeout when none is configured.
+    """
+    requests_mock.get("https://api.airtable.com/v0/meta/whoami", json={})
+    api.request("GET", api.urls.whoami)
+    assert requests_mock.last_request.timeout is None
+
+
+def test_request_timeout_configured(requests_mock):
+    """
+    Test that the timeout passed to Api() is forwarded to the underlying
+    request, so users configuring ``Api(timeout=(2, 5))`` actually get a
+    connect/read timeout enforced.
+    """
+    api = Api("apikey", timeout=(2, 5))
+    requests_mock.get("https://api.airtable.com/v0/meta/whoami", json={})
+    api.request("GET", api.urls.whoami)
+    assert requests_mock.last_request.timeout == (2, 5)
+
+
 def test_whoami(api, requests_mock):
     """
     Test the /whoami endpoint gets passed straight through.

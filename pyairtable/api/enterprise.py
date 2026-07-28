@@ -1,17 +1,7 @@
+from collections.abc import Iterable, Iterator, Sequence
 from datetime import date, datetime
 from functools import cached_property, partialmethod
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Literal
 
 import pydantic
 from typing_extensions import Self
@@ -123,7 +113,7 @@ class Enterprise:
     def __init__(self, api: "Api", enterprise_id: str):
         self.api = api
         self.id = enterprise_id
-        self._info: Optional[EnterpriseInfo] = None
+        self._info: EnterpriseInfo | None = None
 
     @cache_unless_forced
     def info(
@@ -197,7 +187,7 @@ class Enterprise:
         collaborations: bool = True,
         aggregated: bool = False,
         descendants: bool = False,
-    ) -> List[UserInfo]:
+    ) -> list[UserInfo]:
         """
         Retrieve information on the users with the given IDs or emails.
 
@@ -213,8 +203,8 @@ class Enterprise:
             descendants: If ``True``, includes information about the user
                 in a ``dict`` keyed per descendant enterprise account.
         """
-        user_ids: List[str] = []
-        emails: List[str] = []
+        user_ids: list[str] = []
+        emails: list[str] = []
         for value in ids_or_emails:
             (emails if "@" in value else user_ids).append(value)
 
@@ -245,17 +235,17 @@ class Enterprise:
     def audit_log(
         self,
         *,
-        page_size: Optional[int] = None,
-        page_limit: Optional[int] = None,
-        sort_asc: Optional[bool] = False,
-        previous: Optional[str] = None,
-        next: Optional[str] = None,
-        start_time: Optional[Union[str, date, datetime]] = None,
-        end_time: Optional[Union[str, date, datetime]] = None,
-        user_id: Optional[Union[str, Iterable[str]]] = None,
-        event_type: Optional[Union[str, Iterable[str]]] = None,
-        model_id: Optional[Union[str, Iterable[str]]] = None,
-        category: Optional[Union[str, Iterable[str]]] = None,
+        page_size: int | None = None,
+        page_limit: int | None = None,
+        sort_asc: bool | None = False,
+        previous: str | None = None,
+        next: str | None = None,
+        start_time: str | date | datetime | None = None,
+        end_time: str | date | datetime | None = None,
+        user_id: str | Iterable[str] | None = None,
+        event_type: str | Iterable[str] | None = None,
+        model_id: str | Iterable[str] | None = None,
+        category: str | Iterable[str] | None = None,
     ) -> Iterator[AuditLogResponse]:
         """
         Retrieve and yield results from the `Audit Log <https://airtable.com/developers/web/api/audit-logs-integration-guide>`__,
@@ -367,7 +357,7 @@ class Enterprise:
     def remove_user(
         self,
         user_id: str,
-        replacement: Optional[str] = None,
+        replacement: str | None = None,
         *,
         descendants: bool = False,
     ) -> "UserRemoved":
@@ -387,7 +377,7 @@ class Enterprise:
             descendants: If ``True``, removes the user from descendant enterprise accounts.
         """
         url = self.urls.remove_user(user_id)
-        payload: Dict[str, Any] = {"isDryRun": False}
+        payload: dict[str, Any] = {"isDryRun": False}
         if replacement:
             payload["replacementOwnerId"] = replacement
         if descendants:
@@ -396,7 +386,7 @@ class Enterprise:
         return UserRemoved.from_api(response, self.api, context=self)
 
     def claim_users(
-        self, users: Dict[str, Literal["managed", "unmanaged"]]
+        self, users: dict[str, Literal["managed", "unmanaged"]]
     ) -> "ManageUsersResponse":
         """
         Batch manage organizations enterprise account users. This endpoint allows you
@@ -432,7 +422,7 @@ class Enterprise:
         response = self.api.delete(self.urls.users, params={"email": list(emails)})
         return DeleteUsersResponse.from_api(response, self.api, context=self)
 
-    def grant_admin(self, *users: Union[str, UserInfo]) -> "ManageUsersResponse":
+    def grant_admin(self, *users: str | UserInfo) -> "ManageUsersResponse":
         """
         Grant admin access to one or more users.
 
@@ -442,7 +432,7 @@ class Enterprise:
         """
         return self._post_admin_access("grant", users)
 
-    def revoke_admin(self, *users: Union[str, UserInfo]) -> "ManageUsersResponse":
+    def revoke_admin(self, *users: str | UserInfo) -> "ManageUsersResponse":
         """
         Revoke admin access to one or more users.
 
@@ -453,7 +443,7 @@ class Enterprise:
         return self._post_admin_access("revoke", users)
 
     def _post_admin_access(
-        self, action: Literal["grant", "revoke"], users: Iterable[Union[str, UserInfo]]
+        self, action: Literal["grant", "revoke"], users: Iterable[str | UserInfo]
     ) -> "ManageUsersResponse":
         response = self.api.post(
             self.urls.admin_access(action),
@@ -484,7 +474,7 @@ class Enterprise:
     def move_groups(
         self,
         group_ids: Iterable[str],
-        target: Union[str, Self],
+        target: str | Self,
     ) -> "MoveGroupsResponse":
         """
         Move one or more user groups from the current enterprise account
@@ -510,7 +500,7 @@ class Enterprise:
     def move_workspaces(
         self,
         workspace_ids: Iterable[str],
-        target: Union[str, Self],
+        target: str | Self,
     ) -> "MoveWorkspacesResponse":
         """
         Move one or more workspaces from the current enterprise account
@@ -562,7 +552,7 @@ class Enterprise:
         self,
         *,
         all_enterprises: bool = False,
-    ) -> List[Package]:
+    ) -> list[Package]:
         """
         List all packages for the enterprise account.
 
@@ -576,7 +566,7 @@ class Enterprise:
         Returns:
             A list of Package objects representing the enterprise packages.
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if all_enterprises:
             params["shouldGetAllPackagesInGrid"] = True
 
@@ -608,9 +598,9 @@ class Enterprise:
 
     def create_base(
         self,
-        workspace: Union[str, "Workspace"],
+        workspace: "str | Workspace",
         name: str,
-        tables: Sequence[Dict[str, Any]],
+        tables: Sequence[dict[str, Any]],
     ) -> "Base":
         """
         Create a base in the given workspace.
@@ -629,11 +619,11 @@ class Enterprise:
 
     def create_base_from_package(
         self,
-        workspace: Union[str, "Workspace"],
+        workspace: "str | Workspace",
         name: str,
-        package_or_release: Union[str, Package],
+        package_or_release: str | Package,
         *,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> "Base":
         """
         Create a base from an enterprise package template in the specified workspace.
@@ -696,28 +686,28 @@ class UserRemoved(AirtableModel):
     unshared: "UserRemoved.Unshared"
 
     class Shared(AirtableModel):
-        workspaces: List["UserRemoved.Shared.Workspace"]
+        workspaces: list["UserRemoved.Shared.Workspace"]
 
         class Workspace(AirtableModel):
             permission_level: str
             workspace_id: str
             workspace_name: str
             user_id: str = ""
-            deleted_time: Optional[datetime] = None
-            enterprise_account_id: Optional[str] = None
+            deleted_time: datetime | None = None
+            enterprise_account_id: str | None = None
 
     class Unshared(AirtableModel):
-        bases: List["UserRemoved.Unshared.Base"]
-        interfaces: List["UserRemoved.Unshared.Interface"]
-        workspaces: List["UserRemoved.Unshared.Workspace"]
+        bases: list["UserRemoved.Unshared.Base"]
+        interfaces: list["UserRemoved.Unshared.Interface"]
+        workspaces: list["UserRemoved.Unshared.Workspace"]
 
         class Base(AirtableModel):
             user_id: str
             base_id: str
             base_name: str
             former_permission_level: str
-            deleted_time: Optional[datetime] = None
-            enterprise_account_id: Optional[str] = None
+            deleted_time: datetime | None = None
+            enterprise_account_id: str | None = None
 
         class Interface(AirtableModel):
             user_id: str
@@ -725,16 +715,16 @@ class UserRemoved(AirtableModel):
             interface_id: str
             interface_name: str
             former_permission_level: str
-            deleted_time: Optional[datetime] = None
-            enterprise_account_id: Optional[str] = None
+            deleted_time: datetime | None = None
+            enterprise_account_id: str | None = None
 
         class Workspace(AirtableModel):
             user_id: str
             former_permission_level: str
             workspace_id: str
             workspace_name: str
-            deleted_time: Optional[datetime] = None
-            enterprise_account_id: Optional[str] = None
+            deleted_time: datetime | None = None
+            enterprise_account_id: str | None = None
 
 
 class DeleteUsersResponse(AirtableModel):
@@ -743,8 +733,8 @@ class DeleteUsersResponse(AirtableModel):
     endpoint.
     """
 
-    deleted_users: List["DeleteUsersResponse.UserInfo"]
-    errors: List["DeleteUsersResponse.Error"]
+    deleted_users: list["DeleteUsersResponse.UserInfo"]
+    errors: list["DeleteUsersResponse.Error"]
 
     class UserInfo(AirtableModel):
         id: str
@@ -753,7 +743,7 @@ class DeleteUsersResponse(AirtableModel):
     class Error(AirtableModel):
         type: str
         email: str
-        message: Optional[str] = None
+        message: str | None = None
 
 
 class ManageUsersResponse(AirtableModel):
@@ -764,11 +754,11 @@ class ManageUsersResponse(AirtableModel):
     endpoints.
     """
 
-    errors: List["ManageUsersResponse.Error"] = pydantic.Field(default_factory=list)
+    errors: list["ManageUsersResponse.Error"] = pydantic.Field(default_factory=list)
 
     class Error(AirtableModel):
-        id: Optional[str] = None
-        email: Optional[str] = None
+        id: str | None = None
+        email: str | None = None
         type: str
         message: str
 
@@ -784,8 +774,8 @@ class MoveGroupsResponse(AirtableModel):
     Returned by `Move user groups <https://airtable.com/developers/web/api/move-user-groups>`__.
     """
 
-    moved_groups: List[NestedId] = pydantic.Field(default_factory=list)
-    errors: List[MoveError] = pydantic.Field(default_factory=list)
+    moved_groups: list[NestedId] = pydantic.Field(default_factory=list)
+    errors: list[MoveError] = pydantic.Field(default_factory=list)
 
 
 class MoveWorkspacesResponse(AirtableModel):
@@ -793,8 +783,8 @@ class MoveWorkspacesResponse(AirtableModel):
     Returned by `Move workspaces <https://airtable.com/developers/web/api/move-workspaces>`__.
     """
 
-    moved_workspaces: List[NestedId] = pydantic.Field(default_factory=list)
-    errors: List[MoveError] = pydantic.Field(default_factory=list)
+    moved_workspaces: list[NestedId] = pydantic.Field(default_factory=list)
+    errors: list[MoveError] = pydantic.Field(default_factory=list)
 
 
 rebuild_models(vars())

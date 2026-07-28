@@ -11,25 +11,14 @@ import mimetypes
 import random
 import string
 from collections import defaultdict
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import ExitStack, contextmanager
 from functools import partialmethod
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, TypeAlias, cast, overload
 from unittest import mock
 
 import urllib3
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from pyairtable.api import retrying
 from pyairtable.api.api import Api, TimeoutTuple
@@ -79,8 +68,8 @@ def fake_meta(
     base_id: str = "",
     table_name: str = "",
     api_key: str = "patFakePersonalAccessToken",
-    timeout: Optional[TimeoutTuple] = None,
-    retry: Optional[Union[bool, retrying.Retry]] = None,
+    timeout: TimeoutTuple | None = None,
+    retry: bool | retrying.Retry | None = None,
     typecast: bool = True,
     use_field_ids: bool = False,
     memoize: bool = False,
@@ -102,8 +91,8 @@ def fake_meta(
 
 
 def fake_record(
-    fields: Optional[Fields] = None,
-    id: Optional[str] = None,
+    fields: Fields | None = None,
+    id: str | None = None,
     **other_fields: Any,
 ) -> RecordDict:
     """
@@ -190,7 +179,7 @@ def fake_attachment(url: str = "", filename: str = "") -> AttachmentDict:
     }
 
 
-BaseAndTableId: TypeAlias = Tuple[str, str]
+BaseAndTableId: TypeAlias = tuple[str, str]
 
 
 class MockAirtable:
@@ -272,10 +261,10 @@ class MockAirtable:
     ]
 
     # 2-layer mapping of (base, table) IDs --> record IDs --> record dicts.
-    records: Dict[BaseAndTableId, Dict[RecordId, RecordDict]]
+    records: dict[BaseAndTableId, dict[RecordId, RecordDict]]
 
-    _stack: Optional[ExitStack]
-    _mocks: Dict[str, Any]
+    _stack: ExitStack | None
+    _mocks: dict[str, Any]
 
     def __init__(self, passthrough: bool = False) -> None:
         """
@@ -355,18 +344,18 @@ class MockAirtable:
         base_id: str,
         table_id_or_name: str,
         /,
-        records: Iterable[Dict[str, Any]],
-    ) -> List[RecordDict]: ...
+        records: Iterable[dict[str, Any]],
+    ) -> list[RecordDict]: ...
 
     @overload
     def add_records(
         self,
         table: Table,
         /,
-        records: Iterable[Dict[str, Any]],
-    ) -> List[RecordDict]: ...
+        records: Iterable[dict[str, Any]],
+    ) -> list[RecordDict]: ...
 
-    def add_records(self, *args: Any, **kwargs: Any) -> List[RecordDict]:
+    def add_records(self, *args: Any, **kwargs: Any) -> list[RecordDict]:
         """
         Add a list of records to the mock Airtable instance. These will be returned
         from methods like :meth:`~pyairtable.Table.all` and :meth:`~pyairtable.Table.get`.
@@ -414,7 +403,7 @@ class MockAirtable:
         base_id: str,
         table_id_or_name: str,
         /,
-        records: Iterable[Dict[str, Any]],
+        records: Iterable[dict[str, Any]],
     ) -> None: ...
 
     @overload
@@ -422,7 +411,7 @@ class MockAirtable:
         self,
         table: Table,
         /,
-        records: Iterable[Dict[str, Any]],
+        records: Iterable[dict[str, Any]],
     ) -> None: ...
 
     def set_records(self, *args: Any, **kwargs: Any) -> None:
@@ -462,7 +451,7 @@ class MockAirtable:
         mocked = self._mocks["Api.request"]
         return mocked.temp_original(api, method, url, **kwargs)
 
-    def _table_iterate(self, table: Table, **options: Any) -> List[List[RecordDict]]:
+    def _table_iterate(self, table: Table, **options: Any) -> list[list[RecordDict]]:
         return [list(self.records[(table.base.id, table.name)].values())]
 
     def _table_get(self, table: Table, record_id: str, **options: Any) -> RecordDict:
@@ -501,7 +490,7 @@ class MockAirtable:
         table: Table,
         records: Iterable[CreateRecordDict],
         **kwargs: Any,
-    ) -> List[RecordDict]:
+    ) -> list[RecordDict]:
         return [self._table_create(table, record) for record in records]
 
     def _table_batch_update(
@@ -509,7 +498,7 @@ class MockAirtable:
         table: Table,
         records: Iterable[UpdateRecordDict],
         **kwargs: Any,
-    ) -> List[RecordDict]:
+    ) -> list[RecordDict]:
         return [
             self._table_update(table, record["id"], record["fields"])
             for record in records
@@ -519,7 +508,7 @@ class MockAirtable:
         self,
         table: Table,
         record_ids: Iterable[RecordId],
-    ) -> List[RecordDeletedDict]:
+    ) -> list[RecordDeletedDict]:
         return [self._table_delete(table, record_id) for record_id in record_ids]
 
     def _table_batch_upsert(
@@ -542,7 +531,7 @@ class MockAirtable:
         }
 
         for record in records:
-            existing_record: Optional[RecordDict]
+            existing_record: RecordDict | None
             if "id" in record:
                 record_id = str(record.get("id"))
                 existing_record = existing_by_id[record_id]
@@ -561,7 +550,7 @@ class MockAirtable:
         return result
 
 
-def coerce_fake_record(record: Union[AnyRecordDict, Fields]) -> RecordDict:
+def coerce_fake_record(record: AnyRecordDict | Fields) -> RecordDict:
     """
     Coerce a record dict or field mapping to the expected format for
     an Airtable record, creating a fake ID and createdTime if necessary.
@@ -580,9 +569,9 @@ def coerce_fake_record(record: Union[AnyRecordDict, Fields]) -> RecordDict:
 
 def _extract_args(
     args: Sequence[Any],
-    kwargs: Dict[str, Any],
-    extract: Optional[Sequence[str]] = None,
-) -> Tuple[Any, ...]:
+    kwargs: dict[str, Any],
+    extract: Sequence[str] | None = None,
+) -> tuple[Any, ...]:
     """
     Convenience function for functions/methods which accept either
     a Table or a (base_id, table_name) as their first posargs.

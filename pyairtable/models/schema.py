@@ -1,22 +1,11 @@
 import importlib
+from collections.abc import Iterable
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 
 import pydantic
-from typing_extensions import TypeAlias
 
 from pyairtable.api.types import AddCollaboratorDict
 from pyairtable.models._base import (
@@ -80,7 +69,7 @@ class FieldType(str, Enum):
         return f"FieldType({self.value!r})"
 
 
-FieldSpecifier: TypeAlias = Union[str, "orm.fields.AnyField"]
+FieldSpecifier: TypeAlias = "str | orm.fields.AnyField"
 
 _T = TypeVar("_T", bound=Any)
 _FL = partial(pydantic.Field, default_factory=list)
@@ -99,11 +88,11 @@ def _F(classname: str, **kwargs: Any) -> Any:
     return pydantic.Field(**kwargs)
 
 
-def _find(collection: List[_T], id_or_name: str) -> _T:
+def _find(collection: list[_T], id_or_name: str) -> _T:
     """
     For use on a collection model to find objects by either id or name.
     """
-    items_by_name: Dict[str, _T] = {}
+    items_by_name: dict[str, _T] = {}
 
     for item in collection:
         if getattr(item, "deleted", None):
@@ -211,7 +200,7 @@ class Bases(AirtableModel):
     See https://airtable.com/developers/web/api/list-bases
     """
 
-    bases: List["Bases.Info"] = _FL()
+    bases: list["Bases.Info"] = _FL()
 
     def base(self, base_id: str) -> "Bases.Info":
         """
@@ -237,12 +226,12 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
     created_time: datetime
     permission_level: str
     workspace_id: str
-    interfaces: Dict[str, "BaseCollaborators.InterfaceCollaborators"] = _FD()
+    interfaces: dict[str, "BaseCollaborators.InterfaceCollaborators"] = _FD()
     group_collaborators: "BaseCollaborators.GroupCollaborators" = _F("BaseCollaborators.GroupCollaborators")  # fmt: skip
     individual_collaborators: "BaseCollaborators.IndividualCollaborators" = _F("BaseCollaborators.IndividualCollaborators")  # fmt: skip
     invite_links: "BaseCollaborators.InviteLinks" = _F("BaseCollaborators.InviteLinks")  # fmt: skip
-    sensitivity_label: Optional["BaseCollaborators.SensitivityLabel"] = None
-    package_installations: List["BaseCollaborators.PackageInstallation"] = _FL()
+    sensitivity_label: "BaseCollaborators.SensitivityLabel | None" = None
+    package_installations: list["BaseCollaborators.PackageInstallation"] = _FL()
 
     class InterfaceCollaborators(
         _Collaborators,
@@ -251,22 +240,22 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
         id: str
         name: str
         created_time: datetime
-        first_publish_time: Optional[datetime] = None
-        group_collaborators: List["GroupCollaborator"] = _FL()
-        individual_collaborators: List["IndividualCollaborator"] = _FL()
-        invite_links: List["InterfaceInviteLink"] = _FL()
+        first_publish_time: datetime | None = None
+        group_collaborators: list["GroupCollaborator"] = _FL()
+        individual_collaborators: list["IndividualCollaborator"] = _FL()
+        invite_links: list["InterfaceInviteLink"] = _FL()
 
     class GroupCollaborators(AirtableModel):
-        via_base: List["GroupCollaborator"] = _FL(alias="baseCollaborators")
-        via_workspace: List["GroupCollaborator"] = _FL(alias="workspaceCollaborators")
+        via_base: list["GroupCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: list["GroupCollaborator"] = _FL(alias="workspaceCollaborators")
 
     class IndividualCollaborators(AirtableModel):
-        via_base: List["IndividualCollaborator"] = _FL(alias="baseCollaborators")
-        via_workspace: List["IndividualCollaborator"] = _FL(alias="workspaceCollaborators")  # fmt: skip
+        via_base: list["IndividualCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: list["IndividualCollaborator"] = _FL(alias="workspaceCollaborators")  # fmt: skip
 
     class InviteLinks(RestfulModel, url="{base_collaborators._url}/invites"):
-        via_base: List["InviteLink"] = _FL(alias="baseInviteLinks")
-        via_workspace: List["WorkspaceInviteLink"] = _FL(alias="workspaceInviteLinks")  # fmt: skip
+        via_base: list["InviteLink"] = _FL(alias="baseInviteLinks")
+        via_workspace: list["WorkspaceInviteLink"] = _FL(alias="workspaceInviteLinks")  # fmt: skip
 
     class SensitivityLabel(AirtableModel):
         id: str
@@ -276,7 +265,7 @@ class BaseCollaborators(_Collaborators, url="meta/bases/{base.id}"):
     class PackageInstallation(AirtableModel):
         id: str
         package_id: str
-        package_release_id: Optional[str] = None
+        package_release_id: str | None = None
         installation_type: str
 
 
@@ -287,7 +276,7 @@ class BaseShares(AirtableModel):
     See https://airtable.com/developers/web/api/list-shares
     """
 
-    shares: List["BaseShares.Info"]
+    shares: list["BaseShares.Info"]
 
     class Info(
         CanUpdateModel,
@@ -301,13 +290,13 @@ class BaseShares(AirtableModel):
         created_time: datetime
         share_id: str
         type: str
-        can_be_synced: Optional[bool] = None
+        can_be_synced: bool | None = None
         is_password_protected: bool
-        block_installation_id: Optional[str] = None
-        restricted_to_email_domains: List[str] = _FL()
+        block_installation_id: str | None = None
+        restricted_to_email_domains: list[str] = _FL()
         restricted_to_enterprise_members: bool
-        view_id: Optional[str] = None
-        effective_email_domain_allow_list: List[str] = _FL()
+        view_id: str | None = None
+        effective_email_domain_allow_list: list[str] = _FL()
 
         def enable(self) -> None:
             """
@@ -345,7 +334,7 @@ class BaseSchema(AirtableModel):
         )
     """
 
-    tables: List["TableSchema"]
+    tables: list["TableSchema"]
 
     def table(self, id_or_name: str) -> "TableSchema":
         """
@@ -394,10 +383,10 @@ class TableSchema(
     id: str
     name: str
     primary_field_id: str
-    description: Optional[str] = None
-    fields: List["FieldSchema"]
-    views: List["ViewSchema"]
-    date_dependency: Optional["DateDependency"] = pydantic.Field(
+    description: str | None = None
+    fields: list["FieldSchema"]
+    views: list["ViewSchema"]
+    date_dependency: "DateDependency | None" = pydantic.Field(
         alias="dateDependencySettings", default=None
     )
 
@@ -423,9 +412,9 @@ class TableSchema(
         end_date_field: FieldSpecifier,
         duration_field: FieldSpecifier,
         rescheduling_mode: str,
-        predecessor_field: Optional[FieldSpecifier] = None,
+        predecessor_field: "FieldSpecifier | None" = None,
         skip_weekends_and_holidays: bool = False,
-        holidays: Optional[List[str]] = None,
+        holidays: list[str] | None = None,
     ) -> None:
         """
         Create or replace the `date dependency settings <https://airtable.com/developers/web/api/model/date-dependency-settings>`__
@@ -492,11 +481,11 @@ class TableSchema(
         duration_field_id: str
         start_date_field_id: str
         end_date_field_id: str
-        predecessor_field_id: Optional[str] = None
+        predecessor_field_id: str | None = None
         rescheduling_mode: str
         should_skip_weekends_and_holidays: bool
-        holidays: List[str] = _FL()
-        is_forward_only: Optional[bool] = None
+        holidays: list[str] = _FL()
+        is_forward_only: bool | None = None
 
 
 class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):
@@ -517,8 +506,8 @@ class ViewSchema(CanDeleteModel, url="meta/bases/{base.id}/views/{self.id}"):
     id: str
     type: str
     name: str
-    personal_for_user_id: Optional[str] = None
-    visible_field_ids: Optional[List[str]] = None
+    personal_for_user_id: str | None = None
+    visible_field_ids: list[str] | None = None
 
 
 class GroupCollaborator(AirtableModel):
@@ -555,10 +544,10 @@ class InviteLink(CanDeleteModel, url="{invite_links._url}/{self.id}"):
     id: str
     type: str
     created_time: datetime
-    invited_email: Optional[str] = None
+    invited_email: str | None = None
     referred_by_user_id: str
     permission_level: str
-    restricted_to_email_domains: List[str] = _FL()
+    restricted_to_email_domains: list[str] = _FL()
 
 
 class BaseInviteLink(
@@ -602,23 +591,23 @@ class EnterpriseInfo(AirtableModel):
 
     id: str
     created_time: datetime
-    group_ids: List[str]
-    user_ids: List[str]
-    workspace_ids: List[str]
-    email_domains: List["EnterpriseInfo.EmailDomain"]
+    group_ids: list[str]
+    user_ids: list[str]
+    workspace_ids: list[str]
+    email_domains: list["EnterpriseInfo.EmailDomain"]
     root_enterprise_id: str = pydantic.Field(alias="rootEnterpriseAccountId")
-    descendant_enterprise_ids: List[str] = _FL(alias="descendantEnterpriseAccountIds")
-    aggregated: Optional["EnterpriseInfo.AggregatedIds"] = None
-    descendants: Dict[str, "EnterpriseInfo.AggregatedIds"] = _FD()
+    descendant_enterprise_ids: list[str] = _FL(alias="descendantEnterpriseAccountIds")
+    aggregated: "EnterpriseInfo.AggregatedIds | None" = None
+    descendants: dict[str, "EnterpriseInfo.AggregatedIds"] = _FD()
 
     class EmailDomain(AirtableModel):
         email_domain: str
         is_sso_required: bool
 
     class AggregatedIds(AirtableModel):
-        group_ids: List[str] = _FL()
-        user_ids: List[str] = _FL()
-        workspace_ids: List[str] = _FL()
+        group_ids: list[str] = _FL()
+        user_ids: list[str] = _FL()
+        workspace_ids: list[str] = _FL()
 
 
 class Package(AirtableModel):
@@ -632,15 +621,15 @@ class Package(AirtableModel):
     type: str
     created_by_user_id: str
     created_time: datetime
-    description: Optional[str] = None
-    enterprise_account_id: Optional[str] = None
+    description: str | None = None
+    enterprise_account_id: str | None = None
     install_count: int
     last_updated_by_user_id: str
     last_updated_time: datetime
-    latest_release_id: Optional[str] = None
+    latest_release_id: str | None = None
     name: str
     source_application_id: str
-    tagline: Optional[str] = None
+    tagline: str | None = None
 
 
 class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
@@ -653,7 +642,7 @@ class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
     id: str
     name: str
     created_time: datetime
-    base_ids: List[str]
+    base_ids: list[str]
     restrictions: "WorkspaceCollaborators.Restrictions" = pydantic.Field(alias="workspaceRestrictions")  # fmt: skip
     group_collaborators: "WorkspaceCollaborators.GroupCollaborators" = _F("WorkspaceCollaborators.GroupCollaborators")  # fmt: skip
     individual_collaborators: "WorkspaceCollaborators.IndividualCollaborators" = _F("WorkspaceCollaborators.IndividualCollaborators")  # fmt: skip
@@ -669,18 +658,18 @@ class WorkspaceCollaborators(_Collaborators, url="meta/workspaces/{self.id}"):
         share_creation: str = pydantic.Field(alias="shareCreationRestriction")
 
     class GroupCollaborators(AirtableModel):
-        via_base: List["BaseGroupCollaborator"] = _FL(alias="baseCollaborators")
-        via_workspace: List["GroupCollaborator"] = _FL(alias="workspaceCollaborators")
+        via_base: list["BaseGroupCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: list["GroupCollaborator"] = _FL(alias="workspaceCollaborators")
 
     class IndividualCollaborators(AirtableModel):
-        via_base: List["BaseIndividualCollaborator"] = _FL(alias="baseCollaborators")
-        via_workspace: List["IndividualCollaborator"] = _FL(
+        via_base: list["BaseIndividualCollaborator"] = _FL(alias="baseCollaborators")
+        via_workspace: list["IndividualCollaborator"] = _FL(
             alias="workspaceCollaborators"
         )
 
     class InviteLinks(RestfulModel, url="{workspace_collaborators._url}/invites"):
-        via_base: List["BaseInviteLink"] = _FL(alias="baseInviteLinks")
-        via_workspace: List["InviteLink"] = _FL(alias="workspaceInviteLinks")
+        via_base: list["BaseInviteLink"] = _FL(alias="baseInviteLinks")
+        via_workspace: list["InviteLink"] = _FL(alias="workspaceInviteLinks")
 
 
 class NestedId(AirtableModel):
@@ -698,9 +687,9 @@ class Collaborations(AirtableModel):
     See https://airtable.com/developers/web/api/model/collaborations
     """
 
-    base_collaborations: List["Collaborations.BaseCollaboration"] = _FL()
-    interface_collaborations: List["Collaborations.InterfaceCollaboration"] = _FL()
-    workspace_collaborations: List["Collaborations.WorkspaceCollaboration"] = _FL()
+    base_collaborations: list["Collaborations.BaseCollaboration"] = _FL()
+    interface_collaborations: list["Collaborations.InterfaceCollaboration"] = _FL()
+    workspace_collaborations: list["Collaborations.WorkspaceCollaboration"] = _FL()
 
     def __bool__(self) -> bool:
         return bool(
@@ -710,21 +699,21 @@ class Collaborations(AirtableModel):
         )
 
     @property
-    def bases(self) -> Dict[str, "Collaborations.BaseCollaboration"]:
+    def bases(self) -> dict[str, "Collaborations.BaseCollaboration"]:
         """
         Mapping of base IDs to collaborations, to make lookups easier.
         """
         return {c.base_id: c for c in self.base_collaborations}
 
     @property
-    def interfaces(self) -> Dict[str, "Collaborations.InterfaceCollaboration"]:
+    def interfaces(self) -> dict[str, "Collaborations.InterfaceCollaboration"]:
         """
         Mapping of interface IDs to collaborations, to make lookups easier.
         """
         return {c.interface_id: c for c in self.interface_collaborations}
 
     @property
-    def workspaces(self) -> Dict[str, "Collaborations.WorkspaceCollaboration"]:
+    def workspaces(self) -> dict[str, "Collaborations.WorkspaceCollaboration"]:
         """
         Mapping of workspace IDs to collaborations, to make lookups easier.
         """
@@ -765,36 +754,36 @@ class UserInfo(
     is_service_account: bool
     is_sso_required: bool
     is_two_factor_auth_enabled: bool
-    last_activity_time: Optional[datetime] = None
-    created_time: Optional[datetime] = None
-    license_type: Optional[str] = None
-    enterprise_user_type: Optional[str] = None
-    invited_to_airtable_by_user_id: Optional[str] = None
+    last_activity_time: datetime | None = None
+    created_time: datetime | None = None
+    license_type: str | None = None
+    enterprise_user_type: str | None = None
+    invited_to_airtable_by_user_id: str | None = None
     is_managed: bool = False
     is_admin: bool = False
     is_super_admin: bool = False
-    groups: List[NestedId] = _FL()
+    groups: list[NestedId] = _FL()
     collaborations: "Collaborations" = _F("Collaborations")
-    descendants: Dict[str, "UserInfo.DescendantIds"] = _FD()
-    aggregated: Optional["UserInfo.AggregatedIds"] = None
+    descendants: dict[str, "UserInfo.DescendantIds"] = _FD()
+    aggregated: "UserInfo.AggregatedIds | None" = None
 
     def logout(self) -> None:
         self._api.post(self._url + "/logout")
 
     class DescendantIds(AirtableModel):
-        license_type: Optional[str] = None
-        last_activity_time: Optional[datetime] = None
-        collaborations: Optional["Collaborations"] = None
+        license_type: str | None = None
+        last_activity_time: datetime | None = None
+        collaborations: "Collaborations | None" = None
         is_admin: bool = False
         is_managed: bool = False
-        groups: List[NestedId] = _FL()
+        groups: list[NestedId] = _FL()
 
     class AggregatedIds(AirtableModel):
-        license_type: Optional[str] = None
-        last_activity_time: Optional[datetime] = None
-        collaborations: Optional["Collaborations"] = None
+        license_type: str | None = None
+        last_activity_time: datetime | None = None
+        collaborations: "Collaborations | None" = None
         is_admin: bool = False
-        groups: List[NestedId] = _FL()
+        groups: list[NestedId] = _FL()
 
 
 class UserGroup(AirtableModel):
@@ -809,9 +798,9 @@ class UserGroup(AirtableModel):
     enterprise_account_id: str
     created_time: datetime
     updated_time: datetime
-    members: List["UserGroup.Member"]
+    members: list["UserGroup.Member"]
     collaborations: "Collaborations" = _F("Collaborations")
-    mapped_user_license_type: Optional[str] = None
+    mapped_user_license_type: str | None = None
 
     class Member(AirtableModel):
         user_id: str
@@ -840,8 +829,8 @@ class AITextFieldConfig(AirtableModel):
 
 
 class AITextFieldOptions(AirtableModel):
-    prompt: List[Union[str, "AITextFieldOptions.PromptField"]] = _FL()
-    referenced_field_ids: List[str] = _FL()
+    prompt: list["str | AITextFieldOptions.PromptField"] = _FL()
+    referenced_field_ids: list[str] = _FL()
 
     class PromptField(AirtableModel):
         field: NestedFieldId
@@ -896,7 +885,7 @@ class CountFieldConfig(AirtableModel):
 
 class CountFieldOptions(AirtableModel):
     is_valid: bool
-    record_link_field_id: Optional[str] = None
+    record_link_field_id: str | None = None
 
 
 class CreatedByFieldConfig(AirtableModel):
@@ -1007,8 +996,8 @@ class FormulaFieldConfig(AirtableModel):
 class FormulaFieldOptions(AirtableModel):
     formula: str
     is_valid: bool
-    referenced_field_ids: Optional[List[str]] = None
-    result: Optional["FieldConfig"] = None
+    referenced_field_ids: list[str] | None = None
+    result: "FieldConfig | None" = None
 
 
 class LastModifiedByFieldConfig(AirtableModel):
@@ -1030,8 +1019,8 @@ class LastModifiedTimeFieldConfig(AirtableModel):
 
 class LastModifiedTimeFieldOptions(AirtableModel):
     is_valid: bool
-    referenced_field_ids: Optional[List[str]] = None
-    result: Optional[Union["DateFieldConfig", "DateTimeFieldConfig"]] = None
+    referenced_field_ids: list[str] | None = None
+    result: "DateFieldConfig | DateTimeFieldConfig | None" = None
 
 
 class ManualSortFieldConfig(AirtableModel):
@@ -1086,9 +1075,9 @@ class MultipleLookupValuesFieldConfig(AirtableModel):
 
 class MultipleLookupValuesFieldOptions(AirtableModel):
     is_valid: bool
-    field_id_in_linked_table: Optional[str] = None
-    record_link_field_id: Optional[str] = None
-    result: Optional["FieldConfig"] = None
+    field_id_in_linked_table: str | None = None
+    record_link_field_id: str | None = None
+    result: "FieldConfig | None" = None
 
 
 class MultipleRecordLinksFieldConfig(AirtableModel):
@@ -1104,8 +1093,8 @@ class MultipleRecordLinksFieldOptions(AirtableModel):
     is_reversed: bool
     linked_table_id: str
     prefers_single_record_link: bool
-    inverse_link_field_id: Optional[str] = None
-    view_id_for_record_selection: Optional[str] = None
+    inverse_link_field_id: str | None = None
+    view_id_for_record_selection: str | None = None
 
 
 class MultipleSelectsFieldConfig(AirtableModel):
@@ -1180,11 +1169,11 @@ class RollupFieldConfig(AirtableModel):
 
 
 class RollupFieldOptions(AirtableModel):
-    field_id_in_linked_table: Optional[str] = None
+    field_id_in_linked_table: str | None = None
     is_valid: bool
-    record_link_field_id: Optional[str] = None
-    referenced_field_ids: Optional[List[str]] = None
-    result: Optional["FieldConfig"] = None
+    record_link_field_id: str | None = None
+    referenced_field_ids: list[str] | None = None
+    result: "FieldConfig | None" = None
 
 
 class SingleCollaboratorFieldConfig(AirtableModel):
@@ -1213,12 +1202,12 @@ class SingleSelectFieldConfig(AirtableModel):
 
 
 class SingleSelectFieldOptions(AirtableModel):
-    choices: List["SingleSelectFieldOptions.Choice"]
+    choices: list["SingleSelectFieldOptions.Choice"]
 
     class Choice(AirtableModel):
         id: str
         name: str
-        color: Optional[str] = None
+        color: str | None = None
 
 
 class UrlFieldConfig(AirtableModel):
@@ -1236,7 +1225,7 @@ class UnknownFieldConfig(AirtableModel):
     """
 
     type: str
-    options: Optional[Dict[str, Any]] = None
+    options: dict[str, Any] | None = None
 
 
 class _FieldSchemaBase(
@@ -1247,7 +1236,7 @@ class _FieldSchemaBase(
 ):
     id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 # This section is auto-generated so that FieldSchema and FieldConfig are kept aligned.
@@ -1265,10 +1254,10 @@ with open(cog.inFile) as fp:
 
 cog.out("\n\n")
 
-cog.outl("FieldConfig: TypeAlias = Union[")
-for fld, _ in field_types:
-    cog.outl(f"    {fld}Config,")
-cog.outl("]")
+cog.outl("FieldConfig: TypeAlias = (")
+for i, (fld, _) in enumerate(field_types):
+    cog.outl(f"    {'' if i == 0 else '| '}{fld}Config")
+cog.outl(")")
 cog.out("\n\n")
 
 for fld, doc in field_types:
@@ -1280,51 +1269,53 @@ for fld, doc in field_types:
         cog.outl("pass")
     cog.out("\n\n")
 
-cog.outl("FieldSchema: TypeAlias = Union[")
-for fld, _ in field_types:
-    cog.outl(f"    {fld}Schema,")
-cog.outl("]")
+cog.outl("FieldSchema: TypeAlias = (")
+for idx, (fld, doc) in enumerate(field_types):
+    cog.out("    ")
+    cog.out('' if idx == 0 else '| ')
+    cog.outl(f"{fld}Schema")
+cog.outl(")")
 
 [[[out]]]"""
 
 
-FieldConfig: TypeAlias = Union[
-    AITextFieldConfig,
-    AutoNumberFieldConfig,
-    BarcodeFieldConfig,
-    ButtonFieldConfig,
-    CheckboxFieldConfig,
-    CountFieldConfig,
-    CreatedByFieldConfig,
-    CreatedTimeFieldConfig,
-    CurrencyFieldConfig,
-    DateFieldConfig,
-    DateTimeFieldConfig,
-    DurationFieldConfig,
-    EmailFieldConfig,
-    ExternalSyncSourceFieldConfig,
-    FormulaFieldConfig,
-    LastModifiedByFieldConfig,
-    LastModifiedTimeFieldConfig,
-    ManualSortFieldConfig,
-    MultilineTextFieldConfig,
-    MultipleAttachmentsFieldConfig,
-    MultipleCollaboratorsFieldConfig,
-    MultipleLookupValuesFieldConfig,
-    MultipleRecordLinksFieldConfig,
-    MultipleSelectsFieldConfig,
-    NumberFieldConfig,
-    PercentFieldConfig,
-    PhoneNumberFieldConfig,
-    RatingFieldConfig,
-    RichTextFieldConfig,
-    RollupFieldConfig,
-    SingleCollaboratorFieldConfig,
-    SingleLineTextFieldConfig,
-    SingleSelectFieldConfig,
-    UrlFieldConfig,
-    UnknownFieldConfig,
-]
+FieldConfig: TypeAlias = (
+    AITextFieldConfig
+    | AutoNumberFieldConfig
+    | BarcodeFieldConfig
+    | ButtonFieldConfig
+    | CheckboxFieldConfig
+    | CountFieldConfig
+    | CreatedByFieldConfig
+    | CreatedTimeFieldConfig
+    | CurrencyFieldConfig
+    | DateFieldConfig
+    | DateTimeFieldConfig
+    | DurationFieldConfig
+    | EmailFieldConfig
+    | ExternalSyncSourceFieldConfig
+    | FormulaFieldConfig
+    | LastModifiedByFieldConfig
+    | LastModifiedTimeFieldConfig
+    | ManualSortFieldConfig
+    | MultilineTextFieldConfig
+    | MultipleAttachmentsFieldConfig
+    | MultipleCollaboratorsFieldConfig
+    | MultipleLookupValuesFieldConfig
+    | MultipleRecordLinksFieldConfig
+    | MultipleSelectsFieldConfig
+    | NumberFieldConfig
+    | PercentFieldConfig
+    | PhoneNumberFieldConfig
+    | RatingFieldConfig
+    | RichTextFieldConfig
+    | RollupFieldConfig
+    | SingleCollaboratorFieldConfig
+    | SingleLineTextFieldConfig
+    | SingleSelectFieldConfig
+    | UrlFieldConfig
+    | UnknownFieldConfig
+)
 
 
 class AITextFieldSchema(_FieldSchemaBase, AITextFieldConfig):
@@ -1538,44 +1529,44 @@ class UnknownFieldSchema(_FieldSchemaBase, UnknownFieldConfig):
     """
 
 
-FieldSchema: TypeAlias = Union[
-    AITextFieldSchema,
-    AutoNumberFieldSchema,
-    BarcodeFieldSchema,
-    ButtonFieldSchema,
-    CheckboxFieldSchema,
-    CountFieldSchema,
-    CreatedByFieldSchema,
-    CreatedTimeFieldSchema,
-    CurrencyFieldSchema,
-    DateFieldSchema,
-    DateTimeFieldSchema,
-    DurationFieldSchema,
-    EmailFieldSchema,
-    ExternalSyncSourceFieldSchema,
-    FormulaFieldSchema,
-    LastModifiedByFieldSchema,
-    LastModifiedTimeFieldSchema,
-    ManualSortFieldSchema,
-    MultilineTextFieldSchema,
-    MultipleAttachmentsFieldSchema,
-    MultipleCollaboratorsFieldSchema,
-    MultipleLookupValuesFieldSchema,
-    MultipleRecordLinksFieldSchema,
-    MultipleSelectsFieldSchema,
-    NumberFieldSchema,
-    PercentFieldSchema,
-    PhoneNumberFieldSchema,
-    RatingFieldSchema,
-    RichTextFieldSchema,
-    RollupFieldSchema,
-    SingleCollaboratorFieldSchema,
-    SingleLineTextFieldSchema,
-    SingleSelectFieldSchema,
-    UrlFieldSchema,
-    UnknownFieldSchema,
-]
-# [[[end]]] (sum: yhWbyMdrHR)
+FieldSchema: TypeAlias = (
+    AITextFieldSchema
+    | AutoNumberFieldSchema
+    | BarcodeFieldSchema
+    | ButtonFieldSchema
+    | CheckboxFieldSchema
+    | CountFieldSchema
+    | CreatedByFieldSchema
+    | CreatedTimeFieldSchema
+    | CurrencyFieldSchema
+    | DateFieldSchema
+    | DateTimeFieldSchema
+    | DurationFieldSchema
+    | EmailFieldSchema
+    | ExternalSyncSourceFieldSchema
+    | FormulaFieldSchema
+    | LastModifiedByFieldSchema
+    | LastModifiedTimeFieldSchema
+    | ManualSortFieldSchema
+    | MultilineTextFieldSchema
+    | MultipleAttachmentsFieldSchema
+    | MultipleCollaboratorsFieldSchema
+    | MultipleLookupValuesFieldSchema
+    | MultipleRecordLinksFieldSchema
+    | MultipleSelectsFieldSchema
+    | NumberFieldSchema
+    | PercentFieldSchema
+    | PhoneNumberFieldSchema
+    | RatingFieldSchema
+    | RichTextFieldSchema
+    | RollupFieldSchema
+    | SingleCollaboratorFieldSchema
+    | SingleLineTextFieldSchema
+    | SingleSelectFieldSchema
+    | UrlFieldSchema
+    | UnknownFieldSchema
+)
+# [[[end]]] (sum: gPKie2ugBW)
 # fmt: on
 
 
@@ -1585,7 +1576,7 @@ class _HasFieldSchema(AirtableModel):
     field_schema: FieldSchema
 
 
-def parse_field_schema(obj: Dict[str, Any]) -> FieldSchema:
+def parse_field_schema(obj: dict[str, Any]) -> FieldSchema:
     """
     Given a ``dict`` representing a field schema,
     parse it into the appropriate FieldSchema subclass.

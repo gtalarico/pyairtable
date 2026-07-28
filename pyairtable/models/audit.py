@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, TypeAlias
 
 import pydantic
-from typing_extensions import TypeAlias
 
 from pyairtable.models._base import AirtableModel, rebuild_models
 
@@ -15,12 +14,12 @@ class AuditLogResponse(AirtableModel):
     for more information on how to interpret this data structure.
     """
 
-    events: List["AuditLogEvent"]
-    pagination: Optional["AuditLogResponse.Pagination"] = None
+    events: list["AuditLogEvent"]
+    pagination: "AuditLogResponse.Pagination | None" = None
 
     class Pagination(AirtableModel):
-        next: Optional[str] = None
-        previous: Optional[str] = None
+        next: str | None = None
+        previous: str | None = None
 
 
 class AuditLogEvent(AirtableModel):
@@ -47,35 +46,35 @@ class AuditLogEvent(AirtableModel):
     origin: "AuditLogEvent.Origin"
 
     class Context(AirtableModel):
-        base_id: Optional[str] = None
+        base_id: str | None = None
         action_id: str
         enterprise_account_id: str
-        descendant_enterprise_account_id: Optional[str] = None
-        interface_id: Optional[str] = None
-        workspace_id: Optional[str] = None
+        descendant_enterprise_account_id: str | None = None
+        interface_id: str | None = None
+        workspace_id: str | None = None
 
     class Origin(AirtableModel):
         ip_address: str
         user_agent: str
-        oauth_access_token_id: Optional[str] = None
-        personal_access_token_id: Optional[str] = None
-        session_id: Optional[str] = None
+        oauth_access_token_id: str | None = None
+        personal_access_token_id: str | None = None
+        session_id: str | None = None
 
 
 class AuditLogActor(AirtableModel):
     type: str
-    user: Optional["AuditLogActor.UserInfo"] = None
-    view_id: Optional[str] = None
-    automation_id: Optional[str] = None
+    user: "AuditLogActor.UserInfo | None" = None
+    view_id: str | None = None
+    automation_id: str | None = None
 
     class UserInfo(AirtableModel):
         id: str
         email: str
-        name: Optional[str] = None
+        name: str | None = None
 
 
 # Placeholder until we can parse https://airtable.com/developers/web/api/audit-log-event-types
-AuditLogPayload: TypeAlias = Dict[str, Any]
+AuditLogPayload: TypeAlias = dict[str, Any]
 
 
 rebuild_models(vars())

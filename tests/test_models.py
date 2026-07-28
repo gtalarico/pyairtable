@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import List
 
 import pytest
 
@@ -126,7 +125,7 @@ def test_save__nested_reload(requests_mock, api):
     class Parent(CanUpdateModel, url="foo/{self.id}"):
         id: int
         name: str
-        children: List["Parent.Child"]  # noqa
+        children: list["Parent.Child"]  # noqa
 
         class Child(CanUpdateModel, url="foo/{parent.id}/child/{child.id}"):
             id: int
