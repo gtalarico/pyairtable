@@ -380,6 +380,31 @@ def enterprise_groups(
     )
 
 
+@enterprise.group(invoke_without_command=True, cls=ShortcutGroup)
+@needs_context
+def pat(ctx: CliContext) -> None:
+    ctx.default_subcommand(pat_list)
+
+
+@pat.command("list")
+@needs_context
+def pat_list(ctx: CliContext) -> None:
+    """
+    List personal access tokens.
+    """
+    _dump(ctx.enterprise.access_tokens(resources=True))
+
+
+@pat.command("revoke")
+@needs_context
+@click.argument("access_token_id")
+def pat_revoke(ctx: CliContext, access_token_id: str) -> None:
+    """
+    Revoke a personal access token.
+    """
+    _dump(ctx.enterprise.revoke_access_tokens(access_token_id))
+
+
 class JSONEncoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:
         if isinstance(o, AirtableModel):
