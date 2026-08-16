@@ -72,6 +72,15 @@ class Enterprise:
         #: URL for listing enterprise packages.
         packages = meta / "packages"
 
+        #: URL for listing personal access tokens.
+        access_tokens = meta / "personalAccessTokens"
+
+        #: URL for revoking personal access tokens.
+        revoke_access_tokens = access_tokens / "revoke"
+
+        #: URL for updating the workspace AI allowlist.
+        workspace_ai_allowlist = meta / "workspaceAiAllowlist"
+
         def package_install(self, package_id: str) -> Url:
             """
             URL for installing a package (creating a base from a package).
@@ -674,6 +683,93 @@ class Enterprise:
         response = self.api.post(self.urls.package_install(package_id), json=payload)
         return self.api.base(response["id"], validate=True, force=True)
 
+    def access_tokens(
+        self,
+        *,
+        resources: bool = False,
+    ) -> list["PersonalAccessToken"]:
+        """
+        List personal access tokens for users administered by this
+        enterprise account. Only supported for root (organization-level)
+        enterprise accounts.
+
+        See `List personal access tokens <https://airtable.com/developers/web/api/list-enterprise-personal-access-tokens>`__.
+
+        Args:
+            resources: If ``True``, the API will include information
+                about the resources that each token can access.
+        """
+        params: dict[str, Any] = {}
+        if resources:
+            params["includeResources"] = True
+        response = self.api.get(self.urls.access_tokens, params=params)
+        return [
+            PersonalAccessToken.from_api(token, self.api, context=self)
+            for token in response.get("personalAccessTokens", [])
+        ]
+
+    def revoke_access_tokens(
+        self,
+        token_ids: str | Iterable[str],
+    ) -> "RevokeTokensResponse":
+        """
+        Revoke personal access tokens for users administered by this
+        enterprise account. Only supported for root (organization-level)
+        enterprise accounts. The response includes both revoked tokens and
+        errors, so that callers can handle partial success.
+
+        See `Revoke personal access tokens <https://airtable.com/developers/web/api/revoke-enterprise-personal-access-tokens>`__.
+
+        Args:
+            token_ids: One or more personal access token IDs (maximum of 100).
+        """
+        token_ids = coerce_list_str(token_ids)
+        response = self.api.post(
+            self.urls.revoke_access_tokens,
+            json={"tokenIds": token_ids},
+        )
+        return RevokeTokensResponse.from_api(response, self.api, context=self)
+
+    def allow_ai(
+        self,
+        workspaces: "dict[str | Workspace, bool]",
+        *,
+        descendants: bool = False,
+    ) -> "UpdateAiAllowlistResponse":
+        """
+        Add or remove workspaces from the enterprise AI allowlist
+        (maximum of 10 workspaces per request). Only applicable when the
+        enterprise AI workspace restriction policy is set to allow
+        specified workspaces.
+
+        See `Update workspace AI allowlist <https://airtable.com/developers/web/api/update-workspace-ai-allowlist>`__.
+
+        Usage:
+            >>> enterprise.allow_ai(
+            ...     {"wspmhESAta6clCCwF": True, "wspHvvm4dAktsStZH": False}
+            ... )
+
+        Args:
+            workspaces: A ``dict`` mapping workspace IDs or instances of
+                :class:`~pyairtable.Workspace` to whether each workspace
+                should be allowed to use AI features.
+            descendants: If ``True``, changes will also be applied to
+                workspaces belonging to descendant org units.
+        """
+        payload: dict[str, Any] = {
+            "workspaces": [
+                {
+                    "workspaceId": ws if isinstance(ws, str) else ws.id,
+                    "isAllowed": is_allowed,
+                }
+                for (ws, is_allowed) in workspaces.items()
+            ]
+        }
+        if descendants:
+            payload["includeDescendantWorkspaces"] = True
+        response = self.api.post(self.urls.workspace_ai_allowlist, json=payload)
+        return UpdateAiAllowlistResponse.from_api(response, self.api, context=self)
+
 
 class UserRemoved(AirtableModel):
     """
@@ -785,6 +881,65 @@ class MoveWorkspacesResponse(AirtableModel):
 
     moved_workspaces: list[NestedId] = pydantic.Field(default_factory=list)
     errors: list[MoveError] = pydantic.Field(default_factory=list)
+
+
+class PersonalAccessToken(AirtableModel):
+    """
+    A personal access token, as returned by the
+    `List personal access tokens <https://airtable.com/developers/web/api/list-enterprise-personal-access-tokens>`__
+    endpoint.
+    """
+
+    id: str
+    name: str
+    state: str
+    scopes: list[str] = pydantic.Field(default_factory=list)
+    resource_access: "PersonalAccessToken.ResourceAccess"
+    created_time: datetime
+    user_id: str
+    created_by_user_id: str
+
+    class ResourceAccess(AirtableModel):
+        mode: str
+        enterprise_account_id: str | None = None
+        resource_model_ids: list[str] | None = None
+
+
+class RevokeTokensResponse(AirtableModel):
+    """
+    Returned by the `Revoke personal access tokens <https://airtable.com/developers/web/api/revoke-enterprise-personal-access-tokens>`__
+    endpoint.
+    """
+
+    revoked_tokens: list["RevokeTokensResponse.RevokedToken"] = pydantic.Field(
+        default_factory=list
+    )
+    errors: list["RevokeTokensResponse.Error"] = pydantic.Field(default_factory=list)
+
+    class RevokedToken(AirtableModel):
+        id: str
+        user_id: str
+
+    class Error(AirtableModel):
+        type: str
+        message: str
+        token_id: str
+
+
+class UpdateAiAllowlistResponse(AirtableModel):
+    """
+    Returned by the `Update workspace AI allowlist <https://airtable.com/developers/web/api/update-workspace-ai-allowlist>`__
+    endpoint.
+    """
+
+    errors: list["UpdateAiAllowlistResponse.Error"] = pydantic.Field(
+        default_factory=list
+    )
+
+    class Error(AirtableModel):
+        type: str
+        message: str
+        workspace_id: str
 
 
 rebuild_models(vars())

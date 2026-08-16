@@ -35,6 +35,13 @@ SCAN_MODELS = {
     "pyairtable.api.enterprise:MoveError": "move-workspaces.response/@errors/items",
     "pyairtable.api.enterprise:MoveGroupsResponse": "move-user-groups.response",
     "pyairtable.api.enterprise:MoveWorkspacesResponse": "move-workspaces.response",
+    "pyairtable.api.enterprise:PersonalAccessToken": "list-enterprise-personal-access-tokens.response/@personalAccessTokens/items",
+    "pyairtable.api.enterprise:PersonalAccessToken.ResourceAccess": "list-enterprise-personal-access-tokens.response/@personalAccessTokens/items/@resourceAccess",
+    "pyairtable.api.enterprise:RevokeTokensResponse": "revoke-enterprise-personal-access-tokens.response",
+    "pyairtable.api.enterprise:RevokeTokensResponse.RevokedToken": "revoke-enterprise-personal-access-tokens.response/@revokedTokens/items",
+    "pyairtable.api.enterprise:RevokeTokensResponse.Error": "revoke-enterprise-personal-access-tokens.response/@errors/items",
+    "pyairtable.api.enterprise:UpdateAiAllowlistResponse": "update-workspace-ai-allowlist.response",
+    "pyairtable.api.enterprise:UpdateAiAllowlistResponse.Error": "update-workspace-ai-allowlist.response/@errors/items",
     "pyairtable.models.audit:AuditLogResponse": "audit-log-events.response",
     "pyairtable.models.audit:AuditLogEvent": "audit-log-events.response/@events/items",
     "pyairtable.models.audit:AuditLogEvent.Context": "audit-log-events.response/@events/items/@context",
@@ -167,7 +174,8 @@ def identify_missing_fields(api_data: "ApiData") -> None:
             r"\1operations/\2/\3/schema\4",
             data_path,
         )
-        issues.extend(scan_schema(model_cls, api_data.get_nested(data_path)))
+        schema = api_data.collapse_schema(api_data.get_nested(data_path))
+        issues.extend(scan_schema(model_cls, schema))
 
     if not issues:
         print("No missing/extra fields found in scanned classes")

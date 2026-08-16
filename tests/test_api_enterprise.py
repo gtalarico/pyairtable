@@ -8,6 +8,9 @@ from pyairtable.api.enterprise import (
     DeleteUsersResponse,
     Enterprise,
     ManageUsersResponse,
+    PersonalAccessToken,
+    RevokeTokensResponse,
+    UpdateAiAllowlistResponse,
 )
 from pyairtable.exceptions import InvalidParameterError, MissingRecordError
 from pyairtable.models.schema import EnterpriseInfo, Package, UserGroup, UserInfo
@@ -80,6 +83,29 @@ def enterprise_mocks(enterprise, requests_mock, sample_json):
     m.get_packages = requests_mock.get(
         f"{enterprise_url}/packages",
         json=m.json_packages,
+    )
+    m.json_pat = sample_json("PersonalAccessToken")
+    m.list_pats = requests_mock.get(
+        f"{enterprise_url}/personalAccessTokens",
+        json={"personalAccessTokens": [m.json_pat]},
+    )
+    m.revoke_pats_json = {
+        "errors": [
+            {
+                "message": "Token has already been revoked.",
+                "tokenId": "patZp6Lw9Dq3VxTn5",
+                "type": "ALREADY_REVOKED",
+            }
+        ],
+        "revokedTokens": [{"id": "pat8fN3RkQx9ZLm2T", "userId": "usrL2PNC5o3H4lBEi"}],
+    }
+    m.revoke_pats = requests_mock.post(
+        f"{enterprise_url}/personalAccessTokens/revoke",
+        json=m.revoke_pats_json,
+    )
+    m.allow_ai = requests_mock.post(
+        f"{enterprise_url}/workspaceAiAllowlist",
+        json={"errors": []},
     )
     return m
 
@@ -687,3 +713,107 @@ def test_create_base(api, base_id, workspace_id, requests_mock, sample_json):
         "workspaceId": workspace_id,
         "tables": [{"name": "Table1"}],
     }
+
+
+def test_access_tokens(enterprise, enterprise_mocks):
+    tokens = enterprise.access_tokens()
+    assert enterprise_mocks.list_pats.call_count == 1
+    assert "includeresources" not in enterprise_mocks.list_pats.last_request.qs
+    assert len(tokens) == 1
+    assert isinstance(pat := tokens[0], PersonalAccessToken)
+    assert pat.id == "pat8fN3RkQx9ZLm2T"
+    assert pat.name == "Integration token"
+    assert pat.state == "active"
+    assert pat.scopes == ["data.records:read", "enterprise.account:read"]
+    assert pat.resource_access.mode == "enterprise"
+    assert pat.resource_access.enterprise_account_id == "entUBq2RGdihxl3vU"
+    assert pat.created_time == datetime(2023, 1, 1, tzinfo=timezone.utc)
+    assert pat.user_id == "usrL2PNC5o3H4lBEi"
+    assert pat.created_by_user_id == "usrL2PNC5o3H4lBEi"
+
+
+def test_access_tokens__include_resources(enterprise, enterprise_mocks):
+    enterprise.access_tokens(resources=True)
+    assert enterprise_mocks.list_pats.call_count == 1
+    assert enterprise_mocks.list_pats.last_request.qs["includeResources"] == ["True"]
+
+
+@pytest.mark.parametrize(
+    "resource_access",
+    [
+        {"mode": "all"},
+        {"mode": "enterprise"},
+        {"mode": "specificModelIds", "resourceModelIds": ["appLkNDICXNqxSDhG"]},
+    ],
+)
+def test_access_tokens__resource_access(enterprise, enterprise_mocks, resource_access):
+    enterprise_mocks.json_pat["resourceAccess"] = resource_access
+    (pat,) = enterprise.access_tokens()
+    assert pat.resource_access.mode == resource_access["mode"]
+    assert pat.resource_access.resource_model_ids == resource_access.get(
+        "resourceModelIds"
+    )
+
+
+# token_ids accepts a single str or any iterable of str
+@pytest.mark.parametrize(
+    "token_ids,expected",
+    [
+        ("pat8fN3RkQx9ZLm2T", ["pat8fN3RkQx9ZLm2T"]),
+        (
+            ["pat8fN3RkQx9ZLm2T", "patZp6Lw9Dq3VxTn5"],
+            ["pat8fN3RkQx9ZLm2T", "patZp6Lw9Dq3VxTn5"],
+        ),
+        (iter(["pat8fN3RkQx9ZLm2T"]), ["pat8fN3RkQx9ZLm2T"]),
+    ],
+)
+def test_revoke_access_tokens(enterprise, enterprise_mocks, token_ids, expected):
+    result = enterprise.revoke_access_tokens(token_ids)
+    assert enterprise_mocks.revoke_pats.call_count == 1
+    assert enterprise_mocks.revoke_pats.last_request.json() == {"tokenIds": expected}
+    assert isinstance(result, RevokeTokensResponse)
+    assert result.revoked_tokens[0].id == "pat8fN3RkQx9ZLm2T"
+    assert result.revoked_tokens[0].user_id == "usrL2PNC5o3H4lBEi"
+    assert result.errors[0].type == "ALREADY_REVOKED"
+    assert result.errors[0].token_id == "patZp6Lw9Dq3VxTn5"
+
+
+def test_allow_ai(api, enterprise, enterprise_mocks):
+    result = enterprise.allow_ai(
+        {api.workspace("wspmhESAta6clCCwF"): True, "wspHvvm4dAktsStZH": False}
+    )
+    assert enterprise_mocks.allow_ai.call_count == 1
+    assert enterprise_mocks.allow_ai.last_request.json() == {
+        "workspaces": [
+            {"workspaceId": "wspmhESAta6clCCwF", "isAllowed": True},
+            {"workspaceId": "wspHvvm4dAktsStZH", "isAllowed": False},
+        ]
+    }
+    assert isinstance(result, UpdateAiAllowlistResponse)
+    assert result.errors == []
+
+
+def test_allow_ai__descendants(enterprise, enterprise_mocks):
+    enterprise.allow_ai({"wspmhESAta6clCCwF": True}, descendants=True)
+    assert enterprise_mocks.allow_ai.last_request.json() == {
+        "workspaces": [{"workspaceId": "wspmhESAta6clCCwF", "isAllowed": True}],
+        "includeDescendantWorkspaces": True,
+    }
+
+
+def test_allow_ai__errors(enterprise, enterprise_mocks, requests_mock):
+    requests_mock.post(
+        enterprise.urls.workspace_ai_allowlist,
+        json={
+            "errors": [
+                {
+                    "type": "WORKSPACE_NOT_FOUND",
+                    "message": "Workspace not found",
+                    "workspaceId": "wspFakeWorkspaceId",
+                }
+            ]
+        },
+    )
+    result = enterprise.allow_ai({"wspFakeWorkspaceId": True})
+    assert result.errors[0].type == "WORKSPACE_NOT_FOUND"
+    assert result.errors[0].workspace_id == "wspFakeWorkspaceId"

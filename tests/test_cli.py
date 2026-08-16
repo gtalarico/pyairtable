@@ -33,6 +33,17 @@ def mock_metadata(
     requests_mock.get(enterprise.urls.user(user_id), json=user_info)
     for group_id in enterprise_info["groupIds"]:
         requests_mock.get(enterprise.urls.group(group_id), json=user_group)
+    requests_mock.get(
+        enterprise.urls.access_tokens,
+        json={"personalAccessTokens": [sample_json("PersonalAccessToken")]},
+    )
+    requests_mock.post(
+        enterprise.urls.revoke_access_tokens,
+        json={
+            "revokedTokens": [{"id": "pat8fN3RkQx9ZLm2T", "userId": user_id}],
+            "errors": [],
+        },
+    )
 
 
 @pytest.fixture
@@ -255,3 +266,17 @@ def test_enterprise_groups(run, enterprise, option):
 def test_enterprise_groups__invalid(run, enterprise):
     run("enterprise", enterprise.id, "groups", fails=True)
     run("enterprise", enterprise.id, "groups", "--all", "ugp1mKGb3KXUyQfOZ", fails=True)
+
+
+@pytest.mark.parametrize("extra_args", [[], ["list"]])
+def test_enterprise_pat_list(run, enterprise, extra_args):
+    result = run.json("enterprise", enterprise.id, "pat", *extra_args)
+    assert len(result) == 1
+    assert result[0]["id"] == "pat8fN3RkQx9ZLm2T"
+    assert result[0]["name"] == "Integration token"
+
+
+def test_enterprise_pat_revoke(run, enterprise, requests_mock):
+    result = run.json("enterprise", enterprise.id, "pat", "revoke", "pat8fN3RkQx9ZLm2T")
+    assert result["revokedTokens"][0]["id"] == "pat8fN3RkQx9ZLm2T"
+    assert requests_mock.last_request.json() == {"tokenIds": ["pat8fN3RkQx9ZLm2T"]}
