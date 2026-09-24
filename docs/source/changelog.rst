@@ -2,6 +2,11 @@
 Changelog
 =========
 
+3.5.1 (unreleased)
+------------------------
+
+* Bumped the minimum supported version of requests to 2.25.0.
+
 3.5.0.post1 (2026-09-24)
 ------------------------
 
