@@ -2,7 +2,7 @@
 Changelog
 =========
 
-3.5.0 (unreleased)
+3.5.0 (2026-09-23)
 ------------------------
 
 * Added support for the ``parent_comment_id`` parameter to
@@ -10,8 +10,8 @@ Changelog
   `threaded replies <https://airtable.com/developers/web/api/create-comment>`_.
 * Fixed a regression, introduced in 3.0.0, that caused the ``timeout``
   argument to :class:`~pyairtable.Api` to be ignored.
-* :func:`~pyairtable.formulas.AND` and :func:`~pyairtable.formulas.OR` no longer
-  accept (in type annotations) a mix of iterables and formulas, since
+* :func:`~pyairtable.formulas.AND` and :func:`~pyairtable.formulas.OR`
+  type annotation no longer accept a mix of iterables and formulas, since
   that would produce an invalid formula at runtime.
 * Formula functions now accept ORM fields without type errors,
   e.g. ``SUM(MyModel.amount, 1)``.
