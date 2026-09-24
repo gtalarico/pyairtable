@@ -82,19 +82,21 @@ Command list
       --help                Show this message and exit.
 
     Commands:
-      whoami                              Print the current user's information.
-      bases                               List all available bases.
-      base ID schema                      Print the base schema.
-      base ID table ID_OR_NAME records    Retrieve records from the table.
-      base ID table ID_OR_NAME schema     Print the table's schema as JSON.
-      base ID collaborators               Print base collaborators.
-      base ID shares                      Print base shares.
-      base ID orm                         Generate a Python ORM module.
-      enterprise ID info                  Print information about an enterprise.
-      enterprise ID user ID_OR_EMAIL      Print one user's information.
-      enterprise ID users ID_OR_EMAIL...  Print many users, keyed by user ID.
-      enterprise ID group ID              Print a user group's information.
-      enterprise ID groups ID...          Print many groups, keyed by group ID.
+      whoami                                    Print the current user's information.
+      bases                                     List all available bases.
+      base ID schema                            Print the base schema.
+      base ID table ID_OR_NAME records          Retrieve records from the table.
+      base ID table ID_OR_NAME schema           Print the table's schema as JSON.
+      base ID collaborators                     Print base collaborators.
+      base ID shares                            Print base shares.
+      base ID orm                               Generate a Python ORM module.
+      enterprise ID info                        Print information about an enterprise.
+      enterprise ID user ID_OR_EMAIL            Print one user's information.
+      enterprise ID users ID_OR_EMAIL...        Print many users, keyed by user ID.
+      enterprise ID group ID                    Print a user group's information.
+      enterprise ID groups ID...                Print many groups, keyed by group ID.
+      enterprise ID pat list                    List personal access tokens.
+      enterprise ID pat revoke ACCESS_TOKEN_ID  Revoke a personal access token.
 
 
 whoami
@@ -275,4 +277,31 @@ enterprise groups
       -c, --collaborations  Include collaborations.
       --help                Show this message and exit.
 
-.. [[[end]]] (sum: kYHTqKvqGy)
+
+enterprise pat list
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable enterprise ENTERPRISE_ID pat list [OPTIONS]
+
+      List personal access tokens.
+
+    Options:
+      --help  Show this message and exit.
+
+
+enterprise pat revoke
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: text
+
+    Usage: pyairtable enterprise ENTERPRISE_ID pat revoke [OPTIONS]
+                                                          ACCESS_TOKEN_ID
+
+      Revoke a personal access token.
+
+    Options:
+      --help  Show this message and exit.
+
+.. [[[end]]] (sum: 5ECVeCfzZD)
