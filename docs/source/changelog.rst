@@ -2,6 +2,12 @@
 Changelog
 =========
 
+3.5.0.post1 (2026-09-24)
+------------------------
+
+* Bumped the minimum supported version of pydantic to 2.11.0 to fix
+  `#468 <https://github.com/gtalarico/pyairtable/issues/468>`_.
+
 3.5.0 (2026-09-23)
 ------------------------
 
