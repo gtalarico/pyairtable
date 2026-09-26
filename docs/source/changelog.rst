@@ -6,6 +6,8 @@ Changelog
 ------------------------
 
 * Bumped the minimum supported version of requests to 2.25.0.
+* Added ``oauth_app_client_id`` and ``source`` to
+  :class:`~pyairtable.models.AuditLogEvent.Origin`.
 
 3.5.0.post1 (2026-09-24)
 ------------------------
