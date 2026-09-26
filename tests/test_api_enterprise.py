@@ -13,6 +13,7 @@ from pyairtable.api.enterprise import (
     UpdateAiAllowlistResponse,
 )
 from pyairtable.exceptions import InvalidParameterError, MissingRecordError
+from pyairtable.models.audit import AuditLogEvent
 from pyairtable.models.schema import EnterpriseInfo, Package, UserGroup, UserInfo
 from pyairtable.testing import fake_id
 
@@ -127,7 +128,12 @@ def fake_audit_log_events(counter, page_size=N_AUDIT_PAGE_SIZE):
                 "enterpriseAccountId": fake_id("ent"),
                 "workspaceId": fake_id("wsp"),
             },
-            "origin": {"ipAddress": "8.8.8.8", "userAgent": "Internet Explorer"},
+            "origin": {
+                "ipAddress": "8.8.8.8",
+                "oauthAppClientId": "cliR8ZT9KtIgp8Bh3",
+                "source": "server",
+                "userAgent": "Internet Explorer",
+            },
         }
         for n in range(page_size)
     ]
@@ -313,6 +319,14 @@ def test_audit_log(enterprise, fncall, expected_size):
         for event in page.events
     ]
     assert len(events) == expected_size
+    assert events[0].origin.source == "server"
+    assert events[0].origin.oauth_app_client_id == "cliR8ZT9KtIgp8Bh3"
+
+    bare_origin = AuditLogEvent.Origin(
+        ipAddress="8.8.8.8", userAgent="Internet Explorer"
+    )
+    assert bare_origin.source is None
+    assert bare_origin.oauth_app_client_id is None
 
 
 def test_audit_log__no_loop(enterprise, requests_mock):

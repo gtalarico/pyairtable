@@ -57,8 +57,10 @@ class AuditLogEvent(AirtableModel):
         ip_address: str
         user_agent: str
         oauth_access_token_id: str | None = None
+        oauth_app_client_id: str | None = None
         personal_access_token_id: str | None = None
         session_id: str | None = None
+        source: str | None = None
 
 
 class AuditLogActor(AirtableModel):

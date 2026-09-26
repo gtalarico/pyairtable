@@ -1,6 +1,7 @@
 """
 Scans the API documentation on airtable.com and compares it to the models in pyAirtable.
 Attempts to flag any places where the library is missing fields or has extra undocumented fields.
+Exits with a non-zero status if any issues are found, and runs as part of ``tox -e integration``.
 """
 
 import importlib
@@ -151,11 +152,19 @@ def main(save_apidata: Optional[str]) -> None:
         with open(save_apidata, "w") as f:
             json.dump(api_data, f, indent=2, sort_keys=True)
 
-    identify_missing_fields(api_data)
-    identify_unscanned_classes(api_data)
+    issues = identify_missing_fields(api_data)
+    if not issues:
+        print("No missing/extra fields found in scanned classes")
+    unscanned = identify_unscanned_classes(api_data)
+    if not unscanned:
+        print("No unscanned classes found in scanned modules")
+    for issue in issues + unscanned:
+        print(issue)
+    if issues or unscanned:
+        raise SystemExit(1)
 
 
-def identify_missing_fields(api_data: "ApiData") -> None:
+def identify_missing_fields(api_data: "ApiData") -> List[str]:
     issues: List[str] = []
 
     # Find missing/extra fields
@@ -177,14 +186,10 @@ def identify_missing_fields(api_data: "ApiData") -> None:
         schema = api_data.collapse_schema(api_data.get_nested(data_path))
         issues.extend(scan_schema(model_cls, schema))
 
-    if not issues:
-        print("No missing/extra fields found in scanned classes")
-    else:
-        for issue in issues:
-            print(issue)
+    return issues
 
 
-def identify_unscanned_classes(api_data: "ApiData") -> None:
+def identify_unscanned_classes(api_data: "ApiData") -> List[str]:
     issues: List[str] = []
 
     # Find unscanned model classes
@@ -194,11 +199,7 @@ def identify_unscanned_classes(api_data: "ApiData") -> None:
             mod = importlib.import_module(modname)
             issues.extend(scan_missing(mod, prefix=(modname + ":")))
 
-    if not issues:
-        print("No unscanned classes found in scanned modules")
-    else:
-        for issue in issues:
-            print(issue)
+    return issues
 
 
 def ignore_name(name: str) -> bool:

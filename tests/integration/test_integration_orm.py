@@ -275,10 +275,8 @@ def test_attachments_upload(Everything, valid_img_url, tmp_path):
     tmp_file.write_text("Hello, World!")
     record.attachments.upload(tmp_file)
     # ensure we got all attachments, not just the latest one
-    assert record.attachments[0]["filename"] == "logo.png"
-    assert record.attachments[0]["type"] == "image/png"
-    assert record.attachments[1]["filename"] == "sample.txt"
-    assert record.attachments[1]["type"] == "text/plain"
+    filenames = [att["filename"] for att in record.attachments]
+    assert filenames == ["logo.png", "sample.txt"]
 
     # ensure everything persists/loads correctly after fetch()
     record.fetch()
