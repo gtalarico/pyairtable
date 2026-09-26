@@ -57,7 +57,8 @@ Command list
             cli(
                 ["-k", "fake", *cmd.split(), "--help"],
                 prog_name="pyairtable",
-                standalone_mode=False
+                standalone_mode=False,
+                terminal_width=120,
             )
         if cmd:
             heading = " ".join(w for w in cmd.split() if w == w.lower())
@@ -296,12 +297,11 @@ enterprise pat revoke
 
 .. code-block:: text
 
-    Usage: pyairtable enterprise ENTERPRISE_ID pat revoke [OPTIONS]
-                                                          ACCESS_TOKEN_ID
+    Usage: pyairtable enterprise ENTERPRISE_ID pat revoke [OPTIONS] ACCESS_TOKEN_ID
 
       Revoke a personal access token.
 
     Options:
       --help  Show this message and exit.
 
-.. [[[end]]] (sum: 5ECVeCfzZD)
+.. [[[end]]] (sum: QfQSdPC2nV)
