@@ -5,6 +5,8 @@ Changelog
 3.5.1 (unreleased)
 ------------------------
 
+* Fixed ``Compound.flatten()`` incorrectly raising ``CircularFormulaError``
+  when an acyclic subexpression is reused.
 * Bumped the minimum supported version of requests to 2.25.0.
 * Added ``oauth_app_client_id`` and ``source`` to
   :class:`~pyairtable.models.AuditLogEvent.Origin`.
