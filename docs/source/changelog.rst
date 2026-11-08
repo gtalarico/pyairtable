@@ -2,17 +2,22 @@
 Changelog
 =========
 
-3.5.1 (unreleased)
+3.5.1 (2026-11-07)
 ------------------------
 
 * Added ``is_agent_user`` to :class:`~pyairtable.models.schema.UserInfo`.
+  - `PR #475 <https://github.com/gtalarico/pyairtable/pull/475>`_
 * Fixed ``Compound.flatten()`` recursing indefinitely on circular
   references that span multiple operators (e.g. ``AND`` inside ``NOT``).
+  - `PR #475 <https://github.com/gtalarico/pyairtable/pull/475>`_
 * Fixed ``Compound.flatten()`` incorrectly raising ``CircularFormulaError``
   when an acyclic subexpression is reused.
+  - `PR #474 <https://github.com/gtalarico/pyairtable/pull/474>`_
 * Bumped the minimum supported version of requests to 2.25.0.
+  - `PR #470 <https://github.com/gtalarico/pyairtable/pull/470>`_
 * Added ``oauth_app_client_id`` and ``source`` to
   :class:`~pyairtable.models.AuditLogEvent.Origin`.
+  - `PR #472 <https://github.com/gtalarico/pyairtable/pull/472>`_
 
 3.5.0.post1 (2026-09-24)
 ------------------------
