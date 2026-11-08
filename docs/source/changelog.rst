@@ -5,6 +5,9 @@ Changelog
 3.5.1 (unreleased)
 ------------------------
 
+* Added ``is_agent_user`` to :class:`~pyairtable.models.schema.UserInfo`.
+* Fixed ``Compound.flatten()`` recursing indefinitely on circular
+  references that span multiple operators (e.g. ``AND`` inside ``NOT``).
 * Fixed ``Compound.flatten()`` incorrectly raising ``CircularFormulaError``
   when an acyclic subexpression is reused.
 * Bumped the minimum supported version of requests to 2.25.0.

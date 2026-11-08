@@ -183,6 +183,7 @@ def test_user(enterprise, enterprise_mocks):
     user = enterprise.user(enterprise_mocks.user_id)
     assert isinstance(user, UserInfo)
     assert enterprise_mocks.get_users.call_count == 1
+    assert user.is_agent_user is True
     assert user.collaborations
     assert "appLkNDICXNqxSDhG" in user.collaborations.bases
     assert "pbdyGA3PsOziEHPDE" in user.collaborations.interfaces

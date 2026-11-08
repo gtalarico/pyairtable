@@ -244,6 +244,8 @@ class Compound(Formula):
                 raise CircularFormulaError(item)
             if isinstance(item, Compound) and item.operator == self.operator:
                 flattened.extend(item.flatten(memo=memo).components)
+            elif isinstance(item, Compound):
+                flattened.append(item.flatten(memo=memo))
             else:
                 flattened.append(item.flatten())
 
