@@ -179,6 +179,21 @@ def test_compound_flatten():
     )
 
 
+@pytest.mark.parametrize("combine", [AND, OR])
+@pytest.mark.parametrize("nested", [False, True])
+def test_compound_flatten_reused_subexpressions(combine, nested):
+    a = EQ(F.Field("Status"), "Active")
+    b = EQ(F.Field("Region"), "BR")
+    shared = combine(a, b)
+    first = combine(shared, a) if nested else shared
+    formula = combine(first, shared)
+    expected = combine(a, b, a, a, b) if nested else combine(a, b, a, b)
+
+    assert formula.flatten() == expected
+    assert shared.components == [a, b]
+    assert formula.components == [first, shared]
+
+
 def test_compound_flatten_circular_dependency():
     circular = NOT(F.Formula("x"))
     circular.components = [circular]

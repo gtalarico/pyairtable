@@ -236,7 +236,7 @@ class Compound(Formula):
         """
         Reduces the depth of nested AND, OR, and NOT statements.
         """
-        memo = memo if memo else set()
+        memo = set(memo or ())
         memo.add(id(self))
         flattened: list[Formula] = []
         for item in self.components:
