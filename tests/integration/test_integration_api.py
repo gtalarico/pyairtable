@@ -290,11 +290,24 @@ def test_integration_formula_composition(table: Table, cols):
     assert rv_first["id"] == rv_create["id"]
 
 
+def get_processed_attachment(table, record_id, field_name="attachment", timeout=5):
+    """
+    Airtable parses URL-based attachments asynchronously, and the attachment
+    field (and its metadata) is not populated until that finishes. Poll until
+    it's ready instead of sleeping for a fixed (often insufficient) duration.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        time.sleep(0.25)
+        attachments = table.get(record_id)["fields"].get(field_name) or []
+        if attachments and attachments[0].get("url"):
+            return attachments[0]
+    raise TimeoutError("timed out waiting for Airtable to process the attachment")
+
+
 def test_integration_attachment(table, cols, valid_img_url):
     rec = table.create({cols.ATTACHMENT: [{"url": valid_img_url}]})
-    time.sleep(0.5)  # give Airtable time to parse the upload
-    rv_get = table.get(rec["id"])
-    att = rv_get["fields"]["attachment"][0]
+    att = get_processed_attachment(table, rec["id"], cols.ATTACHMENT)
     assert att["filename"] in (
         valid_img_url.rpartition("/")[-1],  # sometimes taken from URL
         "a." + valid_img_url.rpartition(".")[-1],  # default if not
