@@ -39,6 +39,7 @@
   "id": "usrL2PNC5o3H4lBEi",
   "invitedToAirtableByUserId": "usrsOEchC9xuwRgKk",
   "isAdmin": true,
+  "isAgentUser": true,
   "isManaged": true,
   "isServiceAccount": false,
   "isSsoRequired": true,

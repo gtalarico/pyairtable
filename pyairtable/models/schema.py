@@ -762,6 +762,7 @@ class UserInfo(
     is_managed: bool = False
     is_admin: bool = False
     is_super_admin: bool = False
+    is_agent_user: bool = False
     groups: list[NestedId] = _FL()
     collaborations: "Collaborations" = _F("Collaborations")
     descendants: dict[str, "UserInfo.DescendantIds"] = _FD()
