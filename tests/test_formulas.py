@@ -201,6 +201,22 @@ def test_compound_flatten_circular_dependency():
         circular.flatten()
 
 
+def test_compound_flatten_circular_dependency_across_operators():
+    circular = NOT(F.Formula("x"))
+    wrapper = AND(circular)
+    circular.components = [wrapper]
+    with pytest.raises(pyairtable.exceptions.CircularFormulaError):
+        wrapper.flatten()
+
+
+def test_compound_flatten_reused_subexpression_across_operators():
+    a = EQ(F.Field("Status"), "Active")
+    shared = NOT(a)
+    formula = AND(shared, shared)
+    assert formula.flatten() == AND(NOT(a), NOT(a))
+    assert shared.components == [a]
+
+
 @pytest.mark.parametrize(
     "compound,expected",
     [
