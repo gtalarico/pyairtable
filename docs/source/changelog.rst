@@ -2,6 +2,12 @@
 Changelog
 =========
 
+3.6.0 (unreleased)
+------------------------
+
+* Dropped support for Python 3.10 and added support for Python 3.15,
+  which now requires pydantic 2.14.0 or later.
+
 3.5.1 (2026-11-07)
 ------------------------
 
