@@ -7,6 +7,8 @@ Changelog
 
 * Dropped support for Python 3.10 and added support for Python 3.15,
   which now requires pydantic 2.14.0 or later.
+* Fixed ``createdTime`` of fake records in :mod:`pyairtable.testing`, which was
+  the local time instead of UTC.
 
 3.5.1 (2026-11-07)
 ------------------------

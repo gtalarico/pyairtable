@@ -1,7 +1,12 @@
 import re
+import time
+from datetime import datetime, timedelta, timezone
 from unittest.mock import ANY
 
+import pytest
+
 from pyairtable import testing as T
+from pyairtable.utils import datetime_from_iso_str
 
 
 def test_fake_id():
@@ -31,6 +36,22 @@ def test_fake_record():
         "createdTime": ANY,
         "fields": {"one": 1, "two": 2},
     }
+
+
+@pytest.mark.skipif(not hasattr(time, "tzset"), reason="needs time.tzset()")
+def test_fake_record__created_time(monkeypatch):
+    """
+    Test that createdTime is in UTC regardless of the local time zone.
+    """
+    with monkeypatch.context() as patch:
+        patch.setenv("TZ", "Etc/GMT+12")
+        time.tzset()
+        created_time = T.fake_record()["createdTime"]
+    time.tzset()
+    age = datetime.now(timezone.utc) - datetime_from_iso_str(created_time)
+    assert timedelta(0) <= age < timedelta(minutes=1)
+    # Airtable returns milliseconds, e.g. "2014-09-05T12:34:56.000Z"
+    assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z", created_time)
 
 
 def test_fake_user():
