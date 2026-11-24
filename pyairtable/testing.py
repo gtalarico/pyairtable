@@ -37,11 +37,11 @@ from pyairtable.api.types import (
     UpsertResultDict,
     WritableFields,
 )
-from pyairtable.utils import fieldgetter, is_airtable_id
+from pyairtable.utils import datetime_to_iso_str, fieldgetter, is_airtable_id
 
 
 def _now() -> str:
-    return datetime.datetime.now().isoformat() + "Z"
+    return datetime_to_iso_str(datetime.datetime.now(datetime.timezone.utc))
 
 
 def fake_id(type: str = "rec", value: Any = None) -> str:
